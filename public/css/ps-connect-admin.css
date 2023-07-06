@@ -1,0 +1,16 @@
+/**
+Não modifique este arquivo. 
+Se desejar fazer alterações visuais, faça isso em Aparência > Personalizar > CSS Adicional e reescreva a regra que deseja modificar.
+
+Do not modify this file.
+If you wish to make visual changes, do so in Appearance> Customize> Additional CSS and rewrite the rule you want to modify.
+ */
+
+.pslogo-container{
+    display: flex;
+    align-items: center;
+}
+.pslogo{
+    height: 1.5rem;
+    margin-right: 5px;
+}

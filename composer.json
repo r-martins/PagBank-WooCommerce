@@ -1,0 +1,17 @@
+{
+    "name": "ricardomartins/pagseguro-connect-woo",
+    "description": "Integração PagSeguro WooCommerce com desconto nas taxas oficiais",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "RM_PagSeguro\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ricardo Martins"
+        }
+    ],
+    "require": {}
+}
