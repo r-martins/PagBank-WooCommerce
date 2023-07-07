@@ -3,14 +3,16 @@
 namespace RM_PagSeguro\Connect;
 
 use RM_PagSeguro\Connect;
+use RM_PagSeguro\Connect\Payments\Boleto;
 use RM_PagSeguro\Helpers\Api;
 use RM_PagSeguro\Helpers\Pix;
 use WC_Payment_Gateway_CC;
+use WP_Error;
 
 /**
  * Class Gateway
  *
- * @author    Ricardo Martins <ricardo@magenteiro.com>
+ * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
  */
 class Gateway extends WC_Payment_Gateway_CC
@@ -46,9 +48,9 @@ class Gateway extends WC_Payment_Gateway_CC
 
     public function init_settings(){
         $fields = [];
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/settings/general-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/settings/boleto-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/settings/pix-fields.php';
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/boleto-fields.php';
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/pix-fields.php';
         $this->form_fields = array_merge(...$fields);
         
         parent::init_settings();
@@ -60,7 +62,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
 //        wp_enqueue_script( 'pagseguro-admin', plugins_url( 'public/js/admin/admin' . $suffix . '.js', plugin_dir_path( __FILE__ ) ), array( 'jquery' ), WC_PAGSEGURO_VERSION, true );
 
-        include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-admin-page.php';
+        include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-settings-page.php';
 //        parent::admin_options();
     }
 
@@ -76,7 +78,7 @@ class Gateway extends WC_Payment_Gateway_CC
             return;
         }
         
-        $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/settings/' . $section . '-fields.php';
+        $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/' . $section . '-fields.php';
         $form_fields = apply_filters(
             'woocommerce_settings_api_form_fields_'.$this->id,
             array_map(array($this, 'set_defaults'), $fields)
@@ -119,7 +121,7 @@ class Gateway extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
-        echo "<p>PIX</p>";
+        include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
     }
 
     /**
@@ -140,11 +142,31 @@ class Gateway extends WC_Payment_Gateway_CC
                 plugins_url('public/css/pix.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
         }
+        
+        if ( is_checkout() ) {
+            wp_enqueue_style(
+                'pagseguro-connect-checkout',
+                plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+            );
+        }
     }
     
     public function add_scripts(){
         if (is_order_received_page()) {
-            wp_enqueue_script('pagseguro-connect-pix', plugins_url('public/js/pix-success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));
+            wp_enqueue_script(
+                'pagseguro-connect-pix',
+                plugins_url('public/js/pix-success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+            );
+        }
+        
+        if ( is_checkout() ) {
+            wp_enqueue_script(
+                'pagseguro-connect-checkout',
+                plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery'],
+                true,
+                true
+            );
         }
     }
     
@@ -181,6 +203,25 @@ class Gateway extends WC_Payment_Gateway_CC
         global $woocommerce;
         $order = wc_get_order( $order_id );
 
+        //sanitize $_POST['ps_connect_method']
+        $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+        
+        switch ($payment_method) {
+            case 'boleto':
+                $boleto = new Boleto($order);
+                $boleto->send_order();
+                return $this->process_boleto($order);
+//            case 'pix':
+//                return $this->process_pix($order);
+//            case 'cc':
+//                return $this->process_cc($order);
+//            default:
+//                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido')));
+//                return array(
+//                    'result' => 'fail',
+//                    'redirect' => ''
+//                );
+        }
 
         $pixHelper = new Pix();
         $params = $pixHelper->extractPixRequestParams($order);

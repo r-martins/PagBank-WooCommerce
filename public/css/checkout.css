@@ -1,0 +1,3 @@
+.ps-connect-buttons-container button.active{
+    filter: brightness(0.95); /* darkens the selected payment method */
+}

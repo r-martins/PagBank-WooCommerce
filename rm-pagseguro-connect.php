@@ -31,10 +31,14 @@ defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.0.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
+define( 'WC_PAGSEGURO_CONNECT_URL', plugins_url( __FILE__ ) );
 
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
+
+add_action('init', [Connect::class, 'init']);
+
 
 //region old spl
 //register spl autoload function to look into ./src folder with PSR-4 standard
@@ -82,34 +86,37 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 //}
 //endregion
 
-class RMPagseguroConnect
-{
-    public function __construct()
-    {
-        add_action('init', [$this, 'init']);
-    }
+//region old RMPagseguroConnect
+//class RMPagseguroConnect
+//{
+//    public function __construct()
+//    {
+////        add_action('init', [$this, 'init']);
+//    }
+//
+//    public function init() {
+//        /** @var Connect $connect */
+//        static $connect;
+//
+//        if ( ! isset( $connect ) ) {
+//            $connect = new Connect();
+//        }
+//
+//        return $connect;
+//    }
+//    public function activate()
+//    {
+//    }
+//    public function deactivate()
+//    {
+//    }
+//    public static function uninstall()
+//    {
+//    }
+//}
+//endregion
 
-    public function init() {
-        /** @var Connect $connect */
-        static $connect;
-
-        if ( ! isset( $connect ) ) {
-            $connect = new Connect();
-        }
-
-        return $connect;
-    }
-    public function activate()
-    {
-    }
-    public function deactivate()
-    {
-    }
-    public static function uninstall()
-    {
-    }
-}
-$psConnect = new RMPagseguroConnect();
-register_activation_hook(__FILE__, [$psConnect, 'activate']);
-register_deactivation_hook(__FILE__, [$psConnect, 'deactivate']);
-register_uninstall_hook(__FILE__, 'RMPagseguroConnect::uninstall');
+//$psConnect = new RMPagseguroConnect();
+//register_activation_hook(__FILE__, [$psConnect, 'activate']);
+//register_deactivation_hook(__FILE__, [$psConnect, 'deactivate']);
+//register_uninstall_hook(__FILE__, 'RMPagseguroConnect::uninstall');

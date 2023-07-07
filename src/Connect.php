@@ -3,6 +3,7 @@
 namespace RM_PagSeguro;
 
 use RM_PagSeguro\Connect\Gateway;
+use RM_PagSeguro\Connect\Gatewayd;
 
 /**
  * Class Connect
@@ -20,15 +21,20 @@ class Connect
      */
     public function __construct()
     {
+        
+    }
+    
+    public static function init()
+    {
         // Checks if WooCommerce is installed or return
         if ( !class_exists('WooCommerce')) {
             add_action('admin_notices', array(__CLASS__, 'woocommerce_missing_notice'));
             return;
         }
-        
+
         // Load plugin text domain
         load_plugin_textdomain(Connect::DOMAIN, false, dirname(plugin_basename( __FILE__ )) . '/languages/');
-        
+
         // Load plugin files
         self::includes();
 
@@ -36,12 +42,7 @@ class Connect
         add_filter('woocommerce_payment_gateways', array( __CLASS__, 'add_gateway' ));
 
         // Add action links
-        add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( $this, 'plugin_action_links' ) );
-    }
-    
-    public function init()
-    {
-        
+        add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( self::class, 'plugin_action_links' ) );
     }
 
     /**
@@ -58,6 +59,7 @@ class Connect
      */
     public static function includes()
     {
+        //@TODO Remover em prol de Helpers\Functions\genetic_message
         if ( is_admin() ) {
             include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/messages/generic.php';
         }

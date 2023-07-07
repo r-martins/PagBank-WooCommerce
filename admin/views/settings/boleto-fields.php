@@ -35,4 +35,14 @@ return array(
         'default'     => 7,
         'desc_tip'    => false,
     ),
+    'boleto_line_1'       => array(
+        'title'       => __( 'Instruções (Linha 1)', \RM_PagSeguro\Connect::DOMAIN ),
+        'type'        => 'text',
+        'default'     => 'Sr. Caixa, favor não aceitar após vencimento.',
+    ),
+    'boleto_line_2'       => array(
+        'title'       => __( 'Instruções (Linha 2)', \RM_PagSeguro\Connect::DOMAIN ),
+        'type'        => 'text',
+        'default'     => 'Obrigado por comprar em nossa loja!',
+    ),
 );

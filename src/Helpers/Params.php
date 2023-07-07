@@ -63,4 +63,13 @@ class Params
         $return = ltrim($return, '0');
         return (int)$return;
     }
+    
+    public static function getConfig($key, $default = '')
+    {
+        $settings = get_option('woocommerce_rm_pagseguro_connect_settings');
+        if (isset($settings[$key])){
+            return $settings[$key];
+        }
+        return $default;
+    }
 }
