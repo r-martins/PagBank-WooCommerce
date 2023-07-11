@@ -1,7 +1,7 @@
 jQuery(document).ready(function($) {
 
     //region Navigation Tabs
-    $('.nav-tab-wrapper a').click(function(e) {
+    $('.ps-nav-tab-wrapper a').click(function(e) {
         e.preventDefault();
         $('.nav-tab-wrapper a').removeClass('nav-tab-active');
         $(this).addClass('nav-tab-active');
