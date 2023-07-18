@@ -13,7 +13,7 @@
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais) 
  * Version:           4.0.0
  * Requires at least: 5.2
- * Requires PHP:      7.2
+ * Requires PHP:      7.4
  * Author:            Ricardo Martins
  * Author URI:        https://magenteiro.com
  * License:           GPL-3.0

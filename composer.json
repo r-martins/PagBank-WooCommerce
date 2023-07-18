@@ -13,5 +13,8 @@
             "name": "Ricardo Martins"
         }
     ],
-    "require": {}
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*"
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace RM_PagSeguro\Helpers;
 
+use Exception;
 use RM_PagSeguro\Connect;
 use stdClass;
 use WC_Payment_Gateways;
@@ -45,6 +46,13 @@ class Api
         return json_decode(json_encode(simplexml_load_string($response)), true);
     }
 
+    /**
+     * @param string $endpoint
+     * @param array  $params
+     *
+     * @return mixed
+     * @throws Exception
+     */
     public function post(string $endpoint, array $params = [])
     {
         $params[]['isSandbox'] = $this->is_sandbox;
@@ -53,14 +61,27 @@ class Api
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'Authorization: Bearer '.$this->connect_key
+            'Authorization: Bearer ' . $this->connect_key
         ]);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($params));
         $response = curl_exec($curl);
-        curl_close($curl);
+        
+        if (curl_errno($curl)){
+            $error_message = curl_error($curl);
+            curl_close($curl);
+            throw new \Exception('Erro na requisição: ' . $error_message);
+        }
+        
+        $decoded_response = json_decode($response, true);
+        if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
+            // Aqui você pode tratar erros de decodificação JSON
+            curl_close($curl);
+            throw new \Exception('Resposta inválida da API: ' . $response);
+        }
 
-        return json_decode($response);
+        curl_close($curl);
+        return $decoded_response;
     }
 
 

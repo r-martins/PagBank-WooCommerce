@@ -5,8 +5,8 @@ jQuery(document).ready(function($) {
         let methodName = e.target.id.replace('btn-pagseguro-', '')
         
         //disable all fieldsets with .ps-connect-method
-        $('.ps-connect-method').hide()
-        $('.ps-connect-method').attr('disabled', true)
+        $('.ps_connect_method').hide()
+        $('.ps_connect_method').attr('disabled', true)
         
         //enable the fieldset with the id of the button clicked
         $('#ps-connect-payment-' + methodName).show()

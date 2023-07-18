@@ -23,7 +23,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
         ?>
     </div>
 <!--    navigation tabs-->
-    <nav class="ps-nav-tab-wrapper woo-nav-tab-wrapper">
+    <nav class="nav-tab-wrapper woo-nav-tab-wrapper" id="ps-nav">
         <a href="#tab-general" class="nav-tab nav-tab-active"><?php esc_html_e('Geral', Connect::DOMAIN) ?></a>
         <a href="#tab-pix" class="nav-tab"><?php esc_html_e('PIX', Connect::DOMAIN) ?></a>
         <a href="#tab-boleto" class="nav-tab"><?php esc_html_e('Boleto', Connect::DOMAIN) ?></a>

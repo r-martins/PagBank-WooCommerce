@@ -2,10 +2,10 @@
 
 namespace RM_PagSeguro\Connect;
 
+use Exception;
 use RM_PagSeguro\Connect;
 use RM_PagSeguro\Connect\Payments\Boleto;
 use RM_PagSeguro\Helpers\Api;
-use RM_PagSeguro\Helpers\Pix;
 use WC_Payment_Gateway_CC;
 use WP_Error;
 
@@ -139,7 +139,7 @@ class Gateway extends WC_Payment_Gateway_CC
         if (is_order_received_page()) {
             wp_enqueue_style(
                 'pagseguro-connect-pix',
-                plugins_url('public/css/pix.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
         }
         
@@ -154,8 +154,8 @@ class Gateway extends WC_Payment_Gateway_CC
     public function add_scripts(){
         if (is_order_received_page()) {
             wp_enqueue_script(
-                'pagseguro-connect-pix',
-                plugins_url('public/js/pix-success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                'pagseguro-connect',
+                plugins_url('public/js/success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
         }
         
@@ -210,32 +210,43 @@ class Gateway extends WC_Payment_Gateway_CC
         
         switch ($payment_method) {
             case 'boleto':
-                $boleto = new Boleto($order);
-                $boleto->send_order();
-                return $this->process_boleto($order);
-//            case 'pix':
+                $method = new Boleto($order);
+                $params = $method->prepare();
+                break;
+//                return $this->process_boleto($order);
+            case 'pix':
+                $method = new Payments\Pix($order);
+                $params = $method->prepare();
+                break;
 //                return $this->process_pix($order);
 //            case 'cc':
 //                return $this->process_cc($order);
-//            default:
-//                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido')));
-//                return array(
-//                    'result' => 'fail',
-//                    'redirect' => ''
-//                );
+            default:
+                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido')));
+                return array(
+                    'result' => 'fail',
+                    'redirect' => ''
+                );
         }
+        
+        $order->add_meta_data('pagseguro_payment_method', $method->code);
 
-        $pixHelper = new Pix();
-        $params = $pixHelper->extractPixRequestParams($order);
-        $api = new Api();
-        $resp = $api->post('ws/orders', $params);
 
-        $order->add_meta_data('pagseguro_qrcode', $resp->qr_codes[0]->links[0]->href);
-        $order->add_meta_data('pagseguro_qrcode_text', $resp->qr_codes[0]->text);
-        $order->add_meta_data('pagseguro_qrcode_expiration', $resp->qr_codes[0]->expiration_date);
-        $order->add_meta_data('pagseguro_order_id', $resp->id);
+        try {
+            $api = new Api();
+            //TODO: Add logs
+            $resp = $api->post('ws/orders', $params);
+        } catch (Exception $e) {
+            wc_add_wp_error_notices(new WP_Error('api_error', $e->getMessage()));
+            return array(
+                'result' => 'fail',
+                'redirect' => ''
+            );
+        }
+        $method->process_response($order, $resp);
+        
         // some notes to customer (replace true with false to make it private)
-        $order->add_order_note( 'Pedido gerado com sucesso!', true );
+        $order->add_order_note( 'Pedido criado com sucesso!', true );
 
         $order->payment_complete();
         wc_reduce_stock_levels($order_id);
@@ -252,10 +263,17 @@ class Gateway extends WC_Payment_Gateway_CC
 
     public function thankyou_instructions($order_id)
     {
-
-        $qr_code = get_post_meta($order_id, 'pagseguro_qrcode', true);
-        $qr_code_text = get_post_meta($order_id, 'pagseguro_qrcode_text', true);
-        $qr_code_exp = get_post_meta($order_id, 'pagseguro_qrcode_expiration', true);
-        require_once dirname(__FILE__) . '/../templates/pix-instructions.php';
+        $order = wc_get_order($order_id);
+        switch ($order->get_meta('pagseguro_payment_method')) {
+            case 'boleto':
+                    $method = new Boleto($order);
+                    break;
+                case 'pix':
+                    $method = new Payments\Pix($order);
+                    break;
+        }
+        if (!empty($method)) {
+            $method->getThankyouInstructions($order_id);
+        }
     }
 }

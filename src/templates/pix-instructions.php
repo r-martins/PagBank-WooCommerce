@@ -12,7 +12,7 @@ use RM_PagSeguro\Helpers\Functions;
         <img src="<?php echo esc_url($qr_code);?>" class="pix-qr" alt="PIX QrCode" title="Escaneie o código com o aplicativo de seu banco."/>
     </div>
     <p>Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.</p>
-    <div class="pix-code-container">
+    <div class="code-container">
         <label>
             Código PIX: 
             <input type="text" class="pix-code" value="<?php echo esc_attr($qr_code_text);?>" readonly="readonly"/>
@@ -22,10 +22,7 @@ use RM_PagSeguro\Helpers\Functions;
     </div>
     <?php if($qr_code_exp):?>
     <div class="pix-exiration-container">
-        <p><strong>Este código PIX expira em <?php echo Functions::format_date($qr_code_exp);?></strong></p>
+        <p><strong>Este código PIX expira em <?php echo Functions::format_date($qr_code_exp);?>.</strong></p>
     </div>
     <?php endif;?>
 </div>
-
-<?php
-

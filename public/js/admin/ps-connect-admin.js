@@ -1,9 +1,9 @@
 jQuery(document).ready(function($) {
 
     //region Navigation Tabs
-    $('.ps-nav-tab-wrapper a').click(function(e) {
+    $('#ps-nav a').click(function(e) {
         e.preventDefault();
-        $('.nav-tab-wrapper a').removeClass('nav-tab-active');
+        $('#ps-nav a').removeClass('nav-tab-active');
         $(this).addClass('nav-tab-active');
         $('.tab-content').hide();
         var selected_tab = $(this).attr('href');

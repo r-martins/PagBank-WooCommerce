@@ -13,14 +13,14 @@ return array(
         'description' => __( 'Nome do meio de pagamento que seu cliente irá ver no checkout.', \RM_PagSeguro\Connect::DOMAIN ),
         'default'     => __( 'Boleto', \RM_PagSeguro\Connect::DOMAIN ),
         'desc_tip'    => true,
-    ),
+    )/*,
     'boleto_description'        => array(
         'title'       => __( 'Description', \RM_PagSeguro\Connect::DOMAIN ),
         'type'        => 'textarea',
         'description' => __( 'Payment method description that the customer will see on your website.', \RM_PagSeguro\Connect::DOMAIN ),
         'default'     => __( 'Pay with PIX via PagSeguro.', \RM_PagSeguro\Connect::DOMAIN ),
         'desc_tip'    => true,
-    ),
+    )*/,
     'boleto_instructions'       => array(
         'title'       => __( 'Instructions', \RM_PagSeguro\Connect::DOMAIN ),
         'type'        => 'textarea',

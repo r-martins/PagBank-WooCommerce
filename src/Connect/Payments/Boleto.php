@@ -14,23 +14,21 @@ use WC_Order;
 
 class Boleto extends Common
 {
+    public string $code = 'boleto';
+    /**
+     * @param WC_Order $order
+     */
     public function __construct($order)
     {
         $this->order = $order;
     }
     
-    public function send_order()
-    {
-        $body = $this->prepare();
-    }
-
     /**
      * Prepare order params for Boleto
-     * @param $order
      *
-     * @return string
+     * @return array
      */
-    public function prepare(): string
+    public function prepare(): array
     {
         $return = $this->getDefaultParameters();
         
@@ -73,8 +71,17 @@ class Boleto extends Common
         
         $charges = ['charges' => [$charge]];
         
-        return json_encode(array_merge($return, $charges), JSON_PRETTY_PRINT);
+        return array_merge($return, $charges);
         
+    }
+
+    public function getThankyouInstructions($order_id){
+        $boleto_barcode = get_post_meta($order_id, 'pagseguro_boleto_barcode', true);
+        $boleto_barcode_formatted = get_post_meta($order_id, 'pagseguro_boleto_barcode_formatted', true);
+        $boleto_due_date = get_post_meta($order_id, 'pagseguro_boleto_due_date', true);
+        $boleto_pdf = get_post_meta($order_id, 'pagseguro_boleto_pdf', true);
+        $boleto_png = get_post_meta($order_id, 'pagseguro_boleto_png', true);
+        require_once dirname(__FILE__) . '/../../templates/boleto-instructions.php';
     }
     
 }

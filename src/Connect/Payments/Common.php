@@ -18,7 +18,6 @@ use WC_Order_Item_Product;
  */
 class Common
 {
-
     /**
      * @var WC_Order $order
      */
@@ -106,5 +105,36 @@ class Common
     public function setOrder(WC_Order $order): void
     {
         $this->order = $order;
+    }
+    public function getTitle(){
+        return $this->title;
+    }
+
+    /**
+     * @param WC_Order $order
+     * @param array $response
+     *
+     * @return void
+     */
+    public function process_response($order, $response) {
+        
+        switch ($order->get_meta('pagseguro_payment_method')){
+            case 'pix':
+                $order->add_meta_data('pagseguro_pix_qrcode', $response['qr_codes'][0]['links'][0]['href'] ?? null);
+                $order->add_meta_data('pagseguro_pix_qrcode_text', $response['qr_codes'][0]['text'] ?? null);
+                $order->add_meta_data('pagseguro_pix_qrcode_expiration', $response['qr_codes'][0]['expiration_date'] ?? null);
+                break;
+            case 'boleto':
+                $order->add_meta_data('pagseguro_boleto_png', $response['charges'][0]['links'][1]['href'] ?? null);
+                $order->add_meta_data('pagseguro_boleto_pdf', $response['charges'][0]['links'][0]['href'] ?? null);
+                $order->add_meta_data('pagseguro_boleto_due_date', $response['charges'][0]['payment_method']['boleto']['due_date'] ?? null);
+                $order->add_meta_data('pagseguro_boleto_barcode_formatted', $response['charges'][0]['payment_method']['boleto']['formatted_barcode'] ?? null);
+                $order->add_meta_data('pagseguro_boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode'] ?? null);
+                break;
+        }
+        
+        $order->add_meta_data('pagseguro_order_id', $response['id'] ?? null);
+        $order->add_meta_data('pagseguro_order_charges', $response['charges'] ?? null);
+        
     }
 }

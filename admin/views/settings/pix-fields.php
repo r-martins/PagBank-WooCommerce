@@ -15,19 +15,19 @@ return array(
         'desc_tip'    => true,
         'class' => 'pix_attr'
     ),
-    'pix_description'        => array(
+    /*'pix_description'        => array(
         'title'       => __( 'Description', \RM_PagSeguro\Connect::DOMAIN ),
         'type'        => 'textarea',
         'description' => __( 'Payment method description that the customer will see on your website.', \RM_PagSeguro\Connect::DOMAIN ),
         'default'     => __( 'Pay with PIX via PagSeguro.', \RM_PagSeguro\Connect::DOMAIN ),
         'desc_tip'    => true,
         'class'       => 'pix_attr'
-    ),
+    ),*/
     'pix_instructions'       => array(
         'title'       => __( 'Instructions', \RM_PagSeguro\Connect::DOMAIN ),
         'type'        => 'textarea',
         'description' => __( 'Instruções que serão adicionadas à sua página de sucesso.', \RM_PagSeguro\Connect::DOMAIN ),
-        'default'     => __( 'Por favor pague usando uma das opções abaixo.', \RM_PagSeguro\Connect::DOMAIN ),
+        'default'     => __( 'O QrCode será exibido na finalização do pedido.', \RM_PagSeguro\Connect::DOMAIN ),
         'desc_tip'    => true,
         'class'       => 'pix_attr'
     ),
