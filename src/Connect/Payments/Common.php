@@ -24,6 +24,14 @@ class Common
     protected $order;
 
     /**
+     * @param WC_Order $order
+     */
+    public function __construct($order)
+    {
+        $this->order = $order;
+    }
+
+    /**
      * Returns an array with reference_id, customer, items, notification_urls and shipping
      * to be used in the /orders request
      * @return array
@@ -106,9 +114,9 @@ class Common
     {
         $this->order = $order;
     }
-    public function getTitle(){
-        return $this->title;
-    }
+//    public function getTitle(){
+//        return $this->title;
+//    }
 
     /**
      * @param WC_Order $order

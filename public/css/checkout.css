@@ -1,3 +1,17 @@
 .ps-connect-buttons-container button.active{
     filter: brightness(0.95); /* darkens the selected payment method */
 }
+
+/*region bandeiras*/
+#payment .payment_methods .payment_box .wc-credit-card-form-card-number.elo{
+    background-image: url('../images/credit-cards/elo.svg');
+}
+
+#payment .payment_methods .payment_box .wc-credit-card-form-card-number.hipercard{
+    background-image: url('../images/credit-cards/hipercard.svg');
+}
+
+#payment .payment_methods .payment_box .wc-credit-card-form-card-number.aura{
+    background-image: url('../images/credit-cards/aura.svg');
+}
+/*endregion*/

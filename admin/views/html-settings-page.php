@@ -25,9 +25,9 @@ if ( ! defined ( 'ABSPATH' ) ) {
 <!--    navigation tabs-->
     <nav class="nav-tab-wrapper woo-nav-tab-wrapper" id="ps-nav">
         <a href="#tab-general" class="nav-tab nav-tab-active"><?php esc_html_e('Geral', Connect::DOMAIN) ?></a>
+        <a href="#tab-credit-card" class="nav-tab"><?php esc_html_e('Cartão de Crédito', Connect::DOMAIN) ?></a>
         <a href="#tab-pix" class="nav-tab"><?php esc_html_e('PIX', Connect::DOMAIN) ?></a>
         <a href="#tab-boleto" class="nav-tab"><?php esc_html_e('Boleto', Connect::DOMAIN) ?></a>
-        <a href="#tab-credit-card" class="nav-tab"><?php esc_html_e('Cartão de Crédito', Connect::DOMAIN) ?></a>
     </nav>
     <div class="tab-content active" id="tab-general">
         <h3><?php esc_html_e('Credenciais', Connect::DOMAIN) ?></h3>
@@ -36,6 +36,9 @@ if ( ! defined ( 'ABSPATH' ) ) {
         <?php
         echo $this->get_admin_fields('general');
         ?>
+    </div>
+    <div class="tab-content hidden" id="tab-credit-card">
+        <?php echo $this->get_admin_fields('cc'); ?>
     </div>
     <div class="tab-content hidden" id="tab-pix">
         <?php echo $this->get_admin_fields('pix'); ?>

@@ -15,13 +15,7 @@ use WC_Order;
 class Boleto extends Common
 {
     public string $code = 'boleto';
-    /**
-     * @param WC_Order $order
-     */
-    public function __construct($order)
-    {
-        $this->order = $order;
-    }
+    
     
     /**
      * Prepare order params for Boleto

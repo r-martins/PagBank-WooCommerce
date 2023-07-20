@@ -11,13 +11,7 @@ class Pix extends Common
 {
     public string $code = 'pix';
     
-    /**
-     * @param WC_Order $order
-     */
-    public function __construct($order)
-    {
-        $this->order = $order;
-    }
+    
 
     /**
      * Prepares PIX params to be sent to PagSeguro
