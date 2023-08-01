@@ -29,8 +29,4 @@ class ParamsTest extends TestCase
         $this->assertEquals('1215013', Params::convert_to_cents(12150.13));
     }
 
-    public function testExtract_phone()
-    {
-
-    }
 }

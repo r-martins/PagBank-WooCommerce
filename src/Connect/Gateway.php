@@ -7,6 +7,7 @@ use RM_PagSeguro\Connect;
 use RM_PagSeguro\Connect\Payments\Boleto;
 use RM_PagSeguro\Connect\Payments\CreditCard;
 use RM_PagSeguro\Helpers\Api;
+use RM_PagSeguro\Helpers\Params;
 use WC_Payment_Gateway_CC;
 use WP_Error;
 
@@ -24,8 +25,8 @@ class Gateway extends WC_Payment_Gateway_CC
         $this->id = Connect::DOMAIN;
         $this->icon = apply_filters('wc_pagseguro_connect_icon', plugins_url('public/images/pagseguro.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));
         $this->has_fields = true;
-        $this->method_title = __('PagSeguro Connect by Ricardo Martins', Connect::DOMAIN);
-        $this->method_description = __('Accept all PagSeguro Payments and save on taxes and transaction fees', Connect::DOMAIN);
+        $this->method_title = __('PagSeguro Connect por Ricardo Martins', Connect::DOMAIN);
+        $this->method_description = __('Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).', Connect::DOMAIN);
         $this->supports = array(
             'products',
             'refunds',
@@ -35,7 +36,7 @@ class Gateway extends WC_Payment_Gateway_CC
         
         $this->init_settings();
         
-        $this->title = $this->get_option('title', __('PagSeguro UOL', Connect::DOMAIN));
+        $this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', Connect::DOMAIN));
         $this->description = $this->get_option('description');
         
         
@@ -140,6 +141,7 @@ class Gateway extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
+        $foo = 'bar';
         include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
     }
 
@@ -194,6 +196,11 @@ class Gateway extends WC_Payment_Gateway_CC
                     ['jquery', 'jquery-payment'],
                     true,
                     true
+                );
+                wp_localize_script(
+                    'pagseguro-connect-creditcard',
+                    'ajax_object',
+                    ['ajax_url' => admin_url('admin-ajax.php')]
                 );
                 wp_add_inline_script(
                     'pagseguro-connect-creditcard',
@@ -318,4 +325,10 @@ class Gateway extends WC_Payment_Gateway_CC
             $method->getThankyouInstructions($order_id);
         }
     }
+    
+    public function get_default_installments()
+    {
+        return Params::getInstallments(WC()->cart->get_total('edit'), '411111');
+    }
+    
 }

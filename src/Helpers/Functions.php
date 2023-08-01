@@ -6,6 +6,8 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use RM_PagSeguro\Connect;
+use WC_Log_Handler_File;
+use WC_Logger;
 
 /**
  * Class Functions
@@ -26,7 +28,7 @@ class Functions
      *
      * @return string
      */
-    static function format_date($date): string
+    public static function format_date($date): string
     {        
         if (empty($date) || !is_string($date)) {
             return '';
@@ -51,7 +53,7 @@ class Functions
      *
      * @return void
      */
-    static function generic_notice(string $msg, string $type = self::NOTICE_UPDATE, bool $isDismissible=true)
+    public static function generic_notice(string $msg, string $type = self::NOTICE_UPDATE, bool $isDismissible=true)
     {
         if( !is_admin() ) {
             return;
@@ -64,5 +66,26 @@ class Functions
         }
         
         echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagSeguro Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
+    }
+
+    /**
+     * @param $msg
+     * @param $level string One of the following:
+     *     'emergency': System is unusable.
+     *     'alert': Action must be taken immediately.
+     *     'critical': Critical conditions.
+     *     'error': Error conditions.
+     *     'warning': Warning conditions.
+     *     'notice': Normal but significant condition.
+     *     'info': Informational messages.
+     *     'debug': Debug-level messages.
+     * @param $context
+     *
+     * @return void
+     */
+    public static function log($msg, $level = 'info', $context = []): void
+    {
+        $logger = wc_get_logger();
+        $logger->log($level, $msg, [...$context, 'source' => 'pagseguro-connect']); 
     }
 }

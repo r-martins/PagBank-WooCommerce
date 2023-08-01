@@ -17,6 +17,11 @@ use RM_PagSeguro\Object\Holder;
  */
 class CreditCard extends Common
 {
+    public function __construct($order)
+    {
+        parent::__construct($order);
+    }
+
     public function prepare():array
     {
         $return = $this->getDefaultParameters();
@@ -47,4 +52,18 @@ class CreditCard extends Common
             'var pagseguro_connect_public_key = \'' . Params::getConfig('public_key') . '\';'
         );
     }
+    public static function get_ajax_installments(){
+        global $woocommerce;
+
+        $order_total = $woocommerce->cart->get_total('edit');
+        $cc_bin = intval($_REQUEST['cc_bin']);
+
+        $installments = Params::getInstallments($order_total, $cc_bin);
+        if (!$installments){
+            wp_send_json(array('error' => 'Não foi possível obter as parcelas. Verifique o número do cartão digitado.'), 400);
+        }
+        wp_send_json($installments);
+    }
+    
+    
 }

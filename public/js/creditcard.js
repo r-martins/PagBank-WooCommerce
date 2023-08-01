@@ -1,5 +1,5 @@
-// Novo plugin jQuery para estender a identificação de tipos de cartão
 jQuery(document).ready(function ($) {
+    window.ps_cc_bin = '';
     
     /*region extending cards and card types from jqueryPayment to support new types*/
     const typesPagBank = [
@@ -149,15 +149,25 @@ jQuery(document).ready(function ($) {
     /*endregion*/
     
     
+    $(document.body).on('update_checkout', function(e){
+        $(document.body).trigger('update_installments');
+    });
+    
+    
     $('form.woocommerce-checkout').on('checkout_place_order', function (e) {
         
-        //region encrypts credit card data
+        //if not pagseguro connect or not credit card, return
+        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined || 
+            $('#payment_method_rm_pagseguro_connect').is(':checked') === false)
+            return true;
+        
+        
          let form = $(this);
          let card;
         //replace trim and remove duplicated spaces from holder name
         let holder_name = $('#rm_pagseguro_connect-card-holder-name').val().trim().replace(/\s+/g, ' ');
         
-         /*region encrypt card*/
+         /*region Encrypt card*/
         try {
             card = PagSeguro.encryptCard({
                 publicKey: pagseguro_connect_public_key,
@@ -183,15 +193,94 @@ jQuery(document).ready(function ($) {
             //extract error message
             let error = '';
             for (let i = 0; i < card.errors.length; i++) {
-                if (error_codes[card.errors[i].code] !== undefined)
-                    error += error_codes[card.errors[i].code] + '\n';
+                //loop through error codes to find the message
+                for (let j = 0; j < error_codes.length; j++) {
+                    if (error_codes[j].code === card.errors[i].code) {
+                        error += error_codes[j].message + '\n';
+                        break;
+                    }
+                }
             }
-            
-            alert('Erro ao criptografar cartão.' + error);
+            alert('Erro ao criptografar cartão.\n' + error);
             return false;
         }
         $('#rm_pagseguro_connect-card-encrypted').val(card.encryptedCard);
+        
+        //obfuscates cvv
+        $('#rm_pagseguro_connect-card-cvc').val('***');
+        //obfuscates card number between 7th and last 4 digits
+        let card_number = $('#rm_pagseguro_connect-card-number').val();
+        let obfuscated_card_number = '';
+        for (let i = 0; i < card_number.length; i++) {
+            if (i > 5 && i < card_number.length - 4)
+                obfuscated_card_number += '*';
+            else
+                obfuscated_card_number += card_number[i];
+        }
+        $('#rm_pagseguro_connect-card-number').val(obfuscated_card_number);
+        
         /*endregion*/
     });
     
+});
+
+jQuery(document.body).on('init_checkout', ()=>{
+    jQuery(document).on('keyup change paste', '#rm_pagseguro_connect-card-number', (e)=>{
+        let cardNumber = jQuery(e.target).val();
+        let ccBin = cardNumber.replace(/\s/g, '').substring(0, 6);
+        if (ccBin !== window.ps_cc_bin && ccBin.length === 6) {
+            window.ps_cc_bin = ccBin;
+            jQuery(document.body).trigger('update_installments');
+        }
+    });
+});
+
+jQuery(document.body).on('update_installments', ()=>{
+    //if success, update the installments select with the response
+    //if error, show error message
+    let ccBin = window.ps_cc_bin ?? '411111';
+    let total = jQuery('.order-total bdi').html();
+    //extact amount from total, removing html elements
+    total = total.replace(/<[^>]*>?/gm, '');
+    //remove ,
+    total = total.replace(/,/g, '');
+    //replace , with .
+    total = total.replace(/\./g, ',');
+    //remove non numbers and . ,
+    total = total.replace(/[^0-9,]/g, '');
+    
+
+    //convert to cents
+    let orderTotal = parseFloat(total).toFixed(2) * 100;
+    // let maxInstallments = jQuery('#rm_pagseguro_connect-card-installments').attr('max_installments');
+    let url = ajax_object.ajax_url;
+    jQuery.ajax({
+        url: url,
+        method: 'POST',
+        data: {
+            cc_bin: ccBin,
+            action: 'ps_get_installments',
+        },
+        success: (response)=>{
+            // debugger;
+            let select = jQuery('#rm_pagseguro_connect-card-installments');
+            select.empty();
+            for (let i = 0; i < response.length; i++) {
+                let option = jQuery('<option></option>');
+                option.attr('value', response[i].quantity);
+                let text = response[i].installments + 'x de R$ ' + response[i].installment_amount;
+                let additional_text = ' (sem juros)';
+                if (response[i].interest_free === false)
+                    additional_text = ' (Total R$ ' + response[i].total_amount + ')';
+                
+                option.text(text + additional_text);
+                select.append(option);
+            }
+        },
+        error: (response)=>{
+            alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
+            console.info('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
+                'para ver os possíveis problemas na obtenção das parcelas.');
+        }
+    });
 });

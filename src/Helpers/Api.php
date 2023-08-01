@@ -43,7 +43,15 @@ class Api
         $response = curl_exec($curl);
         curl_close($curl);
 
-        return json_decode(json_encode(simplexml_load_string($response)), true);
+        $decoded_response = json_decode($response, true);
+        if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
+            // Aqui você pode tratar erros de decodificação JSON
+            curl_close($curl);
+            throw new \Exception('Resposta inválida da API: ' . $response);
+        }
+
+        curl_close($curl);
+        return $decoded_response;
     }
 
     /**

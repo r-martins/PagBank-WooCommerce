@@ -4,6 +4,7 @@ namespace RM_PagSeguro;
 
 use RM_PagSeguro\Connect\Gateway;
 use RM_PagSeguro\Connect\Gatewayd;
+use RM_PagSeguro\Connect\Payments\CreditCard;
 
 /**
  * Class Connect
@@ -28,9 +29,11 @@ class Connect
     {
         // Checks if WooCommerce is installed or return
         if ( !class_exists('WooCommerce')) {
-            add_action('admin_notices', array(__CLASS__, 'woocommerce_missing_notice'));
+            add_action('admin_notices', [__CLASS__, 'woocommerce_missing_notice']);
             return;
         }
+        add_action('wp_ajax_nopriv_ps_get_installments', [CreditCard::class, 'get_ajax_installments']);
+        add_action('wp_ajax_ps_get_installments', [CreditCard::class, 'get_ajax_installments']);
 
         // Load plugin text domain
         load_plugin_textdomain(Connect::DOMAIN, false, dirname(plugin_basename( __FILE__ )) . '/languages/');
@@ -82,5 +85,11 @@ class Connect
         $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Settings', self::DOMAIN ) . '</a>';
 
         return array_merge( $plugin_links, $links );
+    }
+    
+    public static function get_ajax_installments()
+    {
+        $gateway = new Gateway();
+        return $gateway->get_ajax_installments();
     }
 }
