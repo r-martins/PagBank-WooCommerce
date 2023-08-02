@@ -7,6 +7,7 @@ use RM_PagSeguro\Connect;
 use RM_PagSeguro\Connect\Payments\Boleto;
 use RM_PagSeguro\Connect\Payments\CreditCard;
 use RM_PagSeguro\Helpers\Api;
+use RM_PagSeguro\Helpers\Functions;
 use RM_PagSeguro\Helpers\Params;
 use WC_Payment_Gateway_CC;
 use WP_Error;
@@ -261,12 +262,27 @@ class Gateway extends WC_Payment_Gateway_CC
                 $method = new Boleto($order);
                 $params = $method->prepare();
                 break;
-//                return $this->process_boleto($order);
             case 'pix':
                 $method = new Payments\Pix($order);
                 $params = $method->prepare();
                 break;
             case 'cc':
+                $order->add_meta_data(
+                    'pagseguro_card_installments',
+                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-installments', FILTER_SANITIZE_NUMBER_INT)
+                );
+                $order->add_meta_data(
+                    'pagseguro_card_last4',
+                    substr(filter_input(INPUT_POST, 'rm_pagseguro_connect-card-number', FILTER_SANITIZE_NUMBER_INT), -4)
+                );
+                $order->add_meta_data(
+                    '_pagseguro_card_encrypted',
+                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-encrypted', FILTER_SANITIZE_STRING)
+                );
+                $order->add_meta_data(
+                    '_pagseguro_card_holder_name',
+                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-holder-name', FILTER_SANITIZE_STRING)
+                );
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
@@ -283,8 +299,12 @@ class Gateway extends WC_Payment_Gateway_CC
 
         try {
             $api = new Api();
-            //TODO: Add logs
             $resp = $api->post('ws/orders', $params);
+            
+            if (isset($resp['error_messages'])) {
+                throw new \RM_PagSeguro\Connect\Exception($resp['error_messages'], 40000);
+            }
+            
         } catch (Exception $e) {
             wc_add_wp_error_notices(new WP_Error('api_error', $e->getMessage()));
             return array(
@@ -329,6 +349,12 @@ class Gateway extends WC_Payment_Gateway_CC
     public function get_default_installments()
     {
         return Params::getInstallments(WC()->cart->get_total('edit'), '411111');
+    }
+    
+    public static function notification()
+    {
+        xdebug_break();
+        $a1 = 'foo';
     }
     
 }

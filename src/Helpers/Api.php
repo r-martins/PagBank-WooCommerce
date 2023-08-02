@@ -73,11 +73,17 @@ class Api
         ]);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($params));
+        Functions::log('POST Request to '.$endpoint.' with params: '.json_encode($params, JSON_PRETTY_PRINT), 'debug');
         $response = curl_exec($curl);
         
         if (curl_errno($curl)){
             $error_message = curl_error($curl);
             curl_close($curl);
+            Functions::log(
+                'Erro na requisição: '.$error_message,
+                'error',
+                ['request' => $params, 'endpoint' => $endpoint]
+            );
             throw new \Exception('Erro na requisição: ' . $error_message);
         }
         
@@ -85,10 +91,16 @@ class Api
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
             // Aqui você pode tratar erros de decodificação JSON
             curl_close($curl);
+            Functions::log(
+                'Resposta inválida da API: '.$response,
+                'error',
+                ['request' => $params, 'endpoint' => $endpoint]
+            );
             throw new \Exception('Resposta inválida da API: ' . $response);
         }
 
         curl_close($curl);
+        Functions::log('Response from '.$endpoint.': '.json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
         return $decoded_response;
     }
 

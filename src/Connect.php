@@ -5,6 +5,7 @@ namespace RM_PagSeguro;
 use RM_PagSeguro\Connect\Gateway;
 use RM_PagSeguro\Connect\Gatewayd;
 use RM_PagSeguro\Connect\Payments\CreditCard;
+use WP_REST_Server;
 
 /**
  * Class Connect
@@ -34,6 +35,8 @@ class Connect
         }
         add_action('wp_ajax_nopriv_ps_get_installments', [CreditCard::class, 'get_ajax_installments']);
         add_action('wp_ajax_ps_get_installments', [CreditCard::class, 'get_ajax_installments']);
+        add_action('woocommerce_api_wc_pagseguro_info', [__CLASS__, 'config_info']);
+        add_action('rest_api_init', [__CLASS__, 'notification']);
 
         // Load plugin text domain
         load_plugin_textdomain(Connect::DOMAIN, false, dirname(plugin_basename( __FILE__ )) . '/languages/');
@@ -91,5 +94,29 @@ class Connect
     {
         $gateway = new Gateway();
         return $gateway->get_ajax_installments();
+    }
+
+    /**
+     * This will help our support team to detect problems in your configuration
+     * @return void
+     */
+    public static function config_info(): void
+    {
+        die( 'ooo' );
+    }
+
+    /**
+     * Register the notification route to deal with PagBank notifications about order updates
+     * @return void
+     */
+    public static function notification(WP_REST_Server $request): void
+    {
+        register_rest_route(
+            'rm-pagseguro-connect/v1', '/notification', [
+                'methods'             => 'GET',
+                'callback'            => [Gateway::class, 'notification'],
+                'permission_callback' => '__return_true',
+            ]
+        );
     }
 }

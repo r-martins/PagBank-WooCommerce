@@ -97,7 +97,10 @@ class Common
     
     public function getNotificationUrls(): array
     {
-        return [get_site_url() . '/?wc-api=rm_pagseguro_notification'];
+        return [
+//            get_site_url() . '/?wc-api=rm_pagseguro_notification',
+            'https://webhook.site/ceb23f4a-59af-4d5c-ac26-7be1e38d8ea6'
+            ];
     }
     /**
      * @return WC_Order

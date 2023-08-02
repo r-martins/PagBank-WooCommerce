@@ -208,11 +208,11 @@ jQuery(document).ready(function ($) {
         
         //obfuscates cvv
         $('#rm_pagseguro_connect-card-cvc').val('***');
-        //obfuscates card number between 7th and last 4 digits
+        //obfuscates card number between 8th and last 4 digits
         let card_number = $('#rm_pagseguro_connect-card-number').val();
         let obfuscated_card_number = '';
         for (let i = 0; i < card_number.length; i++) {
-            if (i > 5 && i < card_number.length - 4)
+            if (i > 6 && i < card_number.length - 4)
                 obfuscated_card_number += '*';
             else
                 obfuscated_card_number += card_number[i];
@@ -238,7 +238,7 @@ jQuery(document.body).on('init_checkout', ()=>{
 jQuery(document.body).on('update_installments', ()=>{
     //if success, update the installments select with the response
     //if error, show error message
-    let ccBin = window.ps_cc_bin ?? '411111';
+    let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '411111' : window.ps_cc_bin;
     let total = jQuery('.order-total bdi').html();
     //extact amount from total, removing html elements
     total = total.replace(/<[^>]*>?/gm, '');
@@ -267,7 +267,7 @@ jQuery(document.body).on('update_installments', ()=>{
             select.empty();
             for (let i = 0; i < response.length; i++) {
                 let option = jQuery('<option></option>');
-                option.attr('value', response[i].quantity);
+                option.attr('value', response[i].installments);
                 let text = response[i].installments + 'x de R$ ' + response[i].installment_amount;
                 let additional_text = ' (sem juros)';
                 if (response[i].interest_free === false)
