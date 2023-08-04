@@ -4,7 +4,6 @@ namespace RM_PagSeguro\Helpers;
 
 use Exception;
 use RM_PagSeguro\Connect;
-use stdClass;
 use WC_Order;
 use WC_Payment_Gateways;
 
@@ -71,7 +70,11 @@ class Api
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'Authorization: Bearer ' . $this->connect_key
+            'Authorization: Bearer ' . $this->connect_key,
+            'Platform: WooCommerce',
+            'Extra-Version: ' . WC()->version,
+            'Platform-Version: ' . get_bloginfo('version'),
+            'Module-Version: ' . WC_PAGSEGURO_CONNECT_VERSION,
         ]);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($params));

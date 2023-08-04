@@ -327,10 +327,11 @@ class Gateway extends WC_Payment_Gateway_CC
 
         // region Add note if customer changed payment method
         if ($order->get_meta('pagbank_payment_method', true)) {
+            $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;
             $old_method = $order->get_meta('pagbank_payment_method');
-            if (strcasecmp($payment_method, $old_method) !== 0) {
+            if (strcasecmp($current_method, $old_method) !== 0) {
                 $order->add_order_note(
-                    'PagBank: Cliente alterou o método de pagamento de ' . $old_method . ' para ' . $payment_method
+                    'PagBank: Cliente alterou o método de pagamento de ' . $old_method . ' para ' . $current_method
                 );
             }
         }

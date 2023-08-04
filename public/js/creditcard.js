@@ -168,27 +168,37 @@ jQuery(document).ready(function ($) {
         let holder_name = $('#rm_pagseguro_connect-card-holder-name').val().trim().replace(/\s+/g, ' ');
         
          /*region Encrypt card*/
+        let cardHasChanged = window.ps_cc_has_changed === true;
+        
         try {
+            let cc_number = cardHasChanged ? $('#rm_pagseguro_connect-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
+            let cc_cvv = cardHasChanged ? $('#rm_pagseguro_connect-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
             card = PagSeguro.encryptCard({
                 publicKey: pagseguro_connect_public_key,
                 holder: holder_name,
-                number: $('#rm_pagseguro_connect-card-number').val().replace(/\s/g, ''),
+                number: cc_number,
                 expMonth: $('#rm_pagseguro_connect-card-expiry').val().split('/')[0].replace(/\s/g, ''),
                 expYear: '20' + $('#rm_pagseguro_connect-card-expiry').val().split('/')[1].replace(/\s/g, ''),
-                securityCode: $('#rm_pagseguro_connect-card-cvc').val().replace(/\s/g, ''),
+                securityCode: cc_cvv,
             });
         } catch (e) {
             alert("Erro ao criptografar o cartão.\nVerifique se os dados digitados estão corretos.");
             return false;
-        } 
+        }
         if (card.hasErrors) {
             let error_codes = [
-                {code: 'INVALID_NUMBER', message:'Número do cartão inválido'},
-                {code: 'INVALID_SECURITY_CODE', message:'CVV Inválido. Você deve passar um valor com 3, 4 ou mais dígitos.'},
-                {code: 'INVALID_EXPIRATION_MONTH', message:'Mês de expiração incorreto. Passe um valor entre 1 e 12.'},
-                {code: 'INVALID_EXPIRATION_YEAR', message:'Ano de expiração inválido.'},
-                {code: 'INVALID_PUBLIC_KEY', message:'Chave Pública inválida.'},
-                {code: 'INVALID_HOLDER', message:'Nome do titular do cartão inválido.'},
+                {code: 'INVALID_NUMBER', message: 'Número do cartão inválido'},
+                {
+                    code: 'INVALID_SECURITY_CODE',
+                    message: 'CVV Inválido. Você deve passar um valor com 3, 4 ou mais dígitos.'
+                },
+                {
+                    code: 'INVALID_EXPIRATION_MONTH',
+                    message: 'Mês de expiração incorreto. Passe um valor entre 1 e 12.'
+                },
+                {code: 'INVALID_EXPIRATION_YEAR', message: 'Ano de expiração inválido.'},
+                {code: 'INVALID_PUBLIC_KEY', message: 'Chave Pública inválida.'},
+                {code: 'INVALID_HOLDER', message: 'Nome do titular do cartão inválido.'},
             ]
             //extract error message
             let error = '';
@@ -205,11 +215,17 @@ jQuery(document).ready(function ($) {
             return false;
         }
         $('#rm_pagseguro_connect-card-encrypted').val(card.encryptedCard);
+
+
+        // saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
+        // pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
+        let card_number = $('#rm_pagseguro_connect-card-number').val();
+        window.ps_cc_number = card_number.replace(/\s/g, '');
+        window.ps_cc_cvv = $('#rm_pagseguro_connect-card-cvc').val().replace(/\s/g, '');
         
         //obfuscates cvv
         $('#rm_pagseguro_connect-card-cvc').val('***');
         //obfuscates card number between 8th and last 4 digits
-        let card_number = $('#rm_pagseguro_connect-card-number').val();
         let obfuscated_card_number = '';
         for (let i = 0; i < card_number.length; i++) {
             if (i > 6 && i < card_number.length - 4)
@@ -218,6 +234,8 @@ jQuery(document).ready(function ($) {
                 obfuscated_card_number += card_number[i];
         }
         $('#rm_pagseguro_connect-card-number').val(obfuscated_card_number);
+        window.ps_cc_has_changed = false;
+        
         
         /*endregion*/
     });
@@ -226,12 +244,16 @@ jQuery(document).ready(function ($) {
 
 jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('keyup change paste', '#rm_pagseguro_connect-card-number', (e)=>{
+        window.ps_cc_has_changed = true;
         let cardNumber = jQuery(e.target).val();
         let ccBin = cardNumber.replace(/\s/g, '').substring(0, 6);
         if (ccBin !== window.ps_cc_bin && ccBin.length === 6) {
             window.ps_cc_bin = ccBin;
             jQuery(document.body).trigger('update_installments');
         }
+    });
+    jQuery(document).on('keyup change paste', '#rm_pagseguro_connect-card-cvc', (e)=>{
+       window.ps_cc_has_changed = true;
     });
 });
 
