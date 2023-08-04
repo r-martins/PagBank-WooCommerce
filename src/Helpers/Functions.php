@@ -69,23 +69,24 @@ class Functions
     }
 
     /**
-     * @param $msg
-     * @param $level string One of the following:
-     *     'emergency': System is unusable.
-     *     'alert': Action must be taken immediately.
-     *     'critical': Critical conditions.
-     *     'error': Error conditions.
-     *     'warning': Warning conditions.
-     *     'notice': Normal but significant condition.
-     *     'info': Informational messages.
-     *     'debug': Debug-level messages.
-     * @param $context
+     * @param string $msg
+     * @param string $level  One of the following:
+     *                      'emergency': System is unusable.
+     *                      'alert': Action must be taken immediately.
+     *                      'critical': Critical conditions.
+     *                      'error': Error conditions.
+     *                      'warning': Warning conditions.
+     *                      'notice': Normal but significant condition.
+     *                      'info': Informational messages.
+     *                      'debug': Debug-level messages.
+     * @param array  $additional
      *
      * @return void
      */
-    public static function log($msg, $level = 'info', $context = []): void
+    public static function log(string $msg, string $level = 'info', array $additional = []): void
     {
         $logger = wc_get_logger();
-        $logger->log($level, $msg, [...$context, 'source' => 'pagseguro-connect']); 
+        $msg = $msg . PHP_EOL . var_export($additional, true);
+        $logger->log($level, $msg, ['source' => 'pagseguro-connect']);
     }
 }

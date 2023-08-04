@@ -5,10 +5,12 @@ namespace RM_PagSeguro\Helpers;
 use Exception;
 use RM_PagSeguro\Connect;
 use stdClass;
+use WC_Order;
 use WC_Payment_Gateways;
 
 class Api
 {
+    // Saiba mais em https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/18183910009869
     const WS_URL = 'https://ws.ricardomartins.net.br/pspro/v7/connect/';
 
     /**
@@ -141,5 +143,9 @@ class Api
     {
         $gateways = WC_Payment_Gateways::instance();
         return $gateways->payment_gateways()[Connect::DOMAIN] ?? false;
+    }
+    
+    public static function getOrderHash(WC_Order $order){
+        return substr(wp_hash($order->get_id(), 'auth'), 0, 5);
     }
 }

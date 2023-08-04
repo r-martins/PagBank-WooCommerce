@@ -9,6 +9,7 @@ use RM_PagSeguro\Connect\Payments\CreditCard;
 use RM_PagSeguro\Helpers\Api;
 use RM_PagSeguro\Helpers\Functions;
 use RM_PagSeguro\Helpers\Params;
+use WC_Order;
 use WC_Payment_Gateway_CC;
 use WP_Error;
 
@@ -59,8 +60,75 @@ class Gateway extends WC_Payment_Gateway_CC
         
         parent::init_settings();
     }
-    
-    
+
+    /**
+     * Updates a transaction from the order's json information
+     *
+     * @param $order WC_Order
+     * @param $order_data array
+     *
+     * @return void
+     */
+    protected static function update_transaction(WC_Order $order, array $order_data): void
+    {
+        $charge = $order_data['charges'][0] ?? [];
+        $status = $charge['status'] ?? '';
+        $payment_response = $charge['payment_response'] ?? null;
+        $charge_id = $charge['id'] ?? null;
+
+        $order->add_meta_data('pagbank_charge_id', $charge_id, true);
+        $order->add_meta_data('pagbank_payment_response', $payment_response, true);
+        $order->add_meta_data('pagbank_status', $status, true);
+
+        do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
+        switch ($status) {
+            case 'AUTHORIZED': // Pre-Authorized but not captured yet
+                $order->add_order_note(
+                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id,
+                );
+                $order->update_status(
+                    'on-hold',
+                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id
+                );
+                break;
+            case 'PAID': // Paid and captured
+                //stocks are reduced at this point
+                $order->payment_complete($charge_id);
+                break;
+            case 'IN_ANALYSIS': // Paid with Credit Card, and PagBank is analyzing the risk of the transaction
+                $order->update_status('on-hold', 'PagBank: Pagamento em análise.');
+                break;
+            case 'DECLINED': // Declined by PagBank or by the card issuer
+                $order->update_status('failed', 'PagBank: Pagamento recusado.');
+                $order->add_order_note(
+                    'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id,
+                );
+                break;
+            case 'CANCELED':
+                $order->update_status('cancelled', 'PagBank: Pagamento cancelado.');
+                $order->add_order_note(
+                    'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id,
+                );
+                break;
+            default:
+                $order->delete_meta_data('pagbank_status');
+        }
+
+        // Add some additional information about the payment
+        if ($charge['payment_response']) {
+            $order->add_order_note(
+                'PagBank: Payment Response: '.sprintf(
+                    '%d: %s %s',
+                    $charge['payment_response']['code'] ?? 'N/A',
+                    $charge['payment_response']['message'] ?? 'N/A',
+                    ($charge['payment_response']['reference']) ? ' - REF/NSU: '.$charge['payment_response']['reference']
+                        : ''
+                )
+            );
+        }
+    }
+
+
     public function admin_options() {
         $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
@@ -256,6 +324,17 @@ class Gateway extends WC_Payment_Gateway_CC
 
         //sanitize $_POST['ps_connect_method']
         $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+
+        // region Add note if customer changed payment method
+        if ($order->get_meta('pagbank_payment_method', true)) {
+            $old_method = $order->get_meta('pagbank_payment_method');
+            if (strcasecmp($payment_method, $old_method) !== 0) {
+                $order->add_order_note(
+                    'PagBank: Cliente alterou o método de pagamento de ' . $old_method . ' para ' . $payment_method
+                );
+            }
+        }
+        // endregion
         
         switch ($payment_method) {
             case 'boleto':
@@ -268,20 +347,24 @@ class Gateway extends WC_Payment_Gateway_CC
                 break;
             case 'cc':
                 $order->add_meta_data(
-                    'pagseguro_card_installments',
-                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-installments', FILTER_SANITIZE_NUMBER_INT)
+                    'pagbank_card_installments',
+                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-installments', FILTER_SANITIZE_NUMBER_INT),
+                    true
                 );
                 $order->add_meta_data(
-                    'pagseguro_card_last4',
-                    substr(filter_input(INPUT_POST, 'rm_pagseguro_connect-card-number', FILTER_SANITIZE_NUMBER_INT), -4)
+                    'pagbank_card_last4',
+                    substr(filter_input(INPUT_POST, 'rm_pagseguro_connect-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
+                    true
                 );
                 $order->add_meta_data(
-                    '_pagseguro_card_encrypted',
-                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-encrypted', FILTER_SANITIZE_STRING)
+                    '_pagbank_card_encrypted',
+                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-encrypted', FILTER_SANITIZE_STRING),
+                    true
                 );
                 $order->add_meta_data(
-                    '_pagseguro_card_holder_name',
-                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-holder-name', FILTER_SANITIZE_STRING)
+                    '_pagbank_card_holder_name',
+                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-holder-name', FILTER_SANITIZE_STRING),
+                    true
                 );
                 $method = new CreditCard($order);
                 $params = $method->prepare();
@@ -294,7 +377,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 );
         }
         
-        $order->add_meta_data('pagseguro_payment_method', $method->code);
+        $order->add_meta_data('pagbank_payment_method', $method->code, true);
 
 
         try {
@@ -313,12 +396,30 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
         $method->process_response($order, $resp);
+        self::update_transaction($order, $resp);
+
+        $charge = $resp['charges'][0] ?? false;
+        
+        // region Immediately decline if payment method is credit card and charge was declined
+        if ($payment_method == 'cc' && $charge !== false) {
+            if ($charge['status'] == 'DECLINED'){
+                $additional_error = '';
+                if(isset($charge['payment_response'])) 
+                    $additional_error .= $charge['payment_response']['message'] . ' ('
+                    . $charge['payment_response']['code'] . ')';
+                
+                wc_add_wp_error_notices(new WP_Error('api_error', 'Pagamento Recusado. ' . $additional_error));
+                return [
+                    'result' => 'fail',
+                    'redirect' => ''
+                ];
+            }
+        }
+        // endregion
         
         // some notes to customer (replace true with false to make it private)
         $order->add_order_note( 'Pedido criado com sucesso!', true );
 
-        $order->payment_complete();
-        wc_reduce_stock_levels($order_id);
         $woocommerce->cart->empty_cart();
         return array(
             'result' => 'success',
@@ -333,7 +434,7 @@ class Gateway extends WC_Payment_Gateway_CC
     public function thankyou_instructions($order_id)
     {
         $order = wc_get_order($order_id);
-        switch ($order->get_meta('pagseguro_payment_method')) {
+        switch ($order->get_meta('pagbank_payment_method')) {
             case 'boleto':
                     $method = new Boleto($order);
                     break;
@@ -353,8 +454,44 @@ class Gateway extends WC_Payment_Gateway_CC
     
     public static function notification()
     {
-        xdebug_break();
-        $a1 = 'foo';
+        $body = file_get_contents('php://input');
+        $hash = filter_input(INPUT_GET, 'hash', FILTER_SANITIZE_STRING);
+        
+        Functions::log('Notification received: ' . $body, 'debug', ['hash' => $hash]);
+        
+        // Decode body
+        $order_data = json_decode($body, true);
+        if ($order_data === null) 
+            wp_die('Falha ao decodificar o Json', 400);
+        
+        // Check presence of id and reference
+        $id = $order_data['id'] ?? null;
+        $reference = $order_data['reference_id'] ?? null;
+        if (!$id || !$reference)
+            wp_die('ID ou Reference não informados', 400);
+        
+        // Sanitize $reference and $id
+        $id = filter_var($id, FILTER_SANITIZE_STRING);
+        $reference = filter_var($reference, FILTER_SANITIZE_STRING);
+        
+        // Validate hash
+        $order = wc_get_order($reference);
+        if (!$order)
+            wp_die('Pedido não encontrado', 404);
+        
+        if ($hash != Api::getOrderHash($order))
+            wp_die('Hash inválido', 403);
+        
+        if (!isset($order_data['charges']))
+            wp_die('Charges não informado. Notificação ignorada.', 200);
+
+        try{
+            self::update_transaction($order, $order_data);
+        }catch (Exception $e){
+            Functions::log('Error updating transaction: ' . $e->getMessage(), 'error', ['order_id' => $order->get_id()]);
+            wp_die('Erro ao atualizar transação', 500);
+        }
+        
+        wp_die('OK', 200);
     }
-    
 }

@@ -33,9 +33,9 @@ class Pix extends Common
     }
     
     public function getThankyouInstructions($order_id){
-        $qr_code = get_post_meta($order_id, 'pagseguro_pix_qrcode', true);
-        $qr_code_text = get_post_meta($order_id, 'pagseguro_pix_qrcode_text', true);
-        $qr_code_exp = get_post_meta($order_id, 'pagseguro_pix_qrcode_expiration', true);
+        $qr_code = get_post_meta($order_id, 'pagbank_pix_qrcode', true);
+        $qr_code_text = get_post_meta($order_id, 'pagbank_pix_qrcode_text', true);
+        $qr_code_exp = get_post_meta($order_id, 'pagbank_pix_qrcode_expiration', true);
         require_once dirname(__FILE__) . '/../../templates/pix-instructions.php';
     }
 }

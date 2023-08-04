@@ -2,6 +2,7 @@
 
 namespace RM_PagSeguro\Connect\Payments;
 
+use RM_PagSeguro\Helpers\Api;
 use RM_PagSeguro\Helpers\Params;
 use RM_PagSeguro\Object\Address;
 use RM_PagSeguro\Object\Customer;
@@ -97,11 +98,14 @@ class Common
     
     public function getNotificationUrls(): array
     {
+        $hash = Api::getOrderHash($this->order);
         return [
-//            get_site_url() . '/?wc-api=rm_pagseguro_notification',
-            'https://webhook.site/ceb23f4a-59af-4d5c-ac26-7be1e38d8ea6'
+//            get_site_url() . '/?wc-api=rm_pagseguro_notification'
+            'https://webhook.site/57730f29-ac28-4580-a92c-2f3d8fe004b5'
+            . '/?wc_api=rm_ps_notif&hash=' . $hash
             ];
     }
+    
     /**
      * @return WC_Order
      */
@@ -129,23 +133,24 @@ class Common
      */
     public function process_response($order, $response) {
         
-        switch ($order->get_meta('pagseguro_payment_method')){
+        switch ($order->get_meta('pagbank_payment_method')){
             case 'pix':
-                $order->add_meta_data('pagseguro_pix_qrcode', $response['qr_codes'][0]['links'][0]['href'] ?? null);
-                $order->add_meta_data('pagseguro_pix_qrcode_text', $response['qr_codes'][0]['text'] ?? null);
-                $order->add_meta_data('pagseguro_pix_qrcode_expiration', $response['qr_codes'][0]['expiration_date'] ?? null);
+                $order->add_meta_data('pagbank_pix_qrcode', $response['qr_codes'][0]['links'][0]['href'] ?? null, true);
+                $order->add_meta_data('pagbank_pix_qrcode_text', $response['qr_codes'][0]['text'] ?? null, true);
+                $order->add_meta_data('pagbank_pix_qrcode_expiration', $response['qr_codes'][0]['expiration_date'] ?? null, true);
                 break;
             case 'boleto':
-                $order->add_meta_data('pagseguro_boleto_png', $response['charges'][0]['links'][1]['href'] ?? null);
-                $order->add_meta_data('pagseguro_boleto_pdf', $response['charges'][0]['links'][0]['href'] ?? null);
-                $order->add_meta_data('pagseguro_boleto_due_date', $response['charges'][0]['payment_method']['boleto']['due_date'] ?? null);
-                $order->add_meta_data('pagseguro_boleto_barcode_formatted', $response['charges'][0]['payment_method']['boleto']['formatted_barcode'] ?? null);
-                $order->add_meta_data('pagseguro_boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode'] ?? null);
+                $order->add_meta_data('pagbank_boleto_png', $response['charges'][0]['links'][1]['href'] ?? null, true);
+                $order->add_meta_data('pagbank_boleto_pdf', $response['charges'][0]['links'][0]['href'] ?? null, true);
+                $order->add_meta_data('pagbank_boleto_due_date', $response['charges'][0]['payment_method']['boleto']['due_date'] ?? null, true);
+                $order->add_meta_data('pagbank_boleto_barcode_formatted', $response['charges'][0]['payment_method']['boleto']['formatted_barcode'] ?? null, true);
+                $order->add_meta_data('pagbank_boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode'] ?? null, true);
                 break;
         }
+        $order->update_status('pending');
         
-        $order->add_meta_data('pagseguro_order_id', $response['id'] ?? null);
-        $order->add_meta_data('pagseguro_order_charges', $response['charges'] ?? null);
+        $order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
+        $order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
         
     }
 }

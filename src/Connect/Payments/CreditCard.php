@@ -35,11 +35,11 @@ class CreditCard extends Common
         $paymentMethod = new \RM_PagSeguro\Object\PaymentMethod();
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
-        $paymentMethod->setInstallments(intval($this->order->get_meta('pagseguro_card_installments')));
+        $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
         $card = new Card();
-        $card->setEncrypted($this->order->get_meta('_pagseguro_card_encrypted'));
+        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
         $holder = new Holder();
-        $holder->setName($this->order->get_meta('_pagseguro_card_holder_name'));
+        $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
         $card->setHolder($holder);
         $paymentMethod->setCard($card);
         $charge->setPaymentMethod($paymentMethod);
