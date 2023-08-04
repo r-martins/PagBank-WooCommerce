@@ -22,6 +22,9 @@ if ( ! defined ( 'ABSPATH' ) ) {
         wc_back_link( __( 'Return to payments', 'woocommerce' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
         ?>
     </div>
+    <div class="ps-subtitle">
+        <?php echo '<h4>' . esc_html( $this->get_method_description() ) . '</h4>'; ?>
+    </div>
 <!--    navigation tabs-->
     <nav class="nav-tab-wrapper woo-nav-tab-wrapper" id="ps-nav">
         <a href="#tab-general" class="nav-tab nav-tab-active"><?php esc_html_e('Geral', Connect::DOMAIN) ?></a>

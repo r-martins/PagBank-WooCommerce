@@ -27,7 +27,7 @@ class Gateway extends WC_Payment_Gateway_CC
         $this->id = Connect::DOMAIN;
         $this->icon = apply_filters('wc_pagseguro_connect_icon', plugins_url('public/images/pagseguro.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));
         $this->has_fields = true;
-        $this->method_title = __('PagSeguro Connect por Ricardo Martins', Connect::DOMAIN);
+        $this->method_title = __('PagBank Connect por Ricardo Martins', Connect::DOMAIN);
         $this->method_description = __('Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).', Connect::DOMAIN);
         $this->supports = array(
             'products',
@@ -48,6 +48,7 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('wp_enqueue_scripts', array($this, 'add_scripts'));
         add_action('admin_enqueue_scripts', array($this, 'admin_styles'));
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
+        add_action('woocommerce_admin_order_data_after_order_details', array($this, 'add_payment_info_admin'), 10, 1);
     }
 
     public function init_settings(){
@@ -494,5 +495,21 @@ class Gateway extends WC_Payment_Gateway_CC
         }
         
         wp_die('OK', 200);
+    }
+    
+    public function add_payment_info_admin($order)
+    {
+        $charge_id = $order->get_meta('pagbank_charge_id');
+        if (!$charge_id)
+            return;
+        
+        $transaction = str_replace('CHAR_', '', $charge_id);
+        $link = 'https://minhaconta.pagseguro.uol.com.br/transacao/detalhes/' . $transaction;
+        
+        echo '<img src="' . plugins_url('public/images/pagseguro.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE) . '" style="width: 100px; height: auto; margin-right: 10px; float: left;"/><br/>';
+        echo '<p class="form-field form-field-wide ps-pagbank-info">
+							<label for="customer_user">
+								<a href="'. $link . '">Ver no PagBank →</a></label>
+						</p>';
     }
 }

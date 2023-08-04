@@ -24,7 +24,7 @@ return array(
         'title'       => __( 'Main Title' , \RM_PagSeguro\Connect::DOMAIN ),
         'type'        => 'text',
         'description' => __( 'Main method name, displayed near the radio button.', \RM_PagSeguro\Connect::DOMAIN ),
-        'default'     => __( 'PagSeguro UOL', \RM_PagSeguro\Connect::DOMAIN ),
+        'default'     => __( 'PagBank UOL', \RM_PagSeguro\Connect::DOMAIN ),
         'desc_tip'    => true,
         'required'    => true,
         'validate' => 'validate-connectkey',
