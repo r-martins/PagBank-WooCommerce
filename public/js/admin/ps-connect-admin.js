@@ -21,48 +21,48 @@ jQuery(document).ready(function($) {
 
     
     //region Displaying and hiding credit card options
-    //display #woocommerce_rm_pagseguro_connect_cc_installment_options_fixed based on #woocommerce_rm_pagseguro_connect_cc_installment_options == fixed
+    //display #woocommerce_rm-pagbank_cc_installment_options_fixed based on #woocommerce_rm-pagbank_cc_installment_options == fixed
     function hideOrShowFixedOptions() {
         return function () {
             if ($(this).val() === 'fixed') {
-                $('#woocommerce_rm_pagseguro_connect_cc_installment_options_fixed').closest('tr').show();
+                $('#woocommerce_rm-pagbank_cc_installment_options_fixed').closest('tr').show();
             } else {
-                $('#woocommerce_rm_pagseguro_connect_cc_installment_options_fixed').closest('tr').hide();
+                $('#woocommerce_rm-pagbank_cc_installment_options_fixed').closest('tr').hide();
             }
         };
     }
 
-    $('#woocommerce_rm_pagseguro_connect_cc_installment_options').change(hideOrShowFixedOptions());
-    hideOrShowFixedOptions().call($('#woocommerce_rm_pagseguro_connect_cc_installment_options'));
+    $('#woocommerce_rm-pagbank_cc_installment_options').change(hideOrShowFixedOptions());
+    hideOrShowFixedOptions().call($('#woocommerce_rm-pagbank_cc_installment_options'));
 
-    //display woocommerce_rm_pagseguro_connect_cc_installment_options_min_total based on #woocommerce_rm_pagseguro_connect_cc_installment_options == min_total
+    //display woocommerce_rm-pagbank_cc_installment_options_min_total based on #woocommerce_rm-pagbank_cc_installment_options == min_total
     function hideOrShowMinTotalOptions() {
         return function () {
             if ($(this).val() === 'min_total') {
-                $('#woocommerce_rm_pagseguro_connect_cc_installments_options_min_total').closest('tr').show();
+                $('#woocommerce_rm-pagbank_cc_installments_options_min_total').closest('tr').show();
             } else {
-                $('#woocommerce_rm_pagseguro_connect_cc_installments_options_min_total').closest('tr').hide();
+                $('#woocommerce_rm-pagbank_cc_installments_options_min_total').closest('tr').hide();
             }
         };
     }
     
-    $('#woocommerce_rm_pagseguro_connect_cc_installment_options').change(hideOrShowMinTotalOptions());
-    hideOrShowMinTotalOptions().call($('#woocommerce_rm_pagseguro_connect_cc_installment_options'));
+    $('#woocommerce_rm-pagbank_cc_installment_options').change(hideOrShowMinTotalOptions());
+    hideOrShowMinTotalOptions().call($('#woocommerce_rm-pagbank_cc_installment_options'));
 
 
-    //display #woocommerce_rm_pagseguro_connect_cc_installments_options_max_installments based on #woocommerce_rm_pagseguro_connect_cc_installments_options_limit_installments == yes
+    //display #woocommerce_rm-pagbank_cc_installments_options_max_installments based on #woocommerce_rm-pagbank_cc_installments_options_limit_installments == yes
     function hideOrShowMasInstallmentsOptions() {
         return function () {
             if ($(this).val() === 'yes') {
-                $('#woocommerce_rm_pagseguro_connect_cc_installments_options_max_installments').closest('tr').show();
+                $('#woocommerce_rm-pagbank_cc_installments_options_max_installments').closest('tr').show();
             } else {
-                $('#woocommerce_rm_pagseguro_connect_cc_installments_options_max_installments').closest('tr').hide();
+                $('#woocommerce_rm-pagbank_cc_installments_options_max_installments').closest('tr').hide();
             }
         };
     }
     
-    $('#woocommerce_rm_pagseguro_connect_cc_installments_options_limit_installments').change(hideOrShowMasInstallmentsOptions());
-    hideOrShowMasInstallmentsOptions().call($('#woocommerce_rm_pagseguro_connect_cc_installments_options_limit_installments'));
+    $('#woocommerce_rm-pagbank_cc_installments_options_limit_installments').change(hideOrShowMasInstallmentsOptions());
+    hideOrShowMasInstallmentsOptions().call($('#woocommerce_rm-pagbank_cc_installments_options_limit_installments'));
     
     //endregion
     

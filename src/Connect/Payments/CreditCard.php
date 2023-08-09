@@ -36,6 +36,7 @@ class CreditCard extends Common
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
         $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
+        $paymentMethod->setSoftDescriptor(Params::getConfig('cc_soft_descriptor'));
         $card = new Card();
         $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
         $holder = new Holder();

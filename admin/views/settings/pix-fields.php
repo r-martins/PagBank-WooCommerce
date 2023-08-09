@@ -37,5 +37,9 @@ return array(
         'description' => __( 'minutos', \RM_PagBank\Connect::DOMAIN ),
         'default'     => 1440,
         'desc_tip'    => false,
+        'custom_attr' => array(
+            'min' => 1,
+            'step' => 1,
+        ),
     ),
 );

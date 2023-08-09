@@ -311,7 +311,7 @@ class Gateway extends WC_Payment_Gateway_CC
         if(!is_admin())
             return;
 
-        global $current_section; //only when ?section=rm_pagseguro_connect (plugin config page)
+        global $current_section; //only when ?section=rm-pagbank (plugin config page)
         if ($current_section == Connect::DOMAIN)
             wp_enqueue_script(
                 'pagseguro-connect-admin',
@@ -357,22 +357,22 @@ class Gateway extends WC_Payment_Gateway_CC
             case 'cc':
                 $order->add_meta_data(
                     'pagbank_card_installments',
-                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-installments', FILTER_SANITIZE_NUMBER_INT),
+                    filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT),
                     true
                 );
                 $order->add_meta_data(
                     'pagbank_card_last4',
-                    substr(filter_input(INPUT_POST, 'rm_pagseguro_connect-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
+                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
-                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-encrypted', FILTER_SANITIZE_STRING),
+                    filter_input(INPUT_POST, 'rm-pagbank-card-encrypted', FILTER_SANITIZE_STRING),
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_holder_name',
-                    filter_input(INPUT_POST, 'rm_pagseguro_connect-card-holder-name', FILTER_SANITIZE_STRING),
+                    filter_input(INPUT_POST, 'rm-pagbank-card-holder-name', FILTER_SANITIZE_STRING),
                     true
                 );
                 $method = new CreditCard($order);
