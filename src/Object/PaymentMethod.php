@@ -7,7 +7,7 @@ class PaymentMethod implements \JsonSerializable
     private string $type;
     private int $installments;
     private bool $capture;
-    private string $soft_descriptior;
+    private string $soft_descriptor;
     private Card $card;
     private Boleto $boleto;
 
@@ -67,17 +67,17 @@ class PaymentMethod implements \JsonSerializable
     /**
      * @return string
      */
-    public function getSoftDescriptior(): string
+    public function getSoftDescriptor(): string
     {
-        return $this->soft_descriptior;
+        return $this->soft_descriptor;
     }
 
     /**
-     * @param string $soft_descriptior
+     * @param string $soft_descriptor
      */
-    public function setSoftDescriptior(string $soft_descriptior): void
+    public function setSoftDescriptor(string $soft_descriptor): void
     {
-        $this->soft_descriptior = $soft_descriptior;
+        $this->soft_descriptor = $soft_descriptor;
     }
 
     /**

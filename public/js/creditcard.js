@@ -158,27 +158,27 @@ jQuery(document).ready(function ($) {
         
         //if not pagseguro connect or not credit card, return
         if ($('#ps-connect-payment-cc').attr('disabled') !== undefined || 
-            $('#payment_method_rm_pagseguro_connect').is(':checked') === false)
+            $('#payment_method_rm-pagbank').is(':checked') === false)
             return true;
         
         
          let form = $(this);
          let card;
         //replace trim and remove duplicated spaces from holder name
-        let holder_name = $('#rm_pagseguro_connect-card-holder-name').val().trim().replace(/\s+/g, ' ');
+        let holder_name = $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
         
          /*region Encrypt card*/
         let cardHasChanged = window.ps_cc_has_changed === true;
         
         try {
-            let cc_number = cardHasChanged ? $('#rm_pagseguro_connect-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
-            let cc_cvv = cardHasChanged ? $('#rm_pagseguro_connect-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
+            let cc_number = cardHasChanged ? $('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
+            let cc_cvv = cardHasChanged ? $('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
             card = PagSeguro.encryptCard({
                 publicKey: pagseguro_connect_public_key,
                 holder: holder_name,
                 number: cc_number,
-                expMonth: $('#rm_pagseguro_connect-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                expYear: '20' + $('#rm_pagseguro_connect-card-expiry').val().split('/')[1].replace(/\s/g, ''),
+                expMonth: $('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
+                expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].replace(/\s/g, ''),
                 securityCode: cc_cvv,
             });
         } catch (e) {
@@ -214,17 +214,17 @@ jQuery(document).ready(function ($) {
             alert('Erro ao criptografar cartão.\n' + error);
             return false;
         }
-        $('#rm_pagseguro_connect-card-encrypted').val(card.encryptedCard);
+        $('#rm-pagbank-card-encrypted').val(card.encryptedCard);
 
 
         // saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
         // pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
-        let card_number = $('#rm_pagseguro_connect-card-number').val();
+        let card_number = $('#rm-pagbank-card-number').val();
         window.ps_cc_number = card_number.replace(/\s/g, '');
-        window.ps_cc_cvv = $('#rm_pagseguro_connect-card-cvc').val().replace(/\s/g, '');
+        window.ps_cc_cvv = $('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
         
         //obfuscates cvv
-        $('#rm_pagseguro_connect-card-cvc').val('***');
+        $('#rm-pagbank-card-cvc').val('***');
         //obfuscates card number between 8th and last 4 digits
         let obfuscated_card_number = '';
         for (let i = 0; i < card_number.length; i++) {
@@ -233,7 +233,7 @@ jQuery(document).ready(function ($) {
             else
                 obfuscated_card_number += card_number[i];
         }
-        $('#rm_pagseguro_connect-card-number').val(obfuscated_card_number);
+        $('#rm-pagbank-card-number').val(obfuscated_card_number);
         window.ps_cc_has_changed = false;
         
         
@@ -243,7 +243,7 @@ jQuery(document).ready(function ($) {
 });
 
 jQuery(document.body).on('init_checkout', ()=>{
-    jQuery(document).on('keyup change paste', '#rm_pagseguro_connect-card-number', (e)=>{
+    jQuery(document).on('keyup change paste', '#rm-pagbank-card-number', (e)=>{
         window.ps_cc_has_changed = true;
         let cardNumber = jQuery(e.target).val();
         let ccBin = cardNumber.replace(/\s/g, '').substring(0, 6);
@@ -252,7 +252,7 @@ jQuery(document.body).on('init_checkout', ()=>{
             jQuery(document.body).trigger('update_installments');
         }
     });
-    jQuery(document).on('keyup change paste', '#rm_pagseguro_connect-card-cvc', (e)=>{
+    jQuery(document).on('keyup change paste', '#rm-pagbank-card-cvc', (e)=>{
        window.ps_cc_has_changed = true;
     });
 });
@@ -274,7 +274,7 @@ jQuery(document.body).on('update_installments', ()=>{
 
     //convert to cents
     let orderTotal = parseFloat(total).toFixed(2) * 100;
-    // let maxInstallments = jQuery('#rm_pagseguro_connect-card-installments').attr('max_installments');
+    // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');
     let url = ajax_object.ajax_url;
     jQuery.ajax({
         url: url,
@@ -285,7 +285,7 @@ jQuery(document.body).on('update_installments', ()=>{
         },
         success: (response)=>{
             // debugger;
-            let select = jQuery('#rm_pagseguro_connect-card-installments');
+            let select = jQuery('#rm-pagbank-card-installments');
             select.empty();
             for (let i = 0; i < response.length; i++) {
                 let option = jQuery('<option></option>');

@@ -57,5 +57,16 @@ return array(
             'min' => 1,
             'max' => 18,
         ),
+    ),
+
+    'cc_soft_descriptor' => array(
+        'title' => __( 'Identificador na Fatura', \RM_PagBank\Connect::DOMAIN ),
+        'type'  => 'text',
+        'default' => 'CompraViaPagBank',
+        'description' => __('Nome que será exibido na fatura do Cliente. Escolha um nome que faça o cliente lembrar que comprou na sua loja e evite chargebacks.', \RM_PagBank\Connect::DOMAIN),
+        'desc_tip' => true,
+        'custom_attributes' => array(
+            'maxlength' => 17,
+        ),
     )
 );

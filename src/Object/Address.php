@@ -158,7 +158,7 @@ class Address implements \JsonSerializable
             }
         }
             
-        return $this->region;
+        return $this->region ?? '';
     }
 
     /**

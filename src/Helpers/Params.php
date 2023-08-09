@@ -73,7 +73,7 @@ class Params
      */
     public static function getConfig($key, $default = '')
     {
-        $settings = get_option('woocommerce_rm_pagseguro_connect_settings');
+        $settings = get_option('woocommerce_rm-pagbank_settings');
         if (isset($settings[$key])){
             return $settings[$key];
         }
