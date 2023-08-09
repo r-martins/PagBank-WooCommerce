@@ -1,10 +1,10 @@
 <?php
 
-namespace RM_PagSeguro\Connect\Payments;
+namespace RM_PagBank\Connect\Payments;
 
-use RM_PagSeguro\Helpers\Params;
-use RM_PagSeguro\Object\Amount;
-use RM_PagSeguro\Object\QrCode;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\QrCode;
 use WC_Order;
 
 class Pix extends Common
@@ -23,7 +23,7 @@ class Pix extends Common
         $qr_code = new QrCode();
         
         $amount = new Amount();
-        $amount->setValue(Params::convert_to_cents($this->order->get_total()));
+        $amount->setValue(Params::convertToCents($this->order->get_total()));
         $qr_code->setAmount($amount);
         //calculate expiry date based on current time + expiry days using ISO 8601 format
         $qr_code->setExpirationDate(date('c', strtotime('+' . Params::getConfig('pix_expiry_days', 1440) . 'minute')));

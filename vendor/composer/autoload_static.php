@@ -9,12 +9,12 @@ class ComposerStaticInit33919b669d13edc00398b240007d5a55
     public static $prefixLengthsPsr4 = array (
         'R' => 
         array (
-            'RM_PagSeguro\\' => 13,
+            'RM_PagBank\\' => 11,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'RM_PagSeguro\\' => 
+        'RM_PagBank\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),

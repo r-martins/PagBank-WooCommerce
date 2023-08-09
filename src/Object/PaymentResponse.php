@@ -1,9 +1,9 @@
 <?php
 
-namespace RM_PagSeguro\Object;
+namespace RM_PagBank\Object;
 
 use DateTime;
-use RM_PagSeguro\Helpers\Params;
+use RM_PagBank\Helpers\Params;
 
 class PaymentResponse implements \JsonSerializable
 {

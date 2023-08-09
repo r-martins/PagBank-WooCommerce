@@ -1,11 +1,11 @@
 <?php
 
-namespace RM_PagSeguro\Helpers;
+namespace RM_PagBank\Helpers;
 
 use DateTime;
 use DateTimeZone;
 use Exception;
-use RM_PagSeguro\Connect;
+use RM_PagBank\Connect;
 use WC_Log_Handler_File;
 use WC_Logger;
 
@@ -14,7 +14,7 @@ use WC_Logger;
  *
  * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
- * @package   RM_PagSeguro\Helpers
+ * @package   RM_PagBank\Helpers
  */
 class Functions
 {

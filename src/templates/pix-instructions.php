@@ -1,5 +1,5 @@
 <?php
-use RM_PagSeguro\Helpers\Functions;
+use RM_PagBank\Helpers\Functions;
 
 /** @var string $qr_code */
 /** @var string $qr_code_text */

@@ -1,13 +1,13 @@
 <?php
 
-namespace RM_PagSeguro\Object;
+namespace RM_PagBank\Object;
 
 /**
  * Class QrCode
  *
  * @author    Ricardo Martins <ricardo@magenteiro.com>
  * @copyright 2023 Magenteiro
- * @package   RM_PagSeguro\Object
+ * @package   RM_PagBank\Object
  */
 class QrCode implements \JsonSerializable
 {

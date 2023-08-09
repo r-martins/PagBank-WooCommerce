@@ -1,14 +1,14 @@
 <?php
 
-namespace RM_PagSeguro\Connect;
+namespace RM_PagBank\Connect;
 
 use Exception;
-use RM_PagSeguro\Connect;
-use RM_PagSeguro\Connect\Payments\Boleto;
-use RM_PagSeguro\Connect\Payments\CreditCard;
-use RM_PagSeguro\Helpers\Api;
-use RM_PagSeguro\Helpers\Functions;
-use RM_PagSeguro\Helpers\Params;
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Payments\Boleto;
+use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use WC_Order;
 use WC_Payment_Gateway_CC;
 use WP_Error;
@@ -25,7 +25,7 @@ class Gateway extends WC_Payment_Gateway_CC
     public function __construct()
     {
         $this->id = Connect::DOMAIN;
-        $this->icon = apply_filters('wc_pagseguro_connect_icon', plugins_url('public/images/pagseguro.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));
+        $this->icon = apply_filters('wc_pagseguro_connect_icon', plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));
         $this->has_fields = true;
         $this->method_title = __('PagBank Connect por Ricardo Martins', Connect::DOMAIN);
         $this->method_description = __('Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).', Connect::DOMAIN);
@@ -184,7 +184,7 @@ class Gateway extends WC_Payment_Gateway_CC
         $fields = $this->get_form_fields();
         $connect_key = $this->get_field_value( 'connect_key', $fields['connect_key'], $post_data );
         $api = new Api();
-        $api->set_connect_key($connect_key);
+        $api->setConnectKey($connect_key);
         try {
             $ret = $api->post('ws/public-keys', ['type' => 'card']);
             if (isset($ret['public_key'])) {
@@ -387,7 +387,7 @@ class Gateway extends WC_Payment_Gateway_CC
             $resp = $api->post('ws/orders', $params);
             
             if (isset($resp['error_messages'])) {
-                throw new \RM_PagSeguro\Connect\Exception($resp['error_messages'], 40000);
+                throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
             }
             
         } catch (Exception $e) {
@@ -499,17 +499,6 @@ class Gateway extends WC_Payment_Gateway_CC
     
     public function add_payment_info_admin($order)
     {
-        $charge_id = $order->get_meta('pagbank_charge_id');
-        if (!$charge_id)
-            return;
-        
-        $transaction = str_replace('CHAR_', '', $charge_id);
-        $link = 'https://minhaconta.pagseguro.uol.com.br/transacao/detalhes/' . $transaction;
-        
-        echo '<img src="' . plugins_url('public/images/pagseguro.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE) . '" style="width: 100px; height: auto; margin-right: 10px; float: left;"/><br/>';
-        echo '<p class="form-field form-field-wide ps-pagbank-info">
-							<label for="customer_user">
-								<a href="'. $link . '">Ver no PagBank →</a></label>
-						</p>';
+        include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 }

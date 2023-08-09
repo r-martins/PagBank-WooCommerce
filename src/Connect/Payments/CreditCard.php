@@ -1,19 +1,19 @@
 <?php
 
-namespace RM_PagSeguro\Connect\Payments;
+namespace RM_PagBank\Connect\Payments;
 
-use RM_PagSeguro\Helpers\Params;
-use RM_PagSeguro\Object\Amount;
-use RM_PagSeguro\Object\Card;
-use RM_PagSeguro\Object\Charge;
-use RM_PagSeguro\Object\Holder;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\Card;
+use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Holder;
 
 /**
  * Class CreditCard
  *
  * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
- * @package   RM_PagSeguro\Connect\Payments
+ * @package   RM_PagBank\Connect\Payments
  */
 class CreditCard extends Common
 {
@@ -29,10 +29,10 @@ class CreditCard extends Common
         $return = $this->getDefaultParameters();
         $charge = new Charge();
         $amount = new Amount();
-        $amount->setValue(Params::convert_to_cents($this->order->get_total()));
+        $amount->setValue(Params::convertToCents($this->order->get_total()));
         $charge->setAmount($amount);
         
-        $paymentMethod = new \RM_PagSeguro\Object\PaymentMethod();
+        $paymentMethod = new \RM_PagBank\Object\PaymentMethod();
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
         $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
@@ -55,7 +55,7 @@ class CreditCard extends Common
             'var pagseguro_connect_public_key = \'' . Params::getConfig('public_key') . '\';'
         );
     }
-    public static function get_ajax_installments(){
+    public static function getAjaxInstallments(){
         global $woocommerce;
 
         $order_total = $woocommerce->cart->get_total('edit');

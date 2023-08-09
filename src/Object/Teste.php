@@ -1,6 +1,6 @@
 <?php
 
-namespace RM_PagSeguro\Object;
+namespace RM_PagBank\Object;
 require __DIR__ . '/../../vendor/autoload.php';
 
 $amount = new Amount();

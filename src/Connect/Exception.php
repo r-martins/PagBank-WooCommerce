@@ -1,8 +1,8 @@
 <?php
 
-namespace RM_PagSeguro\Connect;
+namespace RM_PagBank\Connect;
 
-use RM_PagSeguro\Helpers\Functions;
+use RM_PagBank\Helpers\Functions;
 
 class Exception extends \Exception
 {

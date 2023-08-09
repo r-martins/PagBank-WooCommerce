@@ -1,6 +1,6 @@
 <?php
 
-namespace RM_PagSeguro\Object;
+namespace RM_PagBank\Object;
 
 class Item implements \JsonSerializable
 {

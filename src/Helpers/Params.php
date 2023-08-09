@@ -1,7 +1,7 @@
 <?php
 
 
-namespace RM_PagSeguro\Helpers;
+namespace RM_PagBank\Helpers;
 
 use Exception;
 use WC_Order;
@@ -11,7 +11,7 @@ use WC_Order;
  *
  * @author    Ricardo Martins <ricardo@magenteiro.com>
  * @copyright 2023 Magenteiro
- * @package   RM_PagSeguro\Helpers
+ * @package   RM_PagBank\Helpers
  */
 class Params
 {
@@ -22,7 +22,7 @@ class Params
      *
      * @return array
      */
-    public static function extract_phone($order):array
+    public static function extractPhone($order):array
     {
         $full_phone = $order->get_billing_phone();
         $clean_phone = preg_replace('/[^0-9]/', '', $full_phone);
@@ -42,7 +42,7 @@ class Params
      *
      * @return array|string|string[]|null
      */
-    public static function remove_non_numeric($string)
+    public static function removeNonNumeric($string)
     {
         return preg_replace('/[^0-9]/', '', $string);
     }
@@ -53,7 +53,7 @@ class Params
      *
      * @return int
      */
-    public static function convert_to_cents($amount)
+    public static function convertToCents($amount)
     {
         if ( ! is_numeric($amount) ) 
             return 0;
@@ -64,7 +64,13 @@ class Params
         $return = ltrim($return, '0');
         return (int)$return;
     }
-    
+
+    /**
+     * @param $key
+     * @param $default
+     *
+     * @return mixed|string
+     */
     public static function getConfig($key, $default = '')
     {
         $settings = get_option('woocommerce_rm_pagseguro_connect_settings');
@@ -124,7 +130,7 @@ class Params
         $api = new Api();
         $url = 'ws/charges/fees/calculate';
         $params['payment_methods'] = 'CREDIT_CARD';
-        $params['value']  = self::convert_to_cents($orderTotal);
+        $params['value']  = self::convertToCents($orderTotal);
         $params['credit_card_bin'] = $bin;
 
         if ($mi = self::getMaxInstallments($orderTotal))

@@ -1,8 +1,8 @@
 <?php
 
-namespace RM_PagSeguro\Tests;
+namespace RM_PagBank\Tests;
 
-use RM_PagSeguro\Helpers\Functions;
+use RM_PagBank\Helpers\Functions;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
  *
  * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
- * @package   RM_PagSeguro\Tests
- * @covers \RM_PagSeguro\Helpers\Functions
+ * @package   RM_PagBank\Tests
+ * @covers \RM_PagBank\Helpers\Functions
  */
 class FunctionsTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace RM_PagSeguro\Object;
+namespace RM_PagBank\Object;
 
 /**
  * Class AuthenticationMethod
@@ -9,7 +9,7 @@ namespace RM_PagSeguro\Object;
  *
  * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
- * @package   RM_PagSeguro\Object
+ * @package   RM_PagBank\Object
  */
 class AuthenticationMethod implements \JsonSerializable
 {

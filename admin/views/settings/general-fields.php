@@ -1,9 +1,9 @@
 <?php
 return array(
     'connect_key' => array(
-        'title'       => __( 'Connect Key', \RM_PagSeguro\Connect::DOMAIN ),
+        'title'       => __( 'Connect Key', \RM_PagBank\Connect::DOMAIN ),
         'type'        => 'text',
-        'description' => __( 'Please enter your Connect Key; this is needed in order to take payment.', \RM_PagSeguro\Connect::DOMAIN ),
+        'description' => __( 'Informe sua Connect Key, obtida após Obter as Credenciais. Este NÃO é o token PagBank.', \RM_PagBank\Connect::DOMAIN ),
         'default'     => '',
         'placeholder' => 'CON...',
         'desc_tip'    => true,
@@ -15,21 +15,26 @@ return array(
         )
     ),
     'general' => array(
-        'title' => __( 'Configurações Visuais', \RM_PagSeguro\Connect::DOMAIN ),
+        'title' => __( 'Configurações Visuais', \RM_PagBank\Connect::DOMAIN ),
         'type'  => 'title',
         'desc'  => '',
         'id'    => 'wc_pagseguro_connect_general_options',
     ),
     'title' => array(
-        'title'       => __( 'Main Title' , \RM_PagSeguro\Connect::DOMAIN ),
+        'title'       => __( 'Título Principal' , \RM_PagBank\Connect::DOMAIN ),
         'type'        => 'text',
-        'description' => __( 'Main method name, displayed near the radio button.', \RM_PagSeguro\Connect::DOMAIN ),
-        'default'     => __( 'PagBank UOL', \RM_PagSeguro\Connect::DOMAIN ),
+        'description' => __( 'Nome do meio de pagamento a ser exibido no radio button do checkout.', \RM_PagBank\Connect::DOMAIN ),
+        'default'     => __( 'PagBank UOL', \RM_PagBank\Connect::DOMAIN ),
         'desc_tip'    => true,
         'required'    => true,
-        'validate' => 'validate-connectkey',
         'custom_attributes' => array(
             'maxlength' => 40,
         )
-    )
+    ),
+    'enabled'              => array(
+        'title'   => __( 'Enable/Disable', \RM_PagBank\Connect::DOMAIN ),
+        'type'    => 'checkbox',
+        'label'   => __( 'Habilitar PagBank', \RM_PagBank\Connect::DOMAIN ),
+        'default' => 'yes',
+    ),
 );

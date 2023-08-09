@@ -1,6 +1,6 @@
 <?php
 
-use RM_PagSeguro\Connect;
+use RM_PagBank\Connect;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 

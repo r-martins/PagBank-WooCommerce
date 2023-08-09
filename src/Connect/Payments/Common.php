@@ -1,13 +1,13 @@
 <?php
 
-namespace RM_PagSeguro\Connect\Payments;
+namespace RM_PagBank\Connect\Payments;
 
-use RM_PagSeguro\Helpers\Api;
-use RM_PagSeguro\Helpers\Params;
-use RM_PagSeguro\Object\Address;
-use RM_PagSeguro\Object\Customer;
-use RM_PagSeguro\Object\Item;
-use RM_PagSeguro\Object\Phone;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Address;
+use RM_PagBank\Object\Customer;
+use RM_PagBank\Object\Item;
+use RM_PagBank\Object\Phone;
 use WC_Order;
 use WC_Order_Item_Product;
 
@@ -15,7 +15,7 @@ use WC_Order_Item_Product;
  * Common methods shared between payment methods
  *
  * @author    Ricardo Martins
- * @package   RM_PagSeguro\Connect
+ * @package   RM_PagBank\Connect
  */
 class Common
 {
@@ -58,9 +58,9 @@ class Common
         $customer = new Customer();
         $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $customer->setEmail($this->order->get_billing_email());
-        $customer->setTaxId(Params::remove_non_numeric($this->order->get_meta('_billing_cpf')));
+        $customer->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
         $phone = new Phone();
-        $number = Params::extract_phone($this->order);
+        $number = Params::extractPhone($this->order);
         $phone->setArea((int)$number['area']);
         $phone->setNumber((int)$number['number']);
         $customer->setPhone([
@@ -77,7 +77,7 @@ class Common
             $itemObj->setReferenceId($item['product_id']);
             $itemObj->setName($item['name']);
             $itemObj->setQuantity($item['quantity']);
-            $itemObj->setUnitAmount(Params::convert_to_cents($item['line_subtotal']));
+            $itemObj->setUnitAmount(Params::convertToCents($item['line_subtotal']));
             $items[] = $itemObj;
         }
         return $items;
@@ -92,7 +92,7 @@ class Common
         $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
         $address->setCity($this->order->get_meta('_shipping_city'));
         $address->setRegionCode($this->order->get_meta('_shipping_state'));
-        $address->setPostalCode(Params::remove_non_numeric($this->order->get_meta('_shipping_postcode')));
+        $address->setPostalCode(Params::removeNonNumeric($this->order->get_meta('_shipping_postcode')));
         return $address;
     }
     

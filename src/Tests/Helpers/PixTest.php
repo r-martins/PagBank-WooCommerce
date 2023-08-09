@@ -1,9 +1,9 @@
 <?php
 
-namespace RM_PagSeguro\Tests\Helpers;
+namespace RM_PagBank\Tests\Helpers;
 
 use OrderMock;
-use RM_PagSeguro\Helpers\Pix;
+use RM_PagBank\Helpers\Pix;
 use PHPUnit\Framework\TestCase;
 
 class PixTest extends TestCase

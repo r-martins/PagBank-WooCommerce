@@ -1,5 +1,5 @@
 <?php
-/** @var \RM_PagSeguro\Connect\Gateway $this */
+/** @var \RM_PagBank\Connect\Gateway $this */
 $available_methods = ['cc', 'pix', 'boleto'];
 $style = $active = [];
 for ($x=0, $c=count($available_methods), $first = true; $x < $c; $x++){

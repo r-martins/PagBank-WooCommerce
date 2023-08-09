@@ -1,15 +1,15 @@
 <?php
 
-namespace RM_PagSeguro\Connect\Payments;
+namespace RM_PagBank\Connect\Payments;
 
-use RM_PagSeguro\Helpers\Params;
-use RM_PagSeguro\Object\Address;
-use RM_PagSeguro\Object\Amount;
-use RM_PagSeguro\Object\Boleto as BoletoObj;
-use RM_PagSeguro\Object\Charge;
-use RM_PagSeguro\Object\Holder;
-use RM_PagSeguro\Object\InstructionLines;
-use RM_PagSeguro\Object\PaymentMethod;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Address;
+use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\Boleto as BoletoObj;
+use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Holder;
+use RM_PagBank\Object\InstructionLines;
+use RM_PagBank\Object\PaymentMethod;
 use WC_Order;
 
 class Boleto extends Common
@@ -30,7 +30,7 @@ class Boleto extends Common
         $charge->setReferenceId($this->order->get_id());
         
         $amount = new Amount();
-        $amount->setValue(Params::convert_to_cents($this->order->get_total()));
+        $amount->setValue(Params::convertToCents($this->order->get_total()));
         $charge->setAmount($amount);
         
         $paymentMethod = new PaymentMethod();
@@ -43,13 +43,13 @@ class Boleto extends Common
         $boleto->setInstructionLines($instruction_lines);
         $holder = new Holder();
         $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
-        $holder->setTaxId(Params::remove_non_numeric($this->order->get_meta('_billing_cpf')));
+        $holder->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
         $holder->setEmail($this->order->get_billing_email());
         
         $holderAddress = new Address();
         $holderAddress->setCountry('BRA');
         $holderAddress->setCity($this->order->get_billing_city());
-        $holderAddress->setPostalCode(Params::remove_non_numeric($this->order->get_billing_postcode()));
+        $holderAddress->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode()));
         $holderAddress->setLocality($this->order->get_meta('_billing_neighborhood'));
         $holderAddress->setStreet($this->order->get_billing_address_1());
         $holderAddress->setNumber($this->order->get_meta('_billing_number'));

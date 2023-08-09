@@ -1,9 +1,9 @@
 <?php
 
-namespace RM_PagSeguro\Helpers;
+namespace RM_PagBank\Helpers;
 
 use Exception;
-use RM_PagSeguro\Connect;
+use RM_PagBank\Connect;
 use WC_Order;
 use WC_Payment_Gateways;
 
@@ -12,14 +12,9 @@ class Api
     // Saiba mais em https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/18183910009869
     const WS_URL = 'https://ws.ricardomartins.net.br/pspro/v7/connect/';
 
-    /**
-     * @var string
-     */
-    private $publicKey;
+    public string $connect_key;
 
-    public $connect_key;
-
-    protected $is_sandbox;
+    protected bool $is_sandbox;
 
     public function __construct()
     {
@@ -27,10 +22,13 @@ class Api
         $connect_key = $gateway->get_option('connect_key') ?? null;
         $is_sandbox = $gateway->get_option('is_sandbox', false) === 'yes';
         
-        $this->set_connect_key($connect_key);
-        $this->set_is_sandbox($is_sandbox);
+        $this->setConnectKey($connect_key);
+        $this->setIsSandbox($is_sandbox);
     }
 
+    /**
+     * @throws Exception
+     */
     public function get(string $endpoint, array $params = []): array
     {
         $params[]['isSandbox'] = $this->is_sandbox;
@@ -46,9 +44,8 @@ class Api
 
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            // Aqui você pode tratar erros de decodificação JSON
             curl_close($curl);
-            throw new \Exception('Resposta inválida da API: ' . $response);
+            throw new Exception('Resposta inválida da API: ' . $response);
         }
 
         curl_close($curl);
@@ -89,19 +86,18 @@ class Api
                 'error',
                 ['request' => $params, 'endpoint' => $endpoint]
             );
-            throw new \Exception('Erro na requisição: ' . $error_message);
+            throw new Exception('Erro na requisição: ' . $error_message);
         }
         
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            // Aqui você pode tratar erros de decodificação JSON
             curl_close($curl);
             Functions::log(
                 'Resposta inválida da API: '.$response,
                 'error',
                 ['request' => $params, 'endpoint' => $endpoint]
             );
-            throw new \Exception('Resposta inválida da API: ' . $response);
+            throw new Exception('Resposta inválida da API: ' . $response);
         }
 
         curl_close($curl);
@@ -113,7 +109,7 @@ class Api
     /**
      * @return bool
      */
-    public function get_is_sandbox(): bool
+    public function getIsSandbox(): bool
     {
         return $this->is_sandbox;
     }
@@ -121,7 +117,7 @@ class Api
     /**
      * @param bool $is_sandbox
      */
-    public function set_is_sandbox($is_sandbox): void
+    public function setIsSandbox(bool $is_sandbox): void
     {
         $this->is_sandbox = $is_sandbox;
     }
@@ -129,7 +125,7 @@ class Api
     /**
      * @return string
      */
-    public function get_connect_key()
+    public function getConnectKey(): string
     {
         return $this->connect_key;
     }
@@ -137,17 +133,25 @@ class Api
     /**
      * @param string $connect_key
      */
-    public function set_connect_key($connect_key): void
+    public function setConnectKey(string $connect_key): void
     {
         $this->connect_key = $connect_key;
     }
-    
+
+    /**
+     * @return false|mixed
+     */
     public static function getPaymentGateway()
     {
         $gateways = WC_Payment_Gateways::instance();
         return $gateways->payment_gateways()[Connect::DOMAIN] ?? false;
     }
-    
+
+    /**
+     * @param WC_Order $order
+     *
+     * @return false|string
+     */
     public static function getOrderHash(WC_Order $order){
         return substr(wp_hash($order->get_id(), 'auth'), 0, 5);
     }

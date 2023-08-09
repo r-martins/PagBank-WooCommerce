@@ -5,8 +5,8 @@
  * @package WooCommerce_PagSeguro_Connect/Admin/Settings
  */
 
-use RM_PagSeguro\Connect;
-use RM_PagSeguro\Connect\Gateway;
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Gateway;
 
 if ( ! defined ( 'ABSPATH' ) ) {
     exit;
@@ -34,7 +34,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
     </nav>
     <div class="tab-content active" id="tab-general">
         <h3><?php esc_html_e('Credenciais', Connect::DOMAIN) ?></h3>
-        <p><?php esc_html_e('Para utilizar o PagSeguro Connect, você precisa autorizar nossa aplicaçãoe obter suas credenciais connect.', Connect::DOMAIN) ?></p>
+        <p><?php esc_html_e('Para utilizar o PagSeguro Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', Connect::DOMAIN) ?></p>
         <a href="https://pagseguro.ricardomartins.net.br/connect/autorizar.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter credenciais', Connect::DOMAIN) ?></a>
         <?php
         echo $this->get_admin_fields('general');

@@ -1,8 +1,8 @@
 <?php
 
-namespace RM_PagSeguro\Object;
+namespace RM_PagBank\Object;
 
-use RM_PagSeguro\Helpers\Params;
+use RM_PagBank\Helpers\Params;
 
 class Address implements \JsonSerializable
 {
@@ -199,7 +199,7 @@ class Address implements \JsonSerializable
      */
     public function setPostalCode(string $postal_code): void
     {
-        $postal_code = Params::remove_non_numeric($postal_code);
+        $postal_code = Params::removeNonNumeric($postal_code);
         $this->postal_code = substr($postal_code, 0, 8);
     }
 }

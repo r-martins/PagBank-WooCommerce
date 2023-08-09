@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'RM_PagSeguro\\' => array($baseDir . '/src'),
+    'RM_PagBank\\' => array($baseDir . '/src'),
 );
