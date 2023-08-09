@@ -9,6 +9,8 @@ use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use WC_Admin;
+use WC_Admin_Settings;
 use WC_Order;
 use WC_Payment_Gateway_CC;
 use WP_Error;
@@ -176,13 +178,8 @@ class Gateway extends WC_Payment_Gateway_CC
         );
     }
     
-    
-    public function process_admin_options()
+    public function validate_connect_key_field($key, $connect_key)
     {
-        //region updating public_key
-        $post_data = $this->get_post_data();
-        $fields = $this->get_form_fields();
-        $connect_key = $this->get_field_value( 'connect_key', $fields['connect_key'], $post_data );
         $api = new Api();
         $api->setConnectKey($connect_key);
         try {
@@ -191,14 +188,24 @@ class Gateway extends WC_Payment_Gateway_CC
                 $this->update_option('public_key', $ret['public_key']);
                 $this->update_option('public_key_created_at', $ret['created_at']);
             }
+
+            if (isset($ret['error_messages'])){
+                //implode error_messages showing code and description
+                $error_messages = array_map(function($error){
+                    return $error['code'] . ' - ' . $error['description'];
+                }, $ret['error_messages']);
+                WC_Admin_Settings::add_error(implode('<br/>', $error_messages));
+                $connect_key = '';
+            }
         } catch (Exception $e) {
-            $this->add_error($e->getMessage());
+            WC_Admin_Settings::add_error($e->getMessage());
+            $connect_key = '';
         }
-        //endregion
+        
+        return $connect_key;
 
-        return parent::process_admin_options();
     }
-
+    
     /**
      * Checks if the currency is BRL
      * @return bool
