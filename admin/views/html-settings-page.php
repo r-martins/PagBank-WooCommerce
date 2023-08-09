@@ -19,7 +19,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
         <img src="<?php echo esc_url(plugins_url('public/images/pagseguro-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo"/>
         <?php
         echo '<h2>' . esc_html( $this->get_method_title() );
-        wc_back_link( __( 'Return to payments', 'woocommerce' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
+        wc_back_link( __( 'Voltar para Pagamentos', Connect::DOMAIN ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
         ?>
     </div>
     <div class="ps-subtitle">
@@ -34,7 +34,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
     </nav>
     <div class="tab-content active" id="tab-general">
         <h3><?php esc_html_e('Credenciais', Connect::DOMAIN) ?></h3>
-        <p><?php esc_html_e('Para utilizar o PagSeguro Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', Connect::DOMAIN) ?></p>
+        <p><?php esc_html_e('Para utilizar o PagBank Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', Connect::DOMAIN) ?></p>
         <a href="https://pagseguro.ricardomartins.net.br/connect/autorizar.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter credenciais', Connect::DOMAIN) ?></a>
         <?php
         echo $this->get_admin_fields('general');

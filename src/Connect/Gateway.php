@@ -305,7 +305,7 @@ class Gateway extends WC_Payment_Gateway_CC
             return;
 
         global $current_section; //only when ?section=rm_pagseguro_connect (plugin config page)
-        if ($current_section == 'rm_pagseguro_connect')
+        if ($current_section == Connect::DOMAIN)
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)

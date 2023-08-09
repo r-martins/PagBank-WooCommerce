@@ -32,7 +32,7 @@ return array(
         )
     ),
     'enabled'              => array(
-        'title'   => __( 'Enable/Disable', \RM_PagBank\Connect::DOMAIN ),
+        'title'   => __( 'Habilitar/Desabilitar', \RM_PagBank\Connect::DOMAIN ),
         'type'    => 'checkbox',
         'label'   => __( 'Habilitar PagBank', \RM_PagBank\Connect::DOMAIN ),
         'default' => 'yes',

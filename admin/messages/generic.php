@@ -17,6 +17,6 @@ function generic_notice($msg, $type="updated", $isDismissable=true) {
     if ($isDismissable) {
         $class .= ' is-dismissible';
     }
-    echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagSeguro Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
+    echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
 }
 

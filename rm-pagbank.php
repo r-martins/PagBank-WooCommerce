@@ -20,6 +20,7 @@
  * License URI:       https://opensource.org/license/gpl-3/
  * Update URI:        https://pagseguro.ricardomartins.net.br/
  * Text Domain:       rm-pagbank
+ * Domain Path:       /languages
  */
 
 use RM_PagBank\Connect;
@@ -38,6 +39,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 add_action('init', [Connect::class, 'init']);
+add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 
 //$psConnect = new RMPagseguroConnect();
 //register_activation_hook(__FILE__, [$psConnect, 'activate']);

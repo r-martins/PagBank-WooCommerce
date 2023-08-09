@@ -17,7 +17,7 @@ use RM_PagBank\Helpers\Params;
 class Connect 
 {
 
-    public const DOMAIN = 'rm_pagseguro_connect';
+    public const DOMAIN = 'rm-pagbank';
 
     /**
      * @return void
@@ -38,9 +38,6 @@ class Connect
         add_action('wp_ajax_ps_get_installments', [CreditCard::class, 'getAjaxInstallments']);
         add_action('woocommerce_api_wc_pagseguro_info', [__CLASS__, 'configInfo']);
         add_action('woocommerce_api_rm_ps_notif', [__CLASS__, 'notification']);
-
-        // Load plugin text domain
-        load_plugin_textdomain(Connect::DOMAIN, false, dirname(plugin_basename( __FILE__ )) . '/languages/');
 
         // Load plugin files
         self::includes();
@@ -151,5 +148,11 @@ class Connect
     {
         $gateway = new Gateway();
         $gateway->notification();
+    }
+    
+    public static function loadTextDomain(): void
+    {
+        $dir = self::DOMAIN . '/languages/';
+        load_plugin_textdomain(Connect::DOMAIN, false, $dir);
     }
 }
