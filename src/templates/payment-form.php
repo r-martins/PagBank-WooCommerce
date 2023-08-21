@@ -15,15 +15,15 @@ unset($x, $c, $first);
 ?>
 <div class="ps-connect-buttons-container">
     <?php if ($this->get_option('cc_enabled') === 'yes'):?>
-        <button type="button" class="button button-primary <?php echo $active['cc'] ?? ''?>" id="btn-pagseguro-cc">Cartão de Crédito</button>
+        <button type="button" class="wp-element-button button button-primary <?php echo $active['cc'] ?? ''?>" id="btn-pagseguro-cc">Cartão de Crédito</button>
     <?php endif;?>
 
     <?php if ($this->get_option('pix_enabled') === 'yes'):?>
-        <button type="button" class="button button-primary <?php echo $active['pix'] ?? ''?>" id="btn-pagseguro-pix"><?php echo $this->get_option('pix_title');?></button>
+        <button type="button" class="wp-element-button button button-primary <?php echo $active['pix'] ?? ''?>" id="btn-pagseguro-pix"><?php echo $this->get_option('pix_title');?></button>
     <?php endif;?>
 
     <?php if ($this->get_option('boleto_enabled') === 'yes'):?>
-        <button type="button" class="button button-primary <?php echo $active['boleto'] ?? ''?>" id="btn-pagseguro-boleto"><?php echo $this->get_option('boleto_title');?></button>
+        <button type="button" class="wp-element-button button button-primary <?php echo $active['boleto'] ?? ''?>" id="btn-pagseguro-boleto"><?php echo $this->get_option('boleto_title');?></button>
     <?php endif;?>
 </div>
 <!--Initialize PagSeguro payment form fieldset with tabs-->

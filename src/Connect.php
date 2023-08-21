@@ -85,7 +85,7 @@ class Connect
     public static function addPluginActionLinks( $links ): array
     {
         $plugin_links   = array();
-        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Settings', self::DOMAIN ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', self::DOMAIN ) . '</a>';
 
         return array_merge( $plugin_links, $links );
     }
