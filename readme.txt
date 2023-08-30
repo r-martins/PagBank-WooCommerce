@@ -1,4 +1,4 @@
-=== PagBank Connect (PagSeguro ===
+=== PagBank Connect (PagSeguro) ===
 Contributors: martins56
 Tags: woocommerce, pagseguro, payment, pagbank, pix, boleto, visa, mastercard, cartão de crédito
 Donate link: https://github.com/sponsors/r-martins

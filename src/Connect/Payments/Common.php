@@ -44,16 +44,16 @@ class Common
             'customer' => $this->getCustomerData(),
             'items' => $this->getItemsData(),
         ];
-        
+
         if ($this->order->has_shipping_address()){
             $return['shipping']['address'] = $this->getShippingAddress();
         }
-        
+
         $return['notification_urls'] = $this->getNotificationUrls();
-        
+
         return $return;
     }
-    
+
     public function getCustomerData(){
         $customer = new Customer();
         $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
@@ -68,7 +68,7 @@ class Common
         ]);
         return $customer;
     }
-    
+
     public function getItemsData(){
         $items = [];
         /** @var WC_Order_Item_Product $item */
@@ -95,17 +95,17 @@ class Common
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_meta('_shipping_postcode')));
         return $address;
     }
-    
+
     public function getNotificationUrls(): array
     {
         $hash = Api::getOrderHash($this->order);
         return [
-//            get_site_url() . '/?wc-api=rm_pagseguro_notification'
-            'https://webhook.site/57730f29-ac28-4580-a92c-2f3d8fe004b5'
+            get_site_url() . '/?wc-api=rm_pagseguro_notification'
+//            'https://webhook.site/57730f29-ac28-4580-a92c-2f3d8fe004b5'
             . '/?wc_api=rm_ps_notif&hash=' . $hash
             ];
     }
-    
+
     /**
      * @return WC_Order
      */
@@ -132,7 +132,7 @@ class Common
      * @return void
      */
     public function process_response($order, $response) {
-        
+
         switch ($order->get_meta('pagbank_payment_method')){
             case 'pix':
                 $order->add_meta_data('pagbank_pix_qrcode', $response['qr_codes'][0]['links'][0]['href'] ?? null, true);
@@ -148,9 +148,9 @@ class Common
                 break;
         }
         $order->update_status('pending');
-        
+
         $order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
         $order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
-        
+
     }
 }
