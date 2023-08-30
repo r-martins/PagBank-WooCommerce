@@ -30,7 +30,16 @@ class Boleto extends Common
         $charge->setReferenceId($this->order->get_id());
         
         $amount = new Amount();
-        $amount->setValue(Params::convertToCents($this->order->get_total()));
+        $orderTotal = $this->order->get_total();
+
+        if ($discountConfig = Params::getConfig('boleto_discount', 0)){
+            $discount = Params::getDiscountValue($discountConfig, $orderTotal);
+            $this->order->set_discount_total($this->order->get_discount_total() + $discount);
+            $this->order->set_total($this->order->get_total() - $discount);
+            $orderTotal = $orderTotal - $discount;
+        }
+        
+        $amount->setValue(Params::convertToCents($orderTotal));
         $charge->setAmount($amount);
         
         $paymentMethod = new PaymentMethod();

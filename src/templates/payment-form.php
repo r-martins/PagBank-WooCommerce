@@ -28,21 +28,21 @@ unset($x, $c, $first);
 </div>
 <!--Initialize PagSeguro payment form fieldset with tabs-->
 <?php if ($this->get_option('cc_enabled') === 'yes'):?>
-    <fieldset id="ps-connect-payment-cc" class="ps_connect_method <?php echo $active['cc'] ?? 'hide'?>" style="<?php echo $style['cc'];?>" <?php echo $active['cc'] ? '' : 'disabled';  ?>>
+    <fieldset id="ps-connect-payment-cc" class="ps_connect_method <?php echo !isset($active['cc']) ? 'hide' : ''?>" style="<?php echo $style['cc'];?>" <?php echo !isset($active['cc']) ? '' : 'disabled';  ?>>
         <input type="hidden" name="ps_connect_method" value="cc"/>
         <?php require 'payments/creditcard.php'; ?>
     </fieldset>
 <?php endif;?>
 
 <?php if ($this->get_option('pix_enabled') === 'yes'):?>
-    <fieldset id="ps-connect-payment-pix" class="ps_connect_method <?php echo $active['pix'] ?? 'hide'?>" style="<?php echo $style['pix'];?>" <?php echo $active['pix'] ? '' : 'disabled';  ?>>
+    <fieldset id="ps-connect-payment-pix" class="ps_connect_method <?php echo !isset($active['pix']) ? 'hide' : ''?>" style="<?php echo $style['pix'];?>" <?php echo !isset($active['pix']) ? '' : 'disabled';  ?>>
         <input type="hidden" name="ps_connect_method" value="pix"/>
         <?php require 'payments/pix.php'; ?>
     </fieldset>
 <?php endif;?>
 
 <?php if ($this->get_option('boleto_enabled') === 'yes'):?>
-    <fieldset id="ps-connect-payment-boleto" class="ps_connect_method <?php echo $active['boleto'] ?? 'hide'?>" style="<?php echo $style['boleto'];?>" <?php echo $active['boleto'] ? '' : 'disabled';  ?>>
+    <fieldset id="ps-connect-payment-boleto" class="ps_connect_method <?php echo !isset($active['boleto']) ? 'hide' : ''?>" style="<?php echo $style['boleto'];?>" <?php echo !isset($active['boleto']) ? '' : 'disabled';  ?>>
         <input type="hidden" name="ps_connect_method" value="boleto"/>
         <?php require 'payments/boleto.php'; ?>
     </fieldset>

@@ -4,6 +4,7 @@
 namespace RM_PagBank\Helpers;
 
 use Exception;
+use RM_PagBank\Connect;
 use WC_Order;
 
 /**
@@ -174,5 +175,65 @@ class Params
             }
         }
         return $return;
+    }
+
+    /**
+     * Return if discount config value is a PERCENT or FIXED discount, or false if no discount is to be applied
+     * @param $configValue
+     *
+     * @return false|string FIXED or PERCENT
+     */
+    public static function getDiscountType($configValue)
+    {
+        if (empty($configValue)){
+            return false;
+        }
+        
+        if (is_numeric($configValue)){
+            return 'FIXED';
+        }
+        
+        if (strpos($configValue, '%') !== false){
+            return 'PERCENT';
+        }
+        
+        return false;
+    }
+    
+    public static function getDiscountValue($configValue, $orderTotal)
+    {
+        $discountType = self::getDiscountType($configValue);
+        if ( ! $discountType){
+            return 0;
+        }
+        
+        if ('FIXED' == $discountType){
+            return floatval($configValue);
+        }
+        
+        if ('PERCENT' == $discountType){
+            return floatval($orderTotal) * (floatval($configValue) / 100);
+        }
+        
+        return 0;
+    }
+    
+    public static function getDiscountText($method)
+    {
+        $discountConfig = self::getConfig($method . '_discount', 0);
+        $discountType = self::getDiscountType($discountConfig);
+        if ( ! $discountType){
+            return '';
+        }
+        
+        if ('FIXED' == $discountType){
+            return sprintf(__('Um desconto de %s será aplicado.', Connect::DOMAIN), '<strong>' . wc_price($discountConfig) . '</strong>');
+        }
+        
+        if ('PERCENT' == $discountType){
+            return sprintf(__('Um desconto de %s será aplicado', Connect::DOMAIN), '<strong>' . $discountConfig . '</strong>');
+        }
+        
+        return '';
     }
 }

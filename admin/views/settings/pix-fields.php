@@ -42,4 +42,11 @@ return array(
             'step' => 1,
         ),
     ),
+    'pix_discount'       => array(
+        'title'       => __( 'Oferecer Desconto de', \RM_PagBank\Connect::DOMAIN ),
+        'type'        => 'text',
+        'description' => __( 'Ex: 5% para valor percentual ou 5.00 para um valor fixo. <br/>Deixe em branco para não oferecer nenhum desconto.', \RM_PagBank\Connect::DOMAIN ),
+        'default'     => 0,
+        'desc_tip'    => false,
+    ),
 );
