@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name:       PagBank Connect - Ricardo Martins (com descontos)
  * Plugin URI:        https://pagseguro.ricardomartins.net.br/
- * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente em muito mais. 
+ * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente em muito mais.
  * Version:           4.0.0
  * Requires at least: 5.2
  * Requires PHP:      7.4
@@ -24,6 +24,7 @@
  */
 
 use RM_PagBank\Connect;
+use RM_PagBank\EnvioFacil;
 
 // Prevent direct file access.
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
@@ -40,6 +41,9 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 
 add_action('init', [Connect::class, 'init']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
+
+//envio facil
+add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
 //$psConnect = new RMPagseguroConnect();
 //register_activation_hook(__FILE__, [$psConnect, 'activate']);
