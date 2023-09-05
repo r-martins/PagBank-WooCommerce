@@ -61,7 +61,7 @@ class EnvioFacil extends WC_Shipping_Method
 
 		$isValid = $this->validateDimensions($dimensions);
 
-		if ( ! $isValid ) return false;
+		if ( !$isValid || !$dimensions ) return false;
 
 		$ch = curl_init();
 		//body
