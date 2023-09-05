@@ -20,10 +20,8 @@ class Api
     {
         $gateway = self::getPaymentGateway();
         $connect_key = $gateway->get_option('connect_key') ?? null;
-        $is_sandbox = $gateway->get_option('is_sandbox', false) === 'yes';
-        
+
         $this->setConnectKey($connect_key);
-        $this->setIsSandbox($is_sandbox);
     }
 
     /**
@@ -31,7 +29,7 @@ class Api
      */
     public function get(string $endpoint, array $params = []): array
     {
-        $params[]['isSandbox'] = $this->is_sandbox;
+        $params['isSandbox'] = $this->is_sandbox ? '1': '0';
         $url = self::WS_URL . $endpoint .'?' .http_build_query($params);
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -61,8 +59,8 @@ class Api
      */
     public function post(string $endpoint, array $params = [])
     {
-        $params[]['isSandbox'] = $this->is_sandbox;
-        $url = self::WS_URL . $endpoint;
+		$isSandbox = $this->is_sandbox ? '?isSandbox=1' : '';
+        $url = self::WS_URL . $endpoint . $isSandbox;
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_HTTPHEADER, [
@@ -77,7 +75,7 @@ class Api
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($params));
         Functions::log('POST Request to '.$endpoint.' with params: '.json_encode($params, JSON_PRETTY_PRINT), 'debug');
         $response = curl_exec($curl);
-        
+
         if (curl_errno($curl)){
             $error_message = curl_error($curl);
             curl_close($curl);
@@ -88,7 +86,7 @@ class Api
             );
             throw new Exception('Erro na requisição: ' . $error_message);
         }
-        
+
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
             curl_close($curl);
@@ -136,6 +134,7 @@ class Api
     public function setConnectKey(string $connect_key): void
     {
         $this->connect_key = $connect_key;
+		$this->setIsSandbox(strpos($connect_key, 'CONSANDBOX') !== false);
     }
 
     /**

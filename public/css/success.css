@@ -1,5 +1,5 @@
 /**
-Não modifique este arquivo. 
+Não modifique este arquivo.
 Se desejar fazer alterações visuais, faça isso em Aparência > Personalizar > CSS Adicional e reescreva a regra que deseja modificar.
 
 Do not modify this file.
@@ -13,13 +13,16 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     margin-bottom: 30px;
 }
 .copy-btn{
-    width: 35px;
+    width: 2rem;
+	height: 2rem;
     cursor: pointer;
 }
 
 .code-container .copied{
     display: none;
     color: green;
+	font-size: 1rem;
+	margin: 0;
 }
 .boleto-container{
     margin-bottom: 30px;

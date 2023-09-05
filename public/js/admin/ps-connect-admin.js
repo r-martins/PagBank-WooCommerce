@@ -19,7 +19,6 @@ jQuery(document).ready(function($) {
     }
     //endregion
 
-    
     //region Displaying and hiding credit card options
     //display #woocommerce_rm-pagbank_cc_installment_options_fixed based on #woocommerce_rm-pagbank_cc_installment_options == fixed
     function hideOrShowFixedOptions() {
@@ -45,7 +44,7 @@ jQuery(document).ready(function($) {
             }
         };
     }
-    
+
     $('#woocommerce_rm-pagbank_cc_installment_options').change(hideOrShowMinTotalOptions());
     hideOrShowMinTotalOptions().call($('#woocommerce_rm-pagbank_cc_installment_options'));
 
@@ -60,10 +59,20 @@ jQuery(document).ready(function($) {
             }
         };
     }
-    
+
     $('#woocommerce_rm-pagbank_cc_installments_options_limit_installments').change(hideOrShowMasInstallmentsOptions());
     hideOrShowMasInstallmentsOptions().call($('#woocommerce_rm-pagbank_cc_installments_options_limit_installments'));
-    
+
     //endregion
-    
+
+	//region Showing that you are using test mode (when using a CONSANDBOX key)
+	if ($('#woocommerce_rm-pagbank_connect_key').val().indexOf('CONSANDBOX') === 0){
+		//create p element
+		var p = document.createElement('p');
+		p.innerHTML = '⚠️ Você está usando o <strong>modo de testes</strong>. Veja <a href="https://dev.pagbank.uol.com.br/reference/simulador" target="_blank">documentação</a>.<br/>Para usar o modo de produção, altere suas credenciais.<br/>Lembre-se: pagamentos em Sandbox não aparecerão em seu painel, mesmo no ambiente Sandbox.';
+		p.style.color = '#f30649';
+		//insert under connect_key
+		$(p).insertAfter('#woocommerce_rm-pagbank_connect_key');
+	}
+	//endregion
 });

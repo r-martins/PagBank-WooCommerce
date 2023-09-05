@@ -21,7 +21,7 @@ class Functions
     const NOTICE_ERROR = 'error'; //red
     const NOTICE_UPDATE = 'updated'; //green
     const NOTICE_NAG = 'updated-nag'; //gray
-    
+
     /**
      * formatDate from 2023-07-05T15:12:56.000-03:00 to "15/07/2023 15:12:56 (Horário de Brasília)"
      * @param $date
@@ -29,7 +29,7 @@ class Functions
      * @return string
      */
     public static function format_date($date): string
-    {        
+    {
         if (empty($date) || !is_string($date)) {
             return '';
         }
@@ -58,13 +58,13 @@ class Functions
         if( !is_admin() ) {
             return;
         }
-        
+
         $class = 'notice';
         $class .= ' ' . $type;
         if ($isDismissible) {
             $class .= ' is-dismissible';
         }
-        
+
         echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagSeguro Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
     }
 
@@ -89,4 +89,13 @@ class Functions
         $msg = $msg . PHP_EOL . var_export($additional, true);
         $logger->log($level, $msg, ['source' => 'pagseguro-connect']);
     }
+
+	public static function get_cc_flag_url(string $brand): string
+	{
+		if (file_exists(WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/images/credit-cards/' . $brand . '.svg')) {
+			return plugins_url('public/images/credit-cards/' . $brand . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+		}
+
+		return '';
+	}
 }

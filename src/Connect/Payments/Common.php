@@ -146,11 +146,22 @@ class Common
                 $order->add_meta_data('pagbank_boleto_barcode_formatted', $response['charges'][0]['payment_method']['boleto']['formatted_barcode'] ?? null, true);
                 $order->add_meta_data('pagbank_boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode'] ?? null, true);
                 break;
+			case 'credit_card':
+				$order->add_meta_data('_pagbank_card_installments', $response['charges'][0]['payment_method']['installments'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_holder', $response['charges'][0]['payment_method']['card']['holder']['name'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_exp_month', $response['charges'][0]['payment_method']['card']['exp_month'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_exp_year', $response['charges'][0]['payment_method']['card']['exp_year'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null, false);
+				break;
         }
-        $order->update_status('pending');
+		$order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
+		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
+		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
-        $order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
-        $order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
+		$order->update_status('pending');
 
-    }
+	}
 }

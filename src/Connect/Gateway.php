@@ -23,7 +23,7 @@ use WP_Error;
  */
 class Gateway extends WC_Payment_Gateway_CC
 {
-    
+
     public function __construct()
     {
         $this->id = Connect::DOMAIN;
@@ -37,13 +37,13 @@ class Gateway extends WC_Payment_Gateway_CC
             'default_credit_card_form',
 //            'tokenization'
         );
-        
+
         $this->init_settings();
-        
+
         $this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', Connect::DOMAIN));
         $this->description = $this->get_option('description');
-        
-        
+
+
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_instructions'));
         add_action('wp_enqueue_scripts', array($this, 'add_styles'));
@@ -60,7 +60,7 @@ class Gateway extends WC_Payment_Gateway_CC
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/pix-fields.php';
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/cc-fields.php';
         $this->form_fields = array_merge(...$fields);
-        
+
         parent::init_settings();
     }
 
@@ -152,7 +152,7 @@ class Gateway extends WC_Payment_Gateway_CC
         if (!in_array($section, $available_sections)) {
             return;
         }
-        
+
         $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/' . $section . '-fields.php';
         $form_fields = apply_filters(
             'woocommerce_settings_api_form_fields_'.$this->id,
@@ -177,7 +177,7 @@ class Gateway extends WC_Payment_Gateway_CC
             true
         );
     }
-    
+
     public function validate_connect_key_field($key, $connect_key)
     {
         $api = new Api();
@@ -187,6 +187,8 @@ class Gateway extends WC_Payment_Gateway_CC
             if (isset($ret['public_key'])) {
                 $this->update_option('public_key', $ret['public_key']);
                 $this->update_option('public_key_created_at', $ret['created_at']);
+				$isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
+				$this->update_option('is_sandbox', $isSandbox);
             }
 
             if (isset($ret['error_messages'])){
@@ -201,11 +203,11 @@ class Gateway extends WC_Payment_Gateway_CC
             WC_Admin_Settings::add_error($e->getMessage());
             $connect_key = '';
         }
-        
+
         return $connect_key;
 
     }
-    
+
     public function validateDiscountValue($value)
     {
         if (empty($value)){
@@ -216,24 +218,24 @@ class Gateway extends WC_Payment_Gateway_CC
         $value = str_replace(' ', '', $value);
         //replace comma with dot
         $value = str_replace(',', '.', $value);
-        
+
         if (strpos($value, '%')){
             $value = str_replace('%', '', $value);
-            
+
             if (!is_numeric($value) || $value < 0 || $value > 100) {
                 WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100.', Connect::DOMAIN));
                 return '';
             }
             return $value . '%';
         }
-        
+
         if (!is_numeric($value) || $value < 0 ) {
             WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100', Connect::DOMAIN));
             return '';
         }
         return $value;
     }
-    
+
     public function validate_pix_discount_field($key, $value){
         return $this->validateDiscountValue($value);
     }
@@ -241,7 +243,7 @@ class Gateway extends WC_Payment_Gateway_CC
     public function validate_boleto_discount_field($key, $value){
         return $this->validateDiscountValue($value);
     }
-    
+
     /**
      * Checks if the currency is BRL
      * @return bool
@@ -254,7 +256,6 @@ class Gateway extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
-        $foo = 'bar';
         include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
     }
 
@@ -267,16 +268,16 @@ class Gateway extends WC_Payment_Gateway_CC
     {
         return true; //@TODO validate_fields
     }
-    
+
     public function add_styles(){
-        //thankyou page
-        if (is_order_received_page()) {
+        //thank you page
+        if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             wp_enqueue_style(
                 'pagseguro-connect-pix',
                 plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
         }
-        
+
         if ( is_checkout() ) {
             wp_enqueue_style(
                 'pagseguro-connect-checkout',
@@ -284,15 +285,16 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
     }
-    
+
     public function add_scripts(){
-        if (is_order_received_page()) {
+		//thank you page
+        if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             wp_enqueue_script(
                 'pagseguro-connect',
                 plugins_url('public/js/success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
         }
-        
+
         if ( is_checkout() ) {
             wp_enqueue_script(
                 'pagseguro-connect-checkout',
@@ -301,7 +303,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 true,
                 true
             );
-            
+
             if ( $this->get_option('cc_enabled')) {
                 wp_enqueue_script(
                     'pagseguro-connect-creditcard',
@@ -327,22 +329,22 @@ class Gateway extends WC_Payment_Gateway_CC
                     true
                 );
             }
-            
+
         }
     }
-    
+
     public function admin_styles(){
         //admin pages
         if (!is_admin())
             return;
-        
+
         wp_enqueue_style(
             'pagseguro-connect-admin-css',
             plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
         );
-        
+
     }
-    
+
     public function admin_scripts(){
         if(!is_admin())
             return;
@@ -380,7 +382,7 @@ class Gateway extends WC_Payment_Gateway_CC
             }
         }
         // endregion
-        
+
         switch ($payment_method) {
             case 'boleto':
                 $method = new Boleto($order);
@@ -421,18 +423,18 @@ class Gateway extends WC_Payment_Gateway_CC
                     'redirect' => ''
                 );
         }
-        
+
         $order->add_meta_data('pagbank_payment_method', $method->code, true);
 
 
         try {
             $api = new Api();
             $resp = $api->post('ws/orders', $params);
-            
+
             if (isset($resp['error_messages'])) {
                 throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
             }
-            
+
         } catch (Exception $e) {
             wc_add_wp_error_notices(new WP_Error('api_error', $e->getMessage()));
             return array(
@@ -444,15 +446,15 @@ class Gateway extends WC_Payment_Gateway_CC
         self::update_transaction($order, $resp);
 
         $charge = $resp['charges'][0] ?? false;
-        
+
         // region Immediately decline if payment method is credit card and charge was declined
         if ($payment_method == 'cc' && $charge !== false) {
             if ($charge['status'] == 'DECLINED'){
                 $additional_error = '';
-                if(isset($charge['payment_response'])) 
+                if(isset($charge['payment_response']))
                     $additional_error .= $charge['payment_response']['message'] . ' ('
                     . $charge['payment_response']['code'] . ')';
-                
+
                 wc_add_wp_error_notices(new WP_Error('api_error', 'Pagamento Recusado. ' . $additional_error));
                 return [
                     'result' => 'fail',
@@ -461,7 +463,7 @@ class Gateway extends WC_Payment_Gateway_CC
             }
         }
         // endregion
-        
+
         // some notes to customer (replace true with false to make it private)
         $order->add_order_note( 'Pedido criado com sucesso!', true );
 
@@ -491,42 +493,42 @@ class Gateway extends WC_Payment_Gateway_CC
             $method->getThankyouInstructions($order_id);
         }
     }
-    
+
     public function get_default_installments()
     {
         return Params::getInstallments(WC()->cart->get_total('edit'), '411111');
     }
-    
+
     public static function notification()
     {
         $body = file_get_contents('php://input');
         $hash = filter_input(INPUT_GET, 'hash', FILTER_SANITIZE_STRING);
-        
+
         Functions::log('Notification received: ' . $body, 'debug', ['hash' => $hash]);
-        
+
         // Decode body
         $order_data = json_decode($body, true);
-        if ($order_data === null) 
+        if ($order_data === null)
             wp_die('Falha ao decodificar o Json', 400);
-        
+
         // Check presence of id and reference
         $id = $order_data['id'] ?? null;
         $reference = $order_data['reference_id'] ?? null;
         if (!$id || !$reference)
             wp_die('ID ou Reference não informados', 400);
-        
+
         // Sanitize $reference and $id
         $id = filter_var($id, FILTER_SANITIZE_STRING);
         $reference = filter_var($reference, FILTER_SANITIZE_STRING);
-        
+
         // Validate hash
         $order = wc_get_order($reference);
         if (!$order)
             wp_die('Pedido não encontrado', 404);
-        
+
         if ($hash != Api::getOrderHash($order))
             wp_die('Hash inválido', 403);
-        
+
         if (!isset($order_data['charges']))
             wp_die('Charges não informado. Notificação ignorada.', 200);
 
@@ -536,13 +538,13 @@ class Gateway extends WC_Payment_Gateway_CC
             Functions::log('Error updating transaction: ' . $e->getMessage(), 'error', ['order_id' => $order->get_id()]);
             wp_die('Erro ao atualizar transação', 500);
         }
-        
+
         wp_die('OK', 200);
     }
-    
+
     public function add_payment_info_admin($order)
     {
         include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
-    
+
 }
