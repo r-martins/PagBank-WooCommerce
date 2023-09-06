@@ -2,7 +2,7 @@
 /**
  * Admin options screen.
  *
- * @package WooCommerce_PagSeguro_Connect/Admin/Settings
+ * @package RM_PagBank/Admin/Settings
  */
 
 use RM_PagBank\Connect;
@@ -16,7 +16,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
 ?>
 <fieldset name="PagSeguro">
     <div class="pslogo-container">
-        <img src="<?php echo esc_url(plugins_url('public/images/pagseguro-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo"/>
+        <img src="<?php echo esc_url(plugins_url('public/images/pagseguro-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo" alt="PagBank Icon"/>
         <?php
         echo '<h2>' . esc_html( $this->get_method_title() );
         wc_back_link( __( 'Voltar para Pagamentos', Connect::DOMAIN ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
@@ -35,8 +35,9 @@ if ( ! defined ( 'ABSPATH' ) ) {
     <div class="tab-content active" id="tab-general">
         <h3><?php esc_html_e('Credenciais', Connect::DOMAIN) ?></h3>
         <p><?php esc_html_e('Para utilizar o PagBank Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', Connect::DOMAIN) ?></p>
-        <a href="https://pagseguro.ricardomartins.net.br/connect/autorizar.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter credenciais', Connect::DOMAIN) ?></a>
-		<a href="https://pagseguro.ricardomartins.net.br/connect/sandbox.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter credenciais de teste', Connect::DOMAIN) ?></a>
+        <a href="https://pagseguro.ricardomartins.net.br/connect/autorizar.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key', Connect::DOMAIN) ?></a>
+		<a href="https://pagseguro.ricardomartins.net.br/connect/sandbox.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', Connect::DOMAIN) ?></a>
+		<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php esc_html_e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', Connect::DOMAIN);?>"><?php esc_html_e('Obter ajuda', Connect::DOMAIN) ?></a>
         <?php
         echo $this->get_admin_fields('general');
         ?>

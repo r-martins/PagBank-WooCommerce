@@ -14,7 +14,7 @@ use RM_PagBank\Helpers\Functions;
     <p>Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.</p>
     <div class="code-container">
         <label>
-            Código PIX: 
+            Código PIX:
             <input type="text" class="pix-code" value="<?php echo esc_attr($qr_code_text);?>" readonly="readonly"/>
         </label>
         <img src="<?php echo esc_url(plugins_url('public/images/copy-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="Copiar" title="Copiar" class="copy-btn"/>
@@ -22,7 +22,7 @@ use RM_PagBank\Helpers\Functions;
     </div>
     <?php if($qr_code_exp):?>
     <div class="pix-exiration-container">
-        <p><strong>Este código PIX expira em <?php echo Functions::format_date($qr_code_exp);?>.</strong></p>
+        <p><strong>Este código PIX expira em <?php echo Functions::formatDate($qr_code_exp);?>.</strong></p>
     </div>
     <?php endif;?>
 </div>

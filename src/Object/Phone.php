@@ -1,19 +1,29 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class Phone implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class Phone
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Phone implements JsonSerializable
 {
-    private $country = 55;
-    private $area;
-    private $number;
-    private $type = 'MOBILE';
+    private int $country = 55;
+    private int $area;
+    private int $number;
+    private string $type = 'MOBILE';
 
     public function jsonSerialize()
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return int
      */
@@ -71,6 +81,7 @@ class Phone implements \JsonSerializable
     }
 
     /**
+	 * Type can be MOBILE, BUSINESS or HOME
      * @param string $type
      */
     public function setType(string $type): void
@@ -78,6 +89,4 @@ class Phone implements \JsonSerializable
         $this->type = $type;
     }
 
-   
-    
 }

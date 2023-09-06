@@ -1,18 +1,28 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class Amount implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class Amount
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Amount implements JsonSerializable
 {
-    private $value;
-    private $currency = 'BRL';
-    private $summary;
+    private int $value;
+    private string $currency = 'BRL';
+    private Summary $summary;
 
     public function jsonSerialize()
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return int
      */
@@ -60,5 +70,5 @@ class Amount implements \JsonSerializable
     {
         $this->summary = $summary;
     }
-    
+
 }

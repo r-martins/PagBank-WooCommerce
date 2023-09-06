@@ -1,8 +1,18 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class PaymentMethod implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class PaymentMethod
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class PaymentMethod implements JsonSerializable
 {
     private string $type;
     private int $installments;
@@ -95,7 +105,7 @@ class PaymentMethod implements \JsonSerializable
     {
         $this->card = $card;
     }
-    
+
     /**
      * @return Boleto
      */
@@ -103,7 +113,7 @@ class PaymentMethod implements \JsonSerializable
     {
         return $this->boleto;
     }
-    
+
     /**
      * @param Boleto $boleto
      */
@@ -111,5 +121,5 @@ class PaymentMethod implements \JsonSerializable
     {
         $this->boleto = $boleto;
     }
-    
+
 }

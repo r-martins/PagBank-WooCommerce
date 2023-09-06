@@ -1,21 +1,28 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-use DateTime;
-use RM_PagBank\Helpers\Params;
+use JsonSerializable;
 
-class Summary implements \JsonSerializable
+/**
+ * Class Summary
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Summary implements JsonSerializable
 {
-    private $total;
-    private $paid;
-    private $refunded;
+    private int $total;
+    private int $paid;
+    private int $refunded;
 
     public function jsonSerialize()
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return int
      */
@@ -63,5 +70,5 @@ class Summary implements \JsonSerializable
     {
         $this->refunded = $refunded;
     }
-    
+
 }

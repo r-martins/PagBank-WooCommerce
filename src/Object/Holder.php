@@ -1,8 +1,18 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class Holder implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class Holder
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Holder implements JsonSerializable
 {
     private string $name;
     private string $tax_id;
@@ -77,5 +87,5 @@ class Holder implements \JsonSerializable
     {
         $this->address = $address;
     }
-    
+
 }

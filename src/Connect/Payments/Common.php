@@ -22,12 +22,12 @@ class Common
     /**
      * @var WC_Order $order
      */
-    protected $order;
+    protected WC_Order $order;
 
     /**
      * @param WC_Order $order
      */
-    public function __construct($order)
+    public function __construct(WC_Order $order)
     {
         $this->order = $order;
     }
@@ -54,7 +54,12 @@ class Common
         return $return;
     }
 
-    public function getCustomerData(){
+	/**
+	 * Populates the customer object with data from the order
+	 * @return Customer
+	 */
+	public function getCustomerData(): Customer
+	{
         $customer = new Customer();
         $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $customer->setEmail($this->order->get_billing_email());
@@ -69,7 +74,12 @@ class Common
         return $customer;
     }
 
-    public function getItemsData(){
+	/**
+	 * Populates the items array with data from the order
+	 * @return array
+	 */
+	public function getItemsData(): array
+	{
         $items = [];
         /** @var WC_Order_Item_Product $item */
         foreach ($this->order->get_items() as $item) {
@@ -83,7 +93,12 @@ class Common
         return $items;
     }
 
-    public function getShippingAddress(){
+	/**
+	 * Populates the address object with data from the order
+	 * @return Address
+	 */
+	public function getShippingAddress(): Address
+	{
         $address = new Address();
         $address->setStreet($this->order->get_meta('_shipping_address_1'));
         $address->setNumber($this->order->get_meta('_shipping_number'));
@@ -96,42 +111,29 @@ class Common
         return $address;
     }
 
-    public function getNotificationUrls(): array
+	/**
+	 * Returns an array with the notification urls with the hash validation parameter
+	 * @return string[]
+	 */
+	public function getNotificationUrls(): array
     {
         $hash = Api::getOrderHash($this->order);
+		//Note that PagBank API currently supports only one URL
         return [
             get_site_url() . '/?wc-api=rm_pagseguro_notification'
-//            'https://webhook.site/57730f29-ac28-4580-a92c-2f3d8fe004b5'
             . '/?wc_api=rm_ps_notif&hash=' . $hash
             ];
     }
 
-    /**
-     * @return WC_Order
-     */
-    public function getOrder(): WC_Order
-    {
-        return $this->order;
-    }
 
     /**
+	 * Process response from the API and add the metadata to the order
      * @param WC_Order $order
-     */
-    public function setOrder(WC_Order $order): void
-    {
-        $this->order = $order;
-    }
-//    public function getTitle(){
-//        return $this->title;
-//    }
-
-    /**
-     * @param WC_Order $order
-     * @param array $response
+     * @param array    $response
      *
      * @return void
      */
-    public function process_response($order, $response) {
+    public function process_response(WC_Order $order, array $response) {
 
         switch ($order->get_meta('pagbank_payment_method')){
             case 'pix':
@@ -147,14 +149,14 @@ class Common
                 $order->add_meta_data('pagbank_boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode'] ?? null, true);
                 break;
 			case 'credit_card':
-				$order->add_meta_data('_pagbank_card_installments', $response['charges'][0]['payment_method']['installments'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_holder', $response['charges'][0]['payment_method']['card']['holder']['name'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_exp_month', $response['charges'][0]['payment_method']['card']['exp_month'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_exp_year', $response['charges'][0]['payment_method']['card']['exp_year'] ?? null, false);
-				$order->add_meta_data('_pagbank_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null, false);
+				$order->add_meta_data('_pagbank_card_installments', $response['charges'][0]['payment_method']['installments'] ?? null);
+				$order->add_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null);
+				$order->add_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null);
+				$order->add_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null);
+				$order->add_meta_data('_pagbank_card_holder', $response['charges'][0]['payment_method']['card']['holder']['name'] ?? null);
+				$order->add_meta_data('_pagbank_card_exp_month', $response['charges'][0]['payment_method']['card']['exp_month'] ?? null);
+				$order->add_meta_data('_pagbank_card_exp_year', $response['charges'][0]['payment_method']['card']['exp_year'] ?? null);
+				$order->add_meta_data('_pagbank_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null);
 				break;
         }
 		$order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);

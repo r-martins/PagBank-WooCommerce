@@ -1,19 +1,22 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class Item implements \JsonSerializable
+use JsonSerializable;
+
+class Item implements JsonSerializable
 {
-    private $reference_id;
-    private $name;
-    private $quantity;
-    private $unit_amount;
+    private string $reference_id;
+    private string $name;
+    private int $quantity;
+    private int $unit_amount;
 
     public function jsonSerialize()
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return string
      */

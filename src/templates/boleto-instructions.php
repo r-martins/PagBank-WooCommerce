@@ -1,6 +1,4 @@
 <?php
-use RM_PagBank\Helpers\Functions;
-
 /** @var string $boleto_barcode */
 /** @var string $boleto_barcode_formatted */
 /** @var string $boleto_due_date */
@@ -12,7 +10,7 @@ use RM_PagBank\Helpers\Functions;
     <p>Copie o código de barras abaixo e pague direto em seu banco.</p>
     <div class="code-container">
         <label>
-            Código de barras: 
+            Código de barras:
             <input type="text" class="pix-code" value="<?php echo esc_attr($boleto_barcode_formatted);?>" readonly="readonly"/>
         </label>
         <img src="<?php echo esc_url(plugins_url('public/images/copy-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="Copiar" title="Copiar" class="copy-btn"/>

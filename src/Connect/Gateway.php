@@ -9,8 +9,8 @@ use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
-use WC_Admin;
 use WC_Admin_Settings;
+use WC_Data_Exception;
 use WC_Order;
 use WC_Payment_Gateway_CC;
 use WP_Error;
@@ -27,30 +27,35 @@ class Gateway extends WC_Payment_Gateway_CC
     public function __construct()
     {
         $this->id = Connect::DOMAIN;
-        $this->icon = apply_filters('wc_pagseguro_connect_icon', plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));
+		$this->icon = apply_filters(
+			'wc_pagseguro_connect_icon',
+			plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+		);
         $this->has_fields = true;
         $this->method_title = __('PagBank Connect por Ricardo Martins', Connect::DOMAIN);
-        $this->method_description = __('Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).', Connect::DOMAIN);
-        $this->supports = array(
+		$this->method_description = __(
+			'Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).',
+			Connect::DOMAIN
+		);
+        $this->supports = [
             'products',
             'refunds',
             'default_credit_card_form',
-//            'tokenization'
-        );
-
-        $this->init_settings();
-
-        $this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', Connect::DOMAIN));
-        $this->description = $this->get_option('description');
+//            'tokenization' //TODO: implement tokenization
+		];
 
 
-        add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-        add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_instructions'));
-        add_action('wp_enqueue_scripts', array($this, 'add_styles'));
-        add_action('wp_enqueue_scripts', array($this, 'add_scripts'));
-        add_action('admin_enqueue_scripts', array($this, 'admin_styles'));
-        add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
-        add_action('woocommerce_admin_order_data_after_order_details', array($this, 'add_payment_info_admin'), 10, 1);
+		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', Connect::DOMAIN));
+		$this->description = $this->get_option('description');
+		$this->init_settings();
+
+		add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+        add_action('woocommerce_thankyou_' . $this->id, [$this, 'addThankyouInstructions']);
+        add_action('wp_enqueue_scripts', [$this, 'addStyles']);
+        add_action('wp_enqueue_scripts', [$this, 'addScripts']);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles']);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts']);
+        add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
     }
 
     public function init_settings(){
@@ -61,8 +66,17 @@ class Gateway extends WC_Payment_Gateway_CC
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/cc-fields.php';
         $this->form_fields = array_merge(...$fields);
 
-        parent::init_settings();
-    }
+		parent::init_settings();
+
+		switch ($this->get_option('title_display')) {
+			case 'text_only':
+				$this->icon = '';
+				break;
+			case 'logo_only':
+				$this->title = '';
+				break;
+		}
+	}
 
     /**
      * Updates a transaction from the order's json information
@@ -72,7 +86,7 @@ class Gateway extends WC_Payment_Gateway_CC
      *
      * @return void
      */
-    protected static function update_transaction(WC_Order $order, array $order_data): void
+    protected static function updateTransaction(WC_Order $order, array $order_data): void
     {
         $charge = $order_data['charges'][0] ?? [];
         $status = $charge['status'] ?? '';
@@ -162,23 +176,17 @@ class Gateway extends WC_Payment_Gateway_CC
             .'</table>'; // WPCS: XSS ok.
     }
 
-    /**
-     * Checks if the gateway is available for use with the current currency settings.
-     * @return bool
-     */
-    public function is_valid_for_use(): bool
-    {
-        return in_array(
-            get_woocommerce_currency(),
-            apply_filters(
-                'woocommerce_pagseguro_connect_supported_currencies',
-                array( 'BRL' )
-            ),
-            true
-        );
-    }
-
-    public function validate_connect_key_field($key, $connect_key)
+	/**
+	 * Validates the inputed connect key and save additional information like public key and sandbox mode
+	 *
+	 * @param $key
+	 * @param $connect_key
+	 *
+	 * @return mixed|string
+	 * @noinspection PhpUnused
+	 * @noinspection PhpUnusedParameterInspection
+	 */
+	public function validate_connect_key_field($key, $connect_key)
     {
         $api = new Api();
         $api->setConnectKey($connect_key);
@@ -208,7 +216,13 @@ class Gateway extends WC_Payment_Gateway_CC
 
     }
 
-    public function validateDiscountValue($value)
+	/**
+	 * Checks if the inputed discount value is a valid fixed or % discount value (used both in boleto and pix)
+	 * @param $value
+	 *
+	 * @return float|int|string
+	 */
+	public function validateDiscountValue($value)
     {
         if (empty($value)){
             return $value;
@@ -236,20 +250,32 @@ class Gateway extends WC_Payment_Gateway_CC
         return $value;
     }
 
-    public function validate_pix_discount_field($key, $value){
+	/**
+	 * Validates PIX discount field
+	 *
+	 * @param $key
+	 * @param $value
+	 *
+	 * @noinspection PhpUnused
+	 * @noinspection PhpUnusedParameterInspection
+	 * @return float|int|string
+	 */
+	public function validate_pix_discount_field($key, $value){
         return $this->validateDiscountValue($value);
     }
 
-    public function validate_boleto_discount_field($key, $value){
+	/**
+	 * Validates Boleto discount field
+	 *
+	 * @param $key
+	 * @param $value
+	 *
+	 * @noinspection PhpUnused
+	 * @noinspection PhpUnusedParameterInspection
+	 * @return float|int|string
+	 */
+	public function validate_boleto_discount_field($key, $value){
         return $this->validateDiscountValue($value);
-    }
-
-    /**
-     * Checks if the currency is BRL
-     * @return bool
-     */
-    public static function using_supported_currency(): bool {
-        return 'BRL' === get_woocommerce_currency();
     }
 
     /**
@@ -269,7 +295,11 @@ class Gateway extends WC_Payment_Gateway_CC
         return true; //@TODO validate_fields
     }
 
-    public function add_styles(){
+	/**
+	 * Add css files for checkout and success page
+	 * @return void
+	 */
+	public function addStyles(){
         //thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             wp_enqueue_style(
@@ -286,7 +316,11 @@ class Gateway extends WC_Payment_Gateway_CC
         }
     }
 
-    public function add_scripts(){
+	/**
+	 * Add js files for checkout and success page
+	 * @return void
+	 */
+    public function addScripts(){
 		//thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             wp_enqueue_script(
@@ -333,7 +367,11 @@ class Gateway extends WC_Payment_Gateway_CC
         }
     }
 
-    public function admin_styles(){
+	/**
+	 * Add css file to admin
+	 * @return void
+	 */
+	public function addAdminStyles(){
         //admin pages
         if (!is_admin())
             return;
@@ -345,7 +383,11 @@ class Gateway extends WC_Payment_Gateway_CC
 
     }
 
-    public function admin_scripts(){
+	/**
+	 * Add js file to admin, only in the plugin settings page
+	 * @return void
+	 */
+	public function addAdminScripts(){
         if(!is_admin())
             return;
 
@@ -357,12 +399,14 @@ class Gateway extends WC_Payment_Gateway_CC
             );
     }
 
-    /**
-     * Process Payment.
-     *
-     * @param int $order_id Order ID.
-     * @return array
-     */
+	/**
+	 * Process Payment.
+	 *
+	 * @param int $order_id Order ID.
+	 *
+	 * @return array
+	 * @throws WC_Data_Exception
+	 */
     public function process_payment($order_id): array
     {
         global $woocommerce;
@@ -372,7 +416,7 @@ class Gateway extends WC_Payment_Gateway_CC
         $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
 
         // region Add note if customer changed payment method
-        if ($order->get_meta('pagbank_payment_method', true)) {
+        if ($order->get_meta('pagbank_payment_method')) {
             $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;
             $old_method = $order->get_meta('pagbank_payment_method');
             if (strcasecmp($current_method, $old_method) !== 0) {
@@ -443,7 +487,7 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
         $method->process_response($order, $resp);
-        self::update_transaction($order, $resp);
+        self::updateTransaction($order, $resp);
 
         $charge = $resp['charges'][0] ?? false;
 
@@ -473,12 +517,14 @@ class Gateway extends WC_Payment_Gateway_CC
             'redirect' => $this->get_return_url($order)
         );
     }
-    public function payment_fields()
-    {
-        parent::payment_fields(); // TODO: Change the autogenerated stub
-    }
 
-    public function thankyou_instructions($order_id)
+	/**
+	 * Add the instructions to the thankyou page for boleto and pix
+	 * @param $order_id
+	 *
+	 * @return void
+	 */
+	public function addThankyouInstructions($order_id)
     {
         $order = wc_get_order($order_id);
         switch ($order->get_meta('pagbank_payment_method')) {
@@ -494,8 +540,12 @@ class Gateway extends WC_Payment_Gateway_CC
         }
     }
 
-    public function get_default_installments()
-    {
+	/**
+	 * Get the default installments for the credit card payment method using VISA as the default BIN
+	 * @return array
+	 */
+	public function getDefaultInstallments(): array
+	{
         return Params::getInstallments(WC()->cart->get_total('edit'), '411111');
     }
 
@@ -518,7 +568,6 @@ class Gateway extends WC_Payment_Gateway_CC
             wp_die('ID ou Reference não informados', 400);
 
         // Sanitize $reference and $id
-        $id = filter_var($id, FILTER_SANITIZE_STRING);
         $reference = filter_var($reference, FILTER_SANITIZE_STRING);
 
         // Validate hash
@@ -533,7 +582,7 @@ class Gateway extends WC_Payment_Gateway_CC
             wp_die('Charges não informado. Notificação ignorada.', 200);
 
         try{
-            self::update_transaction($order, $order_data);
+            self::updateTransaction($order, $order_data);
         }catch (Exception $e){
             Functions::log('Error updating transaction: ' . $e->getMessage(), 'error', ['order_id' => $order->get_id()]);
             wp_die('Erro ao atualizar transação', 500);
@@ -542,7 +591,14 @@ class Gateway extends WC_Payment_Gateway_CC
         wp_die('OK', 200);
     }
 
-    public function add_payment_info_admin($order)
+	/**
+	 * Adds order info to the admin order page by including the order info template
+	 *
+	 * @param $order
+	 *
+	 * @return void
+	 * @noinspection PhpUnusedParameterInspection*/
+	public function addPaymentInfoAdmin($order)
     {
         include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }

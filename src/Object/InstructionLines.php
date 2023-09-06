@@ -1,10 +1,20 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class InstructionLines implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class InstructionLines
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class InstructionLines implements JsonSerializable
 {
-    private string $line_1;   
+    private string $line_1;
     private string $line_2;
 
     public function jsonSerialize()
@@ -43,5 +53,5 @@ class InstructionLines implements \JsonSerializable
     {
         $this->line_2 = substr($line_2, 0, 75);
     }
-    
+
 }

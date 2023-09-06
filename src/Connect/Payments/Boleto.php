@@ -10,38 +10,40 @@ use RM_PagBank\Object\Charge;
 use RM_PagBank\Object\Holder;
 use RM_PagBank\Object\InstructionLines;
 use RM_PagBank\Object\PaymentMethod;
+use WC_Data_Exception;
 use WC_Order;
 
 class Boleto extends Common
 {
     public string $code = 'boleto';
-    
-    
-    /**
-     * Prepare order params for Boleto
-     *
-     * @return array
-     */
+
+
+	/**
+	 * Prepare order params for Boleto
+	 *
+	 * @return array
+	 * @throws WC_Data_Exception
+	 */
     public function prepare(): array
     {
         $return = $this->getDefaultParameters();
-        
+
         $charge = new Charge();
         $charge->setReferenceId($this->order->get_id());
-        
+
         $amount = new Amount();
         $orderTotal = $this->order->get_total();
 
         if ($discountConfig = Params::getConfig('boleto_discount', 0)){
-            $discount = Params::getDiscountValue($discountConfig, $orderTotal);
-            $this->order->set_discount_total($this->order->get_discount_total() + $discount);
+            $discount = floatval(Params::getDiscountValue($discountConfig, $orderTotal));
+            $this->order->set_discount_total(floatval($this->order->get_discount_total()) + $discount);
             $this->order->set_total($this->order->get_total() - $discount);
             $orderTotal = $orderTotal - $discount;
         }
-        
+
         $amount->setValue(Params::convertToCents($orderTotal));
         $charge->setAmount($amount);
-        
+
         $paymentMethod = new PaymentMethod();
         $paymentMethod->setType('BOLETO');
         $boleto = new BoletoObj();
@@ -54,7 +56,7 @@ class Boleto extends Common
         $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $holder->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
         $holder->setEmail($this->order->get_billing_email());
-        
+
         $holderAddress = new Address();
         $holderAddress->setCountry('BRA');
         $holderAddress->setCity($this->order->get_billing_city());
@@ -63,7 +65,7 @@ class Boleto extends Common
         $holderAddress->setStreet($this->order->get_billing_address_1());
         $holderAddress->setNumber($this->order->get_meta('_billing_number'));
         $holderAddress->setRegionCode($this->order->get_billing_state());
-        
+
         if($this->order->get_meta('_billing_complement'))
             $holderAddress->setComplement($this->order->get_meta('_billing_complement'));
         $holder->setAddress($holderAddress);
@@ -71,14 +73,21 @@ class Boleto extends Common
         $paymentMethod->setType('BOLETO');
         $paymentMethod->setBoleto($boleto);
         $charge->setPaymentMethod($paymentMethod);
-        
+
         $charges = ['charges' => [$charge]];
-        
+
         return array_merge($return, $charges);
-        
+
     }
 
-    public function getThankyouInstructions($order_id){
+	/**
+	 * Set some variables and requires the template with boleto instructions for the success page
+	 * @param $order_id
+	 *
+	 * @return void
+	 * @noinspection SpellCheckingInspection
+	 */
+	public function getThankyouInstructions($order_id){
         $boleto_barcode = get_post_meta($order_id, 'pagbank_boleto_barcode', true);
         $boleto_barcode_formatted = get_post_meta($order_id, 'pagbank_boleto_barcode_formatted', true);
         $boleto_due_date = get_post_meta($order_id, 'pagbank_boleto_due_date', true);
@@ -86,5 +95,5 @@ class Boleto extends Common
         $boleto_png = get_post_meta($order_id, 'pagbank_boleto_png', true);
         require_once dirname(__FILE__) . '/../../templates/boleto-instructions.php';
     }
-    
+
 }

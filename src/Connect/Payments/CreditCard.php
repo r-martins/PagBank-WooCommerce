@@ -2,11 +2,14 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\Card;
 use RM_PagBank\Object\Charge;
 use RM_PagBank\Object\Holder;
+use RM_PagBank\Object\PaymentMethod;
+use WC_Order;
 
 /**
  * Class CreditCard
@@ -18,21 +21,28 @@ use RM_PagBank\Object\Holder;
 class CreditCard extends Common
 {
     public string $code = 'credit_card';
-    
-    public function __construct($order)
+
+	/**
+	 * @param WC_Order $order
+	 */
+	public function __construct(WC_Order $order)
     {
         parent::__construct($order);
     }
 
-    public function prepare():array
+	/**
+	 * Create the array with the data to be sent to the API on CreditCard payments
+	 * @return array
+	 */
+	public function prepare():array
     {
         $return = $this->getDefaultParameters();
         $charge = new Charge();
         $amount = new Amount();
         $amount->setValue(Params::convertToCents($this->order->get_total()));
         $charge->setAmount($amount);
-        
-        $paymentMethod = new \RM_PagBank\Object\PaymentMethod();
+
+        $paymentMethod = new PaymentMethod();
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
         $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
@@ -44,19 +54,16 @@ class CreditCard extends Common
         $card->setHolder($holder);
         $paymentMethod->setCard($card);
         $charge->setPaymentMethod($paymentMethod);
-        
+
         $return['charges'] = [$charge];
         return $return;
     }
-    
-    public static function pagseguro_connect_inline_scripts()
-    {
-        wp_add_inline_script(
-            'pagseguro-connect-public-key',
-            'var pagseguro_connect_public_key = \'' . Params::getConfig('public_key') . '\';'
-        );
-    }
-    public static function getAjaxInstallments(){
+
+	/**
+	 * Outputs the installment options to populate the select field on checkout
+	 * @return void
+	 */
+	public static function getAjaxInstallments(){
         global $woocommerce;
 
         $order_total = $woocommerce->cart->get_total('edit');
@@ -64,10 +71,11 @@ class CreditCard extends Common
 
         $installments = Params::getInstallments($order_total, $cc_bin);
         if (!$installments){
-            wp_send_json(array('error' => 'Não foi possível obter as parcelas. Verifique o número do cartão digitado.'), 400);
+			wp_send_json(
+				['error' =>
+					 __('Não foi possível obter as parcelas. Verifique o número do cartão digitado.', Connect::DOMAIN)],
+				400);
         }
         wp_send_json($installments);
     }
-    
-    
 }

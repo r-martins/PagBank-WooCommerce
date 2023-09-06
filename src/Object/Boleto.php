@@ -1,8 +1,18 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class Boleto implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class Boleto
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Boleto implements JsonSerializable
 {
     private string $due_date;
     private InstructionLines $instruction_lines;
@@ -60,6 +70,5 @@ class Boleto implements \JsonSerializable
     {
         $this->holder = $holder;
     }
-    
-    
+
 }

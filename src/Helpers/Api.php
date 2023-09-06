@@ -7,6 +7,14 @@ use RM_PagBank\Connect;
 use WC_Order;
 use WC_Payment_Gateways;
 
+/**
+ * Class Api
+ * Helper methods to consume the API
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Helpers
+ */
 class Api
 {
     // Saiba mais em https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/18183910009869
@@ -35,7 +43,8 @@ class Api
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'Authorization: Bearer '.$this->connect_key
+            'Authorization: Bearer '.$this->connect_key,
+			'Referer: ' . get_site_url(),
         ]);
         $response = curl_exec($curl);
         curl_close($curl);
@@ -70,6 +79,7 @@ class Api
             'Extra-Version: ' . WC()->version,
             'Platform-Version: ' . get_bloginfo('version'),
             'Module-Version: ' . WC_PAGSEGURO_CONNECT_VERSION,
+			'Referer: ' . get_site_url(),
         ]);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($params));
@@ -106,7 +116,8 @@ class Api
 
     /**
      * @return bool
-     */
+	 * @noinspection PhpUnused
+	 */
     public function getIsSandbox(): bool
     {
         return $this->is_sandbox;
@@ -122,7 +133,8 @@ class Api
 
     /**
      * @return string
-     */
+	 * @noinspection PhpUnused
+	 */
     public function getConnectKey(): string
     {
         return $this->connect_key;
@@ -152,6 +164,6 @@ class Api
      * @return false|string
      */
     public static function getOrderHash(WC_Order $order){
-        return substr(wp_hash($order->get_id(), 'auth'), 0, 5);
+        return substr(wp_hash($order->get_id()), 0, 5);
     }
 }

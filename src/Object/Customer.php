@@ -1,9 +1,17 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
 use JsonSerializable;
 
+/**
+ * Class Customer
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
 class Customer implements JsonSerializable
 {
     private string $name;
@@ -15,7 +23,7 @@ class Customer implements JsonSerializable
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return string
      */
@@ -79,5 +87,5 @@ class Customer implements JsonSerializable
     {
         $this->phone = $phone;
     }
-    
+
 }

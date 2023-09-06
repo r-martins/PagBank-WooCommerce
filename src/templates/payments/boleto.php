@@ -1,7 +1,8 @@
 <?php
-/** @var \RM_PagBank\Connect\Gateway $this */
+/** @var Gateway $this */
 
 use RM_PagBank\Connect;
+use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Helpers\Params;
 
 $expiry = (int)$this->get_option('boleto_expiry_days');

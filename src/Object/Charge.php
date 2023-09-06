@@ -1,21 +1,30 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
 use DateTime;
+use JsonSerializable;
 
-class Charge implements \JsonSerializable
+/**
+ * Class Charge
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Charge implements JsonSerializable
 {
-    protected $id;
-    protected $status;
-    protected $created_at;
-    protected $paid_at;
-    protected $reference_id;
-    protected $description;
-    protected $amount;
-    protected $payment_response;
-    protected $payment_method;
-    
+    protected string $id;
+    protected string $status;
+    protected DateTime $created_at;
+    protected DateTime $paid_at;
+    protected string $reference_id;
+    protected string $description;
+    protected Amount $amount;
+    protected PaymentResponse $payment_response;
+    protected PaymentMethod $payment_method;
+
     const ALLOWED_STATUS = [
         'AUTHORIZED',  // Indica que a cobrança está pré-autorizada.
         'PAID',        // Indica que a cobrança está paga (capturada).
@@ -28,7 +37,7 @@ class Charge implements \JsonSerializable
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return string
      */
@@ -172,5 +181,5 @@ class Charge implements \JsonSerializable
     {
         $this->payment_method = $payment_method;
     }
-    
+
 }

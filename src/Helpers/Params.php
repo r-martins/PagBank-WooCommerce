@@ -1,6 +1,5 @@
 <?php
 
-
 namespace RM_PagBank\Helpers;
 
 use Exception;
@@ -18,24 +17,26 @@ class Params
 {
     /**
      * Extract phone number and return an array with the phone object to be used in the request
+     *
      * @see https://dev.pagseguro.uol.com.br/reference/phone-object
+     *
      * @param $order WC_Order
      *
      * @return array
      */
-    public static function extractPhone($order):array
+    public static function extractPhone(WC_Order $order):array
     {
         $full_phone = $order->get_billing_phone();
         $clean_phone = preg_replace('/[^0-9]/', '', $full_phone);
         $ddd = substr($clean_phone, 0, 2);
         $number = substr($clean_phone, 2);
-        
-        return array(
+
+        return [
             'country' => '55',
             'area' => $ddd,
             'number' => $number,
             'type' => (strlen($number) == 9) ? 'MOBILE' : 'HOME'
-        );
+		];
     }
 
     /**
@@ -54,13 +55,13 @@ class Params
      *
      * @return int
      */
-    public static function convertToCents($amount)
-    {
-        if ( ! is_numeric($amount) ) 
+    public static function convertToCents($amount): int
+	{
+        if ( ! is_numeric($amount) )
             return 0;
-        
+
         $return = number_format($amount, 2, '', '');
-        
+
         //remove leading 0
         $return = ltrim($return, '0');
         return (int)$return;
@@ -68,11 +69,11 @@ class Params
 
     /**
      * @param $key
-     * @param $default
+     * @param string $default
      *
      * @return mixed|string
      */
-    public static function getConfig($key, $default = '')
+    public static function getConfig($key, string $default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank_settings');
         if (isset($settings[$key])){
@@ -83,11 +84,10 @@ class Params
 
     /**
      * Gets the max allowed installments or false if no limit
-     * @param $orderTotal
-     *
+	 *
      * @return false|int
      */
-    public static function getMaxInstallments($orderTotal){
+    public static function getMaxInstallments(){
         //returns false if cc_installments_options_limit_installments == no
         if (self::getConfig('cc_installments_options_limit_installments', 'no') == 'no'){
             return false;
@@ -95,21 +95,29 @@ class Params
         return (int)self::getConfig('cc_installments_options_max_installments', 18);
     }
 
-    public static function getMaxInstallmentsNoInterest($orderTotal)
+	/**
+	 * Get the max installments without interest based on order total and config options
+	 * Will return '' if the option is set to get from the PagBank Config, 0 if the option is set to buyer,
+	 * a fixed number if the option is set to fixed or the calculated number based on the order total
+	 * @param $orderTotal
+	 *
+	 * @return false|float|int|string
+	 */
+	public static function getMaxInstallmentsNoInterest($orderTotal)
     {
         $installment_option = self::getConfig('cc_installment_options', 'external');
         if ('external' == $installment_option){
             return '';
         }
-        
+
         if ('buyer' == $installment_option) {
             return 0;
         }
-        
+
         if ('fixed' == $installment_option) {
             return (int)self::getConfig('cc_installment_options_fixed', 3);
         }
-        
+
 //        if ('min_total' == $installment_option) {
             $min_total = (int)self::getConfig('cc_installments_options_min_total', 50);
             $min_total = max(5, $min_total); //avoiding blanks
@@ -117,7 +125,7 @@ class Params
             return $installments > 18 ? 18 : $installments;
 //        }
     }
-    
+
     /**
      * Gets the credit card amount with interest information based on order total and cc used
      * @param $orderTotal
@@ -134,9 +142,9 @@ class Params
         $params['value']  = self::convertToCents($orderTotal);
         $params['credit_card_bin'] = $bin;
 
-        if ($mi = self::getMaxInstallments($orderTotal))
+        if ($mi = self::getMaxInstallments())
             $params['max_installments'] = $mi;
-        
+
         $params['max_installments_no_interest'] = self::getMaxInstallmentsNoInterest($orderTotal);
 
         try {
@@ -144,27 +152,32 @@ class Params
         } catch (Exception $e) {
             return [];
         }
-        
+
         if (isset($installments['error_messages'])){
             Functions::log('Erro ao calcular as parcelas' . print_r([$installments['error_messages'], $params], true));
         }
-        
+
         if (isset($installments['payment_methods']['credit_card'])){
             $installments = reset($installments['payment_methods']['credit_card']);
             if ( ! isset($installments['installment_plans'])) {
                 return [];
             }
-            
-            
+
+
             foreach ($installments['installment_plans'] as $installment){
                 //convert values from cents to float with 2 decimals
                 $total_amount = number_format($installment['amount']['value'] / 100, 2, '.', '');
                 $installment_value = number_format($installment['installment_value'] / 100, 2, '.', '');
                 $interest_amount = 0;
-                if (isset($installment['amount']['fees']['buyer']['interest']['total'])){
-                    $interest_amount = number_format($installment['amount']['fees']['buyer']['interest']['total'] / 100, 2, '.', '');
+				if (isset($installment['amount']['fees']['buyer']['interest']['total'])) {
+					$interest_amount = number_format(
+						$installment['amount']['fees']['buyer']['interest']['total'] / 100,
+						2,
+						'.',
+						''
+					);
                 }
-                
+
                 $return[] = [
                     'installments' => $installment['installments'],
                     'total_amount' => $total_amount,
@@ -188,52 +201,71 @@ class Params
         if (empty($configValue)){
             return false;
         }
-        
+
         if (is_numeric($configValue)){
             return 'FIXED';
         }
-        
+
         if (strpos($configValue, '%') !== false){
             return 'PERCENT';
         }
-        
+
         return false;
     }
-    
-    public static function getDiscountValue($configValue, $orderTotal)
+
+	/**
+	 * Return the total discount amount value for the order based on the discount config value (% or fixed)
+	 * @param $configValue
+	 * @param $orderTotal
+	 *
+	 * @return float
+	 */
+	public static function getDiscountValue($configValue, $orderTotal): float
     {
         $discountType = self::getDiscountType($configValue);
         if ( ! $discountType){
             return 0;
         }
-        
+
         if ('FIXED' == $discountType){
             return floatval($configValue);
         }
-        
+
         if ('PERCENT' == $discountType){
             return floatval($orderTotal) * (floatval($configValue) / 100);
         }
-        
+
         return 0;
     }
-    
-    public static function getDiscountText($method)
-    {
+
+	/**
+	 * Gets the message about the discount that will be displayed in the checkout page
+	 * @param $method
+	 *
+	 * @return string
+	 */
+	public static function getDiscountText($method): string
+	{
         $discountConfig = self::getConfig($method . '_discount', 0);
         $discountType = self::getDiscountType($discountConfig);
         if ( ! $discountType){
             return '';
         }
-        
+
         if ('FIXED' == $discountType){
-            return sprintf(__('Um desconto de %s será aplicado.', Connect::DOMAIN), '<strong>' . wc_price($discountConfig) . '</strong>');
+			return sprintf(
+				__('Um desconto de %s será aplicado.', Connect::DOMAIN),
+				'<strong>'.wc_price($discountConfig).'</strong>'
+			);
         }
-        
+
         if ('PERCENT' == $discountType){
-            return sprintf(__('Um desconto de %s será aplicado', Connect::DOMAIN), '<strong>' . $discountConfig . '</strong>');
+			return sprintf(
+				__('Um desconto de %s será aplicado', Connect::DOMAIN),
+				'<strong>'.$discountConfig.'</strong>'
+			);
         }
-        
+
         return '';
     }
 }

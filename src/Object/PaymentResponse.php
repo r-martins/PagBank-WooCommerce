@@ -1,21 +1,28 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-use DateTime;
-use RM_PagBank\Helpers\Params;
+use JsonSerializable;
 
-class PaymentResponse implements \JsonSerializable
+/**
+ * Class PaymentResponse
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class PaymentResponse implements JsonSerializable
 {
-    protected $code;
-    protected $message;
-    protected $reference;
+    protected int $code;
+    protected string $message;
+    protected string $reference;
 
     public function jsonSerialize()
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return int
      */
@@ -63,6 +70,5 @@ class PaymentResponse implements \JsonSerializable
     {
         $this->reference = substr($reference, 0, 20);
     }
-    
-    
+
 }

@@ -1,15 +1,18 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
+
+use JsonSerializable;
 
 /**
  * Class QrCode
  *
- * @author    Ricardo Martins <ricardo@magenteiro.com>
+ * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
  * @package   RM_PagBank\Object
  */
-class QrCode implements \JsonSerializable
+class QrCode implements JsonSerializable
 {
     private Amount $amount;
     private string $expiration_date;
@@ -18,7 +21,7 @@ class QrCode implements \JsonSerializable
     {
         return get_object_vars($this);
     }
-    
+
     /**
      * @return int
      */
@@ -50,5 +53,5 @@ class QrCode implements \JsonSerializable
     {
         $this->expiration_date = $expiration_date;
     }
-    
+
 }

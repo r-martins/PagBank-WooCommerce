@@ -1,11 +1,43 @@
-.ps-connect-buttons-container button.active{
-    filter: brightness(0.85); /* darkens the selected payment method */
+/**
+Não modifique este arquivo.
+Se desejar fazer alterações visuais, faça isso em Aparência > Personalizar > CSS Adicional e reescreva a regra que deseja modificar.
+
+Do not modify this file.
+If you wish to make visual changes, do so in Appearance> Customize> Additional CSS and rewrite the rule you want to modify.
+ */
+.ps-button.active{
+    filter: brightness(0.99); /* darkens the selected payment method */
+	border: 1px solid #ccc;
 }
 li.payment_method_rm-pagbank label{
     display: flex;
 }
 li.payment_method_rm-pagbank label img {
     width: 8rem;
+}
+
+.ps-connect-buttons-container{
+	display: flex;
+}
+.ps-button{
+	flex-grow: 1;
+	border: 0;
+	margin: 0 0.5rem;
+	padding: 0.5rem;
+	cursor: pointer;
+	transition: filter 0.2s;
+	background-color: unset;
+}
+.ps-button img {
+	filter: contrast(0%);
+}
+
+.ps_connect_method .form-row-full{
+	clear: both;
+}
+
+#ps-connect-payment-boleto, #ps-connect-payment-cc, #ps-connect-payment-pix, #wc-rm-pagbank-cc-form {
+	border: 0;
 }
 /*region pagbank cc flags*/
 #payment .payment_methods .payment_box .wc-credit-card-form-card-number.elo{

@@ -6,8 +6,6 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use RM_PagBank\Connect;
-use WC_Log_Handler_File;
-use WC_Logger;
 
 /**
  * Class Functions
@@ -23,12 +21,12 @@ class Functions
     const NOTICE_NAG = 'updated-nag'; //gray
 
     /**
-     * formatDate from 2023-07-05T15:12:56.000-03:00 to "15/07/2023 15:12:56 (Horário de Brasília)"
+     * Format Date a date like 2023-07-05T15:12:56.000-03:00 to "15/07/2023 15:12:56 (Horário de Brasília)"
      * @param $date
      *
      * @return string
      */
-    public static function format_date($date): string
+    public static function formatDate($date): string
     {
         if (empty($date) || !is_string($date)) {
             return '';
@@ -44,15 +42,15 @@ class Functions
         }
     }
 
-    /**
-     * Prints(echo) a generic notice in the admin
-     *
-     * @param $msg
-     * @param string $type
-     * @param bool $isDismissible
-     *
-     * @return void
-     */
+	/**
+	 * Prints(echo) a generic notice in the admin
+	 *
+	 * @param string $msg
+	 * @param string $type
+	 * @param bool   $isDismissible
+	 *
+	 * @return void
+	 */
     public static function generic_notice(string $msg, string $type = self::NOTICE_UPDATE, bool $isDismissible=true)
     {
         if( !is_admin() ) {
@@ -65,7 +63,7 @@ class Functions
             $class .= ' is-dismissible';
         }
 
-        echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagSeguro Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
+        echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
     }
 
     /**
@@ -90,7 +88,7 @@ class Functions
         $logger->log($level, $msg, ['source' => 'pagseguro-connect']);
     }
 
-	public static function get_cc_flag_url(string $brand): string
+	public static function getCcFlagUrl(string $brand): string
 	{
 		if (file_exists(WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/images/credit-cards/' . $brand . '.svg')) {
 			return plugins_url('public/images/credit-cards/' . $brand . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);

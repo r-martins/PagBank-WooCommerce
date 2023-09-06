@@ -1,8 +1,18 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-class Card implements \JsonSerializable
+use JsonSerializable;
+
+/**
+ * Class Card
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Card implements JsonSerializable
 {
     protected string $id;
     protected string $encrypted;
@@ -14,7 +24,7 @@ class Card implements \JsonSerializable
     protected Holder $holder;
     protected TokenData $token_data;
     protected AuthenticationMethod $authentication_method;
-    
+
     public function jsonSerialize()
     {
         return get_object_vars($this);

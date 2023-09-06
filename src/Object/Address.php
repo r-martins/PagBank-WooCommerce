@@ -1,33 +1,40 @@
 <?php
+/** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
+use JsonSerializable;
 use RM_PagBank\Helpers\Params;
 
-class Address implements \JsonSerializable
+/**
+ * Class Address
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Object
+ */
+class Address implements JsonSerializable
 {
-    private $street;
+    private string $street;
     private $number;
     private $complement;
     private $locality;
     private $city;
     private $region;
     private $region_code;
-    private $country = 'BRA';
+    private string $country = 'BRA';
     private $postal_code;
-    
+
     public function jsonSerialize()
     {
         return get_object_vars($this);
     }
-    
-    
-    //setters and getters
+
     public function setStreet(string $street)
     {
         $this->street = substr($street, 0, 160);
     }
-    
+
     public function getStreet(): string
     {
         return $this->street;
@@ -152,12 +159,12 @@ class Address implements \JsonSerializable
                 'SE' => 'Sergipe',
                 'TO' => 'Tocantins'
             ];
-            
+
             if (isset($brStatesNames[$regionCode])){
                 return $brStatesNames[$regionCode];
             }
         }
-            
+
         return $this->region ?? '';
     }
 
