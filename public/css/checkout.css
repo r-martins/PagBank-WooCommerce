@@ -5,7 +5,7 @@ Se desejar fazer alterações visuais, faça isso em Aparência > Personalizar >
 Do not modify this file.
 If you wish to make visual changes, do so in Appearance> Customize> Additional CSS and rewrite the rule you want to modify.
  */
-.ps-button.active{
+.payment_method_rm-pagbank .ps-connect-buttons-container button.ps-button.active{
     filter: brightness(0.99); /* darkens the selected payment method */
 	border: 1px solid #ccc;
 }
@@ -19,7 +19,8 @@ li.payment_method_rm-pagbank label img {
 .ps-connect-buttons-container{
 	display: flex;
 }
-.ps-button{
+
+.payment_method_rm-pagbank .ps-connect-buttons-container button.ps-button{
 	flex-grow: 1;
 	border: 0;
 	margin: 0 0.5rem;
@@ -27,6 +28,7 @@ li.payment_method_rm-pagbank label img {
 	cursor: pointer;
 	transition: filter 0.2s;
 	background-color: unset;
+	max-width: 5rem;
 }
 .ps-button img {
 	filter: contrast(0%);
