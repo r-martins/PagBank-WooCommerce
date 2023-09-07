@@ -98,6 +98,21 @@ class Gateway extends WC_Payment_Gateway_CC
         $order->add_meta_data('pagbank_status', $status, true);
 
         do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
+
+		// Add some additional information about the payment
+		if ($charge['payment_response']) {
+			$order->add_order_note(
+				'PagBank: Payment Response: '.sprintf(
+					'%d: %s %s %s',
+					$charge['payment_response']['code'] ?? 'N/A',
+					$charge['payment_response']['message'] ?? 'N/A',
+					($charge['payment_response']['reference']) ? ' - REF/NSU: '.$charge['payment_response']['reference']
+						: '',
+					($status) ? "(Status: $status)" : ''
+				)
+			);
+		}
+
         switch ($status) {
             case 'AUTHORIZED': // Pre-Authorized but not captured yet
                 $order->add_order_note(
@@ -130,21 +145,6 @@ class Gateway extends WC_Payment_Gateway_CC
                 break;
             default:
                 $order->delete_meta_data('pagbank_status');
-        }
-
-        // Add some additional information about the payment
-        if ($charge['payment_response']) {
-
-            $order->add_order_note(
-                'PagBank: Payment Response: '.sprintf(
-                    '%d: %s %s %s',
-                    $charge['payment_response']['code'] ?? 'N/A',
-                    $charge['payment_response']['message'] ?? 'N/A',
-                    ($charge['payment_response']['reference']) ? ' - REF/NSU: '.$charge['payment_response']['reference']
-                        : '',
-					($status) ? "(Status: $status)" : ''
-                )
-            );
         }
     }
 

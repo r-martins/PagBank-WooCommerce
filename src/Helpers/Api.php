@@ -47,7 +47,6 @@ class Api
 			'Referer: ' . get_site_url(),
         ]);
         $response = curl_exec($curl);
-        curl_close($curl);
 
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
