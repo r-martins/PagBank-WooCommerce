@@ -85,7 +85,7 @@ class Functions
     {
         $logger = wc_get_logger();
         $msg = $msg . PHP_EOL . var_export($additional, true);
-        $logger->log($level, $msg, ['source' => 'pagseguro-connect']);
+        $logger->log($level, $msg, ['source' => 'pagbank-connect']);
     }
 
 	public static function getCcFlagUrl(string $brand): string

@@ -133,13 +133,17 @@ class Gateway extends WC_Payment_Gateway_CC
 
         // Add some additional information about the payment
         if ($charge['payment_response']) {
+			$isSuccess = isset($charge['payment_response']['code']) && $charge['payment_response']['code'] == '20000';
             $order->add_order_note(
                 'PagBank: Payment Response: '.sprintf(
-                    '%d: %s %s',
+                    '%d: %s %s %s',
                     $charge['payment_response']['code'] ?? 'N/A',
                     $charge['payment_response']['message'] ?? 'N/A',
                     ($charge['payment_response']['reference']) ? ' - REF/NSU: '.$charge['payment_response']['reference']
-                        : ''
+                        : '',
+					($isSuccess) ? '(Sucesso na resposta do pagamento não garante que o pagamento foi aprovado. '
+						.'Verifique o status.)'
+						: ''
                 )
             );
         }

@@ -14,7 +14,7 @@ use RM_PagBank\Helpers\Params;
  * @author    Ricardo Martins
  * @copyright 2023 Magenteiro
  */
-class Connect 
+class Connect
 {
 
     public const DOMAIN = 'rm-pagbank';
@@ -24,9 +24,9 @@ class Connect
      */
     public function __construct()
     {
-        
+
     }
-    
+
     public static function init()
     {
         // Checks if WooCommerce is installed or return
@@ -55,7 +55,7 @@ class Connect
     public static function wooMissingNotice() {
         include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/messages/html-notice-missing-woocommerce.php';
     }
-    
+
     /**
      * Includes module files.
      *
@@ -128,7 +128,7 @@ class Connect
                 ]
             ]
         ];
-            
+
         try{
             $api = new Api();
             $resp = $api->get('ws/public-keys/card');
@@ -137,7 +137,7 @@ class Connect
             $settings['live_auth'] = $e->getMessage();
         }
         wp_send_json($settings);
-        
+
     }
 
     /**
@@ -149,7 +149,7 @@ class Connect
         $gateway = new Gateway();
         $gateway->notification();
     }
-    
+
     public static function loadTextDomain(): void
     {
         $dir = self::DOMAIN . '/languages/';
