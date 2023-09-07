@@ -111,6 +111,7 @@ class Gateway extends WC_Payment_Gateway_CC
             case 'PAID': // Paid and captured
                 //stocks are reduced at this point
                 $order->payment_complete($charge_id);
+				$order->add_order_note('PagBank: Pagamento aprovado e capturado. Charge ID: ' . $charge_id);
                 break;
             case 'IN_ANALYSIS': // Paid with Credit Card, and PagBank is analyzing the risk of the transaction
                 $order->update_status('on-hold', 'PagBank: Pagamento em análise.');
@@ -133,7 +134,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
         // Add some additional information about the payment
         if ($charge['payment_response']) {
-			$isSuccess = isset($charge['payment_response']['code']) && $charge['payment_response']['code'] == '20000';
+
             $order->add_order_note(
                 'PagBank: Payment Response: '.sprintf(
                     '%d: %s %s %s',
@@ -141,9 +142,7 @@ class Gateway extends WC_Payment_Gateway_CC
                     $charge['payment_response']['message'] ?? 'N/A',
                     ($charge['payment_response']['reference']) ? ' - REF/NSU: '.$charge['payment_response']['reference']
                         : '',
-					($isSuccess) ? '(Sucesso na resposta do pagamento não garante que o pagamento foi aprovado. '
-						.'Verifique o status.)'
-						: ''
+					($status) ? "(Status: $status)" : ''
                 )
             );
         }
