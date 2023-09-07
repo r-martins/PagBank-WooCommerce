@@ -13,6 +13,13 @@ use RM_PagBank\Object\PaymentMethod;
 use WC_Data_Exception;
 use WC_Order;
 
+/**
+ * Class Boleto
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Connect\Payments
+ */
 class Boleto extends Common
 {
     public string $code = 'boleto';

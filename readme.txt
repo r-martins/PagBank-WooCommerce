@@ -47,6 +47,7 @@ Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro,
 * PHP 7.4 ou superior
 * Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank
 * [Autorizar nossa integração](https://pagseguro.ricardomartins.net.br/connect/autorizar.html) em sua conta PagBank.
+* Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 = Como funcionam os descontos nas taxas? =
 
@@ -81,7 +82,9 @@ E quando há uma transação no PagBank, um link para ela é exibida na página 
 
 = Como posso testar usando a Sandbox? =
 
-A Sandbox do PagBank encontra-se fora do ar há meses, e por isso não implementamos suporte a ela no plugin.
+Sim. Basta clicar no botão 'Obter Connect Key para Testes' localizado nas configurações do plugin, seguir as instruções, e informar sua Connect Key de testes no campo indicado.
+
+Um link para mais detalhes sobre como utilizar a Sandbox está disponível na página de configurações do plugin.
 
 A equipe do PagBank está trabalhando numa correção.
 

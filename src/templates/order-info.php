@@ -9,7 +9,7 @@ $charge_id = $order->get_meta('pagbank_charge_id');
 <p class="form-field form-field-wide">
     <img src="<?php echo plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)?>" style="width: 100px; height: auto; margin-right: 10px; float: left;" alt="PagBank Logo"/>
 	<?php if($order->get_meta('pagbank_is_sandbox') == 1):?>
-		<span class="sandbox">Ambiente de Testes</span>
+		<span class="sandbox"><?php echo __('Ambiente de Testes', Connect::DOMAIN)?></span>
 	<?php endif;?>
 
     <?php if($order->get_meta('pagbank_payment_method') === 'boleto'):?>
