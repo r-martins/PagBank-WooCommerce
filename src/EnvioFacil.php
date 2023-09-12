@@ -10,7 +10,13 @@ class EnvioFacil extends WC_Shipping_Method
 {
 	public $countries = ['BR'];
 
-	public function __construct() {
+	/**
+	 * Constructor.
+	 *
+	 * @param int $instance_id Instance ID.
+	 *
+	 * @noinspection PhpUnusedParameterInspection*/
+	public function __construct( $instance_id = 0 ) {
 		$this->id                 = 'rm_enviofacil';
 		$this->method_title       = __( 'PagBank Envio Fácil' );  // Title shown in admin
 		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank' ); // Description shown in admin
@@ -23,6 +29,8 @@ class EnvioFacil extends WC_Shipping_Method
 //		];
 
 		$this->init();
+		/** @noinspection PhpUnusedLocalVariableInspection */
+		parent::__construct( $instance_id = 0 );
 	}
 
 	public function init() {
@@ -34,17 +42,20 @@ class EnvioFacil extends WC_Shipping_Method
 		add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
 	}
 
-	public function is_available($package)
+	/**
+	 * Is this method available?
+	 *
+	 * @param array $package Package.
+	 * @return bool
+	 */
+	public function is_available($package): bool
 	{
 		if ( ! isset($package['destination']['postcode']))
 		{
 			return false;
 		}
 
-		$destinationPostcode = $package['destination']['postcode'];
-		$destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
-
-		$connectKey = substr(Params::getConfig('connect_key', ''), 0, 7);
+		$connectKey = substr(Params::getConfig('connect_key'), 0, 7);
 		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
 			return false;
 		}
@@ -52,7 +63,12 @@ class EnvioFacil extends WC_Shipping_Method
 		return parent::is_available($package);
 	}
 
-	public function calculate_shipping( $package = array() ) {
+	/**
+	 * Called to calculate shipping rates for this method. Rates can be added using the add_rate() method.
+	 *
+	 * @param array $package Package array.
+	 */
+	public function calculate_shipping($package = array()): array {
 		$destinationPostcode = $package['destination']['postcode'];
 		$destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
 
@@ -65,7 +81,7 @@ class EnvioFacil extends WC_Shipping_Method
 
 		$isValid = $this->validateDimensions($dimensions);
 
-		if ( !$isValid || !$dimensions ) return false;
+		if ( !$isValid || !$dimensions ) return [];
 
 		$ch = curl_init();
 		//body
@@ -97,12 +113,12 @@ class EnvioFacil extends WC_Shipping_Method
 		$ret = json_decode($ret, true);
 
 		if (!$ret) {
-			return false;
+			return [];
 		}
 
 		if (isset($ret['error_messages'])) {
 			Functions::log('Erro ao calcular o frete: ' . print_r($ret['error_messages'], true), 'debug');
-			return false;
+			return [];
 		}
 
 		foreach ($ret as $provider) {
@@ -123,16 +139,26 @@ class EnvioFacil extends WC_Shipping_Method
 
 			$this->add_rate( $rate );
 		}
-		return false;
+		return [];
 	}
 
-	public static function addMethod()
+	/**
+	 * Adds the method to the list of available payment methods
+	 * @return array
+	 */
+	public static function addMethod(): array
 	{
 		$methods['rm_enviofacil'] = 'RM_PagBank\EnvioFacil';
 		return $methods;
 	}
 
-	public function getDimensionsAndWeight($package)
+	/**
+	 * Get a sum of the dimensions and weight of the products in the package
+	 * @param $package
+	 *
+	 * @return int[]
+	 */
+	public function getDimensionsAndWeight($package): array
 	{
 		$return = [
 			'length' => 0,
@@ -161,7 +187,13 @@ class EnvioFacil extends WC_Shipping_Method
 
 	}
 
-	public function validateDimensions($dimensions)
+	/**
+	 * Validates the dimensions and weight of the package and logs errors if any
+	 * @param $dimensions
+	 *
+	 * @return bool
+	 */
+	public function validateDimensions($dimensions): bool
 	{
 		if(($dimensions['length'] < 15 || $dimensions['length'] > 100)){
 			Functions::log('Comprimento inválido: ' . $dimensions['length'] . '. Deve ser entre 15 e 100.', 'debug');
@@ -213,7 +245,8 @@ class EnvioFacil extends WC_Shipping_Method
 	 * @since  3.5.1
 	 * @return string
 	 */
-	protected function getBasePostcode() {
+	protected function getBasePostcode(): string
+	{
 		// WooCommerce 3.1.1+.
 		if ( method_exists( WC()->countries, 'get_base_postcode' ) ) {
 			return WC()->countries->get_base_postcode();
