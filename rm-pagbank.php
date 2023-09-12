@@ -26,6 +26,7 @@
 /** @noinspection PhpDefineCanBeReplacedWithConstInspection */
 
 use RM_PagBank\Connect;
+use RM_PagBank\EnvioFacil;
 
 // Prevent direct file access.
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
@@ -42,6 +43,9 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 
 add_action('init', [Connect::class, 'init']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
+
+//envio facil
+add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
 //not needed so far...
 //register_activation_hook(__FILE__, [$psConnect, 'activate']);
