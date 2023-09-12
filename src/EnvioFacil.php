@@ -1,6 +1,8 @@
 <?php
 namespace RM_PagBank;
 
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use WC_Product;
 use WC_Shipping_Method;
 
@@ -52,7 +54,7 @@ class EnvioFacil extends WC_Shipping_Method
 		$destinationPostcode = $package['destination']['postcode'];
 		$destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
 
-		$senderPostcode = $this->get_option('origin_postcode', '');
+		$senderPostcode = $this->get_option('origin_postcode', get_option('woocommerce_store_postcode'));
 		$senderPostcode = preg_replace('/[^0-9]/', '', $senderPostcode);
 
 		$productValue = $package['contents_cost'];
@@ -65,39 +67,43 @@ class EnvioFacil extends WC_Shipping_Method
 
 		$ch = curl_init();
 		//body
-		$body = json_encode([
-			'postalSender' => $senderPostcode,
-			'postalReceiver' => $destinationPostcode,
+		$params = [
+			'sender' => $senderPostcode,
+			'receiver' => $destinationPostcode,
 			'length' => $dimensions['length'],
 			'height' => $dimensions['height'],
 			'width' => $dimensions['width'],
 			'weight' => $dimensions['weight'],
-			'productValue' => $productValue
-		]);
-		curl_setopt_array($ch, array(
-			CURLOPT_URL => 'https://api.site.pagseguro.uol.com.br/ps-website-bff/v1/shipment/simulate',
+			'value' => $productValue
+		];
+		$url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
+		curl_setopt_array($ch, [
+			CURLOPT_URL => $url,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_ENCODING => '',
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 0,
+			CURLOPT_MAXREDIRS => 5,
+			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_SSL_VERIFYHOST => false,
+			CURLOPT_TIMEOUT => 10,
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => 'POST',
-			CURLOPT_POSTFIELDS => $body,
-			CURLOPT_HTTPHEADER => array(
-				'Content-Type: application/json'
-			)
-		));
+			CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . Params::getConfig('connect_key')]
+		]);
 		$ret = curl_exec($ch);
 		curl_close($ch);
 
 		$ret = json_decode($ret, true);
 
-		if ( false === $ret) {
+		if (!$ret) {
 			return false;
 		}
 
 		foreach ($ret as $provider) {
+			if (!isset($provider['provider']) || !isset($provider['providerMethod'])
+				|| !isset($provider['contractValue'])) {
+				continue;
+			}
+
 			$rate = array(
 				'id' => 'ef-' . $provider['provider'],
 				'label' => $provider['provider'] . ' - ' . $provider['providerMethod'] . sprintf(__(' - %d dias úteis'), $provider['estimateDays']),
@@ -134,7 +140,10 @@ class EnvioFacil extends WC_Shipping_Method
 			$product = $content['data'];
 
 			$dimensions = $product->get_dimensions(false);
-			$weight = $product->get_weight();
+			//convert each dimension to float
+			$dimensions = array_map('floatval', $dimensions);
+
+			$weight = floatval($product->get_weight());
 			 $return['length'] += $dimensions['length'] * $content['quantity'];
 			 $return['height'] += $dimensions['height'] * $content['quantity'];
 			 $return['width'] += $dimensions['width'] * $content['quantity'];
@@ -147,15 +156,22 @@ class EnvioFacil extends WC_Shipping_Method
 
 	public function validateDimensions($dimensions)
 	{
-		if (($dimensions['length'] < 15 || $dimensions['length'] > 100) ||
-			($dimensions['height'] < 1 || $dimensions['height'] > 100) ||
-			($dimensions['width'] < 10 || $dimensions['width'] > 100 ))
-		{
+		if(($dimensions['length'] < 15 || $dimensions['length'] > 100)){
+			Functions::log('Comprimento inválido: ' . $dimensions['length'] . '. Deve ser entre 15 e 100.', 'debug');
+			return false;
+		}
+		if(($dimensions['height'] < 1 || $dimensions['height'] > 100)){
+			Functions::log('Altura inválida: ' . $dimensions['height'] . '. Deve ser entre 1 e 100.', 'debug');
+			return false;
+		}
+		if(($dimensions['width'] < 10 || $dimensions['width'] > 100)){
+			Functions::log('Largura inválida: ' . $dimensions['width'] . '. Deve ser entre 10 e 100.', 'debug');
 			return false;
 		}
 
 		if ($dimensions['weight'] > 10)
 		{
+			Functions::log('Peso inválido: ' . $dimensions['weight'] . '. Deve ser menor que 10.', 'debug');
 			return false;
 		}
 
@@ -165,20 +181,21 @@ class EnvioFacil extends WC_Shipping_Method
 	public function init_form_fields()
 	{
 		$this->form_fields = [
-			'enabled'            => array(
+			'enabled'            => [
 				'title'   => __( 'Habilitar', Connect::DOMAIN ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Habilitar', Connect::DOMAIN ),
 				'default' => 'yes',
-			),
-			'origin_postcode'    => array(
+			],
+			'origin_postcode'    => [
 				'title'       => __( 'CEP de Origem', Connect::DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'CEP de onde suas mercadorias serão enviadas', Connect::DOMAIN ),
+				'description' => __( 'CEP de onde suas mercadorias serão enviadas. '
+					.'Se não informado, o CEP da loja será utilizado.', Connect::DOMAIN ),
 				'desc_tip'    => true,
-				'placeholder' => '00000-000',
+				'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
 				'default'     => $this->getBasePostcode(),
-			),
+			],
 		];
 
 	}
