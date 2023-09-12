@@ -1,6 +1,6 @@
 jQuery(document).ready(function ($) {
     window.ps_cc_bin = '';
-    
+
     /*region extending cards and card types from jqueryPayment to support new types*/
     const typesPagBank = [
         {
@@ -91,7 +91,7 @@ jQuery(document).ready(function ($) {
             }
         }
     ];
-    
+
     //cardsFriendly é usado apenas para permitir que o setCardType remova os cartões incorretos, mas não para verificar
     const cardsFriendly = [
         {type: 'elo', patterns: [], length: [], cssLength: [], format: '', luhn: false},
@@ -100,7 +100,7 @@ jQuery(document).ready(function ($) {
     ]
     $.extend($.payment.cardsPagBank, typesPagBank);
     $.extend($.payment.cards, cardsFriendly);
-    
+
     // método original
     const originalCardType = $.payment.cardType;
 
@@ -112,7 +112,7 @@ jQuery(document).ready(function ($) {
             if (cardTypes.length > 0) {
                 return cardTypes[0].type;
             }
-            
+
             // Se não encontrarmos, retornamos o resultado original
             return originalCardType.call(this, num);
         }
@@ -145,31 +145,31 @@ jQuery(document).ready(function ($) {
 
         return result.slice(-1);
     }
-    
+
     /*endregion*/
-    
-    
+
+
     $(document.body).on('update_checkout', function(e){
         $(document.body).trigger('update_installments');
     });
-    
-    
+
+
     $('form.woocommerce-checkout').on('checkout_place_order', function (e) {
-        
+
         //if not pagseguro connect or not credit card, return
-        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined || 
+        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
             $('#payment_method_rm-pagbank').is(':checked') === false)
             return true;
-        
-        
+
+
          let form = $(this);
          let card;
         //replace trim and remove duplicated spaces from holder name
         let holder_name = $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
-        
+
          /*region Encrypt card*/
         let cardHasChanged = window.ps_cc_has_changed === true;
-        
+
         try {
             let cc_number = cardHasChanged ? $('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
             let cc_cvv = cardHasChanged ? $('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
@@ -222,7 +222,7 @@ jQuery(document).ready(function ($) {
         let card_number = $('#rm-pagbank-card-number').val();
         window.ps_cc_number = card_number.replace(/\s/g, '');
         window.ps_cc_cvv = $('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
-        
+
         //obfuscates cvv
         $('#rm-pagbank-card-cvc').val('***');
         //obfuscates card number between 8th and last 4 digits
@@ -235,11 +235,11 @@ jQuery(document).ready(function ($) {
         }
         $('#rm-pagbank-card-number').val(obfuscated_card_number);
         window.ps_cc_has_changed = false;
-        
-        
+
+
         /*endregion*/
     });
-    
+
 });
 
 jQuery(document.body).on('init_checkout', ()=>{
@@ -270,10 +270,13 @@ jQuery(document.body).on('update_installments', ()=>{
     total = total.replace(/\./g, ',');
     //remove non numbers and . ,
     total = total.replace(/[^0-9,]/g, '');
-    
+
 
     //convert to cents
     let orderTotal = parseFloat(total).toFixed(2) * 100;
+	if (orderTotal < 100){
+		return;
+	}
     // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');
     let url = ajax_object.ajax_url;
     jQuery.ajax({
@@ -294,7 +297,7 @@ jQuery(document.body).on('update_installments', ()=>{
                 let additional_text = ' (sem juros)';
                 if (response[i].interest_free === false)
                     additional_text = ' (Total R$ ' + response[i].total_amount + ')';
-                
+
                 option.text(text + additional_text);
                 select.append(option);
             }

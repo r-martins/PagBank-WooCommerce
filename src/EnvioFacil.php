@@ -44,8 +44,10 @@ class EnvioFacil extends WC_Shipping_Method
 		$destinationPostcode = $package['destination']['postcode'];
 		$destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
 
-		if ( strlen( $destinationPostcode) != 8 )
+		$connectKey = substr(Params::getConfig('connect_key', ''), 0, 7);
+		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
 			return false;
+		}
 
 		return parent::is_available($package);
 	}
@@ -74,7 +76,7 @@ class EnvioFacil extends WC_Shipping_Method
 			'height' => $dimensions['height'],
 			'width' => $dimensions['width'],
 			'weight' => $dimensions['weight'],
-			'value' => $productValue
+			'value' => max($productValue, 0.1)
 		];
 		$url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
 		curl_setopt_array($ch, [
@@ -95,6 +97,11 @@ class EnvioFacil extends WC_Shipping_Method
 		$ret = json_decode($ret, true);
 
 		if (!$ret) {
+			return false;
+		}
+
+		if (isset($ret['error_messages'])) {
+			Functions::log('Erro ao calcular o frete: ' . print_r($ret['error_messages'], true), 'debug');
 			return false;
 		}
 

@@ -66,8 +66,10 @@ class CreditCard extends Common
 	public static function getAjaxInstallments(){
         global $woocommerce;
 
-        $order_total = $woocommerce->cart->get_total('edit');
+        $order_total = floatval($woocommerce->cart->get_total('edit'));
         $cc_bin = intval($_REQUEST['cc_bin']);
+
+		if (!$order_total) return;
 
         $installments = Params::getInstallments($order_total, $cc_bin);
         if (!$installments){
