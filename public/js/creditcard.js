@@ -168,8 +168,7 @@ jQuery(document).ready(function ($) {
         let holder_name = $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
 
          /*region Encrypt card*/
-        let cardHasChanged = window.ps_cc_has_changed === true;
-
+        let cardHasChanged = (window.ps_cc_has_changed === true);
         try {
             let cc_number = cardHasChanged ? $('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
             let cc_cvv = cardHasChanged ? $('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
@@ -178,7 +177,7 @@ jQuery(document).ready(function ($) {
                 holder: holder_name,
                 number: cc_number,
                 expMonth: $('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].replace(/\s/g, ''),
+                expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
                 securityCode: cc_cvv,
             });
         } catch (e) {
@@ -217,26 +216,26 @@ jQuery(document).ready(function ($) {
         $('#rm-pagbank-card-encrypted').val(card.encryptedCard);
 
 
-        // saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
-        // pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
-        let card_number = $('#rm-pagbank-card-number').val();
-        window.ps_cc_number = card_number.replace(/\s/g, '');
-        window.ps_cc_cvv = $('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
-
         //obfuscates cvv
-        $('#rm-pagbank-card-cvc').val('***');
-        //obfuscates card number between 8th and last 4 digits
-        let obfuscated_card_number = '';
-        for (let i = 0; i < card_number.length; i++) {
-            if (i > 6 && i < card_number.length - 4)
-                obfuscated_card_number += '*';
-            else
-                obfuscated_card_number += card_number[i];
-        }
-        $('#rm-pagbank-card-number').val(obfuscated_card_number);
-        window.ps_cc_has_changed = false;
+		if (window.ps_cc_has_changed){
+			// saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
+			// pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
+			let card_number = $('#rm-pagbank-card-number').val();
+			window.ps_cc_number = card_number.replace(/\s/g, '');
+			window.ps_cc_cvv = $('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
 
-
+			$('#rm-pagbank-card-cvc').val('***');
+			//obfuscates card number between 8th and last 4 digits
+			let obfuscated_card_number = '';
+			for (let i = 0; i < card_number.length; i++) {
+				if (i > 6 && i < card_number.length - 4)
+					obfuscated_card_number += '*';
+				else
+					obfuscated_card_number += card_number[i];
+			}
+			$('#rm-pagbank-card-number').val(obfuscated_card_number);
+			window.ps_cc_has_changed = false;
+		}
         /*endregion*/
     });
 

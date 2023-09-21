@@ -5,9 +5,12 @@ namespace RM_PagBank\Connect\Payments;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\Buyer;
 use RM_PagBank\Object\Card;
 use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Fees;
 use RM_PagBank\Object\Holder;
+use RM_PagBank\Object\Interest;
 use RM_PagBank\Object\PaymentMethod;
 use WC_Order;
 
@@ -54,6 +57,24 @@ class CreditCard extends Common
         $card->setHolder($holder);
         $paymentMethod->setCard($card);
         $charge->setPaymentMethod($paymentMethod);
+
+		if ($paymentMethod->getInstallments() > 1)
+		{
+			$selectedInstallments = $paymentMethod->getInstallments();
+			$installments = Params::getInstallments($this->order->get_total(), $this->order->get_meta('_pagbank_card_first_digits'));
+			$installment = Params::extractInstallment($installments, $selectedInstallments);
+			if ($installment['fees']){
+				$interest = new Interest();
+				$interest->setInstallments($installment['fees']['buyer']['interest']['installments']);
+				$interest->setTotal($installment['fees']['buyer']['interest']['total']);
+				$buyer = new Buyer();
+				$buyer->setInterest($interest);
+				$fees = new Fees();
+				$fees->setBuyer($buyer);
+				$amount->setFees($fees);
+				$amount->setValue($installment['total_amount_raw']);
+			}
+		}
 
         $return['charges'] = [$charge];
         return $return;

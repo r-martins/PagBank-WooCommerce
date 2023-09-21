@@ -4,6 +4,9 @@
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
 
+if ($order->get_meta('pagbank_payment_method') == ''){
+	return;
+}
 $charge_id = $order->get_meta('pagbank_charge_id');
 ?>
 <p class="form-field form-field-wide">

@@ -6,6 +6,13 @@ use RM_PagBank\Helpers\Params;
 use WC_Product;
 use WC_Shipping_Method;
 
+/**
+ * Class EnvioFacil
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank
+ */
 class EnvioFacil extends WC_Shipping_Method
 {
 	public $countries = ['BR'];
@@ -144,9 +151,12 @@ class EnvioFacil extends WC_Shipping_Method
 
 	/**
 	 * Adds the method to the list of available payment methods
+	 *
+	 * @param $methods
+	 *
 	 * @return array
 	 */
-	public static function addMethod(): array
+	public static function addMethod($methods): array
 	{
 		$methods['rm_enviofacil'] = 'RM_PagBank\EnvioFacil';
 		return $methods;

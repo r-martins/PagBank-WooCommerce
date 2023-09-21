@@ -171,7 +171,7 @@ class Params
                 $interest_amount = 0;
 				if (isset($installment['amount']['fees']['buyer']['interest']['total'])) {
 					$interest_amount = number_format(
-						$installment['amount']['fees']['buyer']['interest']['total'] / 100,
+						$installment['amount']['fees']['buyer']['interest']['total'] ?? 0 / 100,
 						2,
 						'.',
 						''
@@ -179,16 +179,36 @@ class Params
                 }
 
                 $return[] = [
-                    'installments' => $installment['installments'],
-                    'total_amount' => $total_amount,
-                    'installment_amount' => $installment_value,
-                    'interest_free' => $installment['interest_free'],
-                    'interest_amount' => $interest_amount
+					'installments' => $installment['installments'],
+					'total_amount' => $total_amount,
+					'total_amount_raw' => $installment['amount']['value'],
+					'installment_amount' => $installment_value,
+					'interest_free' => $installment['interest_free'],
+					'interest_amount' => $interest_amount,
+//					'interest_amount_raw' => $installment['amount']['fees']['buyer']['interest']['total'] ?? 0
+					'fees' => $installment['amount']['fees'] ?? []
                 ];
             }
         }
         return $return;
     }
+
+	/**
+	 * Extracts the installment information from the array returned by the API
+	 * @param $installments
+	 * @param $installmentNumber
+	 *
+	 * @return false|mixed
+	 */
+	public static function extractInstallment($installments, $installmentNumber)
+	{
+		foreach ($installments as $installment){
+			if ($installment['installments'] == $installmentNumber){
+				return $installment;
+			}
+		}
+		return false;
+	}
 
     /**
      * Return if discount config value is a PERCENT or FIXED discount, or false if no discount is to be applied

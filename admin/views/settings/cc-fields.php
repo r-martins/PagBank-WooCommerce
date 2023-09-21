@@ -77,7 +77,8 @@ return array(
 		'default'           => 'CompraViaPagBank',
 		'description'       => __(
 			'Nome que será exibido na fatura do Cliente. '
-			.'Escolha um nome que faça o cliente lembrar que comprou na sua loja e evite chargebacks.',
+			.'Escolha um nome que faça o cliente lembrar que comprou na sua loja e evite chargebacks. '
+			.'Algumas empresas de cartão podem exibir somente os 13 primeiros caracteres.',
 			Connect::DOMAIN
 		),
 		'desc_tip'          => true,

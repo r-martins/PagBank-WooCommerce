@@ -450,6 +450,11 @@ class Gateway extends WC_Payment_Gateway_CC
                     substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
                     true
                 );
+				$order->add_meta_data(
+					'_pagbank_card_first_digits',
+					substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), 0, 6),
+					true
+				);
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
                     filter_input(INPUT_POST, 'rm-pagbank-card-encrypted', FILTER_SANITIZE_STRING),

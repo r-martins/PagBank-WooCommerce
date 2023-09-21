@@ -17,6 +17,7 @@ class Amount implements JsonSerializable
     private int $value;
     private string $currency = 'BRL';
     private Summary $summary;
+	private Fees $fees;
 
     public function jsonSerialize()
     {
@@ -70,5 +71,15 @@ class Amount implements JsonSerializable
     {
         $this->summary = $summary;
     }
+
+	public function getFees(): Fees
+	{
+		return $this->fees;
+	}
+
+	public function setFees(Fees $fees): void
+	{
+		$this->fees = $fees;
+	}
 
 }

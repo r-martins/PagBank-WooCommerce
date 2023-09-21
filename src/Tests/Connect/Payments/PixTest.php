@@ -1,23 +1,18 @@
 <?php
 
-namespace RM_PagBank\Tests\Helpers;
+namespace RM_PagBank\Tests\Connect\Payments;
 
 use RM_PagBank\Connect\Payments\Pix;
-use PHPUnit\Framework\TestCase;
 use WC_Helper_Order;
-use WC_Order;
-use WP_UnitTestCase;
-use WP_UnitTestCase_Base;
-
 
 class PixTest extends \WP_UnitTestCase
 {
 
     /**
-     * @covers \RM_PagBank\Helpers\Pix::extractPixRequestParams
+     * @covers \RM_PagBank\Connect\Payments\Pix::prepare
      * @return void
      */
-    public function testExtractPixRequestParams()
+    public function testPrepare()
     {
         $order = WC_Helper_Order::create_order();
         $pix = new Pix($order);
