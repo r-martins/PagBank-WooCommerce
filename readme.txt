@@ -25,10 +25,12 @@ Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro,
 * Baixe o arquivo zip e descompacte ele em sua máquina
 * Faça upload dos arquivos na pasta /wp-content/plugins/rm-pagbank
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
+* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === Instalação automática ===
 * Navegue até Plugins > Adicionar Novo e procure por \"PagBank Ricardo Martins\"
 * Clique no botão para instalar e ative o plugin
+* Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -94,7 +96,7 @@ Enquanto isso, você pode testar com dados reais e realizar o estorno. As tarifa
 
 Não. Este é um plugin desenvolvido por Ricardo Martins, assim como outros para Magento e WooCommerce desenvolvidos no passado.
 
-Apesar da parceria entre o desenvolvedor e o PagBank que concede descontos e benefícios, este não é um produto oficial.
+Apesar da parceria entre o desenvolvedor e o PagBank que concede descontos e benefícios, este NÃO é um produto oficial.
 
 PagSeguro e PagBank são marcas do UOL.
 

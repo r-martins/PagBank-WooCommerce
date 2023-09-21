@@ -8,7 +8,7 @@
  * @license           GPL-3.0
  *
  * @wordpress-plugin
- * Plugin Name:       PagBank Connect - Ricardo Martins (com descontos)
+ * Plugin Name:       PagBank Connect
  * Plugin URI:        https://pagseguro.ricardomartins.net.br/
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente em muito mais.
  * Version:           4.0.0
