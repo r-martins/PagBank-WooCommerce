@@ -283,6 +283,7 @@ jQuery(document.body).on('update_installments', ()=>{
         method: 'POST',
         data: {
             cc_bin: ccBin,
+			nonce: rm_pagbank_nonce,
             action: 'ps_get_installments',
         },
         success: (response)=>{

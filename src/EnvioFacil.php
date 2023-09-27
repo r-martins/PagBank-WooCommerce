@@ -90,7 +90,6 @@ class EnvioFacil extends WC_Shipping_Method
 
 		if ( !$isValid || !$dimensions ) return [];
 
-		$ch = curl_init();
 		//body
 		$params = [
 			'sender' => $senderPostcode,
@@ -102,6 +101,14 @@ class EnvioFacil extends WC_Shipping_Method
 			'value' => max($productValue, 0.1)
 		];
 		$url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
+		$ret = wp_remote_get($url, [
+			'headers' => [
+				'Authorization' => 'Bearer ' . Params::getConfig('connect_key')
+			],
+			'timeout' => 10,
+			'sslverify' => false,
+			'httpversion' => '1.1'
+		]);/*
 		curl_setopt_array($ch, [
 			CURLOPT_URL => $url,
 			CURLOPT_RETURNTRANSFER => true,
@@ -113,15 +120,13 @@ class EnvioFacil extends WC_Shipping_Method
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . Params::getConfig('connect_key')]
-		]);
-		$ret = curl_exec($ch);
-		curl_close($ch);
+		]);*/
 
-		$ret = json_decode($ret, true);
-
-		if (!$ret) {
+		if (is_wp_error($ret)) {
 			return [];
 		}
+		$ret = wp_remote_retrieve_body($ret);
+		$ret = json_decode($ret, true);
 
 		if (isset($ret['error_messages'])) {
 			Functions::log('Erro ao calcular o frete: ' . print_r($ret['error_messages'], true), 'debug');

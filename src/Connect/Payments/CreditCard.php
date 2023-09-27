@@ -88,15 +88,27 @@ class CreditCard extends Common
         global $woocommerce;
 
         $order_total = floatval($woocommerce->cart->get_total('edit'));
+		if (!wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+			wp_send_json_error([
+				'error' => __(
+					'Não foi possível obter as parcelas. Chave de formulário inválida. '
+					.'Recarregue a página e tente novamente.',
+					Connect::DOMAIN
+				),
+			],
+				400);
+		}
+
         $cc_bin = intval($_REQUEST['cc_bin']);
 
 		if (!$order_total) return;
 
         $installments = Params::getInstallments($order_total, $cc_bin);
         if (!$installments){
+			$error = $installments['error'] ?? '';
 			wp_send_json(
 				['error' =>
-					 __('Não foi possível obter as parcelas. Verifique o número do cartão digitado.', Connect::DOMAIN)],
+					 __('Não foi possível obter as parcelas. ' . $error, Connect::DOMAIN)],
 				400);
         }
         wp_send_json($installments);

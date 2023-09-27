@@ -39,22 +39,29 @@ class Api
     {
         $params['isSandbox'] = $this->is_sandbox ? '1': '0';
         $url = self::WS_URL . $endpoint .'?' .http_build_query($params);
-        $curl = curl_init($url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer '.$this->connect_key,
-			'Referer: ' . get_site_url(),
-        ]);
-        $response = curl_exec($curl);
+
+        $header = [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$this->connect_key,
+			'Referer' => get_site_url(),
+        ];
+
+		$resp = wp_remote_get($url, [ 'headers' => $header ]);
+
+		if (is_wp_error($resp)) {
+			throw new Exception('Erro na requisição: ' . $resp->get_error_message());
+		}
+
+		$response = wp_remote_retrieve_body($resp);
+		if (empty($response)) {
+			throw new Exception('Resposta inválida da API: ' . $response);
+		};
 
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            curl_close($curl);
             throw new Exception('Resposta inválida da API: ' . $response);
         }
 
-        curl_close($curl);
         return $decoded_response;
     }
 
@@ -69,36 +76,37 @@ class Api
     {
 		$isSandbox = $this->is_sandbox ? '?isSandbox=1' : '';
         $url = self::WS_URL . $endpoint . $isSandbox;
-        $curl = curl_init($url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $this->connect_key,
-            'Platform: WooCommerce',
-            'Extra-Version: ' . WC()->version,
-            'Platform-Version: ' . get_bloginfo('version'),
-            'Module-Version: ' . WC_PAGSEGURO_CONNECT_VERSION,
-			'Referer: ' . get_site_url(),
-        ]);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($params));
-        Functions::log('POST Request to '.$endpoint.' with params: '.json_encode($params, JSON_PRETTY_PRINT), 'debug');
-        $response = curl_exec($curl);
 
-        if (curl_errno($curl)){
-            $error_message = curl_error($curl);
-            curl_close($curl);
+        $headers = [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $this->connect_key,
+            'Platform' => 'WooCommerce',
+            'Extra-Version' => WC()->version,
+            'Platform-Version' => get_bloginfo('version'),
+            'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
+			'Referer' => get_site_url(),
+        ];
+
+		Functions::log('POST Request to '.$endpoint . $isSandbox .' with params: '.wp_json_encode($params, JSON_PRETTY_PRINT), 'debug');
+
+		$response = wp_remote_post($url, [
+			'headers' => $headers,
+			'body' => wp_json_encode($params),
+		]);
+
+
+		if (is_wp_error($response)){
             Functions::log(
-                'Erro na requisição: '.$error_message,
+                'Erro na requisição: ' . $response->get_error_message(),
                 'error',
                 ['request' => $params, 'endpoint' => $endpoint]
             );
-            throw new Exception('Erro na requisição: ' . $error_message);
+            throw new Exception('Erro na requisição: ' . $response->get_error_message());
         }
 
+		$response = wp_remote_retrieve_body($response);
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            curl_close($curl);
             Functions::log(
                 'Resposta inválida da API: '.$response,
                 'error',
@@ -107,8 +115,7 @@ class Api
             throw new Exception('Resposta inválida da API: ' . $response);
         }
 
-        curl_close($curl);
-        Functions::log('Response from '.$endpoint.': '.json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
+        Functions::log('Response from '.$endpoint.': ' . wp_json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
         return $decoded_response;
     }
 

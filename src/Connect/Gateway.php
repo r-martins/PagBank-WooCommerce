@@ -340,6 +340,11 @@ class Gateway extends WC_Payment_Gateway_CC
                 true,
                 true
             );
+			wp_add_inline_script(
+				'pagseguro-connect-checkout',
+				'const rm_pagbank_nonce = "' . wp_create_nonce('rm_pagbank_nonce') . '";',
+				'before'
+			);
 
             if ( $this->get_option('cc_enabled')) {
                 wp_enqueue_script(

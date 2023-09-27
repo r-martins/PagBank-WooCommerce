@@ -38,6 +38,10 @@ $default_fields = [
 if ($default_installments){
     $installment_options = '';
     foreach ($default_installments as $installment){
+		if (is_string($installment)) {
+			$installment_options .= '<option value="">' . $installment . '</option>'; //error message
+			break;
+		}
         $installment_options .= '<option value="'.$installment['installments'].'">'.$installment['installments'].'x de R$ '. $installment['installment_amount'] . ' (';
         $installment_options .= $installment['interest_free'] ? 'sem acréscimo)' : 'Total: R$ ' . $installment['total_amount'] . ')';
     }

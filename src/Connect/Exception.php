@@ -20,6 +20,7 @@ class Exception extends \Exception
         '40002' =>	'Parâmetro inválido. Algum dado foi informado com formato inválido ou o conjunto de dados não cumpriu todos os requisitos de negócio.',
         '42001' =>	'Falha na criação de conta. A conta já existe no PagBank. Para ter acesso aos dados dessa conta ou criar pagamentos em nome do dono da conta, é necessário solicitar permissão via API Connect.',
         '42002' =>	'Falha na criação de conta. O processo de criação foi iniciado por outro canal diferente da API. O usuário precisa acessar o email para finalizar a criação de conta.',
+		'UNAUTHORIZED' => 'Não autorizado. Lojista: verifique se a sua Connect Key está correta e é válida.',
     ];
 
 	/**
@@ -34,7 +35,7 @@ class Exception extends \Exception
         $message = [];
         $original_error_messages = [];
         foreach ($error_messages as $error) {
-            $original_error_messages[] = @$error['code'].' - '.@$error['description'].' ('.@$error['parameter_name']
+            $original_error_messages[] = ($error['code'] ?? '').' - '.($error['description'] ?? '' ).' ('.($error['parameter_name'] ?? '')
                 .')';
             $msg = isset($error['code']) ? $error['code'] . ' - ' : '';
             $msg .= $this->errors[$error['code']] ?? 'Erro desconhecido';

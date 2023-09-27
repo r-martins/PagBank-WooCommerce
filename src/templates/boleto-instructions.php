@@ -24,6 +24,6 @@ use RM_PagBank\Connect;
         <a href="<?php echo esc_url($boleto_png);?>" target="_blank" class="button button-primary"><?php echo __('Imprimir Boleto', Connect::DOMAIN)?></a>
     </div>
     <div class="boleto-exiration-container">
-        <p><strong>Seu boleto vence em <?php echo date('d/m/Y', strtotime($boleto_due_date));?>.</strong></p>
+        <p><strong>Seu boleto vence em <?php echo gmdate('d/m/Y', strtotime($boleto_due_date) - 3600*3);?>.</strong></p>
     </div>
 </div>
