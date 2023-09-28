@@ -96,6 +96,7 @@ class Connect
      */
     public static function configInfo(): void
     {
+		$api = new Api();
         $settings = [
             'platform' => 'Wordpress',
             'module_version' =>[
@@ -104,23 +105,23 @@ class Connect
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
             'settings' => [
-                'enabled' => Params::getConfig('enabled'),
-                'cc_enabled' => Params::getConfig('cc_enabled'),
-                'pix_enabled' => Params::getConfig('pix_enabled'),
-                'boleto_enabled' => Params::getConfig('boleto_enabled'),
-                'public_key' => Params::getConfig('public_key'),
-                'sandbox' => Params::getConfig('sandbox'),
-                'boleto' => [
+				'enabled' => Params::getConfig('enabled'),
+				'cc_enabled' => Params::getConfig('cc_enabled'),
+				'pix_enabled' => Params::getConfig('pix_enabled'),
+				'boleto_enabled' => Params::getConfig('boleto_enabled'),
+				'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
+				'sandbox' => $api->getIsSandbox(),
+				'boleto' => [
                     'enabled' => Params::getConfig('boleto_enabled'),
                     'expiry_days' => Params::getConfig('boleto_expiry_days'),
                 ],
-                'pix' => [
+				'pix' => [
                     'enabled' => Params::getConfig('pix_enabled'),
                     'expiry_minutes' => Params::getConfig('pix_expiry_minutes'),
                 ],
-                'cc' => [
+				'cc' => [
                     'enabled' => Params::getConfig('cc_enabled'),
-                    'installment_options' => Params::getConfig('cc_installments_options'),
+                    'installment_options' => Params::getConfig('cc_installment_options'),
                     'installment_options_fixed' => Params::getConfig('cc_installment_options_fixed'),
                     'installments_options_min_total' => Params::getConfig('cc_installments_options_min_total'),
                     'installments_options_limit_installments' => Params::getConfig('cc_installments_options_limit_installments'),
@@ -132,6 +133,9 @@ class Connect
         try{
             $api = new Api();
             $resp = $api->get('ws/public-keys/card');
+			if (isset($resp['public_key'])){
+				$resp['public_key'] = substr($resp['public_key'], 0, 50) . '...';
+			}
             $settings['live_auth'] = $resp;
         }catch (Exception $e){
             $settings['live_auth'] = $e->getMessage();
