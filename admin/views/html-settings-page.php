@@ -31,6 +31,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
         <a href="#tab-credit-card" class="nav-tab"><?php esc_html_e('Cartão de Crédito', Connect::DOMAIN) ?></a>
         <a href="#tab-pix" class="nav-tab"><?php esc_html_e('PIX', Connect::DOMAIN) ?></a>
         <a href="#tab-boleto" class="nav-tab"><?php esc_html_e('Boleto', Connect::DOMAIN) ?></a>
+        <a href="#tab-recurring" class="nav-tab"><?php esc_html_e('Recorrência', Connect::DOMAIN) ?></a>
     </nav>
     <div class="tab-content active" id="tab-general">
         <h3><?php esc_html_e('Credenciais', Connect::DOMAIN) ?></h3>
@@ -50,5 +51,8 @@ if ( ! defined ( 'ABSPATH' ) ) {
     </div>
     <div class="tab-content hidden" id="tab-boleto">
         <?php echo $this->get_admin_fields('boleto'); ?>
+    </div>
+	<div class="tab-content hidden" id="tab-recurring">
+        <?php echo $this->get_admin_fields('recurring'); ?>
     </div>
 </fieldset>

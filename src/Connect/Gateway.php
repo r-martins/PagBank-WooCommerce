@@ -64,6 +64,7 @@ class Gateway extends WC_Payment_Gateway_CC
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/boleto-fields.php';
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/pix-fields.php';
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/cc-fields.php';
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
         $this->form_fields = array_merge(...$fields);
 
 		parent::init_settings();
@@ -165,7 +166,7 @@ class Gateway extends WC_Payment_Gateway_CC
      * @return string|void
      */
     public function get_admin_fields($section){
-        $available_sections = array('general', 'pix', 'cc', 'boleto');
+        $available_sections = array('general', 'pix', 'cc', 'boleto', 'recurring');
         if (!in_array($section, $available_sections)) {
             return;
         }
