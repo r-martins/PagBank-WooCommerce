@@ -3,6 +3,7 @@ namespace RM_PagBank;
 
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use WC_Admin_Settings;
 use WC_Product;
 use WC_Shipping_Method;
 
@@ -108,19 +109,8 @@ class EnvioFacil extends WC_Shipping_Method
 			'timeout' => 10,
 			'sslverify' => false,
 			'httpversion' => '1.1'
-		]);/*
-		curl_setopt_array($ch, [
-			CURLOPT_URL => $url,
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => '',
-			CURLOPT_MAXREDIRS => 5,
-			CURLOPT_SSL_VERIFYPEER => false,
-			CURLOPT_SSL_VERIFYHOST => false,
-			CURLOPT_TIMEOUT => 10,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . Params::getConfig('connect_key')]
-		]);*/
+		]);
+
 
 		if (is_wp_error($ret)) {
 			return [];
@@ -239,7 +229,7 @@ class EnvioFacil extends WC_Shipping_Method
 				'title'   => __( 'Habilitar', Connect::DOMAIN ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Habilitar', Connect::DOMAIN ),
-				'default' => 'yes',
+				'default' => 'no',
 			],
 			'origin_postcode'    => [
 				'title'       => __( 'CEP de Origem', Connect::DOMAIN ),
@@ -268,5 +258,55 @@ class EnvioFacil extends WC_Shipping_Method
 		}
 
 		return '';
+	}
+
+	/**
+	 * Output the shipping settings screen.
+	 */
+	public function admin_options()
+	{
+		if ( ! $this->instance_id ) {
+			echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
+		}
+		echo wp_kses_post( wpautop( $this->get_method_description() ) );
+		echo __('Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas credenciais connect. Chaves Sandbox ou Minhas Taxas não são elegíveis.', Connect::DOMAIN);
+		echo '<p>' . __('⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do frete. Faça suas simulações antes. ;)', Connect::DOMAIN) . '</p>';
+		echo $this->get_admin_options_html(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
+	}
+
+	/**
+	 * Validates if the method can be enabled with the configured connect key
+	 *
+	 * @param $value string
+	 *
+	 * @return string
+	 * @noinspection PhpUnused
+	 * @noinspection PhpUnusedParameterInspection
+	 */
+	public function validate_enabled_field(string $value): string
+	{
+		// We can't rely on the passed $value here, because WordPress always sends 'enabled' as value
+		$value = filter_input(INPUT_POST, 'woocommerce_'. $this->id . '_enabled', FILTER_SANITIZE_STRING);
+		$value = $value == '1' ? 'yes' : 'no';
+
+		$connectKey = Params::getConfig('connect_key');
+		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30' && $value == 'yes') === false) {
+			WC_Admin_Settings::add_error(
+				__(
+					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
+					.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
+					Connect::DOMAIN
+				)
+			);
+			$value = 'no';
+		}
+
+		return $value;
+	}
+
+	public function init_settings()
+	{
+		$this->init_form_fields();
+		parent::init_settings();
 	}
 }
