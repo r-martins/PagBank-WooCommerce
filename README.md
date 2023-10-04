@@ -13,6 +13,7 @@ Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
 ![Configurações de cartão de crédito](https://i.imgur.com/wE3YBXX.jpg)
 ![PIX e Boleto - Configurações](https://i.imgur.com/nhwMhUO.jpg)
 ![Admin - Tela do Pedido](https://i.imgur.com/CIgTLnv.jpg)
+![Envio Fácil](https://i.imgur.com/nQlOBfx.jpg)
 
 # Descrição
 
