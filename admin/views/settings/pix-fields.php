@@ -41,10 +41,12 @@ return array(
         'title'       => __( 'Oferecer Desconto de', Connect::DOMAIN ),
         'type'        => 'text',
         'description' => __(
-			'Ex: 5% para valor percentual ou 5.00 para um valor fixo. <br/>Deixe em branco '
-			.'para não oferecer nenhum desconto.',
+            'Ex: 5% para valor percentual ou 5.00 para um valor fixo. <br/>Deixe em branco para não oferecer '
+            .'nenhum desconto.<br/><a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/199454'
+            .'30928909-Oferecer-Desconto-Pix-e-Boleto-" target="_blank">Saiba mais.</a>',
 			Connect::DOMAIN
 		),
+        'placeholder'  => __('% ou fixo', Connect::DOMAIN),
         'default'     => 0,
         'desc_tip'    => false,
 	],

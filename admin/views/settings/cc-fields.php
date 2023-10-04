@@ -13,7 +13,9 @@ return array(
 	'cc_installment_options'                     => [
 		'title'   => __('Opções de Parcelamento', Connect::DOMAIN),
 		'type'    => 'select',
-		'desc'    => '',
+		'description'    => __('<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-'
+            .'Op%C3%A7%C3%B5es-de-Parcelamento" target="_blank">Saiba mais</a>', Connect::DOMAIN),
+        'desc_tip'  => false,
 		'options' => [
 			'external'  => __('Obedecer configurações da conta PagBank (padrão)', Connect::DOMAIN),
 			'buyer'     => __('Juros por conta do comprador', Connect::DOMAIN),
@@ -76,12 +78,14 @@ return array(
 		'type'              => 'text',
 		'default'           => 'CompraViaPagBank',
 		'description'       => __(
-			'Nome que será exibido na fatura do Cliente. '
-			.'Escolha um nome que faça o cliente lembrar que comprou na sua loja e evite chargebacks. '
-			.'Algumas empresas de cartão podem exibir somente os 13 primeiros caracteres.',
+			'Nome que será exibido na fatura do Cliente. <br/>'
+			.'Escolha um nome que faça o cliente lembrar que comprou na sua loja e evite chargebacks. <br/>'
+			.'Algumas empresas de cartão podem exibir somente os 13 primeiros caracteres. <a href="https://'
+            .'pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura" '
+            .'target="_blank">Saiba mais</a>.',
 			Connect::DOMAIN
 		),
-		'desc_tip'          => true,
+		'desc_tip'          => false,
 		'custom_attributes' => [
 			'maxlength' => 17,
 		],

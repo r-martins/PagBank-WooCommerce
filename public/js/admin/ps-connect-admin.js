@@ -69,7 +69,7 @@ jQuery(document).ready(function($) {
 	if ($('#woocommerce_rm-pagbank_connect_key').val().indexOf('CONSANDBOX') === 0){
 		//create p element
 		var p = document.createElement('p');
-		p.innerHTML = '⚠️ Você está usando o <strong>modo de testes</strong>. Veja <a href="https://dev.pagbank.uol.com.br/reference/simulador" target="_blank">documentação</a>.<br/>Para usar o modo de produção, altere suas credenciais.<br/>Lembre-se: pagamentos em Sandbox não aparecerão em seu painel, mesmo no ambiente Sandbox.';
+		p.innerHTML = '⚠️ Você está usando o <strong>modo de testes</strong>. Veja <a href="https://dev.pagbank.uol.com.br/reference/simulador" target="_blank">documentação</a>.<br/>Para usar o modo de produção, altere suas credenciais.<br/>Lembre-se: pagamentos em Sandbox não aparecerão no PagBank, mesmo no ambiente Sandbox.';
 		p.style.color = '#f30649';
 		//insert under connect_key
 		$(p).insertAfter('#woocommerce_rm-pagbank_connect_key');
