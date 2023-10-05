@@ -122,3 +122,4 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 3. Configurações de cartão de crédito
 4. PIX e Boleto - Configurações
 5. Admin - Tela do Pedido
+6. Envio Fácil

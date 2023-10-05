@@ -46,7 +46,7 @@ class Api
 			'Referer' => get_site_url(),
         ];
 
-		$resp = wp_remote_get($url, [ 'headers' => $header ]);
+		$resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
 
 		if (is_wp_error($resp)) {
 			throw new Exception('Erro na requisição: ' . $resp->get_error_message());
@@ -92,6 +92,7 @@ class Api
 		$response = wp_remote_post($url, [
 			'headers' => $headers,
 			'body' => wp_json_encode($params),
+            'timeout' => 60,
 		]);
 
 
