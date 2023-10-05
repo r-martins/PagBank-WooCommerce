@@ -14,3 +14,5 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     height: 1.5rem;
     margin-right: 5px;
 }
+
+#woocommerce-product-data ul.wc-tabs li.recurring_pagbank_options a:before { font-family: WooCommerce; content: '\e00e'; }

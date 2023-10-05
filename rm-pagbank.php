@@ -47,6 +47,6 @@ add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
 //not needed so far...
-//register_activation_hook(__FILE__, [$psConnect, 'activate']);
+register_activation_hook(__FILE__, [Connect::class, 'activate']);
 //register_deactivation_hook(__FILE__, [$psConnect, 'deactivate']);
-//register_uninstall_hook(__FILE__, 'RMPagseguroConnect::uninstall');
+register_uninstall_hook(__FILE__, [Connect::class, 'uninstall']);
