@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Address;
@@ -72,7 +73,7 @@ class Common
         $customer = new Customer();
         $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $customer->setEmail($this->order->get_billing_email());
-        $customer->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf'))) ;
+        $customer->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
         $phone = new Phone();
         $number = Params::extractPhone($this->order);
         $phone->setArea((int)$number['area']);
@@ -118,9 +119,8 @@ class Common
         $address = new Address();
         $address->setStreet($this->order->get_shipping_address_1('edit'));
         $address->setNumber($this->order->get_meta('_shipping_number'));
-        if( ! empty($this->order->get_meta('_shipping_complement')) )
+        if($this->order->get_meta('_shipping_complement'))
             $address->setComplement($this->order->get_meta('_shipping_complement'));
-        
         $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
         
         $address->setCity($this->order->get_shipping_city('edit'));
@@ -182,6 +182,11 @@ class Common
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
 		$order->update_status('pending', 'PagBank: Pagamento Pendente');
+        
+        if ($order->get_meta('_pagbank_recurring_initial')){
+            $recurring = new Recurring();
+            $recurring->processInitialResponse($order, $response);
+        }
 
 	}
 }

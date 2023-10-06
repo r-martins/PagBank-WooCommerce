@@ -89,6 +89,12 @@ class Params
      * @return false|int
      */
     public static function getMaxInstallments(){
+        $recurringHelper = new Recurring();
+        $recurring = $recurringHelper->isCartRecurring();
+        if ($recurring){
+            return 1; //when recurring, only 1 installment is allowed
+        }
+        
         //returns false if cc_installments_options_limit_installments == no
         if (self::getConfig('cc_installments_options_limit_installments', 'no') == 'no'){
             return false;
@@ -315,5 +321,18 @@ class Params
         }
         
         return true;
+    }
+
+
+    public static function isPaymentMethodEnabled(string $method): bool
+    {
+        $recurringHelper = new Recurring();
+        $recurring = $recurringHelper->isCartRecurring();
+        
+        if ($recurring){
+            return in_array($method, Params::getConfig('recurring_payments'));
+        }
+
+        return Params::getConfig($method . '_enabled') == 'yes';
     }
 }

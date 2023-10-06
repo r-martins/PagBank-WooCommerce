@@ -2,14 +2,20 @@
 namespace RM_PagBank\Connect;
 
 use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Params;
+use WC_Product;
 
 class Recurring
 {
     public function init()
     {
+        if (Params::getConfig('recurring_enabled') != 'yes') return;
+        
         add_filter('woocommerce_product_data_tabs', [$this, 'addProductRecurringTab']);
         add_action('woocommerce_product_data_panels', [$this, 'addRecurringTabContent']);
         add_action('woocommerce_process_product_meta', [$this, 'saveRecurringTabContent']);
+//        add_action('woocommerce_add_to_cart', [$this, 'avoidOtherThanRecurringInCart'], 10, 2);
+        add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
     }
     
     public function addProductRecurringTab($productTabs)
@@ -25,7 +31,7 @@ class Recurring
     }
 
     public function addRecurringTabContent() {
-        global $woocommerce, $post;
+        global $post;
         ?>
         <!-- id below must match target registered in above add_my_custom_product_data_tab function -->
         <div id="recurring_pagbank" class="panel woocommerce_options_panel">
@@ -89,9 +95,46 @@ class Recurring
             $initial = sanitize_text_field($_POST['_initial_fee']);
             $initial = str_replace(',', '.', $initial);
             $initial = floatval(number_format(max(0, $initial), 2, '.', ''));
+            update_post_meta($postId, '_frequency_cycle', $cycle);
+            update_post_meta($postId, '_initial_fee', $initial);
         }
-        update_post_meta($postId, '_frequency_cycle', $cycle);
-        update_post_meta($postId, '_initial_fee', $initial);
+    }
+    
+    public function avoidOtherThanRecurringInCart($canBeAdded, $productId)
+    {
+        $cart = WC()->cart;
+        $cartItems = $cart->get_cart();
+        
+        $product = wc_get_product($productId);
+        $productIsRecurring = $product->get_meta('_recurring_enabled') == 'yes';
+        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        
+        if (!empty($cartItems) && ($productIsRecurring || $recurringHelper->isCartRecurring())) {
+            wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', Connect::DOMAIN), 'error');
+            $canBeAdded = false;
+        }
+        
+        return $canBeAdded;
+        
+    }
+    
+    public function processInitialResponse($order, $response)
+    {
+        global $wpdb;
+        
+        /** @var WC_Product $recurringItem */
+        $recurringItem = current($order->get_items());
+        $item = wc_get_product($recurringItem->get_id());
+        //@TODO continuar e pegar os dados certos
+        $wpdb->insert('pagbank_recurring', [
+                'initial_order_id' => $order->get_id(),
+                'recurring_amount' => $order->get_total(),
+                'status' => 'ACTIVE',
+                'recurring_type' => $recurringItem->get_meta('_frequency'),
+                'recurring_cycle' => $recurringItem->get_meta('_cycle'),
+                'created_at' => gmdate('Y-m-d H:i:s'),
+                'next_bill_at' => gmdate('Y-m-d H:i:s', strtotime('+1 ' . $recurringItem->get_meta('_frequency'))),
+        ]);
     }
     
 }

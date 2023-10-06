@@ -24,6 +24,7 @@ class Charge implements JsonSerializable
     protected Amount $amount;
     protected PaymentResponse $payment_response;
     protected PaymentMethod $payment_method;
+    protected Recurring $recurring;
 
     const ALLOWED_STATUS = [
         'AUTHORIZED',  // Indica que a cobrança está pré-autorizada.
@@ -180,6 +181,16 @@ class Charge implements JsonSerializable
     public function setPaymentMethod(PaymentMethod $payment_method): void
     {
         $this->payment_method = $payment_method;
+    }
+
+    public function getRecurring(): Recurring
+    {
+        return $this->recurring;
+    }
+
+    public function setRecurring(Recurring $recurring): void
+    {
+        $this->recurring = $recurring;
     }
 
 }

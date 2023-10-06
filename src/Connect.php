@@ -17,16 +17,7 @@ use RM_PagBank\Helpers\Params;
  */
 class Connect
 {
-
     public const DOMAIN = 'rm-pagbank';
-
-    /**
-     * @return void
-     */
-    public function __construct()
-    {
-
-    }
 
     public static function init()
     {

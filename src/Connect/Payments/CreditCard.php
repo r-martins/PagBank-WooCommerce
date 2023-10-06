@@ -13,6 +13,7 @@ use RM_PagBank\Object\Fees;
 use RM_PagBank\Object\Holder;
 use RM_PagBank\Object\Interest;
 use RM_PagBank\Object\PaymentMethod;
+use RM_PagBank\Object\Recurring;
 use WC_Order;
 
 /**
@@ -86,6 +87,14 @@ class CreditCard extends Common
 			}
 		}
         
+        if ($this->order->get_meta('_pagbank_recurring_initial')) {
+            $recurring = new Recurring();
+            $recurring->setType('INITIAL');
+            $charge->setRecurring($recurring);
+            $card->setStore(true);
+            $paymentMethod->setCard($card);
+        }
+
         $return['charges'] = [$charge];
         return $return;
     }
@@ -112,6 +121,7 @@ class CreditCard extends Common
         $cc_bin = intval($_REQUEST['cc_bin']);
 
 		if (!$order_total) return;
+
         $installments = Params::getInstallments($order_total, $cc_bin);
         if (isset($installments['error'])){
 			$error = $installments['error'] ?? '';
