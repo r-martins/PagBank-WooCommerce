@@ -424,6 +424,11 @@ class Gateway extends WC_Payment_Gateway_CC
         //sanitize $_POST['ps_connect_method']
         $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
 
+        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        if ($recurringHelper->isCartRecurring()) {
+            $order->add_meta_data('_pagbank_recurring_initial', true);
+        }
+        
         // region Add note if customer changed payment method
         if ($order->get_meta('pagbank_payment_method')) {
             $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;

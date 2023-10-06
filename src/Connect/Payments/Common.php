@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Address;
@@ -163,6 +164,11 @@ class Common
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
 		$order->update_status('pending');
+        
+        if ($order->get_meta('_pagbank_recurring_initial')){
+            $recurring = new Recurring();
+            $recurring->processInitialResponse($order, $response);
+        }
 
 	}
 }

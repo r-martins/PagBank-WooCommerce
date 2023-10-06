@@ -12,12 +12,15 @@ use JsonSerializable;
  * @copyright 2023 Magenteiro
  * @package   RM_PagBank\Object
  */
-class Recurring extends AbstractJson
+class Recurring implements JsonSerializable
 {
     protected string $type;
 
-
-
+    public function jsonSerialize()
+    {
+        return get_object_vars($this);
+    }
+    
 	public function getType(): string
 	{
 		return $this->type;
