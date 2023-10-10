@@ -1,8 +1,10 @@
 <?php
 namespace RM_PagBank\Connect;
 
+use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
+use WC_Order_Item_Product;
 use WC_Product;
 
 class Recurring
@@ -50,7 +52,7 @@ class Recurring
                 'options' => [
                     'daily'     => __('Diário', Connect::DOMAIN),
                     'weekly'    => __('Semanal', Connect::DOMAIN),
-                    'montly'    => __('Mensal', Connect::DOMAIN),
+                    'monthly'    => __('Mensal', Connect::DOMAIN),
                     'yearly'    => __('Anual', Connect::DOMAIN),
                 ],
                 'desc_tip' => true,
@@ -117,24 +119,40 @@ class Recurring
         return $canBeAdded;
         
     }
-    
-    public function processInitialResponse($order, $response)
+
+    /**
+     * Process the initial response from the given order and add the recurring data to the database
+     * @param $order
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function processInitialResponse($order): bool
     {
         global $wpdb;
         
-        /** @var WC_Product $recurringItem */
+        $recHelper = new \RM_PagBank\Helpers\Recurring();
+        
+        /** @var WC_Order_Item_Product $recurringItem */
         $recurringItem = current($order->get_items());
-        $item = wc_get_product($recurringItem->get_id());
-        //@TODO continuar e pegar os dados certos
-        $wpdb->insert('pagbank_recurring', [
-                'initial_order_id' => $order->get_id(),
-                'recurring_amount' => $order->get_total(),
-                'status' => 'ACTIVE',
-                'recurring_type' => $recurringItem->get_meta('_frequency'),
-                'recurring_cycle' => $recurringItem->get_meta('_cycle'),
-                'created_at' => gmdate('Y-m-d H:i:s'),
-                'next_bill_at' => gmdate('Y-m-d H:i:s', strtotime('+1 ' . $recurringItem->get_meta('_frequency'))),
-        ]);
+        
+        /** @var WC_Product $item */
+        $item = wc_get_product($recurringItem->get_product_id());
+        $frequency = $item->get_meta('_frequency');
+        $cycle = $item->get_meta('_frequency_cycle');
+        $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
+
+        $success = $wpdb->insert($wpdb->prefix.'pagbank_recurring', [
+            'initial_order_id' => $order->get_id(),
+            'recurring_amount' => $order->get_total(),
+            'status'           => $recHelper->getStatusFromOrder($order),
+            'recurring_type'   => $frequency,
+            'recurring_cycle'  => $cycle,
+            'created_at'       => gmdate('Y-m-d H:i:s'),
+            'next_bill_at'     => $nextBill->format('Y-m-d H:i:s'),
+        ], ['%d', '%f', '%s', '%s', '%d', '%s', '%s']);
+        
+        return $success !== false;
     }
     
 }

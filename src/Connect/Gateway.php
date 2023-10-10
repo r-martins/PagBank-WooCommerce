@@ -148,6 +148,19 @@ class Gateway extends WC_Payment_Gateway_CC
             default:
                 $order->delete_meta_data('pagbank_status');
         }
+
+        if ($order->get_meta('_pagbank_recurring_initial')){
+            $recurring = new Recurring();
+            try {
+                $recurring->processInitialResponse($order);
+            } catch (Exception $e) {
+                Functions::log(
+                    'Erro ao processar resposta inicial da assinatura: '.$e->getMessage(),
+                    'error',
+                    $e->getTrace()
+                );
+            }
+        }
     }
 
 

@@ -181,13 +181,15 @@ class Connect
                     id               int auto_increment primary key,
                     initial_order_id int           not null comment 'Order that generated the subscription profiler',
                     recurring_amount float(8, 2)   not null comment 'Amount to be charged regularly',
-                    status           varchar(100)  not null comment 'Current subscription status (ACTIVE, PAUSED, SUSPENDED, CANCELED)',
+                    status           varchar(100)  not null comment 'Current subscription status (ACTIVE, PAUSED, SUSPENDED, CANCELED, PENDING)',
                     recurring_type   varchar(15)   not null comment 'Daily, Weekly, Monthly, Yearly ',
                     recurring_cycle  int default 1 not null comment 'Type multiplier',
                     created_at       datetime      null,
                     paused_at        datetime      null,
                     suspended_at     datetime      null,
-                    next_bill_at     datetime      not null
+                    next_bill_at     datetime      not null,
+                    CONSTRAINT wp_pagbank_recurring_unique_order_id
+                        unique (initial_order_id)
                 )
                     comment 'Recurring profiles information for PagBank Subscribers';
                 ";
