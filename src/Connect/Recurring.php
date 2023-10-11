@@ -4,20 +4,38 @@ namespace RM_PagBank\Connect;
 use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use WC_Order_Item_Product;
 use WC_Product;
 
+/**
+ * Class Recurring
+ *
+ * @author    Ricardo Martins
+ * @copyright 2023 Magenteiro
+ * @package   RM_PagBank\Connect
+ */
 class Recurring
 {
     public function init()
     {
         if (Params::getConfig('recurring_enabled') != 'yes') return;
-        
-        add_filter('woocommerce_product_data_tabs', [$this, 'addProductRecurringTab']);
+
         add_action('woocommerce_product_data_panels', [$this, 'addRecurringTabContent']);
         add_action('woocommerce_process_product_meta', [$this, 'saveRecurringTabContent']);
-//        add_action('woocommerce_add_to_cart', [$this, 'avoidOtherThanRecurringInCart'], 10, 2);
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
+        add_filter('woocommerce_product_data_tabs', [$this, 'addProductRecurringTab']);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
+        //region cron jobs
+        add_action('rm_pagbank_cron_process_recurring_payments', [$this, 'processRecurringPayments']);
+        if ( ! wp_next_scheduled('rm_pagbank_cron_process_recurring_payments') ) {
+            wp_schedule_event(
+                time(),
+                Params::getConfig('recurring_process_frequency', 'hourly'),
+                'rm_pagbank_cron_process_recurring_payments'
+            );
+        }
+        //endregion
     }
     
     public function addProductRecurringTab($productTabs)
@@ -26,7 +44,7 @@ class Recurring
             'label' => __('Assinatura PagBank', Connect::DOMAIN),
             'target' => 'recurring_pagbank',
             'class' => ['show_if_simple', 'show_if_variable'],
-            'priority' => 90
+            'priority' => 90,
         ];
         
         return $productTabs;    
@@ -109,7 +127,7 @@ class Recurring
         
         $product = wc_get_product($productId);
         $productIsRecurring = $product->get_meta('_recurring_enabled') == 'yes';
-        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $recurringHelper = new RecurringHelper();
         
         if (!empty($cartItems) && ($productIsRecurring || $recurringHelper->isCartRecurring())) {
             wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', Connect::DOMAIN), 'error');
@@ -131,15 +149,10 @@ class Recurring
     {
         global $wpdb;
         
-        $recHelper = new \RM_PagBank\Helpers\Recurring();
+        $recHelper = new RecurringHelper();
         
-        /** @var WC_Order_Item_Product $recurringItem */
-        $recurringItem = current($order->get_items());
-        
-        /** @var WC_Product $item */
-        $item = wc_get_product($recurringItem->get_product_id());
-        $frequency = $item->get_meta('_frequency');
-        $cycle = $item->get_meta('_frequency_cycle');
+        $frequency = $order->get_meta('_recurring_frequency');
+        $cycle = (int)$order->get_meta('_recurring_cycle');
         $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
 
         $success = $wpdb->insert($wpdb->prefix.'pagbank_recurring', [
@@ -149,10 +162,42 @@ class Recurring
             'recurring_type'   => $frequency,
             'recurring_cycle'  => $cycle,
             'created_at'       => gmdate('Y-m-d H:i:s'),
+            'updated_at'       => gmdate('Y-m-d H:i:s'),
             'next_bill_at'     => $nextBill->format('Y-m-d H:i:s'),
-        ], ['%d', '%f', '%s', '%s', '%d', '%s', '%s']);
+        ], ['%d', '%f', '%s', '%s', '%d', '%s', '%s', '%s']);
         
         return $success !== false;
     }
     
+    public function processRecurringPayments()
+    {
+        global $wpdb;
+        //Get all recurring orders that are due or past due and active
+        $now = gmdate('Y-m-d H:i:s');
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE status = 'ACTIVE' AND next_bill_at <= '$now'";
+        $subscriptions = $wpdb->get_results($sql);
+        foreach ($subscriptions as $subscription) {
+            $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
+            $recurringOrder->createRecurringOrderFromSub();
+        }
+    }
+    
+    public function addProductMetaToOrder($orderId)
+    {
+        $recHelper = new RecurringHelper();
+        
+        if (! $recHelper->isCartRecurring()) 
+            return;
+        
+        $order = wc_get_order($orderId);
+        foreach ($order->get_items() as $item){
+            $originalItem = wc_get_product($item->get_product_id());
+            if ($originalItem->get_meta('_recurring_enabled') == 'yes'){
+                $order->update_meta_data('_recurring_frequency', $originalItem->get_meta('_frequency'));
+                $order->update_meta_data('_recurring_cycle', $originalItem->get_meta('_frequency_cycle'));
+                $order->update_meta_data('_recurring_initial_fee', $originalItem->get_meta('_initial_fee'));
+                $order->save();
+            }
+        }
+    }
 }

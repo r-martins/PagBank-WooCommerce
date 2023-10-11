@@ -148,7 +148,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 $order->delete_meta_data('pagbank_status');
         }
 
-        if ($order->get_meta('_pagbank_recurring_initial')){
+        if ($order->get_meta('_pagbank_recurring_initial')) {
             $recurring = new Recurring();
             try {
                 $recurring->processInitialResponse($order);
