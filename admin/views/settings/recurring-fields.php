@@ -30,5 +30,16 @@ return array(
 			'min' => 1,
 			'max' => 30,
 		],
-	]
+	],
+    'recurring_process_frequency' => [
+        'title'       => __( 'Frequência de Processamento', Connect::DOMAIN ),
+        'type'        => 'select',
+        'description' => __( 'Com que frequência o plugin deve verificar se há pagamentos recorrentes a serem processados?', Connect::DOMAIN ),
+        'default'     => 'hourly',
+        'options'     => [
+            'hourly' => __( 'A cada hora', Connect::DOMAIN ),
+            'twicedaily' => __( 'Duas vezes ao dia', Connect::DOMAIN ),
+            'daily' => __( 'Diariamente', Connect::DOMAIN ),
+        ],
+    ],
 );
