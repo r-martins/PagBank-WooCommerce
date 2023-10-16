@@ -87,7 +87,7 @@ class Gateway extends WC_Payment_Gateway_CC
      *
      * @return void
      */
-    protected static function updateTransaction(WC_Order $order, array $order_data): void
+    public static function updateTransaction(WC_Order $order, array $order_data): void
     {
         $charge = $order_data['charges'][0] ?? [];
         $status = $charge['status'] ?? '';

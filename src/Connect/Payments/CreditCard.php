@@ -51,11 +51,7 @@ class CreditCard extends Common
         $paymentMethod->setCapture(true);
         $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
         $paymentMethod->setSoftDescriptor(Params::getConfig('cc_soft_descriptor'));
-        $card = new Card();
-        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
-        $holder = new Holder();
-        $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
-        $card->setHolder($holder);
+        $card = $this->getCardDetails();
         $paymentMethod->setCard($card);
         $charge->setPaymentMethod($paymentMethod);
 
@@ -76,14 +72,21 @@ class CreditCard extends Common
 				$amount->setValue($installment['total_amount_raw']);
 			}
 		}
-        
+
+        //region Recurring initial or subsequent order
+        $recurring = new Recurring();
         if ($this->order->get_meta('_pagbank_recurring_initial')) {
-            $recurring = new Recurring();
             $recurring->setType('INITIAL');
             $charge->setRecurring($recurring);
             $card->setStore(true);
             $paymentMethod->setCard($card);
         }
+        
+        if ($this->order->get_meta('_pagbank_is_recurring') === true) {
+            $recurring->setType('SUBSEQUENT');
+            $charge->setRecurring($recurring);
+        }
+        //endregion
 
         $return['charges'] = [$charge];
         return $return;
@@ -121,5 +124,38 @@ class CreditCard extends Common
 				400);
         }
         wp_send_json($installments);
+    }
+
+    /**
+     * Populates the Card object considering with data from order or subscription
+     * @return Card
+     */
+    protected function getCardDetails(): Card
+    {
+        $card = new Card();
+        //if subsequent recurring order...
+        if ($this->order->get_meta('_pagbank_is_recurring') === true)
+        {
+            //get card data from subscription
+            global $wpdb;
+            $initialSubOrderId = $this->order->get_parent_id('edit');
+            $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$initialSubOrderId}";
+            $recurring = $wpdb->get_row($sql);
+            $paymentInfo = json_decode($recurring->payment_info);
+            $card->setId($paymentInfo->card->id);
+            $holder = new Holder();
+            $holder->setName($paymentInfo->card->holder_name);
+            $card->setHolder($holder);
+            $card->setStore(true);
+            return $card;
+        }
+        
+        //non recurring...
+        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
+        $holder = new Holder();
+        $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
+        $card->setHolder($holder);
+
+        return $card;
     }
 }
