@@ -6,6 +6,7 @@ use DateInterval;
 use DateTime;
 use DateTimeZone;
 use Exception;
+use RM_PagBank\Connect;
 use WC_Cart;
 use WC_Order;
 
@@ -72,6 +73,22 @@ class Recurring
             default:
                 return 'PENDING';
         }
+    }
+    
+    public function translateFrequency($frequency)
+    {
+        $available = [
+            'daily' => __('Diário', Connect::DOMAIN),
+            'weekly' => __('Semanal', Connect::DOMAIN),
+            'monthly' => __('Mensal', Connect::DOMAIN),
+            'yearly' => __('Anual', Connect::DOMAIN),
+            'default' => __('Desconhecido', Connect::DOMAIN)
+        ];
+        
+        if (in_array($frequency, array_keys($available)))
+            return $available[$frequency];
+            
+        return $available['default'];
     }
     
 }
