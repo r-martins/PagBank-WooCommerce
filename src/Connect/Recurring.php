@@ -23,14 +23,20 @@ class Recurring
     {
         if (Params::getConfig('recurring_enabled') != 'yes') return;
 
+        //region admin management
         add_action('woocommerce_product_data_panels', [$this, 'addRecurringTabContent']);
         add_action('woocommerce_process_product_meta', [$this, 'saveRecurringTabContent']);
-        add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
         add_filter('woocommerce_product_data_tabs', [$this, 'addProductRecurringTab']);
+        //endregion
+
+        //region frontend initial order flow
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
+        //endregion
         
         //emails
         add_filter('woocommerce_email_classes', [$this, 'addEmails']);
+        
         //region cron jobs
         add_action('rm_pagbank_cron_process_recurring_payments', [$this, 'processRecurringPayments']);
         if ( ! wp_next_scheduled('rm_pagbank_cron_process_recurring_payments') ) {
@@ -40,6 +46,10 @@ class Recurring
                 'rm_pagbank_cron_process_recurring_payments'
             );
         }
+        //endregion
+        
+        //region frontend subscription management
+        add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
         //endregion
     }
     
@@ -310,5 +320,11 @@ class Recurring
             }
         }
         return $update > 0;
+    }
+    
+    public function addSubscriptionManagementMenuItem($items)
+    {
+        $items['rm-pagbank-subscriptions'] = __('Assinaturas', Connect::DOMAIN);
+        return $items;
     }
 }
