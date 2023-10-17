@@ -50,6 +50,8 @@ class Recurring
         
         //region frontend subscription management
         add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
+        add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', [$this, 'addManageSubscriptionContent']);
+        add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
         //endregion
     }
     
@@ -327,4 +329,69 @@ class Recurring
         $items['rm-pagbank-subscriptions'] = __('Assinaturas', Connect::DOMAIN);
         return $items;
     }
+    
+    public static function addManageSubscriptionEndpoint()
+    {
+        add_rewrite_endpoint('rm-pagbank-subscriptions', EP_PAGES);
+    }
+    
+    public function addManageSubscriptionContent()
+    {
+        //get 
+        wc_get_template('recurring/my-account/dashboard.php', [], '', WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+    }
+    
+    public function addSubscriptionManagementTitle($title, $postid)
+    {
+        if ($title == 'My account'){
+            return 'Assinaturas';
+        }
+        
+        return $title;
+    }
+
+    /**
+     * Replace a page title with the endpoint title.
+     *
+     * @param  string $title Post title.
+     * @return string
+     */
+    function recurring_endpoint_title( $title ) {
+        global $wp_query;
+
+        if ( ! is_null( $wp_query ) && ! is_admin() && is_main_query() && in_the_loop() && is_page() && $this->isRecurringEndpoint() ) {
+            $action         = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
+            $endpoint_title = $this->getEndpointTitle( $action );
+            $title          = $endpoint_title ? $endpoint_title : $title;
+
+            remove_filter( 'the_title', 'recurring_endpoint_title' );
+        }
+
+        return $title;
+    }
+    
+    public function isRecurringEndpoint()
+    {
+        global $wp;
+        $currentUrl = home_url( $wp->request );
+        $currentUrl = str_replace(home_url(), '', $currentUrl);
+        $currentUrl = trim($currentUrl, '/');
+        return $currentUrl == 'my-account/rm-pagbank-subscriptions';
+    }
+    
+    public function getEndpointTitle(  $action )
+    {
+        global $wp;
+        
+        $title = '';
+        $endpoint = $wp->request;
+        switch ($endpoint) {
+            case 'my-account/rm-pagbank-subscriptions':
+                $title = __('Minhas Assinaturas', Connect::DOMAIN);
+                break;
+        }
+        
+        return $title;
+    }
+
 }

@@ -530,6 +530,7 @@ class Gateway extends WC_Payment_Gateway_CC
         try {
             $api = new Api();
             $resp = $api->post('ws/orders', $params);
+
             if (isset($resp['error_messages'])) {
                 throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
             }
