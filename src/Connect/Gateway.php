@@ -101,7 +101,7 @@ class Gateway extends WC_Payment_Gateway_CC
         do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
 
 		// Add some additional information about the payment
-		if ($charge['payment_response']) {
+		if (isset($charge['payment_response'])) {
 			$order->add_order_note(
 				'PagBank: Payment Response: '.sprintf(
 					'%d: %s %s %s',
