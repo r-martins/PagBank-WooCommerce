@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Address;
@@ -100,14 +101,19 @@ class Common
 	public function getShippingAddress(): Address
 	{
         $address = new Address();
-        $address->setStreet($this->order->get_meta('_shipping_address_1'));
+        $address->setStreet($this->order->get_shipping_address_1('edit'));
         $address->setNumber($this->order->get_meta('_shipping_number'));
-        if($this->order->get_meta('_shipping_complement'))
+        if( ! empty($this->order->get_meta('_shipping_complement')) )
             $address->setComplement($this->order->get_meta('_shipping_complement'));
+        
         $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
-        $address->setCity($this->order->get_meta('_shipping_city'));
-        $address->setRegionCode($this->order->get_meta('_shipping_state'));
-        $address->setPostalCode(Params::removeNonNumeric($this->order->get_meta('_shipping_postcode')));
+        if ( empty($address->getLocality()) ) {
+            $address->setLocality(__('(Bairro não informado)', Connect::DOMAIN));
+        }
+        
+        $address->setCity($this->order->get_shipping_city('edit'));
+        $address->setRegionCode($this->order->get_shipping_state('edit'));
+        $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
         return $address;
     }
 
