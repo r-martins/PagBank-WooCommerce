@@ -542,7 +542,7 @@ class Gateway extends WC_Payment_Gateway_CC
         // endregion
 
         // some notes to customer (replace true with false to make it private)
-        $order->add_order_note( 'Pedido criado com sucesso!', true );
+        $order->add_order_note( 'Pedido criado com sucesso no PagBank!' );
 
         $woocommerce->cart->empty_cart();
         return array(

@@ -161,7 +161,7 @@ class Connect
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
         
-        $sql = "CREATE TABLE woocommerce_test.wp_pagbank_recurring
+        $sql = "create table $recurringTable 
                 (
                     id               int auto_increment primary key,
                     initial_order_id int           not null comment 'Order that generated the subscription profiler',

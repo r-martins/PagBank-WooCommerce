@@ -34,6 +34,7 @@ defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.0.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
+define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
 define( 'WC_PAGSEGURO_CONNECT_URL', plugins_url( __FILE__ ) );
 
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
@@ -41,6 +42,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 add_action('init', [Connect::class, 'init']);
+add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoint']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 
 //envio facil
