@@ -107,7 +107,8 @@ class Gateway extends WC_Payment_Gateway_CC
 					'%d: %s %s %s',
 					$charge['payment_response']['code'] ?? 'N/A',
 					$charge['payment_response']['message'] ?? 'N/A',
-					($charge['payment_response']['reference']) ? ' - REF/NSU: '.$charge['payment_response']['reference']
+					isset($charge['payment_response']['reference']) 
+                        ? ' - REF/NSU: '.$charge['payment_response']['reference'] 
 						: '',
 					($status) ? "(Status: $status)" : ''
 				)
