@@ -54,7 +54,7 @@ class Api
 
 		$response = wp_remote_retrieve_body($resp);
 		if (empty($response)) {
-			throw new Exception('Resposta inválida da API: ' . $response);
+			throw new Exception('Resposta inválida da API: ""');
 		};
 
         $decoded_response = json_decode($response, true);
@@ -108,6 +108,7 @@ class Api
 		$response = wp_remote_retrieve_body($response);
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
+            $response = $response === '' ? __('"Resposta vazia"', Connect::DOMAIN) : $response;
             Functions::log(
                 'Resposta inválida da API: '.$response,
                 'error',

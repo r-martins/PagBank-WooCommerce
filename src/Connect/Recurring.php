@@ -337,8 +337,13 @@ class Recurring
     
     public function addManageSubscriptionContent()
     {
+        $recDash = new Connect\Recurring\RecurringDashboard();
+        $mySubs = $recDash->getMySubscriptions();
         //get 
-        wc_get_template('recurring/my-account/dashboard.php', [], '', WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+        wc_get_template('recurring/my-account/dashboard.php', [
+                'subscriptions' => $mySubs,
+                'dashboard'  => $recDash
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
     
     public function addSubscriptionManagementTitle($title, $postid)
