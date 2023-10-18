@@ -6,6 +6,7 @@ use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
+use stdClass;
 use WC_Order;
 use WC_Order_Item_Product;
 use WC_Product;
@@ -51,6 +52,7 @@ class Recurring
         //region frontend subscription management
         add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
         add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', [$this, 'addManageSubscriptionContent']);
+        add_action('woocommerce_account_rm-pagbank-subscriptions-view_endpoint', [$this, 'addManageSubscriptionViewContent']);
         add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
         //endregion
     }
@@ -330,9 +332,10 @@ class Recurring
         return $items;
     }
     
-    public static function addManageSubscriptionEndpoint()
+    public static function addManageSubscriptionEndpoints()
     {
         add_rewrite_endpoint('rm-pagbank-subscriptions', EP_PAGES);
+        add_rewrite_endpoint('rm-pagbank-subscriptions-view', EP_PAGES);
     }
     
     public function addManageSubscriptionContent()
@@ -343,6 +346,27 @@ class Recurring
         wc_get_template('recurring/my-account/dashboard.php', [
                 'subscriptions' => $mySubs,
                 'dashboard'  => $recDash
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+    }
+    
+    public function addManageSubscriptionViewContent($subscriptionId)
+    {
+        $subscriptionId = intval($subscriptionId);
+        $subscription = $this->getSubscription($subscriptionId);
+        if (is_null($subscription)) {
+            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+            return;
+        }
+        $order = wc_get_order($subscription->initial_order_id);
+        if ($order->get_customer_id('edit') !== get_current_user_id()) {
+            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+            return;
+        }
+        
+        
+        wc_get_template('recurring/my-account/view-subscription.php', [
+                'subscription' => $subscription,
+                'initialOrder' => $order,
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
     
@@ -361,7 +385,7 @@ class Recurring
      * @param  string $title Post title.
      * @return string
      */
-    function recurring_endpoint_title( $title ) {
+    public function recurring_endpoint_title( $title ) {
         global $wp_query;
 
         if ( ! is_null( $wp_query ) && ! is_admin() && is_main_query() && in_the_loop() && is_page() && $this->isRecurringEndpoint() ) {
@@ -397,6 +421,27 @@ class Recurring
         }
         
         return $title;
+    }
+    
+    public function addManageSubscriptionViewEndpoint($actions, $order)
+    {
+        $actions['view-subscription'] = [
+                'url' => wc_get_endpoint_url('rm-pagbank-subscriptions', $order->get_id()),
+                'name' => __('Ver assinatura', Connect::DOMAIN),
+        ];
+        return $actions;
+    }
+
+    /**
+     * Returns the subscription with the given id
+     * @param int $id
+     *
+     * @return stdClass|null
+     */
+    public function getSubscription(int $id): ?\stdClass
+    {
+        global $wpdb;
+        return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = 0{$id}");
     }
 
 }

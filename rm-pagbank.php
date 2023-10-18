@@ -42,7 +42,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 add_action('init', [Connect::class, 'init']);
-add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoint']);
+add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoints']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 
 //envio facil

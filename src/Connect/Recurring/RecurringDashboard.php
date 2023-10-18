@@ -99,7 +99,7 @@ class RecurringDashboard
         }
         $actions['view'] = [
             'name' => __('Ver detalhes', Connect::DOMAIN),
-            'url' => '#'
+            'url' => wc_get_endpoint_url('rm-pagbank-subscriptions-view', $subscription->id)
         ];
         
         return $actions;
