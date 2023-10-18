@@ -49,7 +49,7 @@ $wp_button_class = wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_
                 <?php elseif ( 'status' === $column_id ) : ?>
                     <?php echo esc_html( $dashboard->getFriendlyStatus($subscription->status) ); ?>
                 <?php elseif ( 'created_at' === $column_id ) : ?>
-                    <?php echo esc_html( wp_date('d/m/Y', strtotime($subscription->created_at)) ); ?>
+                    <?php echo esc_html( wc_format_datetime( wc_string_to_datetime( $subscription->created_at) ) ); ?>
                 <?php elseif ( 'recurring_type' === $column_id ) : ?>
                     <?php echo esc_html( $dashboard->getFriendlyType($subscription->recurring_type) ); ?>
                 <?php elseif ( 'recurring_amount' === $column_id ) : ?>
