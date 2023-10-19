@@ -51,7 +51,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
 		add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         add_action('woocommerce_thankyou_' . $this->id, [$this, 'addThankyouInstructions']);
-        add_action('wp_enqueue_scripts', [$this, 'addStyles']);
+        add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts']);
@@ -332,6 +332,21 @@ class Gateway extends WC_Payment_Gateway_CC
                 plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
         }
+    }
+    
+    public static function addStylesWoo($styles)
+    {
+        if ( Recurring::isRecurringEndpoint() )
+        {
+           $styles['rm-pagbank-recurring'] = [
+               'src'     => plugins_url('public/css/recurring.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+               'deps'    => [],
+               'version' => WC_PAGSEGURO_CONNECT_VERSION,
+               'media'   => 'all',
+               'has_rtl' => false,
+           ];
+        }
+        return $styles;
     }
 
 	/**

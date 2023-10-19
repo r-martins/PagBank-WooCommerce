@@ -60,7 +60,7 @@ class RecurringDashboard
     
     public function getViewSubscriptionUrl($subscription): string
     {
-        return '#' . $subscription->id;
+        return wc_get_endpoint_url('rm-pagbank-subscriptions-view', $subscription->id);
     }
     
     public function getSubscriptionActions($subscription): array
@@ -99,7 +99,7 @@ class RecurringDashboard
         }
         $actions['view'] = [
             'name' => __('Ver detalhes', Connect::DOMAIN),
-            'url' => wc_get_endpoint_url('rm-pagbank-subscriptions-view', $subscription->id)
+            'url' => $this->getViewSubscriptionUrl($subscription)
         ];
         
         return $actions;
@@ -135,6 +135,20 @@ class RecurringDashboard
                 return __('Mensal', Connect::DOMAIN);
             case 'YEARLY':
                 return __('Anual', Connect::DOMAIN);
+            default:
+                return __('Desconhecido', Connect::DOMAIN);
+        }
+    }
+    
+    public function getFriendlyPaymentMethodName(string $method): string
+    {
+        switch ($method) {
+            case 'boleto':
+                return __('Boleto', Connect::DOMAIN);
+            case 'pix':
+                return __('Pix', Connect::DOMAIN);
+            case 'credit_card':
+                return __('Cartão de Crédito', Connect::DOMAIN);
             default:
                 return __('Desconhecido', Connect::DOMAIN);
         }

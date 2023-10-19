@@ -10,6 +10,7 @@ use stdClass;
 use WC_Order;
 use WC_Order_Item_Product;
 use WC_Product;
+use wpdb;
 
 /**
  * Class Recurring
@@ -53,6 +54,10 @@ class Recurring
         add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
         add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', [$this, 'addManageSubscriptionContent']);
         add_action('woocommerce_account_rm-pagbank-subscriptions-view_endpoint', [$this, 'addManageSubscriptionViewContent']);
+        add_action('rm_pagbank_view_subscription', [$this, 'subscriptionDetailsTable'], 10, 1);
+        add_action('rm_pagbank_recurring_details_subscription_table_payment_info', [$this, 'getPaymentInfoRows'], 10, 1);
+        add_action('rm_pagbank_view_subscription_actions', [$this, 'getSubscriptionActionButtons'], 10, 1);
+        add_action('rm_pagbank_view_subscription_order_list', [$this, 'getSubscriptionOrderList'], 10, 1);
         add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
         //endregion
     }
@@ -363,10 +368,11 @@ class Recurring
             return;
         }
         
-        
+        $dash = new Connect\Recurring\RecurringDashboard();
         wc_get_template('recurring/my-account/view-subscription.php', [
                 'subscription' => $subscription,
                 'initialOrder' => $order,
+                'dashboard' => $dash
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
     
@@ -399,13 +405,18 @@ class Recurring
         return $title;
     }
     
-    public function isRecurringEndpoint()
+    public static function isRecurringEndpoint()
     {
         global $wp;
-        $currentUrl = home_url( $wp->request );
-        $currentUrl = str_replace(home_url(), '', $currentUrl);
-        $currentUrl = trim($currentUrl, '/');
-        return $currentUrl == 'my-account/rm-pagbank-subscriptions';
+        $pbEndpoints = [
+            'my-account/rm-pagbank-subscriptions',
+            'my-account/rm-pagbank-subscriptions-view'
+        ];
+        foreach ($pbEndpoints as $endpoint) {
+            if (stripos($wp->request, $endpoint) !== false)
+                return true;
+        }
+        return false;
     }
     
     public function getEndpointTitle(  $action )
@@ -415,7 +426,11 @@ class Recurring
         $title = '';
         $endpoint = $wp->request;
         switch ($endpoint) {
-            case 'my-account/rm-pagbank-subscriptions':
+            case stripos($endpoint, 'my-account/rm-pagbank-subscriptions-view') !== false:
+                $id = esc_html($wp->query_vars['rm-pagbank-subscriptions-view']);
+                $title = sprintf(__('Assinatura #%d', Connect::DOMAIN), $id);
+                break;
+            case stripos($endpoint, 'my-account/rm-pagbank-subscriptions') !== false:
                 $title = __('Minhas Assinaturas', Connect::DOMAIN);
                 break;
         }
@@ -442,6 +457,44 @@ class Recurring
     {
         global $wpdb;
         return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = 0{$id}");
+    }
+    
+    public function subscriptionDetailsTable($subscription)
+    {
+        wc_get_template('recurring/subscription-details.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
+    }
+    
+    public function getPaymentInfoRows($subscription)
+    {
+        wc_get_template('recurring/my-account/subscription-payment-info-rows.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+    }
+    
+    public function getSubscriptionActionButtons($subscription)
+    {
+        wc_get_template('recurring/my-account/subscription-action-buttons.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+    }
+    
+    public function getSubscriptionOrderList($subscription)
+    {
+        global $wpdb;
+        $orders = wc_get_orders([
+                'parent' => $subscription->initial_order_id,
+        ]);
+        $customer = new stdClass();
+        $customer->orders = $orders;
+        $customer->max_num_pages = 0;
+        
+        wc_get_template('templates/myaccount/orders.php', [
+            'has_orders' => count($orders) > 0,
+            'customer_orders' => $customer,
+            'wp_button_class' => wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_theme_get_element_class_name( 'button' ) : '',
+        ], 'woocommerce', plugin_dir_path( WC_PLUGIN_FILE ) );
     }
 
 }
