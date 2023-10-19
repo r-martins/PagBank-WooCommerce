@@ -48,6 +48,9 @@ add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 //envio facil
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
+//recurring
+add_filter('woocommerce_enqueue_styles', [\RM_PagBank\Connect\Gateway::class, 'addStylesWoo'], 99, 1);
+
 //not needed so far...
 register_activation_hook(__FILE__, [Connect::class, 'activate']);
 register_deactivation_hook(__FILE__, [Connect::class, 'deactivate']);

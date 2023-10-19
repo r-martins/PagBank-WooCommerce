@@ -1,0 +1,32 @@
+.cc-brand {
+    max-width: 2.5rem;
+    float: left;
+    margin-right: 4px;
+}
+
+.subscription-button {
+    margin: 0 3px;
+}
+
+.subscription-button.cancel{
+    background-color: #dc3232;
+    border-color: #dc3232;
+    color: #fff;
+}
+
+.subscription-button.suspend{
+    background-color: #f0ad4e;
+    border-color: #f0ad4e;
+}
+.subscription-button.activate{
+    background-color: #5cb85c;
+    border-color: #5cb85c;
+    color: #fff;
+}
+.rm-pagbank-separator{
+    margin-top: 22px   
+}
+
+.woocommerce-info .woocommerce-Button {
+    display: none;
+}

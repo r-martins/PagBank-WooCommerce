@@ -2,15 +2,13 @@
 /**
  * Subscription Not Found (or not Allowed)
  *
- * Shows subscriptions on the account page.
- *
  * This template can be overridden by copying it to yourtheme/rm-pagbank/recurring/my-account/subscription-not-found.php.
  *
  * @see https://docs.woocommerce.com/document/template-structure/
  * @package RM_PagBank\Templates
  * @version 4.0.0
  */
-
+defined( 'ABSPATH' ) || exit;
 /** @var stdClass $subscription */
 ?>
 <?php _e('Assinatura não encontrada', RM_PagBank\Connect::DOMAIN) ?>

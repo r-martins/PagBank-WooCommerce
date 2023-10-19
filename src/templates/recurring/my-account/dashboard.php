@@ -2,7 +2,7 @@
 /**
  * Subscriptions
  * 
- * Shows subscriptions on the account page.
+ * Shows all subscriptions on the account page.
  * 
  * This template can be overridden by copying it to yourtheme/rm-pagbank/recurring/my-account/dashboard.php.
  * 
