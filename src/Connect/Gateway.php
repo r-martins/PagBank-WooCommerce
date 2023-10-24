@@ -317,7 +317,7 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * Add css files for checkout and success page
 	 * @return void
 	 */
-	public function addStyles(){
+	public static function addStyles(){
         //thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             wp_enqueue_style(
@@ -326,7 +326,7 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
 
-        if ( is_checkout() ) {
+        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
             wp_enqueue_style(
                 'pagseguro-connect-checkout',
                 plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)

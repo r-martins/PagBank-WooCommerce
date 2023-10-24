@@ -36,4 +36,4 @@ do_action('rm_pagbank_before_account_recurring_view_subscription', $subscription
     <hr class="rm-pagbank-separator"/>
 <h2 class="woocommerce-order-details__title orders-title"><?php _e('Pedidos gerados a partir desta assinatura', RM_PagBank\Connect::DOMAIN);?></h2>
 <p><?php _e('Após o pedido inicial, toda vez que uma cobrança é feita, um novo pedido é gerado.', RM_PagBank\Connect::DOMAIN)?></p>
-<?php do_action( 'rm_pagbank_view_subscription_order_list', $subscription ); ?>
+<?php do_action( 'rm_pagbank_view_subscription_order_list', $subscription );

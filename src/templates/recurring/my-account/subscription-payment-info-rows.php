@@ -45,4 +45,4 @@ $dashboard = new RecurringDashboard();
         <?php echo esc_html(strtoupper($payment->card->holder_name)); ?> - <?php echo $payment->card->expiration_date?>
     </td>
 </tr>
-<?php endif; ?>
+<?php endif; 
