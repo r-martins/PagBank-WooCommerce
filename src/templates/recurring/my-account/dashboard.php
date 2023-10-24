@@ -79,4 +79,4 @@ $wp_button_class = wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_
     wc_print_notice( esc_html__( 'Você ainda não tem nenhuma assinatura.', RM_PagBank\Connect::DOMAIN ) . ' <a class="woocommerce-Button button' . esc_attr( $wp_button_class ) . '" href="' . esc_url( apply_filters( 'woocommerce_return_to_shop_redirect', wc_get_page_permalink( 'shop' ) ) ) . '">' . esc_html__( 'Browse products', 'woocommerce' ) . '</a>', 'notice' ); // phpcs:ignore WooCommerce.Commenting.CommentHooks.MissingHookComment 
     ?>
 
-<?php endif;?>
+<?php endif;

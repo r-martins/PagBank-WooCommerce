@@ -18,6 +18,8 @@ $dashboard = new RM_PagBank\Connect\Recurring\RecurringDashboard();
 if ( ! isset($subscription->id) || ! $subscription->id ) {
     return;
 }
+
+wc_print_notices();
 ?>
 <section class="woocommerce-order-details">
     <?php do_action( 'rm_pagbank_recurring_details_before_subscription_table', $subscription ); ?>
@@ -64,6 +66,13 @@ if ( ! isset($subscription->id) || ! $subscription->id ) {
                 <tr>
                     <th scope="row"><?php _e('Cancelada em', RM_PagBank\Connect::DOMAIN)?></th>
                     <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->canceled_at));?></td>
+                </tr>
+            <?php endif;?>
+
+            <?php if ( in_array($subscription->status, ['PAUSED']) ): ?>
+                <tr>
+                    <th scope="row"><?php _e('Pausada em', RM_PagBank\Connect::DOMAIN)?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->paused_at));?></td>
                 </tr>
             <?php endif;?>
 

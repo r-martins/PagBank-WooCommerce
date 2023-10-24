@@ -25,6 +25,7 @@
 /** @noinspection PhpDefineCanBeReplacedWithConstInspection */
 
 use RM_PagBank\Connect;
+use RM_PagBank\Connect\Gateway;
 use RM_PagBank\EnvioFacil;
 
 // Prevent direct file access.
@@ -40,7 +41,6 @@ define( 'WC_PAGSEGURO_CONNECT_URL', plugins_url( __FILE__ ) );
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
-
 add_action('init', [Connect::class, 'init']);
 add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoints']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
@@ -48,8 +48,9 @@ add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 //envio facil
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
-//recurring
-add_filter('woocommerce_enqueue_styles', [\RM_PagBank\Connect\Gateway::class, 'addStylesWoo'], 99, 1);
+//recurring and styles
+add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99, 1);
+add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99, 1);
 
 //not needed so far...
 register_activation_hook(__FILE__, [Connect::class, 'activate']);

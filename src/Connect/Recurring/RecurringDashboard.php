@@ -75,9 +75,9 @@ class RecurringDashboard
                 ];
                 break;
             case 'PAUSED':
-                $actions['reactivate'] = [
+                $actions['unpause'] = [
                     'name' => __('Resumir', Connect::DOMAIN),
-                    'url' => '#'
+                    'url' => '?action=unpause&id=' . $subscription->id
                 ];
                 break;
             case 'PENDING_CANCEL':
