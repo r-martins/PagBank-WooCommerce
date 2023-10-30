@@ -62,18 +62,19 @@ class RecurringDashboard
     {
         return wc_get_endpoint_url('rm-pagbank-subscriptions-view', $subscription->id);
     }
-    
+
+    /**
+     * Return the possible in-row actions for a subscription
+     * Used in the user's account page > subscriptions
+     * @param $subscription
+     *
+     * @return array
+     */
     public function getSubscriptionActions($subscription): array
     {
         $actions = [];
         
         switch ($subscription->status) {
-            case 'ACTIVE':
-                $actions['cancel'] = [
-                    'name' => __('Cancelar', Connect::DOMAIN),
-                    'url' => '#'
-                ];
-                break;
             case 'PAUSED':
                 $actions['unpause'] = [
                     'name' => __('Resumir', Connect::DOMAIN),

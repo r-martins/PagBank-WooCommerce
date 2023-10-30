@@ -15,6 +15,7 @@
 /** @var RecurringDashboard $dashboard */
 /** @var WC_Order $initialOrder */
 
+use RM_PagBank\Connect;
 use RM_PagBank\Connect\Recurring\RecurringDashboard;
 defined( 'ABSPATH' ) || exit;
 do_action('rm_pagbank_before_account_recurring_view_subscription', $subscription);
@@ -35,5 +36,10 @@ do_action('rm_pagbank_before_account_recurring_view_subscription', $subscription
 <?php do_action( 'rm_pagbank_view_subscription_actions', $subscription ); ?>
     <hr class="rm-pagbank-separator"/>
 <h2 class="woocommerce-order-details__title orders-title"><?php _e('Pedidos gerados a partir desta assinatura', RM_PagBank\Connect::DOMAIN);?></h2>
-<p><?php _e('Após o pedido inicial, toda vez que uma cobrança é feita, um novo pedido é gerado.', RM_PagBank\Connect::DOMAIN)?></p>
+    <p><?php echo sprintf(
+            __('Após o %s, toda vez que uma cobrança é feita, um novo pedido é gerado.', Connect::DOMAIN),
+            '<mark class="order-number"><a href="'.$initialOrder->get_view_order_url().'">'.
+            __('pedido inicial', Connect::DOMAIN) 
+            .'</a></mark>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        ); ?></p>
 <?php do_action( 'rm_pagbank_view_subscription_order_list', $subscription );
