@@ -46,8 +46,13 @@ class Common
             'items' => $this->getItemsData(),
         ];
 
-        if ($this->order->has_shipping_address()){
-            $return['shipping']['address'] = $this->getShippingAddress();
+        if ($this->order->has_shipping_address() && Params::getConfig('shipping_param', '') !== 'never'){
+            $address = $this->getShippingAddress();
+            $return['shipping']['address'] = $address;
+            $helper = new Params();
+            if (Params::getConfig('shipping_param', '') === 'validate' && ! $helper->isAddressValid($address)){
+                unset($return['shipping']);
+            }
         }
 
         $return['notification_urls'] = $this->getNotificationUrls();
@@ -64,7 +69,7 @@ class Common
         $customer = new Customer();
         $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $customer->setEmail($this->order->get_billing_email());
-        $customer->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
+        $customer->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf'))) ;
         $phone = new Phone();
         $number = Params::extractPhone($this->order);
         $phone->setArea((int)$number['area']);
@@ -107,9 +112,6 @@ class Common
             $address->setComplement($this->order->get_meta('_shipping_complement'));
         
         $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
-        if ( empty($address->getLocality()) ) {
-            $address->setLocality(__('(Bairro não informado)', Connect::DOMAIN));
-        }
         
         $address->setCity($this->order->get_shipping_city('edit'));
         $address->setRegionCode($this->order->get_shipping_state('edit'));

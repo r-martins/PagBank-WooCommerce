@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect;
 
+use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
 use Throwable;
 
@@ -39,13 +40,40 @@ class Exception extends \Exception
                 .')';
             $msg = isset($error['code']) ? $error['code'] . ' - ' : '';
             $msg .= $this->errors[$error['code']] ?? 'Erro desconhecido';
-            $msg .= isset($error['parameter_name']) ? ' (' . $error['parameter_name'] . ')' : '';
+            $friendlyParamName = $this->getFriendlyParameterName($error['parameter_name'] ?? '');
+            $msg .= isset($error['parameter_name']) ? ' (' . $friendlyParamName . ')' : '';
             $message[] = $msg;
         }
 
         Functions::log('Erro Connect: ' . implode(', ', $original_error_messages), 'error');
         $message = implode("<br/>\n", $message);
         parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * Returns a friendly name for the parameter that is missing or invalid
+     * @param string $parameterName
+     *
+     * @return string
+     */
+    public function getFriendlyParameterName(string $parameterName): string
+    {
+        switch ($parameterName){
+            case 'customer.tax_id':
+                return $parameterName . ' - ' . __('CPF/CNPJ', Connect::DOMAIN);
+            case 'charges[0].payment_method.boleto.due_date':
+                return $parameterName . ' - ' . __('Data de vencimento do boleto', Connect::DOMAIN);
+            case strpos($parameterName, 'locality') !== false:
+                return $parameterName . ' - ' . __('Bairro', Connect::DOMAIN);
+            case strpos($parameterName, 'address.number') !== false:
+                return $parameterName . ' - ' . __('Número do Endereço', Connect::DOMAIN);
+            case strpos($parameterName, 'address.city') !== false:
+                return $parameterName . ' - ' . __('Cidade do Endereço', Connect::DOMAIN);
+            case strpos($parameterName, 'address.region') !== false:
+                return $parameterName . ' - ' . __('Estado do Endereço', Connect::DOMAIN);
+        }
+        
+        return $parameterName;
     }
 
 }

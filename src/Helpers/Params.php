@@ -4,6 +4,7 @@ namespace RM_PagBank\Helpers;
 
 use Exception;
 use RM_PagBank\Connect;
+use RM_PagBank\Object\Address;
 use WC_Order;
 
 /**
@@ -288,5 +289,31 @@ class Params
         }
 
         return '';
+    }
+
+    /**
+     * Checks if all required address attributes are not empty
+     * @param Address $address
+     *
+     * @return bool
+     */
+    public function isAddressValid(Address $address): bool
+    {
+        $required = [
+            'street',
+            'number',
+            'locality',
+            'city',
+            'regionCode',
+            'country',
+            'postalCode',
+        ];
+        foreach ($required as $field){
+            if (empty($address->{'get' . ucfirst($field)}())){
+                return false;
+            }
+        }
+        
+        return true;
     }
 }

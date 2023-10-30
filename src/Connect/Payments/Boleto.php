@@ -70,9 +70,7 @@ class Boleto extends Common
         $holderAddress->setCity($this->order->get_billing_city());
         $holderAddress->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode()));
         $locality = $this->order->get_meta('_billing_neighborhood');
-        if (empty($locality)){
-            $locality = __('(Bairro não informado)', Connect::DOMAIN);
-        }
+        
         $holderAddress->setLocality($locality);
         $holderAddress->setStreet($this->order->get_billing_address_1());
         $holderAddress->setNumber($this->order->get_meta('_billing_number'));
