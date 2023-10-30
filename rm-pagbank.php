@@ -12,7 +12,7 @@
  * Plugin URI:        https://pagseguro.ricardomartins.net.br/
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente em muito mais.
  * Version:           4.0.0
- * Requires at least: 5.2
+ * Requires at least: 5.3
  * Requires PHP:      7.4
  * Author:            martins56
  * Author URI:        https://magenteiro.com

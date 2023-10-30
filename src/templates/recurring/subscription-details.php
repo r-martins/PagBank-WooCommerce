@@ -76,10 +76,17 @@ wc_print_notices();
                 </tr>
             <?php endif;?>
 
-            <?php if ( ! empty($subscription->cancelation_reason) ): ?>
+            <?php if ( ! empty($subscription->canceled_reason) ): ?>
                 <tr>
                     <th scope="row"><?php _e('Razão do Cancelamento', RM_PagBank\Connect::DOMAIN)?></th>
-                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->cancelation_reason));?></td>
+                    <td><?php echo esc_html($subscription->canceled_reason);?></td>
+                </tr>
+            <?php endif;?>
+
+            <?php if ( $subscription->status == 'PENDING_CANCEL' ): ?>
+                <tr>
+                    <th scope="row"><?php _e('Assinatura será cancelada em', RM_PagBank\Connect::DOMAIN)?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
                 </tr>
             <?php endif;?>
 

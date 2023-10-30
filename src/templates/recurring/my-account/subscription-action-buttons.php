@@ -47,7 +47,7 @@ $actions = apply_filters('rm_pagbank_account_recurring_actions', [
         'url' => wc_get_endpoint_url( 'rm-pagbank-subscriptions-view/' . $subscription->id, '', wc_get_page_permalink( 'myaccount' ) ) . '?action=update&id=' . $subscription->id,
         'class' => 'subscription-button update',
     ]
-]);
+], $subscription);
 if ( ! empty( $actions ) ) {
     foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
         echo '<a href="' . esc_url( $action['url'] ) . '" class="woocommerce-button ' . esc_attr( $action['class'] ) . ' button ' . sanitize_html_class( $key ) . '">' . esc_html( $action['name'] ) . '</a>';

@@ -60,6 +60,7 @@ class Recurring
         add_action('rm_pagbank_view_subscription_order_list', [$this, 'getSubscriptionOrderList'], 10, 1);
         add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
         add_action('rm_pagbank_manage_subscription_action', [$this, 'manageSubscriptionAction'], 10, 1);
+        add_filter('rm_pagbank_account_recurring_actions', [$this, 'filterAllowedActions'], 10, 2);
         //endregion
     }
     
@@ -302,9 +303,10 @@ class Recurring
     {
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
-        
+        $nextBill = wp_date('U', strtotime($subscription->next_bill_at));
+        $newStatus = ($nextBill < time()) ? 'CANCELED' : 'PENDING_CANCEL';
         $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
-            ['canceled_at' => gmdate('Y/m/d H:i:s'), 'status' => 'CANCELED', 'canceled_reason' => $reason],
+            ['canceled_at' => gmdate('Y/m/d H:i:s'), 'status' => $newStatus, 'canceled_reason' => $reason],
             ['id' => $subscription->id],
             ['%s', '%s', '%s'],
             ['%d']
@@ -343,7 +345,7 @@ class Recurring
     {
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
-        if ($subscription->status != 'ACTIVE' || $subscription->status != 'PENDING') {
+        if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
             wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
             return false;
         }
@@ -609,6 +611,43 @@ class Recurring
         }
         
 //        wp_redirect(wc_get_account_endpoint_url('rm-pagbank-subscriptions-view/' . $subscription->id));
+    }
+    
+    public function filterAllowedActions($actions, $subscription)
+    {
+        switch ($subscription->status){
+            case 'PAUSED':
+                unset($actions['pause']);
+                unset($actions['activate']);
+                break;
+            case 'ACTIVE':
+                unset($actions['unpause']);
+                unset($actions['activate']);
+                break;
+            case 'CANCELED':
+                unset($actions['cancel']);
+                unset($actions['pause']);
+                unset($actions['unpause']);
+                unset($actions['activate']);
+                break;
+            case 'SUSPENDED':
+                unset($actions['cancel']);
+                unset($actions['pause']);
+                unset($actions['unpause']);
+                break;
+            case 'PENDING':
+                unset($actions['unpause']);
+                break;
+            case 'PENDING_CANCEL':
+                unset($actions['cancel']);
+                unset($actions['pause']);
+                unset($actions['unpause']);
+                unset($actions['activate']);
+                unset($actions['update']);
+                break;
+        }
+        
+        return $actions;
     }
     
 }
