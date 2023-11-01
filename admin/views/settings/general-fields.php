@@ -21,7 +21,7 @@ return array(
 		]
 	],
 	'general' => [
-        'title' => __( 'Configurações Visuais', Connect::DOMAIN ),
+        'title' => __( 'Configurações Gerais', Connect::DOMAIN ),
         'type'  => 'title',
         'desc'  => '',
         'id'    => 'wc_pagseguro_connect_general_options',
@@ -48,6 +48,17 @@ return array(
 			'both'			=> __('Ambos', Connect::DOMAIN),
 		],
 	],
+    'shipping_param' => [
+        'title'		=> __('Endereço de Entrega', Connect::DOMAIN),
+        'type'		=> 'select',
+        'description' => '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029" target="_blank">' . __('Saiba mais', Connect::DOMAIN) . '</a>',
+        'default'	=> '',
+        'options'	=> [
+            ''		    => __('Fornecer ao PagBank sempre que aplicável', Connect::DOMAIN),
+            'validate'	=> __('Não fornecer se estiver incompleto', Connect::DOMAIN),
+            'never'		=> __('Nunca fornecer ao PagBank', Connect::DOMAIN),
+        ],
+    ],
 	'enabled'              => [
         'title'   => __( 'Habilitar/Desabilitar', Connect::DOMAIN ),
         'type'    => 'checkbox',

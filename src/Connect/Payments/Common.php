@@ -46,8 +46,13 @@ class Common
             'items' => $this->getItemsData(),
         ];
 
-        if ($this->order->has_shipping_address()){
-            $return['shipping']['address'] = $this->getShippingAddress();
+        if ($this->order->has_shipping_address() && Params::getConfig('shipping_param', '') !== 'never'){
+            $address = $this->getShippingAddress();
+            $return['shipping']['address'] = $address;
+            $helper = new Params();
+            if (Params::getConfig('shipping_param', '') === 'validate' && ! $helper->isAddressValid($address)){
+                unset($return['shipping']);
+            }
         }
 
         $return['notification_urls'] = $this->getNotificationUrls();
@@ -107,12 +112,6 @@ class Common
             $address->setComplement($this->order->get_meta('_shipping_complement'));
         
         $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
-        $address->setCity($this->order->get_shipping_city('edit'));
-        $address->setRegionCode($this->order->get_shipping_state('edit'));
-        $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
-        if ( empty($address->getLocality()) ) {
-            $address->setLocality(__('(Bairro não informado)', Connect::DOMAIN));
-        }
         
         $address->setCity($this->order->get_shipping_city('edit'));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
@@ -168,7 +167,7 @@ class Common
 				break;
         }
 		$order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
-		$order->add_meta_data('_pagbank_order_charges', $response['charges'] ?? null, true);
+		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
 		$order->update_status('pending');

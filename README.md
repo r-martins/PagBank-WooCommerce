@@ -8,16 +8,19 @@ Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
 
 **Integrado com EnvioFácil (economize até 70% no frete ao usar PagBank)¹**
 
-![Cartão de Crédito na visão do cliente](https://i.imgur.com/epgmWWr.jpg)
-![PIX - Tela de Sucesso](https://i.imgur.com/FwTz73C.jpg)
-![Configurações de cartão de crédito](https://i.imgur.com/wE3YBXX.jpg)
-![PIX e Boleto - Configurações](https://i.imgur.com/nhwMhUO.jpg)
-![Admin - Tela do Pedido](https://i.imgur.com/CIgTLnv.jpg)
-![Envio Fácil](https://i.imgur.com/nQlOBfx.jpg)
+<details>
+  <summary>Veja alguns Screenshots (clique aqui para expandir)</summary>
+  <img src="https://i.imgur.com/epgmWWr.jpg" alt="Cartão de Crédito na visão do cliente" title="Cartão de Crédito na visão do cliente"/>
+  <img src="https://i.imgur.com/FwTz73C.jpg" alt="PIX - Tela de Sucesso" title="PIX - Tela de Sucesso"/>
+  <img src="https://i.imgur.com/wE3YBXX.jpg" alt="Configurações de cartão de crédito" title="Configurações de cartão de crédito"/>
+  <img alt="PIX e Boleto - Configurações" src="https://i.imgur.com/nhwMhUO.jpg" title="PIX e Boleto - Configurações"/>
+  <img alt="Admin - Tela do Pedido" src="https://i.imgur.com/CIgTLnv.jpg" title="Admin - Tela do Pedido"/>
+  <img alt="Envio Fácil" src="https://i.imgur.com/nQlOBfx.jpg" title="Envio Fácil"/>  
+</details>
 
 # Descrição
 
-https://www.youtube.com/watch?v=eN_WaK-1SQc
+<a href="https://www.youtube.com/watch?v=L9Oans5dZ7M"><img src="https://i.imgur.com/nyrybNq.jpg"/></a>
 
 Esta é a forma mais fácil de integrar sua loja com PagBank (PagSeguro).
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
@@ -71,10 +74,8 @@ Ao usar nossa integração, nossas taxas e condições serão aplicadas ao invé
 
 É importante notar que taxas negociadas no mundo físico (moderninhas) não são aplicadas no mundo online.
 
-Se mesmo assim você possuir uma taxa ou condição melhor, e se compromete a faturar mais de R$20 mil / mês (pedidos aprovados usando nossa integração), podemos incluir sua loja em uma aplicação especial.
+Se mesmo assim você possuir uma taxa ou condição melhor, e se compromete a faturar mais de R$20 mil / mês (pedidos aprovados usando nossa integração), podemos incluir sua loja em uma aplicação especial. Basta selecionar o modelo "Minhas taxas" quando obter sua Connect Key.
 
-Entre em [Contato conosco](https://pagsegurotransparente.zendesk.com/hc/pt-br/requests/new) para obter um convite e instruções. 
-Ao fazer isso, informe o url da sua loja e e-mail do responsável por ela. O e-mail do responsável deve ser @urldaloja.xyz.
 
 ## Tenho outra pergunta não listada aqui
 
@@ -122,6 +123,8 @@ O desenvolvedor ou PagBank não se responsabilizam por quaisquer danos causados 
 Esta é uma iniciativa pessoal, sem vínculo com PagBank. PagBank é uma marca do UOL.
 
 Este não é um produto oficial do PagBank.
+
+Ao usar este plugin você concorda com os [Termos de Uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html).
 
 ---
 ¹ A Integração com Envio Fácil está disponível apenas para lojas com integração 14 ou 30 dias. Embora utilizemos as APIs do PagSeguro para isso, eles não encorajam o uso dessas APIs. Use com cautela. O PagSeguro não oferece suporte para esta integração.
