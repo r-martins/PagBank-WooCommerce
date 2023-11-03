@@ -24,27 +24,27 @@ if ( ! isset($subscription->id) || ! $subscription->id ) {
 $actions = apply_filters('rm_pagbank_account_recurring_actions', [
     'cancel' => [
         'name' => __('Cancelar Assinatura', RM_PagBank\Connect::DOMAIN),
-        'url' => wc_get_endpoint_url( 'rm-pagbank-subscriptions-view/' . $subscription->id, '', wc_get_page_permalink( 'myaccount' ) ) . '?action=cancel&id=' . $subscription->id,
+        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=cancel&id=' . $subscription->id,
         'class' => 'subscription-button cancel',
+    ],
+    'uncancel' => [
+        'name' => __('Suspender Cancelamento', RM_PagBank\Connect::DOMAIN),
+        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=uncancel&id=' . $subscription->id,
+        'class' => 'subscription-button uncancel',
     ],
     'pause' => [
         'name' => __('Pausar Assinatura', RM_PagBank\Connect::DOMAIN),
-        'url' => wc_get_endpoint_url( 'rm-pagbank-subscriptions-view/' . $subscription->id, '', wc_get_page_permalink( 'myaccount' ) ) . '?action=pause&id=' . $subscription->id,
+        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pause&id=' . $subscription->id,
         'class' => 'subscription-button suspend',
     ],
     'unpause' => [
         'name' => __('Resumir Assinatura', RM_PagBank\Connect::DOMAIN),
-        'url' => wc_get_endpoint_url( 'rm-pagbank-subscriptions-view/' . $subscription->id, '', wc_get_page_permalink( 'myaccount' ) ) . '?action=unpause&id=' . $subscription->id,
+        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id,
         'class' => 'subscription-button suspend',
-    ],
-    'activate' => [
-        'name' => __('Ativar Assinatura', RM_PagBank\Connect::DOMAIN),
-        'url' => wc_get_endpoint_url( 'rm-pagbank-subscriptions-view/' . $subscription->id, '', wc_get_page_permalink( 'myaccount' ) ) . '?action=activate&id=' . $subscription->id,
-        'class' => 'subscription-button activate',
     ],
     'update' => [
         'name' => __('Atualizar Cartão', RM_PagBank\Connect::DOMAIN),
-        'url' => wc_get_endpoint_url( 'rm-pagbank-subscriptions-view/' . $subscription->id, '', wc_get_page_permalink( 'myaccount' ) ) . '?action=update&id=' . $subscription->id,
+        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=update&id=' . $subscription->id,
         'class' => 'subscription-button update',
     ]
 ], $subscription);

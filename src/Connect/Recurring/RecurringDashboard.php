@@ -70,7 +70,7 @@ class RecurringDashboard
      *
      * @return array
      */
-    public function getSubscriptionActions($subscription): array
+    public function getSubscriptionInRowActions($subscription): array
     {
         $actions = [];
         
@@ -78,20 +78,20 @@ class RecurringDashboard
             case 'PAUSED':
                 $actions['unpause'] = [
                     'name' => __('Resumir', Connect::DOMAIN),
-                    'url' => '?action=unpause&id=' . $subscription->id
+                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id
                 ];
                 break;
             case 'PENDING_CANCEL':
                 $actions['cancel'] = [
                     'name' => __('Suspender Cancelamento', Connect::DOMAIN),
-                    'url' => '#'
+                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=uncancel&id=' . $subscription->id
                 ];
                 break;
             case 'SUSPENDED':
             case 'PENDING':
                 $actions['pay'] = [
                     'name' => __('Pagar', Connect::DOMAIN),
-                    'url' => '#'
+                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pay&id=' . $subscription->id
                 ];
                 break;
             case 'CANCELED':

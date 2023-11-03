@@ -56,7 +56,7 @@ $wp_button_class = wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_
                     <?php echo esc_html( $subscription->recurring_amount ); ?>
                 <?php elseif ( 'subscription-actions' === $column_id ) : ?>
                     <?php
-                    $actions = $dashboard->getSubscriptionActions( $subscription );
+                    $actions = $dashboard->getSubscriptionInRowActions( $subscription );
                     if ( ! empty( $actions ) ) {
                         foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
                             echo '<a href="' . esc_url( $action['url'] ) . '" class="woocommerce-button' . esc_attr( $wp_button_class ) . ' button ' . sanitize_html_class( $key ) . '">' . esc_html( $action['name'] ) . '</a>';

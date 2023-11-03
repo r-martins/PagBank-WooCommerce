@@ -7,6 +7,7 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use RM_PagBank\Connect;
+use stdClass;
 use WC_Cart;
 use WC_Order;
 
@@ -89,6 +90,35 @@ class Recurring
             return $available[$frequency];
             
         return $available['default'];
+    }
+
+    /**
+     * In case of a subscription for digital content you can check if the user are still eligible to access the content
+     * It will be based on the status of the subscription. In cases where the subscription is pending or paused
+     * this method will see if the next billing date is in the future.
+     *
+     * @param stdClass $subscription
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function areBenefitsActive(\stdClass $subscription): bool
+    {
+        switch ($subscription->status) {
+            case 'ACTIVE':
+                return true;
+            case 'PAUSED':
+            case 'PENDING_CANCEL':
+                $nextBilling = $subscription->next_billing_at;
+                $now = new DateTime('now', new DateTimeZone('GMT'));
+                return $nextBilling > $now->format('Y-m-d H:i:s');
+            case 'PENDING':
+            case 'SUSPENDED':
+            case 'CANCELED':
+                default:
+                    return false;
+                
+        }
     }
     
 }

@@ -82,10 +82,11 @@ class Gateway extends WC_Payment_Gateway_CC
     /**
      * Updates a transaction from the order's json information
      *
-     * @param $order WC_Order
+     * @param $order      WC_Order
      * @param $order_data array
      *
      * @return void
+     * @throws Exception
      */
     public static function updateTransaction(WC_Order $order, array $order_data): void
     {
@@ -160,6 +161,30 @@ class Gateway extends WC_Payment_Gateway_CC
                     $e->getTrace()
                 );
             }
+        }
+
+        //region Update subscription status accordingly
+        if ($order->get_meta('_pagbank_is_recurring')) {
+            $recurring = new Recurring();
+            $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+            $shouldBeStatus = $recurringHelper->getStatusFromOrder($order);
+            $subscription = $recurring->getSubscriptionFromOrder($order->get_parent_id('edit'));
+            $parentOrder = wc_get_order($order->get_parent_id('edit'));
+            $frequency = $parentOrder->get_meta('_recurring_frequency');
+            $cycle = (int)$parentOrder->get_meta('_recurring_cycle');
+            if ( ! $subscription instanceof \stdClass) {
+                return;
+            }
+            
+            if ($subscription->status != $shouldBeStatus) {
+                $recurring->updateSubscription($subscription, [
+                    'status' => $shouldBeStatus,
+                    'next_bill_at' => $recurringHelper->calculateNextBillingDate(
+                        $frequency,
+                        $cycle
+                    )->format('Y-m-d')
+                ]);
+            }            
         }
     }
 
