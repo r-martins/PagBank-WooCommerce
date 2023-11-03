@@ -1,0 +1,22 @@
+parameters:
+  # ...
+
+services:
+  RM_PagBank\Connect\Recurring\Actions:
+    class: RM_PagBank\Connect\Recurring\Actions
+    public: true
+    autowire: true
+  RM_PagBank\Connect\Recurring:
+    class: RM_PagBank\Connect\Recurring
+    public: true
+    autowire: true
+  RM_PagBank\Helpers\Recurring:
+    class: RM_PagBank\Helpers\Recurring
+    public: true
+    autowire: true
+  RM_PagBank\Connect\Gateway:
+    class: RM_PagBank\Connect\Gateway
+    arguments:
+      $recurringHelper: 'RM_PagBank\Helpers\Recurring'
+    public: true
+    autowire: true

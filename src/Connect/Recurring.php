@@ -21,6 +21,7 @@ use wpdb;
  */
 class Recurring
 {
+
     public function init()
     {
         if (Params::getConfig('recurring_enabled') != 'yes') return;
@@ -31,7 +32,7 @@ class Recurring
         add_filter('woocommerce_product_data_tabs', [$this, 'addProductRecurringTab']);
         //endregion
 
-        //region frontend initial order flow
+        //region frontend initial-order flow
         add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
         //endregion
@@ -54,15 +55,17 @@ class Recurring
         add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
         add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', [$this, 'addManageSubscriptionContent']);
         add_action('woocommerce_account_rm-pagbank-subscriptions-view_endpoint', [$this, 'addManageSubscriptionViewContent']);
+        add_action('woocommerce_api_rm-pagbank-subscription-edit', [$this, 'addManageSubscriptionEditAction']);
         add_action('rm_pagbank_view_subscription', [$this, 'subscriptionDetailsTable'], 10, 1);
         add_action('rm_pagbank_recurring_details_subscription_table_payment_info', [$this, 'getPaymentInfoRows'], 10, 1);
         add_action('rm_pagbank_view_subscription_actions', [$this, 'getSubscriptionActionButtons'], 10, 1);
         add_action('rm_pagbank_view_subscription_order_list', [$this, 'getSubscriptionOrderList'], 10, 1);
         add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
-        add_action('rm_pagbank_manage_subscription_action', [$this, 'manageSubscriptionAction'], 10, 1);
         add_filter('rm_pagbank_account_recurring_actions', [$this, 'filterAllowedActions'], 10, 2);
         //endregion
     }
+    
+    
     
     public function addProductRecurringTab($productTabs)
     {
@@ -207,12 +210,15 @@ class Recurring
         return $success !== false;
     }
     
-    public function processRecurringPayments()
+    public function processRecurringPayments(\stdClass $subscription = null)
     {
         global $wpdb;
         //Get all recurring orders that are due or past due and active
         $now = gmdate('Y-m-d H:i:s');
-        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE status = 'ACTIVE' AND next_bill_at <= '$now'";
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE ";
+        $sql .= $subscription == null 
+            ? "status = 'ACTIVE' AND next_bill_at <= '$now'" 
+            : "id = 0{$subscription->id}";
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
             $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
@@ -291,117 +297,7 @@ class Recurring
         return $emails;
     }
 
-    /**
-     * Cancels the specified subscription
-     * @param stdClass $subscription The subscription to be canceled (row from pagbank_recurring table)
-     * @param string   $reason     The reason for cancellation (will be visible to the customer)
-     * @param string   $reasonType The reason type (CUSTOMER or FAILURE)
-     *
-     * @return bool
-     */
-    public function cancelSubscription(\stdClass $subscription, string $reason, string $reasonType): bool
-    {
-        global $wpdb;
-        $initialOrder = wc_get_order($subscription->initial_order_id);
-        $nextBill = wp_date('U', strtotime($subscription->next_bill_at));
-        $newStatus = ($nextBill < time()) ? 'CANCELED' : 'PENDING_CANCEL';
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
-            ['canceled_at' => gmdate('Y/m/d H:i:s'), 'status' => $newStatus, 'canceled_reason' => $reason],
-            ['id' => $subscription->id],
-            ['%s', '%s', '%s'],
-            ['%d']
-        );
-        
-        if ($update)
-        {
-            $reasonType = strtoupper($reasonType);
-            switch ($reasonType) {
-                case 'CUSTOMER':
-                    do_action(
-                        'pagbank_recurring_subscription_canceled_by_customer_notification',
-                        $subscription,
-                        $initialOrder
-                    );
-                    break;
-                case 'FAILURE':
-                    do_action(
-                        'pagbank_recurring_subscription_canceled_by_failure_notification',
-                        $subscription,
-                        $initialOrder
-                    );
-            }
-            wc_add_notice(__('Assinatura cancelada com sucesso.', Connect::DOMAIN));
-        }
-        return $update > 0;
-    }
-
-    /**
-     * Suspends the specified subscription
-     * @param stdClass $subscription
-     *
-     * @return bool
-     */
-    public function pauseSubscription(\stdClass $subscription): bool
-    {
-        global $wpdb;
-        $initialOrder = wc_get_order($subscription->initial_order_id);
-        if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
-            return false;
-        }
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
-            ['paused_at' => gmdate('Y/m/d H:i:s'), 'status' => 'PAUSED'],
-            ['id' => $subscription->id],
-            ['%s', '%s'],
-            ['%d']
-        );
-        
-        if ($update)
-        {
-            do_action(
-                'pagbank_recurring_subscription_paused_notification',
-                $subscription,
-                $initialOrder
-            );
-        }
-        return $update > 0;
-    }
     
-    public function unpauseSubscription(\stdClass $subscription)
-    {
-        global $wpdb;
-        $initialOrder = wc_get_order($subscription->initial_order_id);
-        $status = 'ACTIVE';
-
-        if ($subscription->status != 'PAUSED') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
-            return false;
-        }
-        //if next_bill_at < current date, update the next_bill_at with current time
-        $nextBill = $subscription->next_bill_at;
-        if ( gmdate('U', strtotime($nextBill)) <= gmdate('U') ) {
-            $nextBill = gmdate('Y-m-d H:i:s');
-            $status = 'PENDING';
-        }
-        
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
-            ['paused_at' => null, 'status' => $status, 'next_bill_at' => $nextBill],
-            ['id' => $subscription->id],
-            ['%s', '%s', '%s'],
-            ['%d']
-        );
-        
-        if ($update)
-        {
-            wc_add_notice(__('Assinatura resumida com sucesso.', Connect::DOMAIN));
-            do_action(
-                'pagbank_recurring_subscription_unpaused_notification',
-                $subscription,
-                $initialOrder
-            );
-        }
-        return $update > 0;
-    }
     
     public function addSubscriptionManagementMenuItem($items)
     {
@@ -413,6 +309,7 @@ class Recurring
     {
         add_rewrite_endpoint('rm-pagbank-subscriptions', EP_PAGES);
         add_rewrite_endpoint('rm-pagbank-subscriptions-view', EP_PAGES);
+        add_rewrite_endpoint('rm-pagbank-subscriptions-edit', EP_ROOT | EP_PAGES);
     }
     
     public function addManageSubscriptionContent()
@@ -453,7 +350,7 @@ class Recurring
                 'initialOrder' => $order,
                 'dashboard' => $dash
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
-    }
+    }    
     
     public function addSubscriptionManagementTitle($title, $postid)
     {
@@ -489,7 +386,8 @@ class Recurring
         global $wp;
         $pbEndpoints = [
             'my-account/rm-pagbank-subscriptions',
-            'my-account/rm-pagbank-subscriptions-view'
+            'my-account/rm-pagbank-subscriptions-view',
+            'my-account/rm-pagbank-subscriptions-edit',
         ];
         foreach ($pbEndpoints as $endpoint) {
             if (stripos($wp->request, $endpoint) !== false)
@@ -575,43 +473,6 @@ class Recurring
             'wp_button_class' => wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_theme_get_element_class_name( 'button' ) : '',
         ], 'woocommerce', plugin_dir_path( WC_PLUGIN_FILE ) );
     }
-
-    public function manageSubscriptionAction($action)
-    {
-        if (!is_user_logged_in() && !is_admin()) 
-            return;
-        $subscription = $this->getSubscription($_GET['id']);
-        
-        if ( ! isset($_GET['id']) || ! is_numeric($_GET['id']) || $subscription == null) {
-            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
-            return;
-        }
-        
-        //if subscription doesn't belong to user
-        $subscription = $this->getSubscription($_GET['id']);
-        $order = wc_get_order($subscription->initial_order_id);
-        if ($order->get_customer_id('edit') !== get_current_user_id()) {
-            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
-            return;
-        }
-
-        switch ($action){
-            case 'cancel':
-                $this->cancelSubscription($subscription, __('Cancelada pelo cliente', Connect::DOMAIN), 'CUSTOMER');
-                break;
-            case 'pause':
-                $this->pauseSubscription($subscription);
-                break;
-            case 'unpause':
-                $this->unpauseSubscription($subscription);
-                break;
-            case 'update':
-                $this->updateSubscriptionAction();
-                break;
-        }
-        
-//        wp_redirect(wc_get_account_endpoint_url('rm-pagbank-subscriptions-view/' . $subscription->id));
-    }
     
     public function filterAllowedActions($actions, $subscription)
     {
@@ -619,23 +480,28 @@ class Recurring
             case 'PAUSED':
                 unset($actions['pause']);
                 unset($actions['activate']);
+                unset($actions['uncancel']);
                 break;
             case 'ACTIVE':
                 unset($actions['unpause']);
+                unset($actions['uncancel']);
                 unset($actions['activate']);
                 break;
             case 'CANCELED':
                 unset($actions['cancel']);
+                unset($actions['uncancel']);
                 unset($actions['pause']);
                 unset($actions['unpause']);
                 unset($actions['activate']);
                 break;
             case 'SUSPENDED':
                 unset($actions['cancel']);
+                unset($actions['uncancel']);
                 unset($actions['pause']);
                 unset($actions['unpause']);
                 break;
             case 'PENDING':
+                unset($actions['uncancel']);
                 unset($actions['unpause']);
                 break;
             case 'PENDING_CANCEL':
@@ -649,5 +515,271 @@ class Recurring
         
         return $actions;
     }
+
+    // region frontend subscription management -edit api endpoint (/wc-api/rm-pagbank-subscription-edit)
+
+    /**
+     * Entry point for the subscription management edit api endpoint
+     * @return void
+     */
+    public function addManageSubscriptionEditAction(): void
+    {
+        $subscriptionId = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+        $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_STRING);
+        $referrer = wp_get_referer() ?? home_url();
+        if (empty($subscriptionId) || empty($action)) {
+            wp_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', Connect::DOMAIN), 'error');
+            return;
+        }
+
+        $subscription = $this->getSubscription($subscriptionId);
+        if ( ! $subscription->id ) {
+            wp_add_notice(__('Assinatura não encontrada.', Connect::DOMAIN), 'error');
+            wp_redirect($referrer);
+            return;
+        }
+        $order = wc_get_order($subscription->initial_order_id);
+        if ( ! is_admin()) {
+            if ( ! is_user_logged_in() ) {
+                wp_die(
+                    __('Você precisa estar logado para acessar esta página.', Connect::DOMAIN),
+                    __('Acesso Negado', Connect::DOMAIN, ['response' => 403])
+                );
+            }
+
+            if ( $order->get_customer_id() != get_current_user_id()) {
+                wp_die(
+                    __('Você não tem permissão para acessar esta página.', Connect::DOMAIN),
+                    __('Acesso Negado', Connect::DOMAIN, ['response' => 403])
+                );
+            }
+        }
+        
+        if ( ! method_exists($this, $action . 'SubscriptionAction')) {
+            wc_add_notice(__('Ação não implementada.', Connect::DOMAIN), 'error');
+            wp_redirect($referrer);
+            return;
+        }
+
+        $this->{$action . 'SubscriptionAction'}($subscription);
+        wp_redirect($referrer);
+
+    }
+
+    public function cancelSubscriptionAction(\stdClass $subscription): void
+    {
+        $this->cancelSubscription($subscription, __('Cancelado pelo cliente', Connect::DOMAIN), 'CUSTOMER');
+    }
     
+    /**
+     * Cancels the specified subscription
+     * @param stdClass $subscription The subscription to be canceled (row from pagbank_recurring table)
+     * @param string   $reason     The reason for cancellation (will be visible to the customer)
+     * @param string   $reasonType The reason type (CUSTOMER or FAILURE)
+     *
+     * @return bool
+     */
+    public function cancelSubscription(\stdClass $subscription, string $reason, string $reasonType): void
+    {
+        global $wpdb;
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        $nextBill = wp_date('U', strtotime($subscription->next_bill_at));
+        $newStatus = ($nextBill < time()) ? 'CANCELED' : 'PENDING_CANCEL';
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['canceled_at' => gmdate('Y/m/d H:i:s'), 'status' => $newStatus, 'canceled_reason' => $reason],
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        if ($update)
+        {
+            $reasonType = strtoupper($reasonType);
+            switch ($reasonType) {
+                case 'CUSTOMER':
+                    do_action(
+                        'pagbank_recurring_subscription_canceled_by_customer_notification',
+                        $subscription,
+                        $initialOrder
+                    );
+                    break;
+                case 'FAILURE':
+                    do_action(
+                        'pagbank_recurring_subscription_canceled_by_failure_notification',
+                        $subscription,
+                        $initialOrder
+                    );
+            }
+        }
+        
+        if ($update > 0) {
+            wc_add_notice(__('Assinatura cancelada com sucesso.', Connect::DOMAIN));
+            return;            
+        }
+        
+        wc_add_notice(__('Não foi possível cancelar a assinatura.', Connect::DOMAIN), 'error');
+    }
+
+    /** @noinspection PhpUnused */
+    public function uncancelSubscriptionAction(\stdClass $subscription): void
+    {
+        global $wpdb;
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        if ($subscription->status != 'PENDING_CANCEL') {
+            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
+            return;
+        }
+        
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['canceled_at' => null, 'status' => 'ACTIVE'],
+            ['id' => $subscription->id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        if ($update)
+        {
+            do_action(
+                'pagbank_recurring_subscription_canceled_suspension_notification',
+                $subscription,
+                $initialOrder
+            );
+        }
+        
+        if ($update > 0) {
+            wc_add_notice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', Connect::DOMAIN));
+            return;
+        }
+        
+        wc_add_notice(__('Não foi possível suspender o cancelamento da assinatura.', Connect::DOMAIN), 'error');
+    }
+
+    /**
+     * Suspends the specified subscription
+     *
+     * @param stdClass $subscription
+     *
+     * @return bool
+     * @noinspection PhpUnused*/
+    public function pauseSubscriptionAction(\stdClass $subscription): void
+    {
+        global $wpdb;
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
+            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
+            return;
+        }
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['paused_at' => gmdate('Y/m/d H:i:s'), 'status' => 'PAUSED'],
+            ['id' => $subscription->id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        if ($update)
+        {
+            do_action(
+                'pagbank_recurring_subscription_paused_notification',
+                $subscription,
+                $initialOrder
+            );
+        }
+        if ($update > 0){
+            wc_add_notice(__('Assinatura pausada com sucesso.', Connect::DOMAIN));
+            return;
+        }
+        wc_add_notice(__('Não foi possível pausar a assinatura.', Connect::DOMAIN), 'error');
+    }
+
+    /** @noinspection PhpUnused */
+    public function unpauseSubscriptionAction(\stdClass $subscription): void
+    {
+        global $wpdb;
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        $status = 'ACTIVE';
+
+        if ($subscription->status != 'PAUSED') {
+            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
+            return;
+        }
+        //if next_bill_at < current date, update the next_bill_at with current time
+        $nextBill = $subscription->next_bill_at;
+        $isDueNow = gmdate('U', strtotime($nextBill)) <= gmdate('U');
+        if ($isDueNow) {
+            $nextBill = gmdate('Y-m-d H:i:s');
+            $status = 'PENDING';
+        }
+
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['paused_at' => null, 'status' => $status, 'next_bill_at' => $nextBill],
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+        
+        if ($isDueNow) {
+            $this->processRecurringPayments($subscription);
+        }
+
+        if ($update > 0)
+        {
+            wc_add_notice(__('Assinatura resumida com sucesso.', Connect::DOMAIN));
+            do_action(
+                'pagbank_recurring_subscription_unpaused_notification',
+                $subscription,
+                $initialOrder
+            );
+            return;
+        }
+        
+        wc_add_notice(__('Não foi possível resumir a assinatura.', Connect::DOMAIN), 'error');
+    }
+    // endregion
+
+    /**
+     * Updates $subscription with the new $data
+     * @param stdClass $subscription
+     * @param array    $data
+     *
+     * @return bool
+     */
+    public function updateSubscription(\stdClass $subscription, array $data): bool
+    {
+        global $wpdb;
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            $data,
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+        
+        if ($update > 0)
+        {
+            do_action(
+                'pagbank_recurring_subscription_updated_notification',
+                $subscription,
+                $data
+            );
+            return true;
+        }
+        return false;        
+    }
+
+    /**
+     * Returns the subscription with the given initial order id or WC_Order object
+     * @param mixed $order WC_Order | int
+     *
+     * @return array|object|stdClass|null
+     */
+    public function getSubscriptionFromOrder($order)
+    {
+        global $wpdb;
+        
+        if ($order instanceof WC_Order){
+            $order = $order->get_id();
+        }
+        $order = intval($order);
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$order}";
+        return $wpdb->get_row($sql);
+    }
 }
