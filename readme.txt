@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.2
 Requires PHP: 7.4
-Stable tag: 4.1.0
+Stable tag: 4.1.1
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -108,6 +108,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.1.1 =
+* Corrigido problema de erro com unit.amount nos casos onde um ou mais produtos com valor zero está presente
+* Administrador da loja agora recebe e-mail de novo pedido
+
 = 4.1.0 =
 * Mensagens mais amigáveis de erro ajudam o cliente a saber que parâmetro precisa ser corrigido
 * Agora há opção de [ocultar o endereço de entrega](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029), evitando erros de validação de endereço em vários cenários.
