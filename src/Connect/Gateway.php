@@ -523,7 +523,7 @@ class Gateway extends WC_Payment_Gateway_CC
         // endregion
 
         // some notes to customer (replace true with false to make it private)
-        $order->add_order_note( 'PagBank: Pedido criado com sucesso!', false );
+        $order->add_order_note( 'PagBank: Pedido criado com sucesso!', true );
         
         // sends the new order email
         $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
