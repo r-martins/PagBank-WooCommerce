@@ -16,7 +16,7 @@
     ],
     "require": {
         "php": ">=7.4",
-        "ext-curl": "*"
+        "ext-json": "*"
     },
     "require-dev": {
         "yoast/phpunit-polyfills": "^2.0"

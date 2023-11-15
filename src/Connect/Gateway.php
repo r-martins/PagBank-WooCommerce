@@ -549,9 +549,9 @@ class Gateway extends WC_Payment_Gateway_CC
             case 'boleto':
                     $method = new Boleto($order);
                     break;
-                case 'pix':
-                    $method = new Payments\Pix($order);
-                    break;
+            case 'pix':
+                $method = new Payments\Pix($order);
+                break;
         }
         if (!empty($method)) {
             $method->getThankyouInstructions($order_id);
