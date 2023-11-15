@@ -2,7 +2,6 @@
 
 namespace RM_PagBank\Connect\Payments;
 
-use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Address;
@@ -45,12 +44,16 @@ class Common
             'customer' => $this->getCustomerData(),
             'items' => $this->getItemsData(),
         ];
+        
+        if (empty($return['items'])){
+            unset($return['items']);
+        }
 
-        if ($this->order->has_shipping_address() && Params::getConfig('shipping_param', '') !== 'never'){
+        if ($this->order->has_shipping_address() && Params::getConfig('shipping_param') !== 'never'){
             $address = $this->getShippingAddress();
             $return['shipping']['address'] = $address;
             $helper = new Params();
-            if (Params::getConfig('shipping_param', '') === 'validate' && ! $helper->isAddressValid($address)){
+            if (Params::getConfig('shipping_param') === 'validate' && ! $helper->isAddressValid($address)){
                 unset($return['shipping']);
             }
         }
@@ -87,6 +90,7 @@ class Common
 	public function getItemsData(): array
 	{
         $items = [];
+        
         /** @var WC_Order_Item_Product $item */
         foreach ($this->order->get_items() as $item) {
             $itemObj = new Item();
@@ -94,8 +98,14 @@ class Common
             $itemObj->setName($item['name']);
             $itemObj->setQuantity($item['quantity']);
             $itemObj->setUnitAmount(Params::convertToCents($item['line_subtotal']));
+            
+            if ($item['line_subtotal'] == 0) {
+                continue;
+            }
+            
             $items[] = $itemObj;
         }
+        
         return $items;
     }
 
