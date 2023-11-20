@@ -108,6 +108,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.1.2 =
+* Corrigido problema onde EnvioFacil não era suportado em aplicações autorizadas no modelo de recebimento em 30 dias (Reportado por Ligia Salzano)
+
 = 4.1.1 =
 * Corrigido problema de erro com unit.amount nos casos onde um ou mais produtos com valor zero está presente
 * Administrador da loja agora recebe e-mail de novo pedido
