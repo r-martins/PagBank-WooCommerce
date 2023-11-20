@@ -291,7 +291,7 @@ class EnvioFacil extends WC_Shipping_Method
 		$value = $value == '1' ? 'yes' : 'no';
 
 		$connectKey = Params::getConfig('connect_key');
-		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30' && $value == 'yes') === false) {
+		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
 			WC_Admin_Settings::add_error(
 				__(
 					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
