@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.2
 Requires PHP: 7.4
-Stable tag: 4.1.1
+Stable tag: 4.1.3
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -108,6 +108,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.1.3 =
+* Corrigido problema que ocorria em alguns checkouts (ex: FunnelKit) onde, ao atualizar o meio de frete, o valor da parcela do cartão não era atualizado corretamente. Reportado por Philippe.
+
 = 4.1.2 =
 * Corrigido problema onde EnvioFacil não era suportado em aplicações autorizadas no modelo de recebimento em 30 dias (Reportado por Ligia Salzano)
 
