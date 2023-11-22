@@ -289,7 +289,7 @@ class Params
 
         if ('PERCENT' == $discountType){
 			return sprintf(
-				__('Um desconto de %s será aplicado', Connect::DOMAIN),
+				__('Um desconto de %s será aplicado.', Connect::DOMAIN),
 				'<strong>'.$discountConfig.'</strong>'
 			);
         }

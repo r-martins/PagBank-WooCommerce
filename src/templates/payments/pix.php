@@ -4,8 +4,11 @@
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
 
 $expiry = (int)$this->get_option('pix_expiry_minutes');
+$recHelper = new Recurring();
+$isCartRecurring = $recHelper->isCartRecurring();
 switch ($expiry){
     case $expiry <= 60:
         $text = sprintf(__('Você terá %d minutos para pagar com seu código PIX.', Connect::DOMAIN), $expiry);
@@ -33,4 +36,10 @@ $discountText = Params::getDiscountText('pix');
         <br/>
         <?php echo $discountText; ?>
     <?php endif; ?>
+    <?php if ($isCartRecurring) :?>
+        <br/>
+        <p class="form-row form-row-wide">
+            <?php echo $recHelper->getRecurringTermsFromCart('pix');?>
+        </p>
+    <?php endif;?>
 </p>

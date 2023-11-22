@@ -2,10 +2,13 @@
 /** @var Gateway $this */
 
 use RM_PagBank\Connect\Gateway;
+use RM_PagBank\Helpers\Recurring;
 
 wp_enqueue_script( 'wc-credit-card-form' );
 $default_installments = $this->getDefaultInstallments();
 $installment_options = '<option value="">' . esc_html__( 'Informe um número de cartão', RM_PagBank\Connect::DOMAIN ) . '</option>';
+$recHelper = new Recurring();
+$isCartRecurring = $recHelper->isCartRecurring();
 $fields = array();
 
 $cvc_field = '<p class="form-row form-row-last">
@@ -66,6 +69,11 @@ $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_f
         ?>
         <input type="hidden" <?php echo $this->field_name('card-encrypted');?>" id="<?php echo esc_attr( $this->id )?>-card-encrypted" />
         <?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
+        <?php if ($isCartRecurring) :?>
+            <p class="form-row form-row-wide">
+                <?php echo $recHelper->getRecurringTermsFromCart('creditcard');?>
+            </p>
+        <?php endif;?>
         <div class="clear"></div>
     </fieldset>
 <?php

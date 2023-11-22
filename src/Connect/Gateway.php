@@ -582,7 +582,11 @@ class Gateway extends WC_Payment_Gateway_CC
         // endregion
 
         // some notes to customer (replace true with false to make it private)
-        $order->add_order_note( 'Pedido criado com sucesso no PagBank!' );
+        $order->add_order_note( 'PagBank: Pedido criado com sucesso!', true );
+        
+        // sends the new order email
+        $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
+        $newOrderEmail->trigger($order->get_id());
 
         $woocommerce->cart->empty_cart();
         return array(
@@ -604,9 +608,9 @@ class Gateway extends WC_Payment_Gateway_CC
             case 'boleto':
                     $method = new Boleto($order);
                     break;
-                case 'pix':
-                    $method = new Payments\Pix($order);
-                    break;
+            case 'pix':
+                $method = new Payments\Pix($order);
+                break;
         }
         if (!empty($method)) {
             $method->getThankyouInstructions($order_id);

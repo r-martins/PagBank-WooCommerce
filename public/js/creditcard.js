@@ -149,7 +149,7 @@ jQuery(document).ready(function ($) {
     /*endregion*/
 
 
-    $(document.body).on('update_checkout', function(e){
+    $(document.body).on('updated_checkout', function(e){
         $(document.body).trigger('update_installments');
     });
 
