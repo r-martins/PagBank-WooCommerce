@@ -6,6 +6,7 @@ use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 
 /**
@@ -16,6 +17,7 @@ use RM_PagBank\Helpers\Params;
  */
 class Connect
 {
+
     public const DOMAIN = 'rm-pagbank';
 
     public static function init()
@@ -38,6 +40,10 @@ class Connect
 
         // Add action links
         add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( self::class, 'addPluginActionLinks' ) );
+
+        // Payment method title used
+        add_filter('woocommerce_gateway_title', [__CLASS__, 'getMethodTitle'], 10, 2);
+
         
         if (Params::getConfig('recurring_enabled')){
             $recurring = new Connect\Recurring();
@@ -155,13 +161,25 @@ class Connect
         $dir = self::DOMAIN . '/languages/';
         load_plugin_textdomain(Connect::DOMAIN, false, $dir);
     }
+
+    public static function getMethodTitle($title, $id){
+        //get order
+        if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST['ps_connect_method']))
+        {
+            $method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+            $method = Functions::getFriendlyPaymentMethodName($method);
+            $title = Params::getConfig('title') . ' - ' . $method;
+        }
+
+        return $title;
+    }
     
     public static function activate()
     {
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
         
-        $sql = "create table $recurringTable 
+        $sql = "CREATE TABLE $recurringTable 
                 (
                     id               int auto_increment primary key,
                     initial_order_id int           not null comment 'Order that generated the subscription profiler',

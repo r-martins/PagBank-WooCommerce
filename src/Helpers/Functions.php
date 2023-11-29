@@ -96,4 +96,19 @@ class Functions
 
 		return '';
 	}
+
+    public static function getFriendlyPaymentMethodName(string $method): string
+    {
+        switch ($method) {
+            case 'boleto':
+                return __('Boleto', Connect::DOMAIN);
+            case 'pix':
+                return __('Pix', Connect::DOMAIN);
+            case 'credit_card':
+            case 'cc':
+                return __('Cartão de Crédito', Connect::DOMAIN);
+            default:
+                return __('Desconhecido', Connect::DOMAIN);
+        }
+    }
 }
