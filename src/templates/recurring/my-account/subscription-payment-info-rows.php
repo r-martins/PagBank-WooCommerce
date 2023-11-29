@@ -15,6 +15,8 @@
 
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Recurring\RecurringDashboard;
+use RM_PagBank\Helpers\Functions;
+
 defined( 'ABSPATH' ) || exit;
 do_action('rm_pagbank_before_account_recurring_view_subscription_payment_rows', $subscription);
 
@@ -22,14 +24,13 @@ if ( ! isset($subscription->id) || ! $subscription->id ) {
     return;
 }
 $payment = json_decode($subscription->payment_info);
-$dashboard = new RecurringDashboard();
 ?>
 <tr class="woocommerce-table__line-item order_item">
     <td class="woocommerce-table__product-name product-name">
         <strong><?php _e('Forma de Pagamento', RM_PagBank\Connect::DOMAIN)?></strong>
     </td>
     <td class="woocommerce-table__product-total product-total">
-        <?php echo $dashboard->getFriendlyPaymentMethodName($payment->method);?>
+        <?php echo Functions::getFriendlyPaymentMethodName($payment->method);?>
     </td>
 </tr>
 

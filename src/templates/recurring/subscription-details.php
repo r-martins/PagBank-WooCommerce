@@ -12,6 +12,9 @@
  */
 
 /** @var stdClass $subscription */
+
+use RM_PagBank\Helpers\Recurring;
+
 defined( 'ABSPATH' ) || exit;
 $dashboard = new RM_PagBank\Connect\Recurring\RecurringDashboard();
 
@@ -49,11 +52,11 @@ wc_print_notices();
             </tr>
             <tr>
                 <th scope="row"><?php _e('Status', RM_PagBank\Connect::DOMAIN)?></th>
-                <td><?php echo $dashboard->getFriendlyStatus($subscription->status);?></td>
+                <td><?php echo Recurring::getFriendlyStatus($subscription->status);?></td>
             </tr>
             <tr>
                 <th scope="row"><?php _e('Cobrança', RM_PagBank\Connect::DOMAIN)?></th>
-                <td><?php echo $dashboard->getFriendlyType($subscription->recurring_type);?></td>
+                <td><?php echo Recurring::getFriendlyType($subscription->recurring_type);?></td>
             </tr>
             <?php if ( in_array($subscription->status, ['ACTIVE', 'PENDING', 'SUSPENDED']) ): ?>
                 <tr>

@@ -69,6 +69,7 @@ class Connect
         if ( is_admin() ) {
             include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/messages/generic.php';
         }
+        include_once __DIR__ . '/Menu.php';
     }
 
     /**
