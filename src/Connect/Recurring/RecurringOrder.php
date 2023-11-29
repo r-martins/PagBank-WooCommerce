@@ -6,6 +6,7 @@ use RM_PagBank\Connect;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Recurring;
 use WC_Data_Exception;
@@ -116,7 +117,7 @@ class RecurringOrder
                 $params = $method->prepare();
                 break;
             case 'pix':
-                $method = new Payments\Pix($order);
+                $method = new Pix($order);
                 $params = $method->prepare();
                 break;
             case 'credit_card':

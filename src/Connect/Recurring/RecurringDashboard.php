@@ -105,53 +105,5 @@ class RecurringDashboard
         
         return $actions;
     }
-    
-    public function getFriendlyStatus($status): string
-    {
-        switch ($status) {
-            case 'ACTIVE':
-                return __('Ativo', Connect::DOMAIN);
-            case 'PAUSED':
-                return __('Pausado', Connect::DOMAIN);
-            case 'PENDING_CANCEL':
-                return __('Cancelamento Pendente', Connect::DOMAIN);
-            case 'SUSPENDED':
-                return __('Suspenso', Connect::DOMAIN);
-            case 'PENDING':
-                return __('Pendente', Connect::DOMAIN);
-            case 'CANCELED':
-                return __('Cancelado', Connect::DOMAIN);
-            default:
-                return __('Desconhecido', Connect::DOMAIN);
-        }
-    }
-    public function getFriendlyType($type): string
-    {
-        switch (strtoupper($type)) {
-            case 'DAILY':
-                return __('Diário', Connect::DOMAIN);
-            case 'WEEKLY':
-                return __('Semanal', Connect::DOMAIN);
-            case 'MONTHLY':
-                return __('Mensal', Connect::DOMAIN);
-            case 'YEARLY':
-                return __('Anual', Connect::DOMAIN);
-            default:
-                return __('Desconhecido', Connect::DOMAIN);
-        }
-    }
-    
-    public function getFriendlyPaymentMethodName(string $method): string
-    {
-        switch ($method) {
-            case 'boleto':
-                return __('Boleto', Connect::DOMAIN);
-            case 'pix':
-                return __('Pix', Connect::DOMAIN);
-            case 'credit_card':
-                return __('Cartão de Crédito', Connect::DOMAIN);
-            default:
-                return __('Desconhecido', Connect::DOMAIN);
-        }
-    }
+
 }

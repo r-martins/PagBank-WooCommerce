@@ -15,6 +15,7 @@
 /** @var RecurringDashboard $dashboard */
 
 use RM_PagBank\Connect\Recurring\RecurringDashboard;
+use RM_PagBank\Helpers\Recurring;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -47,11 +48,11 @@ $wp_button_class = wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_
                         #<?php echo esc_html( $subscription->id ); ?>
                     </a>
                 <?php elseif ( 'status' === $column_id ) : ?>
-                    <?php echo esc_html( $dashboard->getFriendlyStatus($subscription->status) ); ?>
+                    <?php echo esc_html(Recurring::getFriendlyStatus($subscription->status)); ?>
                 <?php elseif ( 'created_at' === $column_id ) : ?>
                     <?php echo esc_html( wc_format_datetime( wc_string_to_datetime( $subscription->created_at) ) ); ?>
                 <?php elseif ( 'recurring_type' === $column_id ) : ?>
-                    <?php echo esc_html( $dashboard->getFriendlyType($subscription->recurring_type) ); ?>
+                    <?php echo esc_html(Recurring::getFriendlyType($subscription->recurring_type)); ?>
                 <?php elseif ( 'recurring_amount' === $column_id ) : ?>
                     <?php echo esc_html( $subscription->recurring_amount ); ?>
                 <?php elseif ( 'subscription-actions' === $column_id ) : ?>

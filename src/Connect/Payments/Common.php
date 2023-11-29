@@ -178,7 +178,7 @@ class Common
 				break;
         }
 		$order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
-		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
+		$order->add_meta_data('_pagbank_order_charges', $response['charges'] ?? null, true);
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
 		$order->update_status('pending', 'PagBank: Pagamento Pendente');

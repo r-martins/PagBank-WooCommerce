@@ -17,6 +17,8 @@
 
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Recurring\RecurringDashboard;
+use RM_PagBank\Helpers\Recurring;
+
 defined( 'ABSPATH' ) || exit;
 do_action('rm_pagbank_before_account_recurring_view_subscription', $subscription);
 ?>
@@ -28,7 +30,7 @@ do_action('rm_pagbank_before_account_recurring_view_subscription', $subscription
         '<mark class="order-number">' . esc_html($subscription->id) . '</mark>',
         '<mark class="date">' . wc_format_datetime(wc_string_to_datetime($subscription->created_at)) . '</mark>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         '<mark class="order-number"><a href="' . $initialOrder->get_view_order_url() . '">' . $initialOrder->get_id() . '</a></mark>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        '<mark class="order-status">' . $dashboard->getFriendlyStatus($subscription->status) . '</mark>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        '<mark class="order-status">' .Recurring::getFriendlyStatus($subscription->status). '</mark>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     )?></p>
 
 <?php do_action( 'rm_pagbank_view_subscription', $subscription ); ?>
