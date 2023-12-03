@@ -1,5 +1,5 @@
 <?php
-
+/** @TODO Organize classes in other files */
 use RM_PagBank\Helpers\Recurring;
 
 /**
