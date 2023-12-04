@@ -4,6 +4,7 @@ namespace RM_PagBank;
 
 use Exception;
 use RM_PagBank\Connect\Gateway;
+use RM_PagBank\Connect\MenuPagBank;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
@@ -45,6 +46,8 @@ class Connect
         // Payment method title used
         add_filter('woocommerce_gateway_title', [__CLASS__, 'getMethodTitle'], 10, 2);
         
+        self::addPagBankMenu();
+        
         if (Params::getConfig('recurring_enabled')){
             $recurring = new Connect\Recurring();
             $recurring->init();
@@ -65,7 +68,9 @@ class Connect
      */
     public static function includes()
     {
-        
+        if ( is_admin() ) {
+            include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/messages/generic.php';
+        }
     }
 
     /**
@@ -214,5 +219,12 @@ class Connect
     {
         $timestamp = wp_next_scheduled('rm_pagbank_cron_process_recurring_payments');
         wp_unschedule_event($timestamp, 'rm_pagbank_cron_process_recurring_payments');
+    }
+
+    private static function addPagBankMenu()
+    {
+        add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);
+        add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
+        add_action('admin_enqueue_scripts', [MenuPagBank::class, 'adminPagesStyle']);
     }
 }
