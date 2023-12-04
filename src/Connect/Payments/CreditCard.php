@@ -93,7 +93,7 @@ class CreditCard extends Common
 				'error' => __(
 					'Não foi possível obter as parcelas. Chave de formulário inválida. '
 					.'Recarregue a página e tente novamente.',
-					Connect::DOMAIN
+					'pagbank-connect'
 				),
 			],
 				400);
@@ -108,7 +108,7 @@ class CreditCard extends Common
 			$error = $installments['error'] ?? '';
 			wp_send_json(
 				['error' =>
-					 __('Não foi possível obter as parcelas. ' . $error, Connect::DOMAIN)],
+					 __('Não foi possível obter as parcelas. ' . $error, 'pagbank-connect')],
 				400);
         }
         wp_send_json($installments);

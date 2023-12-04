@@ -51,7 +51,7 @@ class Functions
 	 *
 	 * @return void
 	 */
-    public static function generic_notice(string $msg, string $type = self::NOTICE_UPDATE, bool $isDismissible=true)
+    public static function generic_notice_pagbank(string $msg, string $type = self::NOTICE_UPDATE, bool $isDismissible=true)
     {
         if( !is_admin() ) {
             return;
@@ -63,7 +63,7 @@ class Functions
             $class .= ' is-dismissible';
         }
 
-        echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
+        echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', 'pagbank-connect' ) . '</strong> ' . $msg . '</p></div>';
     }
 
     /**
@@ -101,14 +101,14 @@ class Functions
     {
         switch ($method) {
             case 'boleto':
-                return __('Boleto', Connect::DOMAIN);
+                return __('Boleto', 'pagbank-connect');
             case 'pix':
-                return __('Pix', Connect::DOMAIN);
+                return __('Pix', 'pagbank-connect');
             case 'credit_card':
             case 'cc':
-                return __('Cartão de Crédito', Connect::DOMAIN);
+                return __('Cartão de Crédito', 'pagbank-connect');
             default:
-                return __('Desconhecido', Connect::DOMAIN);
+                return __('Desconhecido', 'pagbank-connect');
         }
     }
 }
