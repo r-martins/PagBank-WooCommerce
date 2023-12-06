@@ -32,14 +32,12 @@ $discountText = Params::getDiscountText('pix');
     <?php echo $this->get_option('pix_instructions'); ?>
     <br/>
     <?php echo $text; ?>
-    <?php if ($hasDiscount): ?>
-        <br/>
-        <?php echo $discountText; ?>
-    <?php endif; ?>
     <?php if ($isCartRecurring) :?>
-        <br/>
         <p class="form-row form-row-wide">
             <?php echo $recHelper->getRecurringTermsFromCart('pix');?>
         </p>
     <?php endif;?>
+    <?php if ($hasDiscount): ?>
+        <?php echo $discountText; ?>
+    <?php endif; ?>
 </p>

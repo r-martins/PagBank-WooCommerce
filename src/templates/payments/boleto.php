@@ -17,14 +17,13 @@ $isCartRecurring = $recHelper->isCartRecurring();
     <?php echo $this->get_option('boleto_instructions'); ?>
     <br/>
     <?php echo sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', $expiry, Connect::DOMAIN ), $expiry ); ?>
-    <?php if ($hasDiscount): ?>
-        <br/>
-        <?php echo $discountText; ?>
-    <?php endif; ?>
     <?php if ($isCartRecurring) :?>
-        <br/>
         <p class="form-row form-row-wide">
             <?php echo $recHelper->getRecurringTermsFromCart('boleto');?>
         </p>
     <?php endif;?>
+    <?php if ($hasDiscount): ?>
+        <br/>
+        <?php echo $discountText; ?>
+    <?php endif; ?>
 </p>

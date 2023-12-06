@@ -254,12 +254,15 @@ jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('keyup change paste', '#rm-pagbank-card-cvc', (e)=>{
        window.ps_cc_has_changed = true;
     });
+    jQuery(document).on('input change paste', '#rm-pagbank-card-holder-name', (e)=>{
+        jQuery(e.target).val(jQuery(e.target).val().toUpperCase());
+    });
 });
 
 jQuery(document.body).on('update_installments', ()=>{
     //if success, update the installments select with the response
     //if error, show error message
-    let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '411111' : window.ps_cc_bin;
+    let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
     let total = jQuery('.order-total bdi').html();
     //extact amount from total, removing html elements
     total = total.replace(/<[^>]*>?/gm, '');
@@ -285,6 +288,10 @@ jQuery(document.body).on('update_installments', ()=>{
             cc_bin: ccBin,
 			nonce: rm_pagbank_nonce,
             action: 'ps_get_installments',
+        },
+        beforeSend: ()=>{
+            jQuery('#rm-pagbank-card-installments').empty();
+            jQuery('#rm-pagbank-card-installments').append('<option value="">Carregando...</option>');
         },
         success: (response)=>{
             // debugger;

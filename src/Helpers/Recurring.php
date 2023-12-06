@@ -176,14 +176,17 @@ class Recurring
     {
         if (!$cart) $cart = WC()->cart;
         $msg = __('O valor de R$ %s será cobrado %s.', Connect::DOMAIN);
-        $total = $cart->get_total();
+        $total = $cart->get_total('edit');
         $frequency = __('mensalmente', Connect::DOMAIN);
+        $initialFee = 0;
         //get cicle and frequency from the first recurring product
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
             if ($product->get_meta('_recurring_enabled') == 'yes'){
                 $cycle = $product->get_meta('_frequency_cycle');
                 $frequency = $product->get_meta('_frequency');
+                $initialFee = (float)$product->get_meta('_initial_fee');
+                $total -= $initialFee * $cartItem['quantity'];
                 if ($cycle == 1){
                     switch ($frequency){
                         case 'daily':
@@ -204,20 +207,20 @@ class Recurring
                 break;       
             }
         }
-        $msg = sprintf($msg, $total, $frequency);
+        $msg = sprintf($msg, wc_price($total), $frequency);
         $initialFee = $product->get_meta('_initial_fee');
         if ($initialFee > 0){
-            $msg .= ' ' . sprintf(__('Uma taxa de %s será adicionada à primeira cobrança.', Connect::DOMAIN), wc_price($initialFee));
+            $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', Connect::DOMAIN), wc_price($initialFee)) . '</p>';;
         }
         
         $recurringNoticeDays = (int)Params::getConfig('recurring_notice_days', 0);
         if ($paymentMethod != 'creditcard' && $recurringNoticeDays > 0){
             switch ($paymentMethod){
                 case 'pix':
-                    $msg .= '<br/>' . sprintf(__('Um código PIX será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays);
+                    $msg .= '<p>' . sprintf(__('Um código PIX será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays) . '</p>';
                     break;
                 case 'boleto':
-                    $msg .= '<br/>' . sprintf(__('Um novo boleto será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays);
+                    $msg .= '<p>' . sprintf(__('Um novo boleto será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays) . '</p>';
                     break;
             }
             $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', Connect::DOMAIN);
