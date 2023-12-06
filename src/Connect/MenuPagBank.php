@@ -79,7 +79,7 @@ SVG;
         $subscriptionsListTable->prepare_items();
 
         echo '<div class="wrap">';
-        echo '<h1>' . __('Assinaturas', 'pagbank-connect') . '</h1>';
+        echo '<h1>' . __('Assinaturas PagBank', 'pagbank-connect') . '</h1>';
         $subscriptionsListTable->display();
         echo '</div>';
     }

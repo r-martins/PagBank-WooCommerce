@@ -80,13 +80,24 @@ class SubscriptionList extends WP_List_Table
         $orderby = (isset($_GET['orderby']) && in_array($_GET['orderby'], array_keys($this->get_sortable_columns()))) ? $_GET['orderby'] : 'id';
         $order = (isset($_GET['order']) && in_array($_GET['order'], array('asc', 'desc'))) ? $_GET['order'] : 'asc';
 
+        $where = "1=1";
+        if (!empty($_REQUEST['status'])) {
+            $status = sanitize_text_field($_REQUEST['status']);
+            $where .= " AND status = '$status'";
+        }
+        if (!empty($_REQUEST['order_id'])) {
+            $order_id = intval($_REQUEST['order_id']);
+            $where .= " AND initial_order_id = $order_id";
+        }
+
+
         $this->set_pagination_args([
             'total_items' => $total_items,
             'per_page'    => $per_page,
             'total_pages' => ceil($total_items / $per_page)
         ]);
 
-        $this->items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring ORDER BY $orderby $order LIMIT %d OFFSET %d", $per_page, ($current_page - 1) * $per_page), ARRAY_A);
+        $this->items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d", $per_page, ($current_page - 1) * $per_page), ARRAY_A);
     }
 
     public function get_sortable_columns()
@@ -102,4 +113,24 @@ class SubscriptionList extends WP_List_Table
             'next_bill_at' => array('next_bill_at', false),
         );
     }
+    
+    public function extra_tablenav($which) {
+    if ($which == "top"){
+        ?>
+        <form method="get">
+            <input type="hidden" name="page" value="<?php echo $_REQUEST['page'] ?>" />
+            <div class="alignleft actions bulkactions">
+                <select name="status" id="filter-by-status">
+                    <option value=""><?php _e('Todos os status', 'rm-pagbank');?></option>
+                    <?php foreach (Recurring::getAllStatuses() as $value => $status):?>
+                        <option value="<?php echo $value;?>"><?php echo $status;?></option>
+                    <?php endforeach;?>
+                </select>
+                <input type="text" name="order_id" id="filter-by-order-id" placeholder="<?php _e('ID do Pedido', 'rm-pagbank');?>">
+                <?php submit_button(__('Filtrar'), 'button', 'filter_action', false);?>
+            </div>
+        </form>
+        <?php
+    }
+}
 }

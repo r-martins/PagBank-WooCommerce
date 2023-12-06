@@ -32,6 +32,17 @@ class Recurring
                 return __('Desconhecido', Connect::DOMAIN);
         }
     }
+    
+    public static function getAllStatuses()
+    {
+        return [
+            'ACTIVE' => __('Ativo', Connect::DOMAIN),
+            'PAUSED' => __('Pausado', Connect::DOMAIN),
+            'PENDING_CANCEL' => __('Cancelamento Pendente', Connect::DOMAIN),
+            'SUSPENDED' => __('Suspenso', Connect::DOMAIN),
+            'PENDING' => __('Pendente', Connect::DOMAIN),
+            'CANCELED' => __('Cancelado', Connect::DOMAIN),];
+    }
 
     public static function getFriendlyType($type): string
     {
