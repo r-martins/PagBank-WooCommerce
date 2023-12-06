@@ -5,8 +5,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
 
 $expiry = (int)$this->get_option('pix_expiry_minutes');
+$recHelper = new Recurring();
+$isCartRecurring = $recHelper->isCartRecurring();
 switch ($expiry){
     case $expiry <= 60:
         $text = sprintf(__('Você terá %d minutos para pagar com seu código PIX.', 'pagbank-connect'), $expiry);
@@ -30,6 +33,11 @@ $discountText = Params::getDiscountText('pix');
     <?php echo wp_kses($this->get_option('pix_instructions'), 'strong'); ?>
     <br/>
     <?php echo wp_kses($text, 'strong'); ?>
+    <?php if ($isCartRecurring) :?>
+        <p class="form-row form-row-wide">
+            <?php echo $recHelper->getRecurringTermsFromCart('pix');?>
+        </p>
+    <?php endif;?>
     <?php if ($hasDiscount): ?>
         <br/>
         <?php echo wp_kses($discountText, 'strong'); ?>

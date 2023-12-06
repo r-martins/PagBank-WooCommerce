@@ -473,6 +473,9 @@ jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('keyup change paste', '#rm-pagbank-card-cvc', (e)=>{
        window.ps_cc_has_changed = true;
     });
+    jQuery(document).on('input change paste', '#rm-pagbank-card-holder-name', (e)=>{
+        jQuery(e.target).val(jQuery(e.target).val().toUpperCase());
+    });
 });
 
 jQuery(document.body).on('update_installments', ()=>{
@@ -504,6 +507,10 @@ jQuery(document.body).on('update_installments', ()=>{
             cc_bin: ccBin,
 			nonce: rm_pagbank_nonce,
             action: 'ps_get_installments',
+        },
+        beforeSend: ()=>{
+            jQuery('#rm-pagbank-card-installments').empty();
+            jQuery('#rm-pagbank-card-installments').append('<option value="">Carregando...</option>');
         },
         success: (response)=>{
             let select = jQuery('#rm-pagbank-card-installments');

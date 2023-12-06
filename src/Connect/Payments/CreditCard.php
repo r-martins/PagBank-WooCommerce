@@ -90,6 +90,13 @@ class CreditCard extends Common
             $charge->setRecurring($recurring);
             $card->setStore(true);
             $paymentMethod->setCard($card);
+//            if (floatval($this->order->get_meta('_recurring_initial_fee')) > 0) {
+//                $currentAmount = $charge->getAmount()->getValue();
+//                $initialFee = $this->order->get_meta('_recurring_initial_fee');
+//                $newAmount = new Amount();
+//                $newAmount->setValue($currentAmount + Params::convertToCents($initialFee));
+//                $charge->setAmount($newAmount);
+//            }
         }
         
         if ($this->order->get_meta('_pagbank_is_recurring') === true) {

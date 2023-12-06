@@ -63,8 +63,35 @@ class Recurring
         add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
         add_filter('rm_pagbank_account_recurring_actions', [$this, 'filterAllowedActions'], 10, 2);
         //endregion
+        
+        add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
     }
     
+    public function addInitialFeeToCart($cart)
+    {
+        if (is_admin() && !defined('DOING_AJAX')) {
+            return;
+        }
+
+        // Defina a taxa extra
+        $extra_fee = 0;
+
+        // Percorra cada produto no carrinho
+        foreach($cart->get_cart() as $cart_item) {
+            $product = $cart_item['data'];
+
+            // Verifique a propriedade do produto
+            if($product->get_meta('_initial_fee') && $product->get_meta('_recurring_enabled') == 'yes') {
+                // Adicione a taxa extra se a propriedade do produto for verdadeira
+                $extra_fee += floatval($product->get_meta('_initial_fee'));
+            }
+        }
+
+        // Adicione a taxa extra ao carrinho se for maior que zero
+        if($extra_fee > 0) {
+            $cart->add_fee(__('Taxa Inicial', 'pagbank-connect'), $extra_fee);
+        }
+    }
     
     
     public function addProductRecurringTab($productTabs)
@@ -142,7 +169,7 @@ class Recurring
             $cycle = max($cycle, 1);
             
             $initial = sanitize_text_field($_POST['_initial_fee']);
-            $initial = str_replace(',', '.', $initial);
+            $initial = floatval(str_replace(',', '.', $initial));
             $initial = floatval(number_format(max(0, $initial), 2, '.', ''));
             update_post_meta($postId, '_frequency_cycle', $cycle);
             update_post_meta($postId, '_initial_fee', $initial);
@@ -183,12 +210,13 @@ class Recurring
         $frequency = $order->get_meta('_recurring_frequency');
         $cycle = (int)$order->get_meta('_recurring_cycle');
         $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
+        $initialFee = (float)$order->get_meta('_recurring_initial_fee');
 
         $paymentInfo = $this->getPaymentInfo($order);
         $statusFromOrder = $recHelper->getStatusFromOrder($order);
         $success = $wpdb->insert($wpdb->prefix.'pagbank_recurring', [
             'initial_order_id' => $order->get_id(),
-            'recurring_amount' => $order->get_total(),
+            'recurring_amount' => $order->get_total() - $initialFee,
             'status'           => $statusFromOrder,
             'recurring_type'   => $frequency,
             'recurring_cycle'  => $cycle,

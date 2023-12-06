@@ -127,6 +127,22 @@ class Recurring
         return $available['default'];
     }
 
+    public function translateFrequencyTermsPlural($frequency)
+    {
+        $available = [
+            'daily' => __('dias', Connect::DOMAIN),
+            'weekly' => __('semanas', Connect::DOMAIN),
+            'monthly' => __('meses', Connect::DOMAIN),
+            'yearly' => __('anos', Connect::DOMAIN),
+            'default' => __('desconhecido', Connect::DOMAIN)
+        ];
+
+        if (in_array($frequency, array_keys($available)))
+            return $available[$frequency];
+
+        return $available['default'];
+    }
+
     /**
      * In case of a subscription for digital content you can check if the user are still eligible to access the content
      * It will be based on the status of the subscription. In cases where the subscription is pending or paused
@@ -154,6 +170,63 @@ class Recurring
                     return false;
                 
         }
+    }
+    
+    public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
+    {
+        if (!$cart) $cart = WC()->cart;
+        $msg = __('O valor de R$ %s será cobrado %s.', Connect::DOMAIN);
+        $total = $cart->get_total('edit');
+        $frequency = __('mensalmente', Connect::DOMAIN);
+        $initialFee = 0;
+        //get cicle and frequency from the first recurring product
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem['data'];
+            if ($product->get_meta('_recurring_enabled') == 'yes'){
+                $cycle = $product->get_meta('_frequency_cycle');
+                $frequency = $product->get_meta('_frequency');
+                $initialFee = (float)$product->get_meta('_initial_fee');
+                $total -= $initialFee * $cartItem['quantity'];
+                if ($cycle == 1){
+                    switch ($frequency){
+                        case 'daily':
+                            $frequency = __('diariamente', Connect::DOMAIN);
+                            break 2;
+                        case 'weekly':
+                            $frequency = __('semanalmente', Connect::DOMAIN);
+                            break 2;
+                        case 'monthly':
+                            $frequency = __('mensalmente', Connect::DOMAIN);
+                            break 2;
+                        case 'yearly':
+                            $frequency = __('anualmente', Connect::DOMAIN);
+                            break 2;
+                    }
+                }
+                $frequency = sprintf(__('a cada %d %s', Connect::DOMAIN), $cycle, $this->translateFrequencyTermsPlural($frequency));
+                break;       
+            }
+        }
+        $msg = sprintf($msg, wc_price($total), $frequency);
+        $initialFee = $product->get_meta('_initial_fee');
+        if ($initialFee > 0){
+            $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', Connect::DOMAIN), wc_price($initialFee)) . '</p>';;
+        }
+        
+        $recurringNoticeDays = (int)Params::getConfig('recurring_notice_days', 0);
+        if ($paymentMethod != 'creditcard' && $recurringNoticeDays > 0){
+            switch ($paymentMethod){
+                case 'pix':
+                    $msg .= '<p>' . sprintf(__('Um código PIX será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays) . '</p>';
+                    break;
+                case 'boleto':
+                    $msg .= '<p>' . sprintf(__('Um novo boleto será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays) . '</p>';
+                    break;
+            }
+            $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', Connect::DOMAIN);
+        }
+        
+        return $msg;
     }
     
 }
