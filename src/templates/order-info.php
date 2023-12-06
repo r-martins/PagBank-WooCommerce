@@ -3,6 +3,7 @@
 
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Recurring;
 
 if ($order->get_meta('pagbank_payment_method') == ''){
 	return;
@@ -12,8 +13,18 @@ $charge_id = $order->get_meta('pagbank_charge_id');
 <p class="form-field form-field-wide">
     <img src="<?php echo plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)?>" style="width: 100px; height: auto; margin-right: 10px; float: left;" alt="PagBank Logo"/>
 	<?php if($order->get_meta('pagbank_is_sandbox') == 1):?>
-		<span class="sandbox"><?php echo __('Ambiente de Testes', Connect::DOMAIN)?></span>
-	<?php endif;?>
+        <span class="sandbox-label">
+        <span class="sandbox-icon"></span>
+        <span class="sandbox" title="<?php _e('Ambiente de Testes', 'pagbank-connect')?>"><?php echo __('Sandbox', Connect::DOMAIN)?></span>
+    </span>
+    <?php endif;?>
+    
+    <?php if($order->get_meta('_recurring_cycle') > 0):?>
+    <a href="<?php echo Recurring::getAdminSubscriptionDetailsUrl($order->get_id())?>" class="recurring-label">
+        <span class="recurring-icon"></span>
+        <span class="recurring"><?php echo __('Pedido Recorrente', Connect::DOMAIN)?></span>
+    </a>
+<?php endif;?>
 
     <?php if($order->get_meta('pagbank_payment_method') === 'boleto'):?>
         <span class="form-field form-field-wide ps-pagbank-info">
@@ -31,17 +42,19 @@ $charge_id = $order->get_meta('pagbank_charge_id');
 	<?php if($order->get_meta('pagbank_payment_method') === 'credit_card'):?>
 		<span class="form-field form-field-wide ps-pagbank-info">
 			<?php if($order->get_meta('pagbank_card_installments')):?>
-				<?php echo __('Cartão de Crédito em', Connect::DOMAIN);?> <?php echo $order->get_meta('pagbank_card_installments');?>x
+                <strong><?php _e('Cartão de Crédito', 'pagbank-connect');?></strong> <?php echo $order->get_meta('pagbank_card_installments');?>x
 			<?php endif;?>
 			<?php if($order->get_meta('_pagbank_card_brand')):
 				$brand_url = Functions::getCcFlagUrl($order->get_meta('_pagbank_card_brand'));
 				$brand = mb_strtoupper($order->get_meta('_pagbank_card_brand')) . ' - ';
+                $firstDigits = $order->get_meta('_pagbank_card_first_digits');
+                $firstDigits = substr_replace($firstDigits, ' ', 4, 0);
 				if ($brand_url) {
 					$brand = '<img src="' . $brand_url . '" style="width: 30px; height: auto; margin-right: 10px; float: left;" alt="' . $brand . '"/>';
 				}
 				?>
-				<br/><?php echo esc_attr($order->get_meta('_pagbank_card_first_digits') . 'xx xxxx' . $order->get_meta('_pagbank_card_last_digits')) . $brand;?>
-				<br/>Titular: <?php echo esc_attr($order->get_meta('_pagbank_card_holder_name'));?>
+				<br/><?php echo esc_attr($firstDigits . 'xx xxxx ' . $order->get_meta('_pagbank_card_last_digits')) . $brand;?>
+				<br/><?php  esc_attr_e($order->get_meta('_pagbank_card_holder_name'));?>
 			<?php endif;?>
 		</span>
 	<?php endif;?>

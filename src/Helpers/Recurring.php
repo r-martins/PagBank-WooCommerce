@@ -228,5 +228,14 @@ class Recurring
         
         return $msg;
     }
-    
+
+    public static function getAdminSubscriptionDetailsUrl($orderId)
+    {
+        global $wpdb;
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$orderId}";
+        $subscription = $wpdb->get_row($sql);
+        if ( ! $subscription) return '#';
+        return admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $subscription->id);
+
+    }
 }
