@@ -30,8 +30,14 @@ li.payment_method_rm-pagbank label img {
 	background-color: unset;
 	max-width: 5rem;
 }
+
+.ps-button{
+    margin-right: 5px;
+}
 .ps-button img {
 	filter: contrast(0%);
+    width: 26px;
+    height: 26px;
 }
 
 .ps_connect_method .form-row-full{

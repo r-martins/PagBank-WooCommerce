@@ -18,7 +18,7 @@ use RM_PagBank\Helpers\Params;
 class Connect
 {
 
-    public const DOMAIN = 'rm-pagbank';
+    public const DOMAIN = 'pagbank-connect';
 
     /**
      * @return void

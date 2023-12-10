@@ -1,9 +1,10 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * See https://developer.wordpress.org/plugins/plugin-basics/uninstall-methods/ for details
  * Remove tables, and wp_options
  */
-
 // if uninstall.php is not called by WordPress, die
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
     die;

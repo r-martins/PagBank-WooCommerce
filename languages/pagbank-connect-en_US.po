@@ -1,0 +1,227 @@
+# Copyright (C) 2023 Ricardo Martins
+# This file is distributed under the GPL-3.0.
+msgid ""
+msgstr ""
+"Project-Id-Version: PagBank Connect - Ricardo Martins (com descontos) 4.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/pagbank-connect\n"
+"POT-Creation-Date: 2023-12-04 05:30+1000\n"
+"PO-Revision-Date: 2023-12-04 05:31+1000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.4.1\n"
+"X-Domain: pagbank-connect\n"
+"X-Poedit-Basepath: ../src\n"
+"X-Poedit-KeywordsList: __;__e;_n;esc_html_e\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: Connect.php:93
+msgid "Configurações"
+msgstr ""
+
+#: Connect/Exception.php:63
+msgid "CPF/CNPJ"
+msgstr ""
+
+#: Connect/Exception.php:65
+msgid "Data de vencimento do boleto"
+msgstr ""
+
+#: Connect/Exception.php:67
+msgid "Bairro"
+msgstr ""
+
+#: Connect/Exception.php:69
+msgid "Número do Endereço"
+msgstr ""
+
+#: Connect/Exception.php:71
+msgid "Cidade do Endereço"
+msgstr ""
+
+#: Connect/Exception.php:73
+msgid "Estado do Endereço"
+msgstr ""
+
+#: Connect/Gateway.php:35
+msgid "PagBank Connect por Ricardo Martins"
+msgstr ""
+
+#: Connect/Gateway.php:37
+msgid ""
+"Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro)."
+msgstr ""
+
+#: Connect/Gateway.php:48
+msgid "PagBank (PagSeguro UOL)"
+msgstr ""
+
+#: Connect/Gateway.php:244
+msgid "O desconto deve ser um número positivo ou percentual de 0 a 100."
+msgstr ""
+
+#: Connect/Gateway.php:251
+msgid "O desconto deve ser um número positivo ou percentual de 0 a 100"
+msgstr ""
+
+#: Connect/Gateway.php:478
+msgid "Método de pagamento inválido"
+msgstr ""
+
+#: Connect/Payments/CreditCard.php:94
+msgid ""
+"Não foi possível obter as parcelas. Chave de formulário inválida. Recarregue "
+"a página e tente novamente."
+msgstr ""
+
+#: Connect/Payments/CreditCard.php:111
+msgid "Não foi possível obter as parcelas. "
+msgstr ""
+
+#: EnvioFacil.php:29
+msgid "PagBank Envio Fácil"
+msgstr ""
+
+#: EnvioFacil.php:30
+msgid ""
+"Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com "
+"PagBank"
+msgstr ""
+
+#: EnvioFacil.php:134
+#, php-format
+msgid " - %d dias úteis"
+msgstr ""
+
+#: EnvioFacil.php:229 EnvioFacil.php:231
+msgid "Habilitar"
+msgstr ""
+
+#: EnvioFacil.php:235
+msgid "CEP de Origem"
+msgstr ""
+
+#: EnvioFacil.php:237
+msgid ""
+"CEP de onde suas mercadorias serão enviadas. Se não informado, o CEP da loja "
+"será utilizado."
+msgstr ""
+
+#: EnvioFacil.php:272
+msgid ""
+"Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação "
+"e obter suas credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não "
+"são elegíveis.</strong>"
+msgstr ""
+
+#: EnvioFacil.php:273
+msgid ""
+"⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para "
+"o cálculo do frete. Faça suas simulações antes. ;)"
+msgstr ""
+
+#: EnvioFacil.php:274
+msgid ""
+"<a href=\"https://pagsegurotransparente.zendesk.com/hc/pt-br/"
+"articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce\" "
+"target=\"_blank\">Ver documentação ↗</a>"
+msgstr ""
+
+#: EnvioFacil.php:297
+msgid ""
+"Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais "
+"connect. Chaves Sandbox ou Minhas Taxas não são elegíveis."
+msgstr ""
+
+#: Helpers/Functions.php:66
+msgid "PagBank Connect"
+msgstr ""
+
+#: Helpers/Functions.php:104
+msgid "Boleto"
+msgstr ""
+
+#: Helpers/Functions.php:106
+msgid "Pix"
+msgstr ""
+
+#: Helpers/Functions.php:109
+msgid "Cartão de Crédito"
+msgstr ""
+
+#: Helpers/Functions.php:111
+msgid "Desconhecido"
+msgstr ""
+
+#: Helpers/Params.php:279
+#, php-format
+msgid "Um desconto de %s será aplicado."
+msgstr ""
+
+#: Helpers/Params.php:286
+#, php-format
+msgid "Um desconto de %s será aplicado"
+msgstr ""
+
+#: templates/boleto-instructions.php:12
+msgid "Pague seu Boleto"
+msgstr ""
+
+#: templates/boleto-instructions.php:13
+msgid "Copie o código de barras abaixo e pague direto em seu banco."
+msgstr ""
+
+#: templates/boleto-instructions.php:16
+msgid "Código de barras:"
+msgstr ""
+
+#: templates/boleto-instructions.php:23
+msgid "Baixar Boleto"
+msgstr ""
+
+#: templates/boleto-instructions.php:24
+msgid "Imprimir Boleto"
+msgstr ""
+
+#: templates/order-info.php:15
+msgid "Ambiente de Testes"
+msgstr ""
+
+#: templates/order-info.php:34
+msgid "Cartão de Crédito em"
+msgstr ""
+
+#: templates/payments/boleto.php:16
+msgid "Seu boleto vencerá amanhã."
+msgstr ""
+
+#: templates/payments/pix.php:11
+#, php-format
+msgid "Você terá %d minutos para pagar com seu código PIX."
+msgstr ""
+
+#: templates/payments/pix.php:14
+msgid "Você terá 24 horas para pagar com seu código PIX."
+msgstr ""
+
+#: templates/payments/pix.php:18
+#, php-format
+msgid "Você terá %d dias para usar seu código PIX."
+msgstr ""
+
+#: templates/pix-instructions.php:12
+msgid "Escaneie o código abaixo com o aplicativo de seu banco."
+msgstr ""
+
+#: templates/pix-instructions.php:16
+msgid ""
+"Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco "
+"usando o PIX com o modo Copie e Cola."
+msgstr ""
+
+#: templates/pix-instructions.php:19
+msgid "Código PIX"
+msgstr ""

@@ -4,27 +4,27 @@ use RM_PagBank\Connect;
 
 return array(
 	'cc_enabled'                                 => [
-		'title'       => __('Habilitar', Connect::DOMAIN),
-		'label'       => __('Habilitar', Connect::DOMAIN),
+		'title'       => __('Habilitar', 'pagbank-connect'),
+		'label'       => __('Habilitar', 'pagbank-connect'),
 		'type'        => 'checkbox',
 		'description' => '',
 		'default'     => 'yes',
 	],
 	'cc_installment_options'                     => [
-		'title'   => __('Opções de Parcelamento', Connect::DOMAIN),
+		'title'   => __('Opções de Parcelamento', 'pagbank-connect'),
 		'type'    => 'select',
 		'description'    => __('<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-'
-            .'Op%C3%A7%C3%B5es-de-Parcelamento" target="_blank">Saiba mais</a>', Connect::DOMAIN),
+            .'Op%C3%A7%C3%B5es-de-Parcelamento" target="_blank">Saiba mais</a>', 'pagbank-connect'),
         'desc_tip'  => false,
 		'options' => [
-			'external'  => __('Obedecer configurações da conta PagBank (padrão)', Connect::DOMAIN),
-			'buyer'     => __('Juros por conta do comprador', Connect::DOMAIN),
-			'fixed'     => __('Até X parcelas sem juros', Connect::DOMAIN),
-			'min_total' => __('Até X parcelas sem juros dependendo do valor da parcela', Connect::DOMAIN),
+			'external'  => __('Obedecer configurações da conta PagBank (padrão)', 'pagbank-connect'),
+			'buyer'     => __('Juros por conta do comprador', 'pagbank-connect'),
+			'fixed'     => __('Até X parcelas sem juros', 'pagbank-connect'),
+			'min_total' => __('Até X parcelas sem juros dependendo do valor da parcela', 'pagbank-connect'),
 		],
 	],
 	'cc_installment_options_fixed'               => [
-		'title'             => __('Número de Parcelas sem Juros', Connect::DOMAIN),
+		'title'             => __('Número de Parcelas sem Juros', 'pagbank-connect'),
 		'type'              => 'number',
 		'desc'              => '',
 		'default'           => 3,
@@ -34,13 +34,13 @@ return array(
 		],
 	],
 	'cc_installments_options_min_total'          => [
-		'title'             => __('Valor Mínimo da Parcela sem Juros', Connect::DOMAIN),
+		'title'             => __('Valor Mínimo da Parcela sem Juros', 'pagbank-connect'),
 		'type'              => 'number',
 		'description'       => __(
 			'Valor inteiro sem decimais. Exemplo: 10 para R$ 10,00 <br/><small>Neste exemplo, um pedido '
 			.'de R$100 poderá ser parcelado em 10x sem juros.<br/>Taxa padrão de juros: '
 			.'2,99% a.m (consulte valor atualizado).</small>',
-			Connect::DOMAIN
+			'pagbank-connect'
 		),
 		//        'desc_tip' => true,
 		'default'           => 50,
@@ -50,21 +50,21 @@ return array(
 		],
 	],
 	'cc_installments_options_limit_installments' => [
-		'title'       => __('Limitar parcelas?', Connect::DOMAIN),
+		'title'       => __('Limitar parcelas?', 'pagbank-connect'),
 		'type'        => 'select',
 		'description' => __(
 			'Recomendação: Não impeça seu cliente de comprar com um parcelamento elevado mesmo que ele '
 			.'queira assumir os juros.<br/>Não há um custo maior pra você.',
-			Connect::DOMAIN
+			'pagbank-connect'
 		),
 		'options'     => [
-			'no'  => __('Não (recomendável)', Connect::DOMAIN),
-			'yes' => __('Sim', Connect::DOMAIN),
+			'no'  => __('Não (recomendável)', 'pagbank-connect'),
+			'yes' => __('Sim', 'pagbank-connect'),
 		],
 	],
 
 	'cc_installments_options_max_installments' => [
-		'title'             => __('Número Máximo de Parcelas', Connect::DOMAIN),
+		'title'             => __('Número Máximo de Parcelas', 'pagbank-connect'),
 		'type'              => 'number',
 		'default'           => 18,
 		'custom_attributes' => [
@@ -74,7 +74,7 @@ return array(
 	],
 
 	'cc_soft_descriptor' => [
-		'title'             => __('Identificador na Fatura', Connect::DOMAIN),
+		'title'             => __('Identificador na Fatura', 'pagbank-connect'),
 		'type'              => 'text',
 		'default'           => 'CompraViaPagBank',
 		'description'       => __(
@@ -83,7 +83,7 @@ return array(
 			.'Algumas empresas de cartão podem exibir somente os 13 primeiros caracteres. <a href="https://'
             .'pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura" '
             .'target="_blank">Saiba mais</a>.',
-			Connect::DOMAIN
+			'pagbank-connect'
 		),
 		'desc_tip'          => false,
 		'custom_attributes' => [

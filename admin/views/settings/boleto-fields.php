@@ -1,59 +1,58 @@
 <?php
-
-use RM_PagBank\Connect;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 return array(
 	'boleto_enabled'      => [
-		'title'       => __('Habilitar', Connect::DOMAIN),
-		'label'       => __('Habilitar', Connect::DOMAIN),
+		'title'       => __('Habilitar', 'pagbank-connect'),
+		'label'       => __('Habilitar', 'pagbank-connect'),
 		'type'        => 'checkbox',
 		'description' => '',
 		'default'     => 'yes',
 	],
 	'boleto_title'        => [
-		'title'       => __('Title', Connect::DOMAIN),
+		'title'       => __('Title', 'pagbank-connect'),
 		'type'        => 'safe_text',
-		'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', Connect::DOMAIN),
-		'default'     => __('Boleto', Connect::DOMAIN),
+		'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),
+		'default'     => __('Boleto', 'pagbank-connect'),
 		'desc_tip'    => true,
 	],
 	'boleto_instructions' => [
-		'title'       => __('Instruções', Connect::DOMAIN),
+		'title'       => __('Instruções', 'pagbank-connect'),
 		'type'        => 'textarea',
-		'description' => __('Instruções que serão adicionadas à sua página de sucesso.', Connect::DOMAIN),
+		'description' => __('Instruções que serão adicionadas à sua página de sucesso.', 'pagbank-connect'),
 		'default'     => __(
 			'Imprima ou copie o código de barras de seu boleto para pagar no banco ou casa lotérica antes do vencimento.',
-			Connect::DOMAIN
+			'pagbank-connect'
 		),
 		'desc_tip'    => true,
 	],
 	'boleto_expiry_days'  => [
-		'title'       => __('Validade do boleto', Connect::DOMAIN),
+		'title'       => __('Validade do boleto', 'pagbank-connect'),
 		'type'        => 'number',
-		'description' => __('dias', Connect::DOMAIN),
+		'description' => __('dias', 'pagbank-connect'),
 		'default'     => 7,
 		'desc_tip'    => false,
 	],
 	'boleto_line_1'       => [
-		'title'   => __('Instruções (Linha 1)', Connect::DOMAIN),
+		'title'   => __('Instruções (Linha 1)', 'pagbank-connect'),
 		'type'    => 'text',
 		'default' => 'Sr. Caixa, favor não aceitar após vencimento.',
 	],
 	'boleto_line_2'       => [
-		'title'   => __('Instruções (Linha 2)', Connect::DOMAIN),
+		'title'   => __('Instruções (Linha 2)', 'pagbank-connect'),
 		'type'    => 'text',
 		'default' => 'Obrigado por comprar em nossa loja!',
 	],
 	'boleto_discount'     => [
-		'title'       => __('Oferecer Desconto de', Connect::DOMAIN),
+		'title'       => __('Oferecer Desconto de', 'pagbank-connect'),
 		'type'        => 'text',
 		'description' => __(
             'Ex: 5% para valor percentual ou 5.00 para um valor fixo. <br/>Deixe em branco para não oferecer '
             .'nenhum desconto.<br/><a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/199454'
             .'30928909-Oferecer-Desconto-Pix-e-Boleto-" target="_blank">Saiba mais.</a>',
-			Connect::DOMAIN
+			'pagbank-connect'
 		),
-        'placeholder'  => __('% ou fixo', Connect::DOMAIN),
+        'placeholder'  => __('% ou fixo', 'pagbank-connect'),
 		'default'     => 0,
 		'desc_tip'    => false,
 	],
