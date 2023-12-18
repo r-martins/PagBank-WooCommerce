@@ -16,6 +16,7 @@ Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
   <img alt="PIX e Boleto - Configurações" src="https://i.imgur.com/nhwMhUO.jpg" title="PIX e Boleto - Configurações"/>
   <img alt="Admin - Tela do Pedido" src="https://i.imgur.com/CIgTLnv.jpg" title="Admin - Tela do Pedido"/>
   <img alt="Envio Fácil" src="https://i.imgur.com/nQlOBfx.jpg" title="Envio Fácil"/>  
+  <img alt="3D Secure" src="https://i.imgur.com/hqhgWfM.jpg" title="3D Secure"/>  
 </details>
 
 # Descrição

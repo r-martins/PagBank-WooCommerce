@@ -5,11 +5,13 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.2
 Requires PHP: 7.4
-Stable tag: 4.1.5
+Stable tag: 4.2.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
 Aceite Pix, Cartão de Crédito e Boleto de forma transparente e economize nas taxas oficiais.
+
+Use autenticação 3D Secure e reduza os custos com chargebacks.
 
 == Description ==
 
@@ -140,3 +142,4 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 4. PIX e Boleto - Configurações
 5. Admin - Tela do Pedido
 6. Envio Fácil
+7. Autenticação 3D Secure
