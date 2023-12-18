@@ -65,6 +65,7 @@ $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_f
         }
         ?>
         <input type="hidden" <?php echo $this->field_name('card-encrypted');?>" id="<?php echo esc_attr( $this->id )?>-card-encrypted" />
+        <input type="hidden" <?php echo $this->field_name('card-3d');?>" id="<?php echo esc_attr( $this->id )?>-card-3d" />
         <?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
         <div class="clear"></div>
     </fieldset>

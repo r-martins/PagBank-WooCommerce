@@ -35,7 +35,7 @@ class Api
     /**
      * @throws Exception
      */
-    public function get(string $endpoint, array $params = []): array
+    public function get(string $endpoint, array $params = [], int $cacheMin = 0): array
     {
         $params['isSandbox'] = $this->is_sandbox ? '1': '0';
         $url = self::WS_URL . $endpoint .'?' .http_build_query($params);
@@ -46,7 +46,13 @@ class Api
 			'Referer' => get_site_url(),
         ];
 
-		$resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
+        $transientKey = 'cache_' . md5($url . serialize($header));
+        $cached = get_transient($transientKey);
+        if ($cached !== false){
+            return $cached;
+        }
+        
+        $resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
 
 		if (is_wp_error($resp)) {
 			throw new Exception('Erro na requisição: ' . $resp->get_error_message());
@@ -62,21 +68,26 @@ class Api
             throw new Exception('Resposta inválida da API: ' . $response);
         }
 
+        if ($cacheMin > 0){
+            set_transient($transientKey, $decoded_response, $cacheMin * 60);
+        }
+        
         return $decoded_response;
     }
 
     /**
      * @param string $endpoint
      * @param array  $params
+     * @param int    $cacheMin cache response time for this request in minutes                    
      *
      * @return mixed
      * @throws Exception
      */
-    public function post(string $endpoint, array $params = [])
+    public function post(string $endpoint, array $params = [], int $cacheMin = 0)
     {
 		$isSandbox = $this->is_sandbox ? '?isSandbox=1' : '';
         $url = self::WS_URL . $endpoint . $isSandbox;
-
+        
         $headers = [
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $this->connect_key,
@@ -86,6 +97,19 @@ class Api
             'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
 			'Referer' => get_site_url(),
         ];
+        
+        $transientKey = 'cache_' . md5($url);
+
+        if ($cacheMin > 0){
+            $cached = get_transient($transientKey);
+            if ($cached !== false){
+                Functions::log(
+                    'Response from '.$endpoint.' (cached): '.wp_json_encode($cached, JSON_PRETTY_PRINT),
+                    'debug'
+                );
+                return $cached;
+            }
+        }
 
 		Functions::log('POST Request to '.$endpoint . $isSandbox .' with params: '.wp_json_encode($params, JSON_PRETTY_PRINT), 'debug');
 
@@ -117,7 +141,25 @@ class Api
         }
 
         Functions::log('Response from '.$endpoint.': ' . wp_json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
+        if ($cacheMin > 0){
+            set_transient($transientKey, $decoded_response, $cacheMin * 60);
+        }
         return $decoded_response;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function get3DSession(): string
+    {
+        $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 20);
+        
+        if (isset($resp['session']))
+        {
+            return $resp['session'];
+        }
+        
+        throw new Exception(__('Erro ao obter a sessão 3D Secure', 'pagbank-connect'));
     }
 
 

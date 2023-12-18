@@ -5,6 +5,7 @@ namespace RM_PagBank\Connect\Payments;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\AuthenticationMethod;
 use RM_PagBank\Object\Buyer;
 use RM_PagBank\Object\Card;
 use RM_PagBank\Object\Charge;
@@ -56,6 +57,15 @@ class CreditCard extends Common
         $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
         $card->setHolder($holder);
         $paymentMethod->setCard($card);
+
+        //3ds
+        if ($this->order->get_meta('_pagbank_card_3ds_id')){
+            $authMethod = new AuthenticationMethod();
+            $authMethod->setType('THREEDS');
+            $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
+            $paymentMethod->setAuthenticationMethod($authMethod);
+        }
+        
         $charge->setPaymentMethod($paymentMethod);
 
 		if ($paymentMethod->getInstallments() > 1)
@@ -75,7 +85,7 @@ class CreditCard extends Common
 				$amount->setValue($installment['total_amount_raw']);
 			}
 		}
-
+        
         $return['charges'] = [$charge];
         return $return;
     }
@@ -102,15 +112,35 @@ class CreditCard extends Common
         $cc_bin = intval($_REQUEST['cc_bin']);
 
 		if (!$order_total) return;
-
         $installments = Params::getInstallments($order_total, $cc_bin);
         if (!$installments){
 			$error = $installments['error'] ?? '';
 			wp_send_json(
 				['error' =>
-					 __('Não foi possível obter as parcelas. ' . $error, Connect::DOMAIN)],
+					 __('Não foi possível obter as parcelas. ' . $error, 'pagbank-connect')],
 				400);
         }
         wp_send_json($installments);
+    }
+
+    /**
+     * Outputs the cart total (used via ajax with nonce validation)
+     * @return void
+     */
+    public static function getCartTotal()
+    {
+        if (!wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+            wp_send_json_error([
+                'error' => __(
+                    'Não foi possível obter o total. Chave de formulário inválida. '
+                    .'Recarregue a página e tente novamente.',
+                    'pagbank-connect'
+                ),
+            ],
+                400);
+        }
+        global $woocommerce;
+        echo $woocommerce->cart->get_total('edit');
+        wp_die();
     }
 }

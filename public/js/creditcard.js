@@ -153,16 +153,173 @@ jQuery(document).ready(function ($) {
         $(document.body).trigger('update_installments');
     });
 
+    $('form.woocommerce-checkout').off('submit').on('submit', async function (e) {
 
-    $('form.woocommerce-checkout').on('checkout_place_order', function (e) {
+        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
+            $('#payment_method_rm-pagbank').is(':checked') === false)
+            return true;
+       
+       //if 3ds is not enabled, continue
+       if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session){
+           return true;
+       }
+       
+       //if 3ds authorization is successful, continue
+       if ('undefined' !== typeof pagbank3dAuthorized && pagbank3dAuthorized === true){
+           return true;
+       }
 
+       
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        //region 3ds authentication
+        PagSeguro.setUp({
+            session: pagseguro_connect_3d_session,
+            env: pagseguro_connect_environment,
+        });
+        var checkoutFormData = $(this).serializeArray();
+        // Convert the form data to an object
+        var checkoutFormDataObj = {};
+        $.each(checkoutFormData, function(i, field) {
+            checkoutFormDataObj[field.name] = field.value;
+        });
+        let cartTotal;
+        $.ajax({
+            url: ajax_object.ajax_url,
+            method: 'POST',
+            async: false,
+            data: {
+                action: 'get_cart_total',
+                nonce: rm_pagbank_nonce,
+            },
+            success: (response)=>{
+                cartTotal = response;
+                //convert to cents
+                cartTotal = parseFloat(cartTotal).toFixed(2) * 100;
+            },
+            error: (response)=>{
+                alert('Erro ao obter o total do pedido. Verifique os logs em WooCommerce > Status > Logs ' +
+                    'para ver os possíveis problemas na obtenção do total do pedido.');
+                console.log('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
+                    'para ver os possíveis problemas na obtenção do total do pedido.');
+            }
+            
+        });
+        const request = {
+            data: {
+                customer: {
+                    name: checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'],
+                    email: checkoutFormDataObj['billing_email'],
+                    phones: [
+                        {
+                            country: '55',
+                            area: checkoutFormDataObj['billing_phone'].replace(/\D/g, '').substring(0, 2),
+                            number: checkoutFormDataObj['billing_phone'].replace(/\D/g, '').substring(2),
+                            type: 'MOBILE'
+                        }
+                    ]
+                },
+                paymentMethod: {
+                    type: 'CREDIT_CARD',
+                    installments: $('#rm-pagbank-card-installments').val()*1,
+                    card: {
+                        number: $('#rm-pagbank-card-number').val().replace(/\s/g, ''),
+                        expMonth: $('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
+                        expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
+                        holder: {
+                            name: $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '),
+                        }
+                    }
+                },
+                amount: {
+                    value: cartTotal,
+                    currency: 'BRL'
+                },
+                billingAddress: {
+                    street: checkoutFormDataObj['billing_address_1'].replace(/\s+/g, ' '),
+                    number: checkoutFormDataObj['billing_number'].replace(/\s+/g, ' '),
+                    complement: checkoutFormDataObj['billing_neighborhood'].replace(/\s+/g, ' '),
+                    regionCode: checkoutFormDataObj['billing_state'].replace(/\s+/g, ' '),
+                    country: 'BRA',
+                    city: checkoutFormDataObj['billing_city'].replace(/\s+/g, ' '),
+                    postalCode: checkoutFormDataObj['billing_postcode'].replace(/\D+/g, '')
+                },
+                dataOnly: false
+            }
+        }
+        
+        //disable place order button
+        jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').block({
+            message: 'Autenticação 3D em andamento', 
+            overlayCSS: {
+                background: '#fff',
+                opacity: 0.6
+            },
+            css: {border: 0}
+        });
+        
+        PagSeguro.authenticate3DS(request).then( result => {
+            switch (result.status) {
+                case 'CHANGE_PAYMENT_METHOD':
+                    // The user must change the payment method used
+                    alert('Pagamento negado pelo PagBank. Escolha outro método de pagamento ou cartão.');
+                    jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+                    return false;
+                case 'AUTH_FLOW_COMPLETED':
+                    //O processo de autenticação foi realizado com sucesso, dessa forma foi gerado um id do 3DS que poderá ter o resultado igual a Autenticado ou Não Autenticado.
+                    if (result.authenticationStatus === 'AUTHENTICATED') {
+                        //O cliente foi autenticado com sucesso, dessa forma o pagamento foi autorizado.
+                        $('#rm-pagbank-card-3d').val(result.id);
+                        console.debug('3DS Autenticado ou Sem desafio');
+                        pagbank3dAuthorized = true;
+                        jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+                        $(this).submit();
+                        return true;
+                    }
+                    alert('Autenticação 3D falhou. Tente novamente.');
+                    pagbank3dAuthorized = false;
+                    jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+                    return false;
+                    break;
+                case 'AUTH_NOT_SUPPORTED':
+                    //A autenticação 3DS não ocorreu, isso pode ter ocorrido por falhas na comunicação com emissor ou bandeira, ou algum controle que não possibilitou a geração do 3DS id, essa transação não terá um retorno de status de autenticação e seguirá como uma transação sem 3DS.
+                    //O cliente pode seguir adiante sem 3Ds (exceto débito)
+                    if (pagseguro_connect_cc_3ds_allow_continue === 'yes') {
+                        pagbank3dAuthorized = true;
+                        jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+                        $(this).submit();
+                        return true;
+                    }
+                    alert('Seu cartão não suporta autenticação 3D. Escolha outro método de pagamento ou cartão.');
+                    jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+                    return false;
+                case 'REQUIRE_CHALLENGE':
+                    //É um status intermediário que é retornando em casos que o banco emissor solicita desafios, é importante para identificar que o desafio deve ser exibido.
+                    break;
+            }
+        }).catch((err) => {
+            if(err instanceof PagSeguro.PagSeguroError ) {
+                console.error(err);
+                console.debug(err.detail);
+                let errMsgs = err.detail.errorMessages.map(error => `${error.code}: ${error.parameterName} ${error.description}`).join('\n');
+                alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
+                jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+            }
+        })
+        //endregion
+
+       console.debug('3DS não autorizado');
+       return false;
+    });
+
+    $('form.woocommerce-checkout').off('checkout_place_order').on('checkout_place_order', async function (e) {
         //if not pagseguro connect or not credit card, return
         if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
             $('#payment_method_rm-pagbank').is(':checked') === false)
             return true;
-
-
-         let form = $(this);
+        
+        let form = $(this);
          let card;
         //replace trim and remove duplicated spaces from holder name
         let holder_name = $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
@@ -244,6 +401,9 @@ jQuery(document).ready(function ($) {
 jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('keyup change paste', '#rm-pagbank-card-number', (e)=>{
         window.ps_cc_has_changed = true;
+        if ('undefined' !== typeof pagseguro_connect_3d_session){
+            pagbank3dAuthorized = false;
+        }
         let cardNumber = jQuery(e.target).val();
         let ccBin = cardNumber.replace(/\s/g, '').substring(0, 6);
         if (ccBin !== window.ps_cc_bin && ccBin.length === 6) {
@@ -261,7 +421,7 @@ jQuery(document.body).on('update_installments', ()=>{
     //if error, show error message
     let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
     let total = jQuery('.order-total bdi').html();
-    //extact amount from total, removing html elements
+    //extract amount from total, removing html elements
     total = total.replace(/<[^>]*>?/gm, '');
     //remove ,
     total = total.replace(/,/g, '');
@@ -287,7 +447,6 @@ jQuery(document.body).on('update_installments', ()=>{
             action: 'ps_get_installments',
         },
         success: (response)=>{
-            // debugger;
             let select = jQuery('#rm-pagbank-card-installments');
             select.empty();
             for (let i = 0; i < response.length; i++) {

@@ -149,7 +149,7 @@ class Params
         $params['max_installments_no_interest'] = self::getMaxInstallmentsNoInterest($orderTotal);
 
         try {
-            $installments = $api->get($url, $params);
+            $installments = $api->get($url, $params, 30);
         } catch (Exception $e) {
             return [];
         }

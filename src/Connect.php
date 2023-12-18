@@ -39,6 +39,8 @@ class Connect
         add_action('wp_ajax_ps_get_installments', [CreditCard::class, 'getAjaxInstallments']);
         add_action('woocommerce_api_wc_pagseguro_info', [__CLASS__, 'configInfo']);
         add_action('woocommerce_api_rm_ps_notif', [__CLASS__, 'notification']);
+        add_action('wp_ajax_get_cart_total', [CreditCard::class, 'getCartTotal']);
+        add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
 
         // Load plugin files
         self::includes();

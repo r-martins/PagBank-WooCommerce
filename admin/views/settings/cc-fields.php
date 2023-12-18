@@ -90,4 +90,23 @@ return array(
 			'maxlength' => 17,
 		],
 	],
+    'cc_3ds'                                 => [
+        'title'       => __('Autenticação 3D', Connect::DOMAIN),
+        'label'       => __('Habilitar', Connect::DOMAIN),
+        'type'        => 'checkbox',
+        'description' => 'Habilita a autenticação 3D Secure para compras com cartão de crédito. <br/>'
+            .'A autenticação 3D Secure é um protocolo de segurança que adiciona uma camada extra de proteção '
+            .'para compras online, <br/> e evita que chargebacks de compras não reconhecidas sejam cobrados do lojista. <br/>'
+            .'Para mais informações, consulte a <a href="https://dev.pagbank.uol.com.br/docs/'
+            .'cobrando-com-autenticacao-3ds" target="_blank">documentação</a>.',
+        'default'     => 'yes',
+    ],
+    'cc_3ds_allow_continue'                                 => [
+        'title'       => __('Quando 3D não for suportado', Connect::DOMAIN),
+        'label'       => __('Permitir concluir', Connect::DOMAIN),
+        'type'        => 'checkbox',
+        'description' => 'Alguns cartões não possuem suporte a autenticação 3D. <br/>'
+            .'Ao marcar esta opção, o cliente poderá concluir a compra mesmo que o cartão não suporte tal recurso.',
+        'default'     => 'no',
+    ],
 );

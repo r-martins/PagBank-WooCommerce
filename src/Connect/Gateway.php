@@ -325,6 +325,7 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
     public function addScripts(){
+        $api = new Api();
 		//thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             wp_enqueue_script(
@@ -347,7 +348,7 @@ class Gateway extends WC_Payment_Gateway_CC
 				'before'
 			);
 
-            if ( $this->get_option('cc_enabled')) {
+            if ( $this->get_option('cc_enabled') == 'yes') {
                 wp_enqueue_script(
                     'pagseguro-connect-creditcard',
                     plugins_url('public/js/creditcard.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
@@ -363,6 +364,24 @@ class Gateway extends WC_Payment_Gateway_CC
                 wp_add_inline_script(
                     'pagseguro-connect-creditcard',
                     'var pagseguro_connect_public_key = \''.$this->get_option('public_key').'\';',
+                    'before'
+                );
+                if ( $this->get_option('cc_3ds') === 'yes') {
+                    wp_add_inline_script(
+                        'pagseguro-connect-creditcard',
+                        'var pagseguro_connect_3d_session = \''.$api->get3DSession().'\';',
+                        'before'
+                    );
+                    wp_add_inline_script(
+                        'pagseguro-connect-creditcard',
+                        'var pagseguro_connect_cc_3ds_allow_continue = \''.Params::getConfig('cc_3ds_allow_continue', 'no').'\';',
+                        'before'
+                    );
+                }
+                $environment = $api->getIsSandbox() ? 'SANDBOX' : 'PROD';
+                wp_add_inline_script(
+                    'pagseguro-connect-checkout',
+                    "const pagseguro_connect_environment = '$environment';",
                     'before'
                 );
                 wp_enqueue_script('pagseguro-checkout-sdk',
@@ -470,6 +489,10 @@ class Gateway extends WC_Payment_Gateway_CC
                     '_pagbank_card_holder_name',
                     filter_input(INPUT_POST, 'rm-pagbank-card-holder-name', FILTER_SANITIZE_STRING),
                     true
+                );
+                $order->add_meta_data(
+                    '_pagbank_card_3ds_id',
+                    filter_input(INPUT_POST, 'rm-pagbank-card-3d', FILTER_SANITIZE_STRING) ?? false,
                 );
                 $method = new CreditCard($order);
                 $params = $method->prepare();

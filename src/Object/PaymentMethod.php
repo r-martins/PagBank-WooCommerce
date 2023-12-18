@@ -20,6 +20,7 @@ class PaymentMethod implements JsonSerializable
     private string $soft_descriptor;
     private Card $card;
     private Boleto $boleto;
+    private AuthenticationMethod $authentication_method;
 
     public function jsonSerialize()
     {
@@ -120,6 +121,16 @@ class PaymentMethod implements JsonSerializable
     public function setBoleto(Boleto $boleto): void
     {
         $this->boleto = $boleto;
+    }
+
+    public function getAuthenticationMethod(): AuthenticationMethod
+    {
+        return $this->authentication_method;
+    }
+
+    public function setAuthenticationMethod(AuthenticationMethod $authentication_method): void
+    {
+        $this->authentication_method = $authentication_method;
     }
 
 }
