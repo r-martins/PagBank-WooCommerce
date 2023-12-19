@@ -32,10 +32,10 @@ class Gateway extends WC_Payment_Gateway_CC
 			plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
 		);
         $this->has_fields = true;
-        $this->method_title = __('PagBank Connect por Ricardo Martins', Connect::DOMAIN);
+        $this->method_title = __('PagBank Connect por Ricardo Martins', 'pagbank-connect');
 		$this->method_description = __(
 			'Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).',
-			Connect::DOMAIN
+			'pagbank-connect'
 		);
         $this->supports = [
             'products',
@@ -45,7 +45,7 @@ class Gateway extends WC_Payment_Gateway_CC
 		];
 
 
-		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', Connect::DOMAIN));
+		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', 'pagbank-connect'));
 		$this->description = $this->get_option('description');
 		$this->init_settings();
 
@@ -241,14 +241,14 @@ class Gateway extends WC_Payment_Gateway_CC
             $value = str_replace('%', '', $value);
 
             if (!is_numeric($value) || $value < 0 || $value > 100) {
-                WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100.', Connect::DOMAIN));
+                WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100.', 'pagbank-connect'));
                 return '';
             }
             return $value . '%';
         }
 
         if (!is_numeric($value) || $value < 0 ) {
-            WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100', Connect::DOMAIN));
+            WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100', 'pagbank-connect'));
             return '';
         }
         return $value;

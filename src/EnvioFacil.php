@@ -226,16 +226,16 @@ class EnvioFacil extends WC_Shipping_Method
 	{
 		$this->form_fields = [
 			'enabled'            => [
-				'title'   => __( 'Habilitar', Connect::DOMAIN ),
+				'title'   => __( 'Habilitar', 'pagbank-connect' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Habilitar', Connect::DOMAIN ),
+				'label'   => __( 'Habilitar', 'pagbank-connect' ),
 				'default' => 'no',
 			],
 			'origin_postcode'    => [
-				'title'       => __( 'CEP de Origem', Connect::DOMAIN ),
+				'title'       => __( 'CEP de Origem', 'pagbank-connect' ),
 				'type'        => 'text',
 				'description' => __( 'CEP de onde suas mercadorias serão enviadas. '
-					.'Se não informado, o CEP da loja será utilizado.', Connect::DOMAIN ),
+					.'Se não informado, o CEP da loja será utilizado.', 'pagbank-connect' ),
 				'desc_tip'    => true,
 				'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
 				'default'     => $this->getBasePostcode(),
@@ -269,9 +269,9 @@ class EnvioFacil extends WC_Shipping_Method
 			echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
 		}
 		echo wp_kses_post( wpautop( $this->get_method_description() ) );
-		echo __('Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>', Connect::DOMAIN);
-		echo '<p>' . __('⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do frete. Faça suas simulações antes. ;)', Connect::DOMAIN) . '</p>';
-		echo '<p>' . __('<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce" target="_blank">Ver documentação ↗</a>', Connect::DOMAIN) . '</p>';
+		echo __('Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>', 'pagbank-connect');
+		echo '<p>' . __('⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do frete. Faça suas simulações antes. ;)', 'pagbank-connect') . '</p>';
+		echo '<p>' . __('<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce" target="_blank">Ver documentação ↗</a>', 'pagbank-connect') . '</p>';
 		echo $this->get_admin_options_html(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
 	}
 
@@ -296,7 +296,7 @@ class EnvioFacil extends WC_Shipping_Method
 				__(
 					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
 					.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
-					Connect::DOMAIN
+					'pagbank-connect'
 				)
 			);
 			$value = 'no';

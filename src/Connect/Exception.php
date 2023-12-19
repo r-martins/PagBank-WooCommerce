@@ -60,17 +60,17 @@ class Exception extends \Exception
     {
         switch ($parameterName){
             case 'customer.tax_id':
-                return $parameterName . ' - ' . __('CPF/CNPJ', Connect::DOMAIN);
+                return $parameterName . ' - ' . __('CPF/CNPJ', 'pagbank-connect');
             case 'charges[0].payment_method.boleto.due_date':
-                return $parameterName . ' - ' . __('Data de vencimento do boleto', Connect::DOMAIN);
+                return $parameterName . ' - ' . __('Data de vencimento do boleto', 'pagbank-connect');
             case strpos($parameterName, 'locality') !== false:
-                return $parameterName . ' - ' . __('Bairro', Connect::DOMAIN);
+                return $parameterName . ' - ' . __('Bairro', 'pagbank-connect');
             case strpos($parameterName, 'address.number') !== false:
-                return $parameterName . ' - ' . __('Número do Endereço', Connect::DOMAIN);
+                return $parameterName . ' - ' . __('Número do Endereço', 'pagbank-connect');
             case strpos($parameterName, 'address.city') !== false:
-                return $parameterName . ' - ' . __('Cidade do Endereço', Connect::DOMAIN);
+                return $parameterName . ' - ' . __('Cidade do Endereço', 'pagbank-connect');
             case strpos($parameterName, 'address.region') !== false:
-                return $parameterName . ' - ' . __('Estado do Endereço', Connect::DOMAIN);
+                return $parameterName . ' - ' . __('Estado do Endereço', 'pagbank-connect');
         }
         
         return $parameterName;

@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * See https://developer.wordpress.org/plugins/plugin-basics/uninstall-methods/ for details
  * Remove tables, and wp_options

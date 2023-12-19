@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var Gateway $this */
 
 use RM_PagBank\Connect\Gateway;

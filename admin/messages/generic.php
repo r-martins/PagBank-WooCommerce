@@ -11,12 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @return void
  */
-function generic_notice($msg, $type="updated", $isDismissable=true) {
+function generic_notice_pagbank($msg, $type="updated", $isDismissable=true) {
     $class = 'notice';
     $class .= ' ' . $type;
     if ($isDismissable) {
         $class .= ' is-dismissible';
     }
-    echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', Connect::DOMAIN ) . '</strong> ' . $msg . '</p></div>';
+    echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', 'pagbank-connect' ) . '</strong> ' . $msg . '</p></div>';
 }
 

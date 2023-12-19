@@ -163,8 +163,8 @@ class Connect
 
     public static function loadTextDomain(): void
     {
-        $dir = self::DOMAIN . '/languages/';
-        load_plugin_textdomain(Connect::DOMAIN, false, $dir);
+        $dir = __DIR__ . '/../languages/';
+        load_plugin_textdomain('pagbank-connect', false, $dir);
     }
 
     public static function getMethodTitle($title, $id){

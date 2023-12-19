@@ -1,11 +1,12 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var Gateway $this */
 
 use RM_PagBank\Connect\Gateway;
 
 wp_enqueue_script( 'wc-credit-card-form' );
 $default_installments = $this->getDefaultInstallments();
-$installment_options = '<option value="">' . esc_html__( 'Informe um número de cartão', RM_PagBank\Connect::DOMAIN ) . '</option>';
+$installment_options = '<option value="">' . esc_html__( 'Informe um número de cartão', 'pagbank-connect' ) . '</option>';
 $fields = array();
 
 $cvc_field = '<p class="form-row form-row-last">
@@ -15,20 +16,20 @@ $cvc_field = '<p class="form-row form-row-last">
 
 $default_fields = [
     'card-holer-name' => '<p class="form-row form-row-wide">
-				<label for="' . esc_attr( $this->id ) . '-card-holder">' . esc_html__( 'Titular do Cartão', RM_PagBank\Connect::DOMAIN ) . '&nbsp;<span class="required">*</span></label>
-				<input id="' . esc_attr( $this->id ) . '-card-holder-name" class="input-text wc-credit-card-form-holder-name" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" type="text" placeholder="' . esc_html__( 'JOSÉ DA SILVA', RM_PagBank\Connect::DOMAIN ) . '" ' . $this->field_name( 'card-holder-name' ) . ' />
+				<label for="' . esc_attr( $this->id ) . '-card-holder">' . esc_html__( 'Titular do Cartão', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
+				<input id="' . esc_attr( $this->id ) . '-card-holder-name" class="input-text wc-credit-card-form-holder-name" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" type="text" placeholder="' . esc_html__( 'JOSÉ DA SILVA', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-holder-name' ) . ' />
 			</p>',
     'card-number-field' => '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'woocommerce' ) . '&nbsp;<span class="required">*</span></label>
                     <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocapitalize="off" spellcheck="false" type="tel" placeholder="&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;" ' . $this->field_name( 'card-number' ) . ' />
                 </p>',
     'card-expiry-field' => '<p class="form-row form-row-first">
-				<label for="' . esc_attr( $this->id ) . '-card-expiry">' . esc_html__( 'Validade (MM/AA)', RM_PagBank\Connect::DOMAIN) . '&nbsp;<span class="required">*</span></label>
+				<label for="' . esc_attr( $this->id ) . '-card-expiry">' . esc_html__( 'Validade (MM/AA)', 'pagbank-connect') . '&nbsp;<span class="required">*</span></label>
 				<input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocapitalize="off" spellcheck="false" type="tel" placeholder="' . esc_attr__( 'MM / YY', 'woocommerce' ) . '" ' . $this->field_name( 'card-expiry' ) . ' maxlength="7" />
 			</p>',
     'card-cvc-field' => $cvc_field,
     'card-installments' => '<p class="form-row form-row-full">
-                    <label for="' . esc_attr( $this->id ) . '-card-installments">' . esc_html__( 'Parcelas', RM_PagBank\Connect::DOMAIN ) . '&nbsp;<span class="required">*</span></label>
+                    <label for="' . esc_attr( $this->id ) . '-card-installments">' . esc_html__( 'Parcelas', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
                     <select id="' . esc_attr( $this->id ) . '-card-installments" class="input-text wc-credit-card-form-card-installments"  ' . $this->field_name( 'card-installments' ) . ' >
                         {{installment_options}}
                     </select>

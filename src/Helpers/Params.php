@@ -276,14 +276,14 @@ class Params
 
         if ('FIXED' == $discountType){
 			return sprintf(
-				__('Um desconto de %s será aplicado.', Connect::DOMAIN),
+				__('Um desconto de %s será aplicado.', 'pagbank-connect'),
 				'<strong>'.wc_price($discountConfig).'</strong>'
 			);
         }
 
         if ('PERCENT' == $discountType){
 			return sprintf(
-				__('Um desconto de %s será aplicado', Connect::DOMAIN),
+				__('Um desconto de %s será aplicado', 'pagbank-connect'),
 				'<strong>'.$discountConfig.'</strong>'
 			);
         }
