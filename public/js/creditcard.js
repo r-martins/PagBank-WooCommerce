@@ -302,7 +302,7 @@ jQuery(document).ready(function ($) {
             if(err instanceof PagSeguro.PagSeguroError ) {
                 console.error(err);
                 console.debug(err.detail);
-                let errMsgs = err.detail.errorMessages.map(error => `${error.code}: ${error.parameterName} ${error.description}`).join('\n');
+                let errMsgs = err.detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
                 alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
                 jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
             }
