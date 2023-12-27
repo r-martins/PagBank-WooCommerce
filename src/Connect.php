@@ -70,10 +70,7 @@ class Connect
      */
     public static function includes()
     {
-        //@TODO Remover em prol de Helpers\Functions\generic_message
-        if ( is_admin() ) {
-            include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/messages/generic.php';
-        }
+        
     }
 
     /**
@@ -92,7 +89,7 @@ class Connect
     public static function addPluginActionLinks( $links ): array
     {
         $plugin_links   = array();
-        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', self::DOMAIN ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', 'pagbank-connect' ) . '</a>';
 
         return array_merge( $plugin_links, $links );
     }

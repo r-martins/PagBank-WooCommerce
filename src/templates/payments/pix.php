@@ -27,11 +27,11 @@ $hasDiscount = $this->get_option('pix_discount');
 $discountText = Params::getDiscountText('pix');
 ?>
 <p class="instructions">
-    <?php echo $this->get_option('pix_instructions'); ?>
+    <?php esc_html_e($this->get_option('pix_instructions')); ?>
     <br/>
-    <?php echo $text; ?>
+    <?php esc_html_e($text); ?>
     <?php if ($hasDiscount): ?>
         <br/>
-        <?php echo $discountText; ?>
+        <?php esc_html_e($discountText); ?>
     <?php endif; ?>
 </p>

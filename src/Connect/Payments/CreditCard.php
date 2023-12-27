@@ -59,7 +59,7 @@ class CreditCard extends Common
         $paymentMethod->setCard($card);
 
         //3ds
-        if ($this->order->get_meta('_pagbank_card_3ds_id')){
+        if ($this->order->get_meta('_pagbank_card_3ds_id') && Params::getConfig('cc_3ds') === 'yes'){
             $authMethod = new AuthenticationMethod();
             $authMethod->setType('THREEDS');
             $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
@@ -113,11 +113,10 @@ class CreditCard extends Common
 
 		if (!$order_total) return;
         $installments = Params::getInstallments($order_total, $cc_bin);
-        if (!$installments){
+        if (isset($installments['error'])){
 			$error = $installments['error'] ?? '';
 			wp_send_json(
-				['error' =>
-					 __('Não foi possível obter as parcelas. ' . $error, 'pagbank-connect')],
+                ['error' => sprintf(__('Não foi possível obter as parcelas. %s', 'pagbank-connect'), $error)],
 				400);
         }
         wp_send_json($installments);
@@ -140,7 +139,7 @@ class CreditCard extends Common
                 400);
         }
         global $woocommerce;
-        echo $woocommerce->cart->get_total('edit');
+        esc_html_e($woocommerce->cart->get_total('edit'));
         wp_die();
     }
 }

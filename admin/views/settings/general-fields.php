@@ -5,12 +5,12 @@ use RM_PagBank\Connect;
 
 return array(
 	'connect_key' => [
-        'title'       => __( 'Connect Key', 'pagbank-connect' ),
+        'title'       => esc_html( __( 'Connect Key', 'pagbank-connect' ) ),
         'type'        => 'text',
-        'description' => __(
+        'description' => esc_html(  __(
 			'Informe sua Connect Key, obtida após Obter as Credenciais. Este NÃO é o token PagBank.',
 			'pagbank-connect'
-		),
+		) ),
         'default'     => '',
         'placeholder' => 'CON...',
         'desc_tip'    => true,
@@ -22,16 +22,16 @@ return array(
 		]
 	],
 	'general' => [
-        'title' => __( 'Configurações Gerais', 'pagbank-connect' ),
+        'title' => esc_html( __( 'Configurações Gerais', 'pagbank-connect' ) ),
         'type'  => 'title',
         'desc'  => '',
         'id'    => 'wc_pagseguro_connect_general_options',
 	],
 	'title' => [
-        'title'       => __( 'Título Principal' , 'pagbank-connect' ),
+        'title'       => esc_html( __( 'Título Principal' , 'pagbank-connect' ) ),
         'type'        => 'text',
-        'description' => __( 'Nome do meio de pagamento a ser exibido no radio button do checkout.', 'pagbank-connect' ),
-        'default'     => __( 'PagBank UOL', 'pagbank-connect' ),
+        'description' => esc_html( __( 'Nome do meio de pagamento a ser exibido no radio button do checkout.', 'pagbank-connect' ) ),
+        'default'     => esc_html( __( 'PagBank UOL', 'pagbank-connect' ) ),
         'desc_tip'    => true,
         'required'    => true,
         'custom_attributes' => [

@@ -40,7 +40,7 @@ use RM_PagBank\Connect\Gateway;
 		<a href="https://pagseguro.ricardomartins.net.br/connect/sandbox.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
 		<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php esc_html_e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', 'pagbank-connect');?>"><?php esc_html_e('Obter ajuda', 'pagbank-connect') ?></a>
         <?php
-        echo $this->get_admin_fields('general');
+        echo $this->get_admin_fields('general'); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
         ?>
     </div>
     <div class="tab-content hidden" id="tab-credit-card">

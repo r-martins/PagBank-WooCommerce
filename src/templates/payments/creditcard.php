@@ -72,6 +72,6 @@ $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_f
     </fieldset>
 <?php
 
-if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
-    echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
-}
+//if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
+//    echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
+//}

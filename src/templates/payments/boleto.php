@@ -12,11 +12,11 @@ $hasDiscount = $this->get_option('boleto_discount');
 $discountText = Params::getDiscountText('boleto');
 ?>
 <p class="instructions">
-    <?php echo $this->get_option('boleto_instructions'); ?>
+    <?php esc_html_e($this->get_option('boleto_instructions')); ?>
     <br/>
-    <?php echo sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', $expiry, 'pagbank-connect' ), $expiry ); ?>
+    <?php echo sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', esc_attr($expiry), 'pagbank-connect' ), esc_attr($expiry) ); ?>
     <?php if ($hasDiscount): ?>
         <br/>
-        <?php echo $discountText; ?>
+        <?php esc_html_e($discountText); ?>
     <?php endif; ?>
 </p>

@@ -60,17 +60,17 @@ class Exception extends \Exception
     {
         switch ($parameterName){
             case 'customer.tax_id':
-                return $parameterName . ' - ' . __('CPF/CNPJ', 'pagbank-connect');
+                return $parameterName . ' - ' . esc_html( __('CPF/CNPJ', 'pagbank-connect') );
             case 'charges[0].payment_method.boleto.due_date':
-                return $parameterName . ' - ' . __('Data de vencimento do boleto', 'pagbank-connect');
+                return $parameterName . ' - ' . esc_html( __('Data de vencimento do boleto', 'pagbank-connect') );
             case strpos($parameterName, 'locality') !== false:
-                return $parameterName . ' - ' . __('Bairro', 'pagbank-connect');
+                return $parameterName . ' - ' .esc_html(  __('Bairro', 'pagbank-connect') );
             case strpos($parameterName, 'address.number') !== false:
-                return $parameterName . ' - ' . __('Número do Endereço', 'pagbank-connect');
+                return $parameterName . ' - ' . esc_html( __('Número do Endereço', 'pagbank-connect') );
             case strpos($parameterName, 'address.city') !== false:
-                return $parameterName . ' - ' . __('Cidade do Endereço', 'pagbank-connect');
+                return $parameterName . ' - ' . esc_html( __('Cidade do Endereço', 'pagbank-connect') );
             case strpos($parameterName, 'address.region') !== false:
-                return $parameterName . ' - ' . __('Estado do Endereço', 'pagbank-connect');
+                return $parameterName . ' - ' . esc_html( __('Estado do Endereço', 'pagbank-connect') );
         }
         
         return $parameterName;
