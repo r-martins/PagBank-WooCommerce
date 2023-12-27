@@ -498,7 +498,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 $params = $method->prepare();
                 break;
             default:
-                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido')));
+                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect')));
                 return array(
                     'result' => 'fail',
                     'redirect' => ''

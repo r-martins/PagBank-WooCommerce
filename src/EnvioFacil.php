@@ -26,8 +26,8 @@ class EnvioFacil extends WC_Shipping_Method
 	 * @noinspection PhpUnusedParameterInspection*/
 	public function __construct( $instance_id = 0 ) {
 		$this->id                 = 'rm_enviofacil';
-		$this->method_title       = __( 'PagBank Envio Fácil' );  // Title shown in admin
-		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank' ); // Description shown in admin
+		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect' );  // Title shown in admin
+		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect' ); // Description shown in admin
 
 		$this->enabled            = $this->get_option('enabled');
 		$this->title              = "PagBank Envio Fácil";
@@ -131,7 +131,7 @@ class EnvioFacil extends WC_Shipping_Method
 
 			$rate = array(
 				'id' => 'ef-' . $provider['provider'],
-				'label' => $provider['provider'] . ' - ' . $provider['providerMethod'] . sprintf(__(' - %d dias úteis'), $provider['estimateDays']),
+				'label' => $provider['provider'] . ' - ' . $provider['providerMethod'] . sprintf(__(' - %d dias úteis', 'pagbank-connect'), $provider['estimateDays']),
 				'cost' => $provider['contractValue'],
 				'calc_tax' => 'per_order'
 			);

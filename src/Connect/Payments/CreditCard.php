@@ -139,7 +139,7 @@ class CreditCard extends Common
                 400);
         }
         global $woocommerce;
-        esc_html_e($woocommerce->cart->get_total('edit'));
+        esc_html_e($woocommerce->cart->get_total('edit'), 'pagbank-connect');
         wp_die();
     }
 }
