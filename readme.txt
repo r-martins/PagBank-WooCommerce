@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.1
+Stable tag: 4.2.2
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -113,6 +113,18 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.2.2 =
+* Ajustes diversos para compatibilidade com requisitos do WP Marketplace
+* Corrigido problema onde, em alguns cenários, logo após desativar a autenticação 3D, o plugin ainda tentava autenticar usando este método e gerando erro
+
+= 4.2.1 =
+* Pequenos ajustes de compatibilidade para estar de acordo com os requisitos do marketplace do WP Marketplace
+
+= 4.2.0 =
+* Adicionado suporte a autenticação 3D Secure, reduzindo drasticamente seus custos com chargebacks, e aumentando significativamente a taxa de aprovação.
+* Passamos a cachear algumas chamadas repetidas, aumentando significativamente a performance do processo de checkout.
+
 = 4.1.5 =
 * Corrigido problema no carregamento inicial de parcelas. Uma mudança no PagBank fez com que as parcelas iniciais não fossem carregadas até que o cliente informasse o número do cartão.
 
