@@ -17,6 +17,6 @@ $discountText = Params::getDiscountText('boleto');
     <?php echo sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', esc_attr($expiry), 'pagbank-connect' ), esc_attr($expiry) ); ?>
     <?php if ($hasDiscount): ?>
         <br/>
-        <?php esc_html_e($discountText, 'pagbank-connect'); ?>
+        <?php echo wp_kses($discountText, 'strong'); ?>
     <?php endif; ?>
 </p>

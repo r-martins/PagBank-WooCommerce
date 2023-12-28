@@ -45,7 +45,7 @@ $charge_id = $order->get_meta('pagbank_charge_id');
 					$brand = '<img src="' . $brand_url . '" style="width: 30px; height: auto; margin-right: 10px; float: left;" alt="' . $brand . '"/>';
 				}
 				?>
-				<br/><?php echo esc_attr($order->get_meta('_pagbank_card_first_digits') . 'xx xxxx' . $order->get_meta('_pagbank_card_last_digits') . $brand);?>
+				<br/><?php echo esc_attr($order->get_meta('_pagbank_card_first_digits') . 'xx xxxx' . $order->get_meta('_pagbank_card_last_digits')) . $brand;?>
 				<br/>Titular: <?php echo esc_attr($order->get_meta('_pagbank_card_holder_name'));?>
 			<?php endif;?>
 		</span>

@@ -32,6 +32,6 @@ $discountText = Params::getDiscountText('pix');
     <?php esc_html_e($text, 'pagbank-connect'); ?>
     <?php if ($hasDiscount): ?>
         <br/>
-        <?php esc_html_e($discountText, 'pagbank-connect'); ?>
+        <?php echo wp_kses($discountText, 'strong'); ?>
     <?php endif; ?>
 </p>
