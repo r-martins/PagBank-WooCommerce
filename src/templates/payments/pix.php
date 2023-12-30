@@ -27,9 +27,9 @@ $hasDiscount = $this->get_option('pix_discount');
 $discountText = Params::getDiscountText('pix');
 ?>
 <p class="instructions">
-    <?php esc_html_e($this->get_option('pix_instructions'), 'pagbank-connect'); ?>
+    <?php echo wp_kses($this->get_option('pix_instructions'), 'strong'); ?>
     <br/>
-    <?php esc_html_e($text, 'pagbank-connect'); ?>
+    <?php echo wp_kses($text, 'strong'); ?>
     <?php if ($hasDiscount): ?>
         <br/>
         <?php echo wp_kses($discountText, 'strong'); ?>

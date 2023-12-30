@@ -12,7 +12,7 @@ $hasDiscount = $this->get_option('boleto_discount');
 $discountText = Params::getDiscountText('boleto');
 ?>
 <p class="instructions">
-    <?php esc_html_e($this->get_option('boleto_instructions'), 'pagbank-connect'); ?>
+    <?php echo wp_kses($this->get_option('boleto_instructions'), 'strong'); ?>
     <br/>
     <?php echo sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', esc_attr($expiry), 'pagbank-connect' ), esc_attr($expiry) ); ?>
     <?php if ($hasDiscount): ?>
