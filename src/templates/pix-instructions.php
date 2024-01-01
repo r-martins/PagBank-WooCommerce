@@ -9,14 +9,14 @@ use RM_PagBank\Helpers\Functions;
 ?>
 <div class="pix-payment">
     <h2>Pague seu PIX</h2>
-    <p><?php echo esc_html(__('Escaneie o código abaixo com o aplicativo de seu banco.', 'pagbank-connect'));?></p>
+    <p><?php _e('Escaneie o código abaixo com o aplicativo de seu banco.', 'pagbank-connect');?></p>
     <div class="pix-qr-container">
         <img src="<?php echo esc_url($qr_code);?>" class="pix-qr" alt="PIX QrCode" title="Escaneie o código com o aplicativo de seu banco."/>
     </div>
-    <p><?php echo esc_html(__('Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.', 'pagbank-connect'));?></p>
+    <p><?php _e('Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.', 'pagbank-connect');?></p>
     <div class="code-container">
         <label>
-            <?php echo esc_html(__('Código PIX', 'pagbank-connect'));?>
+            <?php _e('Código PIX', 'pagbank-connect');?>
             <input type="text" class="pix-code" value="<?php echo esc_attr($qr_code_text);?>" readonly="readonly"/>
         </label>
         <img src="<?php echo esc_url(plugins_url('public/images/copy-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="Copiar" title="Copiar" class="copy-btn"/>

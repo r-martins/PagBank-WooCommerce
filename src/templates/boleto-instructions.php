@@ -10,19 +10,19 @@ use RM_PagBank\Connect;
 
 ?>
 <div class="boleto-payment">
-    <h2><?php echo esc_html(__('Pague seu Boleto', 'pagbank-connect'));?></h2>
-    <p><?php echo esc_html(__('Copie o código de barras abaixo e pague direto em seu banco.', 'pagbank-connect'));?></p>
+    <h2><?php _e('Pague seu Boleto', 'pagbank-connect');?></h2>
+    <p><?php _e('Copie o código de barras abaixo e pague direto em seu banco.', 'pagbank-connect');?></p>
     <div class="code-container">
         <label>
-            <?php echo esc_html(__('Código de barras:', 'pagbank-connect'));?>
+            <?php _e('Código de barras:', 'pagbank-connect');?>
             <input type="text" class="pix-code" value="<?php echo esc_attr($boleto_barcode_formatted);?>" readonly="readonly"/>
         </label>
         <img src="<?php echo esc_url(plugins_url('public/images/copy-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="Copiar" title="Copiar" class="copy-btn"/>
         <p class="copied">Copiado ✔</p>
     </div>
     <div class="boleto-actions">
-        <a href="<?php echo esc_url($boleto_pdf);?>" target="_blank" class="button button-primary"><?php echo esc_html( __('Baixar Boleto', 'pagbank-connect') )?></a>
-        <a href="<?php echo esc_url($boleto_png);?>" target="_blank" class="button button-primary"><?php echo esc_html( __('Imprimir Boleto', 'pagbank-connect') )?></a>
+        <a href="<?php echo esc_url($boleto_pdf);?>" target="_blank" class="button button-primary"><?php _e('Baixar Boleto', 'pagbank-connect')?></a>
+        <a href="<?php echo esc_url($boleto_png);?>" target="_blank" class="button button-primary"><?php _e('Imprimir Boleto', 'pagbank-connect')?></a>
     </div>
     <div class="boleto-exiration-container">
         <p><strong>Seu boleto vence em <?php echo gmdate('d/m/Y', strtotime($boleto_due_date) - 3600*3);?>.</strong></p>
