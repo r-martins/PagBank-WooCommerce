@@ -1,6 +1,69 @@
 jQuery(document).ready(function ($) {
     window.ps_cc_bin = '';
 
+    //region Encrypt card method
+    /**
+     * Encrypts the card and sets the encrypted card in the hidden input and window.ps_cc_* variables for number and cvv
+     * @returns {boolean}
+     */
+    let encryptCard = function () {
+        let cardHasChanged = (window.ps_cc_has_changed === true);
+        let card, cc_number, cc_cvv;
+        //replace trim and remove duplicated spaces from holder name
+        let holder_name = $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
+        try {
+            cc_number = cardHasChanged ? $('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
+            cc_cvv = cardHasChanged ? $('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
+            card = PagSeguro.encryptCard({
+                publicKey: pagseguro_connect_public_key,
+                holder: holder_name,
+                number: cc_number,
+                expMonth: $('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
+                expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
+                securityCode: cc_cvv,
+            });
+        } catch (e) {
+            alert("Erro ao criptografar o cartão.\nVerifique se os dados digitados estão corretos.");
+            return false;
+        }
+        if (card.hasErrors) {
+            let error_codes = [
+                {code: 'INVALID_NUMBER', message: 'Número do cartão inválido'},
+                {
+                    code: 'INVALID_SECURITY_CODE',
+                    message: 'CVV Inválido. Você deve passar um valor com 3, 4 ou mais dígitos.'
+                },
+                {
+                    code: 'INVALID_EXPIRATION_MONTH',
+                    message: 'Mês de expiração incorreto. Passe um valor entre 1 e 12.'
+                },
+                {code: 'INVALID_EXPIRATION_YEAR', message: 'Ano de expiração inválido.'},
+                {code: 'INVALID_PUBLIC_KEY', message: 'Chave Pública inválida.'},
+                {code: 'INVALID_HOLDER', message: 'Nome do titular do cartão inválido.'},
+            ]
+            //extract error message
+            let error = '';
+            for (let i = 0; i < card.errors.length; i++) {
+                //loop through error codes to find the message
+                for (let j = 0; j < error_codes.length; j++) {
+                    if (error_codes[j].code === card.errors[i].code) {
+                        error += error_codes[j].message + '\n';
+                        break;
+                    }
+                }
+            }
+            alert('Erro ao criptografar cartão.\n' + error);
+            return false;
+        }
+        
+        $('#rm-pagbank-card-encrypted').val(card.encryptedCard);
+        window.ps_cc_has_changed = false;
+        window.ps_cc_number = cc_number;
+        window.ps_cc_cvv = cc_cvv;
+        return true;
+    }
+    //endregion
+    
     /*region extending cards and card types from jqueryPayment to support new types*/
     const typesPagBank = [
         {
@@ -153,31 +216,61 @@ jQuery(document).ready(function ($) {
         $(document.body).trigger('update_installments');
     });
 
-    $('form.woocommerce-checkout').off('submit').on('submit', async function (e) {
-
-        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
-            $('#payment_method_rm-pagbank').is(':checked') === false)
+    //region 3ds authentication
+    let isSubmitting = false;
+    if (!$('form.woocommerce-checkout').length) {
+        console.debug('PagBank: checkout form not found');
+        return true;
+    }
+    let originalSubmitHandler = () => {};
+    if ($._data($('form.woocommerce-checkout')[0], "events") !== undefined) {
+        originalSubmitHandler = $._data($('form.woocommerce-checkout')[0], "events").submit[0].handler ?? null;
+    }
+    
+    $('form.woocommerce-checkout').off('submit');
+    $('form.woocommerce-checkout').on('submit', async function (e) {
+        console.debug('PagBank: submit');
+        
+        if (isSubmitting) {
             return true;
+        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        
+        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
+            $('#payment_method_rm-pagbank').is(':checked') === false) {
+            isSubmitting = true;
+            $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
+            $('form.woocommerce-checkout').trigger('submit');
+            return true;
+        }
        
        //if 3ds is not enabled, continue
-       if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session){
+       if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
+           isSubmitting = true;
+           $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
+           $('form.woocommerce-checkout').trigger('submit');
            return true;
        }
        
        //if 3ds authorization is successful, continue
-       if ('undefined' !== typeof pagbank3dAuthorized && pagbank3dAuthorized === true){
+       if ('undefined' !== typeof pagbank3dAuthorized && pagbank3dAuthorized === true) {
+           isSubmitting = true;
+           $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
+           $('form.woocommerce-checkout').trigger('submit');
            return true;
        }
 
-       
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        //region 3ds authentication
+        //region 3ds authentication method
         PagSeguro.setUp({
             session: pagseguro_connect_3d_session,
             env: pagseguro_connect_environment,
         });
+
+        if (encryptCard() === false){
+            return false;
+        }
+       
         var checkoutFormData = $(this).serializeArray();
         // Convert the form data to an object
         var checkoutFormDataObj = {};
@@ -206,6 +299,9 @@ jQuery(document).ready(function ($) {
             }
             
         });
+
+        let expiryVal = $('#rm-pagbank-card-expiry').val();
+        
         const request = {
             data: {
                 customer: {
@@ -224,9 +320,9 @@ jQuery(document).ready(function ($) {
                     type: 'CREDIT_CARD',
                     installments: $('#rm-pagbank-card-installments').val()*1,
                     card: {
-                        number: $('#rm-pagbank-card-number').val().replace(/\s/g, ''),
+                        number: window.ps_cc_number,
                         expMonth: $('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                        expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
+                        expYear: expiryVal.includes('/') ? '20' + expiryVal.split('/')[1].slice(-2).replace(/\s/g, '') : '',
                         holder: {
                             name: $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '),
                         }
@@ -271,24 +367,29 @@ jQuery(document).ready(function ($) {
                     if (result.authenticationStatus === 'AUTHENTICATED') {
                         //O cliente foi autenticado com sucesso, dessa forma o pagamento foi autorizado.
                         $('#rm-pagbank-card-3d').val(result.id);
-                        console.debug('3DS Autenticado ou Sem desafio');
+                        console.debug('PagBank: 3DS Autenticado ou Sem desafio');
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
-                        $(this).submit();
+                        isSubmitting = true;
+                        $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
+                        $('form.woocommerce-checkout').trigger('submit');
                         return true;
                     }
                     alert('Autenticação 3D falhou. Tente novamente.');
                     pagbank3dAuthorized = false;
                     jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
                     return false;
-                    break;
                 case 'AUTH_NOT_SUPPORTED':
                     //A autenticação 3DS não ocorreu, isso pode ter ocorrido por falhas na comunicação com emissor ou bandeira, ou algum controle que não possibilitou a geração do 3DS id, essa transação não terá um retorno de status de autenticação e seguirá como uma transação sem 3DS.
                     //O cliente pode seguir adiante sem 3Ds (exceto débito)
                     if (pagseguro_connect_cc_3ds_allow_continue === 'yes') {
+                        console.debug('PagBank: 3DS não suportado pelo cartão. Continuando sem 3DS.');
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
-                        $(this).submit();
+                        
+                        isSubmitting = true;
+                        $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
+                        $('form.woocommerce-checkout').trigger('submit');
                         return true;
                     }
                     alert('Seu cartão não suporta autenticação 3D. Escolha outro método de pagamento ou cartão.');
@@ -296,106 +397,64 @@ jQuery(document).ready(function ($) {
                     return false;
                 case 'REQUIRE_CHALLENGE':
                     //É um status intermediário que é retornando em casos que o banco emissor solicita desafios, é importante para identificar que o desafio deve ser exibido.
+                    console.debug('PagBank: REQUIRE_CHALLENGE - O desafio está sendo exibido pelo banco.');
                     break;
             }
         }).catch((err) => {
             if(err instanceof PagSeguro.PagSeguroError ) {
                 console.error(err);
-                console.debug(err.detail);
+                console.debug('PagBank: ' + err.detail);
                 let errMsgs = err.detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
                 alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
                 jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
+                return false;
             }
         })
         //endregion
-
-       console.debug('3DS não autorizado');
+        
        return false;
     });
+    //endregion
 
     $('form.woocommerce-checkout').off('checkout_place_order').on('checkout_place_order', async function (e) {
+        console.debug('PagBank: checkout_place_order');
+        
         //if not pagseguro connect or not credit card, return
         if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
-            $('#payment_method_rm-pagbank').is(':checked') === false)
+            $('#payment_method_rm-pagbank').is(':checked') === false) {
             return true;
+        }
         
-        let form = $(this);
-         let card;
-        //replace trim and remove duplicated spaces from holder name
-        let holder_name = $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
 
-         /*region Encrypt card*/
-        let cardHasChanged = (window.ps_cc_has_changed === true);
-        try {
-            let cc_number = cardHasChanged ? $('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
-            let cc_cvv = cardHasChanged ? $('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
-            card = PagSeguro.encryptCard({
-                publicKey: pagseguro_connect_public_key,
-                holder: holder_name,
-                number: cc_number,
-                expMonth: $('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                expYear: '20' + $('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
-                securityCode: cc_cvv,
-            });
-        } catch (e) {
-            alert("Erro ao criptografar o cartão.\nVerifique se os dados digitados estão corretos.");
-            return false;
+         /*region Encrypt card and obfuscates before submit*/
+        if (encryptCard() === false){
+            return;
         }
-        if (card.hasErrors) {
-            let error_codes = [
-                {code: 'INVALID_NUMBER', message: 'Número do cartão inválido'},
-                {
-                    code: 'INVALID_SECURITY_CODE',
-                    message: 'CVV Inválido. Você deve passar um valor com 3, 4 ou mais dígitos.'
-                },
-                {
-                    code: 'INVALID_EXPIRATION_MONTH',
-                    message: 'Mês de expiração incorreto. Passe um valor entre 1 e 12.'
-                },
-                {code: 'INVALID_EXPIRATION_YEAR', message: 'Ano de expiração inválido.'},
-                {code: 'INVALID_PUBLIC_KEY', message: 'Chave Pública inválida.'},
-                {code: 'INVALID_HOLDER', message: 'Nome do titular do cartão inválido.'},
-            ]
-            //extract error message
-            let error = '';
-            for (let i = 0; i < card.errors.length; i++) {
-                //loop through error codes to find the message
-                for (let j = 0; j < error_codes.length; j++) {
-                    if (error_codes[j].code === card.errors[i].code) {
-                        error += error_codes[j].message + '\n';
-                        break;
-                    }
-                }
-            }
-            alert('Erro ao criptografar cartão.\n' + error);
-            return false;
-        }
-        $('#rm-pagbank-card-encrypted').val(card.encryptedCard);
-
 
         //obfuscates cvv
-		if (window.ps_cc_has_changed){
-			// saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
-			// pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
-			let card_number = $('#rm-pagbank-card-number').val();
-			window.ps_cc_number = card_number.replace(/\s/g, '');
-			window.ps_cc_cvv = $('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
+        // saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
+        // pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
+        let card_number = $('#rm-pagbank-card-number').val();
+        window.ps_cc_number = card_number.replace(/\s/g, '');
+        window.ps_cc_cvv = $('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
 
-			$('#rm-pagbank-card-cvc').val('***');
-			//obfuscates card number between 8th and last 4 digits
-			let obfuscated_card_number = '';
-			for (let i = 0; i < card_number.length; i++) {
-				if (i > 6 && i < card_number.length - 4)
-					obfuscated_card_number += '*';
-				else
-					obfuscated_card_number += card_number[i];
-			}
-			$('#rm-pagbank-card-number').val(obfuscated_card_number);
-			window.ps_cc_has_changed = false;
-		}
+        $('#rm-pagbank-card-cvc').val('***');
+        //obfuscates card number between 8th and last 4 digits
+        let obfuscated_card_number = '';
+        for (let i = 0; i < card_number.length; i++) {
+            if (i > 6 && i < card_number.length - 4)
+                obfuscated_card_number += '*';
+            else
+                obfuscated_card_number += card_number[i];
+        }
+        $('#rm-pagbank-card-number').val(obfuscated_card_number);
+        window.ps_cc_has_changed = false;
         /*endregion*/
+        
+        isSubmitting = false;
     });
 
+    
 });
 
 jQuery(document.body).on('init_checkout', ()=>{
