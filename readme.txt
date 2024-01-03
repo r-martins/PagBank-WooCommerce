@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.4
+Stable tag: 4.2.5
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -113,6 +113,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.2.5 =
+* Correção: em versões antigas do WooCommerce (ex: 6.4), em pedidos com cartao, o checkout era recarregado ao tentar finalizar compra, sem concluir o pedido. (#2)
+* Melhorias e refatoracao no JS de cartão de crédito, que agora não é mais inserido na página de sucesso desnecessariamente.
+* Mais melhorias em possíveis mensagens de erro no retorno de validações 3DSecure.
+* Mais ajustes pequenos em traduções, solicitados pela equipe do WordPress
 
 = 4.2.2 =
 * Ajustes diversos para compatibilidade com requisitos do WP Marketplace
