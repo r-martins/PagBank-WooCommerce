@@ -334,7 +334,7 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
 
-        if ( is_checkout() ) {
+        if ( is_checkout() && !is_order_received_page() ) {
             wp_enqueue_script(
                 'pagseguro-connect-checkout',
                 plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
@@ -511,7 +511,6 @@ class Gateway extends WC_Payment_Gateway_CC
         try {
             $api = new Api();
             $resp = $api->post('ws/orders', $params);
-
             if (isset($resp['error_messages'])) {
                 throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
             }

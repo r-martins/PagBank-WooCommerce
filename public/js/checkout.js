@@ -35,6 +35,7 @@ jQuery(document).ready(function($) {
             'must be greater than or equal to 100': 'deve ser maior ou igual a 100',
             'must be between 1 and 24': 'deve ser entre 1 e 24',
             'only ISO 3166-1 alpha-3 values are accepted': 'deve ser um código ISO 3166-1 alpha-3',
+            'either paymentMethod.card.id or paymentMethod.card.encrypted should be informed': 'deve ser informado o cartão de crédito criptografado ou o id do cartão',
         };
     
         const parameters = {
@@ -45,6 +46,7 @@ jQuery(document).ready(function($) {
             'billingAddress.complement': 'complemento/bairro do endereço de cobrança',
             'paymentMethod.installments': 'parcelas',
             'billingAddress.country': 'país de cobrança',
+            'paymentMethod.card': 'cartão de crédito',
         };
 
         // Get the code, description, and parameterName from the errorMessage object
@@ -56,6 +58,6 @@ jQuery(document).ready(function($) {
         const parameterTranslation = parameters[parameterName] || parameterName;
 
         // Concatenate the translations into a single string
-        return `${codeTranslation}: ${parameterTranslation} ${descriptionTranslation}`;
+        return `${codeTranslation}: ${parameterTranslation} - ${descriptionTranslation}`;
     }
 })
