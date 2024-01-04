@@ -68,7 +68,9 @@ class Connect
      */
     public static function includes()
     {
-        
+        if ( is_admin() ) {
+            include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/messages/generic.php';
+        }
     }
 
     /**

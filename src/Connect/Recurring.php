@@ -810,9 +810,4 @@ class Recurring
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$order}";
         return $wpdb->get_row($sql);
     }
-    
-    public function getThankyouInstructions($order)
-    {
-        require_once dirname(__FILE__) . '/../templates/recurring-instructions.php';
-    }
 }

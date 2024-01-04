@@ -42,12 +42,11 @@ $actions = apply_filters('rm_pagbank_account_recurring_actions', [
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id,
         'class' => 'subscription-button suspend',
     ],
-    // Coming soon
-    /*'update' => [
+    'update' => [
         'name' => __('Atualizar Cartão', RM_PagBank\Connect::DOMAIN),
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=update&id=' . $subscription->id,
         'class' => 'subscription-button update',
-    ]*/
+    ]
 ], $subscription);
 if ( ! empty( $actions ) ) {
     foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
