@@ -35,6 +35,7 @@ if ( ! defined ( 'ABSPATH' ) ) {
         <a href="#tab-pix" class="nav-tab"><?php esc_html_e('PIX', 'pagbank-connect') ?></a>
         <a href="#tab-boleto" class="nav-tab"><?php esc_html_e('Boleto', 'pagbank-connect') ?></a>
         <a href="#tab-recurring" class="nav-tab"><?php esc_html_e('Recorrência', 'pagbank-connect') ?></a>
+        <a href="#tab-recurring" class="nav-tab"><?php esc_html_e('Recorrência', Connect::DOMAIN) ?></a>
     </nav>
     <div class="tab-content active" id="tab-general">
         <h3><?php esc_html_e('Credenciais', 'pagbank-connect') ?></h3>
