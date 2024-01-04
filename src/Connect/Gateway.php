@@ -638,6 +638,10 @@ class Gateway extends WC_Payment_Gateway_CC
         if (!empty($method)) {
             $method->getThankyouInstructions($order_id);
         }
+        if ($order->get_meta('_pagbank_recurring_initial')) {
+            $recurring = new Recurring();
+            $recurring->getThankyouInstructions($order);
+        }
     }
 
 	/**
