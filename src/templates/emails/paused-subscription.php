@@ -1,9 +1,9 @@
 <?php
 /**
- * PagBank Subscription was Canceled (E-mail de cancelamento de assinatura) 
+ * PagBank Subscription was Paused (E-mail de assinatura pausada) 
  *
  * Este e-mail pode ser sobrescrito pelo seu tema. Copie este arquivo para
- * seutema/woocommerce/emails/canceled-subscription.php.
+ * seutema/woocommerce/emails/paused-subscription.php.
  *
  * 
  * NO ENTANTO, ocasionalmente você precisará atualizar os arquivos de modelo e você

@@ -7,9 +7,8 @@ use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use stdClass;
+use WC_Emails;
 use WC_Order;
-use WC_Order_Item_Product;
-use WC_Product;
 use wpdb;
 
 /**
@@ -35,10 +34,12 @@ class Recurring
         //region frontend initial-order flow
         add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
+        add_filter('woocommerce_checkout_registration_required', [$this, 'disableGuestCheckoutForRecurringOrder'], 1, 1);
         //endregion
         
         //emails
         add_filter('woocommerce_email_classes', [$this, 'addEmails']);
+        WC_Emails::instance();
         
         //region cron jobs
         add_action('rm_pagbank_cron_process_recurring_payments', [$this, 'processRecurringPayments']);
@@ -97,7 +98,7 @@ class Recurring
     public function addProductRecurringTab($productTabs)
     {
         $productTabs['recurring_pagbank'] = [
-            'label' => __('Assinatura PagBank', Connect::DOMAIN),
+            'label' => __('Assinatura PagBank', 'pagbank-connect'),
             'target' => 'recurring_pagbank',
             'class' => ['show_if_simple', 'show_if_variable'],
             'priority' => 90,
@@ -115,27 +116,27 @@ class Recurring
             woocommerce_wp_checkbox( array(
                 'id'            => '_recurring_enabled',
                 'wrapper_class' => 'show_if_simple',
-                'label'         => __( 'Habilitar recorrência', Connect::DOMAIN ),
-                'description'   => __( 'Habilitar', Connect::DOMAIN),
+                'label'         => __( 'Habilitar recorrência', 'pagbank-connect' ),
+                'description'   => __( 'Habilitar', 'pagbank-connect'),
                 'default'  		=> '0',
                 'desc_tip'    	=> false,
             ) );
             woocommerce_wp_select([
                 'id' => '_frequency',
-                'label' => __('Frequência', Connect::DOMAIN),
+                'label' => __('Frequência', 'pagbank-connect'),
                 'options' => [
-                    'daily'     => __('Diário', Connect::DOMAIN),
-                    'weekly'    => __('Semanal', Connect::DOMAIN),
-                    'monthly'    => __('Mensal', Connect::DOMAIN),
-                    'yearly'    => __('Anual', Connect::DOMAIN),
+                    'daily'     => __('Diário', 'pagbank-connect'),
+                    'weekly'    => __('Semanal', 'pagbank-connect'),
+                    'monthly'    => __('Mensal', 'pagbank-connect'),
+                    'yearly'    => __('Anual', 'pagbank-connect'),
                 ],
                 'desc_tip' => true,
                 'value' => get_post_meta($post->ID, '_frequency', true),
             ]);
             woocommerce_wp_text_input([
                 'id' => '_frequency_cycle',
-                'label' => __('Ciclo', Connect::DOMAIN),
-                'description' => __('Ex: Se Frequência fosse Diário e ciclo fosse 2, cobraria a cada 2 dias.', Connect::DOMAIN),
+                'label' => __('Ciclo', 'pagbank-connect'),
+                'description' => __('Ex: Se Frequência fosse Diário e ciclo fosse 2, cobraria a cada 2 dias.', 'pagbank-connect'),
                 'desc_tip' => true,
                 'type' => 'number',
                 'custom_attributes' => [
@@ -146,13 +147,13 @@ class Recurring
             ]);
             woocommerce_wp_text_input([
                 'id' => '_initial_fee',
-                'label' => __('Taxa inicial', Connect::DOMAIN),
-                'description' => __('Use . como separador decimal.', Connect::DOMAIN),
+                'label' => __('Taxa inicial', 'pagbank-connect'),
+                'description' => __('Use . como separador decimal.', 'pagbank-connect'),
                 'desc_tip' => true,
                 'value' => get_post_meta($post->ID, '_initial_fee', true),
             ]);
             ?>
-            <p><?php echo __('Alterações realizadas aqui só afetarão futuras assinaturas.', Connect::DOMAIN);?></p>
+            <p><?php echo __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect');?></p>
         </div>
         <?php
     }
@@ -186,12 +187,28 @@ class Recurring
         $recurringHelper = new RecurringHelper();
         
         if (!empty($cartItems) && ($productIsRecurring || $recurringHelper->isCartRecurring())) {
-            wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', Connect::DOMAIN), 'error');
+            wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', 'pagbank-connect'), 'error');
             $canBeAdded = false;
         }
         
         return $canBeAdded;
         
+    }
+
+    /**
+     * Disables guest checkout if the cart contains recurring products regardless of the settings
+     *
+     * @param bool $mustBeRegistered
+     *
+     * @return bool
+     */
+    public function disableGuestCheckoutForRecurringOrder(bool $mustBeRegistered): bool
+    {
+        $recHelper = new RecurringHelper();
+        if ($recHelper->isCartRecurring()) {
+            $mustBeRegistered = true;
+        }
+        return $mustBeRegistered;
     }
 
     /**
@@ -315,7 +332,7 @@ class Recurring
      *
      * @return array
      */
-    public function addEmails(array $emails):array
+    public static function addEmails(array $emails):array
     {
         $emails['RM_PagBank_Canceled_Subscription'] = include __DIR__ . '/Recurring/Emails/CanceledSubscription.php';
         $emails['RM_PagBank_New_Subscription'] = include __DIR__ . '/Recurring/Emails/NewSubscription.php';
@@ -329,7 +346,7 @@ class Recurring
     
     public function addSubscriptionManagementMenuItem($items)
     {
-        $items['rm-pagbank-subscriptions'] = __('Assinaturas', Connect::DOMAIN);
+        $items['rm-pagbank-subscriptions'] = __('Assinaturas', 'pagbank-connect');
         return $items;
     }
     
@@ -433,10 +450,10 @@ class Recurring
         switch ($endpoint) {
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions-view') !== false:
                 $id = esc_html($wp->query_vars['rm-pagbank-subscriptions-view']);
-                $title = sprintf(__('Assinatura #%d', Connect::DOMAIN), $id);
+                $title = sprintf(__('Assinatura #%d', 'pagbank-connect'), $id);
                 break;
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions') !== false:
-                $title = __('Minhas Assinaturas', Connect::DOMAIN);
+                $title = __('Minhas Assinaturas', 'pagbank-connect');
                 break;
         }
         
@@ -447,7 +464,7 @@ class Recurring
     {
         $actions['view-subscription'] = [
                 'url' => wc_get_endpoint_url('rm-pagbank-subscriptions', $order->get_id()),
-                'name' => __('Ver assinatura', Connect::DOMAIN),
+                'name' => __('Ver assinatura', 'pagbank-connect'),
         ];
         return $actions;
     }
@@ -556,13 +573,13 @@ class Recurring
         $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_STRING);
         $referrer = wp_get_referer() ?? home_url();
         if (empty($subscriptionId) || empty($action)) {
-            wp_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', Connect::DOMAIN), 'error');
+            wp_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');
             return;
         }
 
         $subscription = $this->getSubscription($subscriptionId);
         if ( ! $subscription->id ) {
-            wp_add_notice(__('Assinatura não encontrada.', Connect::DOMAIN), 'error');
+            wp_add_notice(__('Assinatura não encontrada.', 'pagbank-connect'), 'error');
             wp_redirect($referrer);
             return;
         }
@@ -570,21 +587,22 @@ class Recurring
         if ( ! is_admin()) {
             if ( ! is_user_logged_in() ) {
                 wp_die(
-                    __('Você precisa estar logado para acessar esta página.', Connect::DOMAIN),
-                    __('Acesso Negado', Connect::DOMAIN, ['response' => 403])
-                );
-            }
-
-            if ( $order->get_customer_id() != get_current_user_id()) {
-                wp_die(
-                    __('Você não tem permissão para acessar esta página.', Connect::DOMAIN),
-                    __('Acesso Negado', Connect::DOMAIN, ['response' => 403])
+                    __('Você precisa estar logado para acessar esta página.', 'pagbank-connect'),
+                    __('Acesso Negado', 'pagbank-connect', ['response' => 403])
                 );
             }
         }
         
+        // if not an admin, check if the user is the owner of the subscription
+        if ( ! current_user_can('manage_options') && $order->get_customer_id() != get_current_user_id()) {
+            wp_die(
+                __('Você não tem permissão para acessar esta página.', 'pagbank-connect'),
+                __('Acesso Negado', 'pagbank-connect', ['response' => 403])
+            );
+        }
+
         if ( ! method_exists($this, $action . 'SubscriptionAction')) {
-            wc_add_notice(__('Ação não implementada.', Connect::DOMAIN), 'error');
+            wc_add_notice(__('Ação não implementada.', 'pagbank-connect'), 'error');
             wp_redirect($referrer);
             return;
         }
@@ -596,7 +614,7 @@ class Recurring
 
     public function cancelSubscriptionAction(\stdClass $subscription): void
     {
-        $this->cancelSubscription($subscription, __('Cancelado pelo cliente', Connect::DOMAIN), 'CUSTOMER');
+        $this->cancelSubscription($subscription, __('Cancelado pelo cliente', 'pagbank-connect'), 'CUSTOMER');
     }
     
     /**
@@ -641,11 +659,11 @@ class Recurring
         }
         
         if ($update > 0) {
-            wc_add_notice(__('Assinatura cancelada com sucesso.', Connect::DOMAIN));
+            wc_add_notice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'));
             return;            
         }
         
-        wc_add_notice(__('Não foi possível cancelar a assinatura.', Connect::DOMAIN), 'error');
+        wc_add_notice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'), 'error');
     }
 
     /** @noinspection PhpUnused */
@@ -654,12 +672,12 @@ class Recurring
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         if ($subscription->status != 'PENDING_CANCEL') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
+            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         
         $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
-            ['canceled_at' => null, 'status' => 'ACTIVE'],
+            ['canceled_at' => null, 'status' => 'ACTIVE', 'canceled_reason' => null],
             ['id' => $subscription->id],
             ['%s', '%s'],
             ['%d']
@@ -675,11 +693,11 @@ class Recurring
         }
         
         if ($update > 0) {
-            wc_add_notice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', Connect::DOMAIN));
+            wc_add_notice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'));
             return;
         }
         
-        wc_add_notice(__('Não foi possível suspender o cancelamento da assinatura.', Connect::DOMAIN), 'error');
+        wc_add_notice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'), 'error');
     }
 
     /**
@@ -694,7 +712,7 @@ class Recurring
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
+            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
@@ -706,17 +724,16 @@ class Recurring
 
         if ($update)
         {
-            do_action(
-                'pagbank_recurring_subscription_paused_notification',
-                $subscription,
-                $initialOrder
-            );
+            $notifAction = current_user_can('manage_options') ? 'pagbank_recurring_subscription_paused_by_admin'
+                : 'pagbank_recurring_subscription_paused_by_customer';
+            do_action($notifAction, $subscription, $initialOrder);
+            
         }
         if ($update > 0){
-            wc_add_notice(__('Assinatura pausada com sucesso.', Connect::DOMAIN));
+            wc_add_notice(__('Assinatura pausada com sucesso.', 'pagbank-connect'));
             return;
         }
-        wc_add_notice(__('Não foi possível pausar a assinatura.', Connect::DOMAIN), 'error');
+        wc_add_notice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'), 'error');
     }
 
     /** @noinspection PhpUnused */
@@ -727,7 +744,7 @@ class Recurring
         $status = 'ACTIVE';
 
         if ($subscription->status != 'PAUSED') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', Connect::DOMAIN), 'error');
+            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         //if next_bill_at < current date, update the next_bill_at with current time
@@ -751,7 +768,7 @@ class Recurring
 
         if ($update > 0)
         {
-            wc_add_notice(__('Assinatura resumida com sucesso.', Connect::DOMAIN));
+            wc_add_notice(__('Assinatura resumida com sucesso.', 'pagbank-connect'));
             do_action(
                 'pagbank_recurring_subscription_unpaused_notification',
                 $subscription,
@@ -760,7 +777,7 @@ class Recurring
             return;
         }
         
-        wc_add_notice(__('Não foi possível resumir a assinatura.', Connect::DOMAIN), 'error');
+        wc_add_notice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), 'error');
     }
     // endregion
 
@@ -815,4 +832,5 @@ class Recurring
     {
         require_once dirname(__FILE__) . '/../templates/recurring-instructions.php';
     }
+    
 }

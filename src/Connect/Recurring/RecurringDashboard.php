@@ -48,12 +48,12 @@ class RecurringDashboard
         return apply_filters(
             'rm_pagbank_recurring_dashboard_columns',
             [
-                'recurring-id' => __('Identificador', Connect::DOMAIN),
-                'status' => __('Status', Connect::DOMAIN),
-                'created_at' => __('Data Inicial', Connect::DOMAIN),
-                'recurring_type' => __('Tipo', Connect::DOMAIN),
-                'recurring_amount' => __('Valor', Connect::DOMAIN),
-                'subscription-actions' => __('Ações', Connect::DOMAIN),
+                'recurring-id' => __('Identificador', 'pagbank-connect'),
+                'status' => __('Status', 'pagbank-connect'),
+                'created_at' => __('Data Inicial', 'pagbank-connect'),
+                'recurring_type' => __('Tipo', 'pagbank-connect'),
+                'recurring_amount' => __('Valor', 'pagbank-connect'),
+                'subscription-actions' => __('Ações', 'pagbank-connect'),
             ]
         );
     }
@@ -77,29 +77,30 @@ class RecurringDashboard
         switch ($subscription->status) {
             case 'PAUSED':
                 $actions['unpause'] = [
-                    'name' => __('Resumir', Connect::DOMAIN),
+                    'name' => __('Resumir', 'pagbank-connect'),
                     'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id
                 ];
                 break;
             case 'PENDING_CANCEL':
                 $actions['cancel'] = [
-                    'name' => __('Suspender Cancelamento', Connect::DOMAIN),
+                    'name' => __('Suspender Cancelamento', 'pagbank-connect'),
                     'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=uncancel&id=' . $subscription->id
                 ];
                 break;
             case 'SUSPENDED':
             case 'PENDING':
-                $actions['pay'] = [
-                    'name' => __('Pagar', Connect::DOMAIN),
-                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pay&id=' . $subscription->id
-                ];
+                // coming soon
+//                $actions['pay'] = [
+//                    'name' => __('Pagar', 'pagbank-connect'),
+//                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pay&id=' . $subscription->id
+//                ];
                 break;
             case 'CANCELED':
             default:
                 break;
         }
         $actions['view'] = [
-            'name' => __('Ver detalhes', Connect::DOMAIN),
+            'name' => __('Ver detalhes', 'pagbank-connect'),
             'url' => $this->getViewSubscriptionUrl($subscription)
         ];
         

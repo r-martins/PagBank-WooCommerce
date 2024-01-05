@@ -154,8 +154,7 @@ class RecurringOrder
         }
 
         $order->add_meta_data('pagbank_payment_method', $method->code, true);
-
-
+        
         try {
             $api = new Api();
             $resp = $api->post('ws/orders', $params);
