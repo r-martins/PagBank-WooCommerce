@@ -24,21 +24,21 @@ use RM_PagBank\Connect\Gateway;
         ?>
     </div>
     <div class="ps-subtitle">
-        <?php echo '<h4>' . esc_html( $this->get_method_description() ) . '</h4>'; ?>
+        <?php echo '<h4>' . _e( $this->get_method_description() ) . '</h4>'; ?>
     </div>
 <!--    navigation tabs-->
     <nav class="nav-tab-wrapper woo-nav-tab-wrapper" id="ps-nav">
-        <a href="#tab-general" class="nav-tab nav-tab-active"><?php esc_html_e('Geral', 'pagbank-connect') ?></a>
-        <a href="#tab-credit-card" class="nav-tab"><?php esc_html_e('Cartão de Crédito', 'pagbank-connect') ?></a>
-        <a href="#tab-pix" class="nav-tab"><?php esc_html_e('PIX', 'pagbank-connect') ?></a>
-        <a href="#tab-boleto" class="nav-tab"><?php esc_html_e('Boleto', 'pagbank-connect') ?></a>
+        <a href="#tab-general" class="nav-tab nav-tab-active"><?php _e('Geral', 'pagbank-connect') ?></a>
+        <a href="#tab-credit-card" class="nav-tab"><?php _e('Cartão de Crédito', 'pagbank-connect') ?></a>
+        <a href="#tab-pix" class="nav-tab"><?php _e('PIX', 'pagbank-connect') ?></a>
+        <a href="#tab-boleto" class="nav-tab"><?php _e('Boleto', 'pagbank-connect') ?></a>
     </nav>
     <div class="tab-content active" id="tab-general">
-        <h3><?php esc_html_e('Credenciais', 'pagbank-connect') ?></h3>
-        <p><?php esc_html_e('Para utilizar o PagBank Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', 'pagbank-connect') ?></p>
-        <a href="https://pagseguro.ricardomartins.net.br/connect/autorizar.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key', 'pagbank-connect') ?></a>
-		<a href="https://pagseguro.ricardomartins.net.br/connect/sandbox.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
-		<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php esc_html_e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', 'pagbank-connect');?>"><?php esc_html_e('Obter ajuda', 'pagbank-connect') ?></a>
+        <h3><?php _e('Credenciais', 'pagbank-connect') ?></h3>
+        <p><?php _e('Para utilizar o PagBank Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', 'pagbank-connect') ?></p>
+        <a href="https://pagseguro.ricardomartins.net.br/connect/autorizar.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php _e('Obter Connect Key', 'pagbank-connect') ?></a>
+		<a href="https://pagseguro.ricardomartins.net.br/connect/sandbox.html?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php _e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
+		<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php _e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', 'pagbank-connect');?>"><?php _e('Obter ajuda', 'pagbank-connect') ?></a>
         <?php
         echo $this->get_admin_fields('general'); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
         ?>

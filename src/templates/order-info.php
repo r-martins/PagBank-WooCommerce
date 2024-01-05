@@ -33,10 +33,10 @@ $charge_id = $order->get_meta('pagbank_charge_id');
 	<?php if($order->get_meta('pagbank_payment_method') === 'credit_card'):?>
 		<span class="form-field form-field-wide ps-pagbank-info">
 			<?php if($order->get_meta('pagbank_card_installments')):?>
-				<?php _e('Cartão de Crédito em', 'pagbank-connect');?> <?php esc_html_e($order->get_meta('pagbank_card_installments'), 'pagbank-connect');?>x
+				<?php _e('Cartão de Crédito em', 'pagbank-connect');?> <?php echo esc_html($order->get_meta('pagbank_card_installments'));?>x
 			<?php endif;?>
             <?php if($_3dsst = $order->get_meta('_pagbank_card_3ds_status')):?>
-                <span class="3dstatus" title="Status Autenticação 3D">(3DS: <?php esc_html_e($_3dsst, 'pagbank-connect');?>)</span>
+                <span class="3dstatus" title="Status Autenticação 3D">(3DS: <?php echo esc_html($_3dsst);?>)</span>
             <?php endif;?>
 			<?php if($order->get_meta('_pagbank_card_brand')):
 				$brand_url = Functions::getCcFlagUrl($order->get_meta('_pagbank_card_brand'));
