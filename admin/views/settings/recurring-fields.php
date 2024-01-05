@@ -17,20 +17,23 @@ return array(
 		'default' => 'cc',
 		'options'	=> [
 			'cc' => __('Cartão de Crédito', Connect::DOMAIN),
-			'pix' => __('PIX', Connect::DOMAIN),
-			'boleto' => __('Boleto', Connect::DOMAIN),
+//          Coming soon
+//			'pix' => __('PIX', Connect::DOMAIN),
+//			'boleto' => __('Boleto', Connect::DOMAIN),
 		]
 	],
-	'recurring_notice_days' => [
-		'title'       => __( 'Notificar X dias antes', Connect::DOMAIN ),
-		'type'        => 'number',
-		'description' => __( 'Quantos dias antes do vencimento da assinatura o cliente deve ser notificado por e-mail? (Válido para Boleto e Pix)', Connect::DOMAIN ),
-		'default'     => 3,
-		'custom_attributes' => [
-			'min' => 1,
-			'max' => 30,
-		],
-	],
+//  Coming soon
+//	'recurring_notice_days' => [
+//		'title'       => __( 'Notificar X dias antes', Connect::DOMAIN ),
+//		'type'        => 'number',
+//        'visible'     => false,
+//		'description' => __( 'Quantos dias antes do vencimento da assinatura o cliente deve ser notificado por e-mail? (Válido para Boleto e Pix)', Connect::DOMAIN ),
+//		'default'     => 3,
+//		'custom_attributes' => [
+//			'min' => 1,
+//			'max' => 30,
+//		],
+//	],
     'recurring_process_frequency' => [
         'title'       => __( 'Frequência de Processamento', Connect::DOMAIN ),
         'type'        => 'select',

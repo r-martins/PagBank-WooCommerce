@@ -195,37 +195,4 @@ class CreditCard extends Common
         echo $woocommerce->cart->get_total('edit');
         wp_die();
     }
-
-    /**
-     * Populates the Card object considering with data from order or subscription
-     * @return Card
-     */
-    protected function getCardDetails(): Card
-    {
-        $card = new Card();
-        //if subsequent recurring order...
-        if ($this->order->get_meta('_pagbank_is_recurring') === true)
-        {
-            //get card data from subscription
-            global $wpdb;
-            $initialSubOrderId = $this->order->get_parent_id('edit');
-            $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$initialSubOrderId}";
-            $recurring = $wpdb->get_row($sql);
-            $paymentInfo = json_decode($recurring->payment_info);
-            $card->setId($paymentInfo->card->id);
-            $holder = new Holder();
-            $holder->setName($paymentInfo->card->holder_name);
-            $card->setHolder($holder);
-            $card->setStore(true);
-            return $card;
-        }
-        
-        //non recurring...
-        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
-        $holder = new Holder();
-        $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
-        $card->setHolder($holder);
-
-        return $card;
-    }
 }

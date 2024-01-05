@@ -187,8 +187,7 @@ class Gateway extends WC_Payment_Gateway_CC
             }            
         }
     }
-
-
+    
     public function admin_options() {
         $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 

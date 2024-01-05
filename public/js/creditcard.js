@@ -508,10 +508,6 @@ jQuery(document.body).on('update_installments', ()=>{
 			nonce: rm_pagbank_nonce,
             action: 'ps_get_installments',
         },
-        beforeSend: ()=>{
-            jQuery('#rm-pagbank-card-installments').empty();
-            jQuery('#rm-pagbank-card-installments').append('<option value="">Carregando...</option>');
-        },
         success: (response)=>{
             let select = jQuery('#rm-pagbank-card-installments');
             select.empty();

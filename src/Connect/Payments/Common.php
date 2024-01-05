@@ -183,10 +183,6 @@ class Common
 
 		$order->update_status('pending', 'PagBank: Pagamento Pendente');
         
-        if ($order->get_meta('_pagbank_recurring_initial')){
-            $recurring = new Recurring();
-            $recurring->processInitialResponse($order, $response);
-        }
 
 	}
 }
