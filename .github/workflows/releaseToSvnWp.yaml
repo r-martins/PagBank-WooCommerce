@@ -1,0 +1,33 @@
+name: Deploy to WordPress SVN
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v2
+
+      - name: Setup SVN
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - name: Checkout WordPress SVN repo
+        run: |
+          svn checkout --username ${{ secrets.SVN_USERNAME }} --password ${{ secrets.SVN_PASSWORD }} https://plugins.svn.wordpress.org/pagbank-connect/ ./svn
+
+      - name: Copy files
+        run: |
+          rsync -r --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/
+
+      - name: Commit and push to WordPress SVN
+        run: |
+          cd ./svn/trunk/
+          svn add --force * --auto-props --parents --depth infinity -q
+          svn commit -m "Deploying version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password ${{ secrets.SVN_PASSWORD }}
