@@ -3,6 +3,9 @@ name: Deploy to WordPress SVN
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - master
 
 jobs:
   deploy:
@@ -20,7 +23,7 @@ jobs:
 
       - name: Checkout WordPress SVN repo
         run: |
-          svn checkout --username ${{ secrets.SVN_USERNAME }} --password ${{ secrets.SVN_PASSWORD }} https://plugins.svn.wordpress.org/pagbank-connect/ ./svn
+          svn checkout --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}" https://plugins.svn.wordpress.org/pagbank-connect/ ./svn --no-auth-cache
 
       - name: Copy files
         run: |
