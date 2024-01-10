@@ -24,7 +24,8 @@ jobs:
       - name: Checkout WordPress SVN repo
         run: |
           svn checkout --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}" https://plugins.svn.wordpress.org/pagbank-connect/ ./svn --no-auth-cache
-
+        shell: bash -O extglob {0}
+        
       - name: Copy files
         run: |
           rsync -r --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/
@@ -33,4 +34,4 @@ jobs:
         run: |
           cd ./svn/trunk/
           svn add --force * --auto-props --parents --depth infinity -q
-          svn commit -m "Deploying version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password ${{ secrets.SVN_PASSWORD }}
+          svn commit -m "Deploying version ${{ github.ref }} from GitHub."
