@@ -34,4 +34,4 @@ jobs:
         run: |
           cd ./svn/trunk/
           svn add --force * --auto-props --parents --depth infinity -q
-          svn commit -m "Deploying version ${{ github.ref }} from GitHub."
+          svn ci -m "Deploying version ${{ github.ref }} from GitHub." --password="${{ secrets.SVN_PASSWORD }}"
