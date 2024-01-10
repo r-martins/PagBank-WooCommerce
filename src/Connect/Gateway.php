@@ -56,6 +56,7 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts']);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
+        add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
     }
 
     public function init_settings(){
@@ -592,17 +593,7 @@ class Gateway extends WC_Payment_Gateway_CC
 	 */
 	public function getDefaultInstallments(): array
 	{
-        $total = WC()->cart->get_total('edit');
-        if ( is_wc_endpoint_url('order-pay') )
-        {
-            global $wp;
-            $orderId = $wp->query_vars['order-pay'];
-            $order = wc_get_order($orderId);
-
-            if ($order) {
-                $total = $order->get_total('edit');
-            }
-        }
+        $total = Api::getOrderTotal();
         
         return Params::getInstallments($total, '555566');
     }
@@ -661,4 +652,22 @@ class Gateway extends WC_Payment_Gateway_CC
         include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 
+    /**
+     * Disables PagBank if order < R$1.00
+     * @param $gateways
+     *
+     * @return mixed
+     */
+    public function disableIfOrderLessThanOneReal($gateways)
+    {
+        // Get the current cart total
+        $total = Api::getOrderTotal();
+
+        // Check if the total is less than 1.00
+        if ($total < 1) {
+            unset($gateways[Connect::DOMAIN]);
+        }
+
+        return $gateways;
+    }
 }

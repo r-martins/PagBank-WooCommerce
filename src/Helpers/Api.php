@@ -233,4 +233,24 @@ class Api
     public static function getOrderHash(WC_Order $order){
         return substr(wp_hash($order->get_id()), 0, 5);
     }
+
+    /**
+     * Get order total wether from cart, or from order-pay page
+     * @return float
+     */
+    public static function getOrderTotal(): float
+    {
+        $total = floatval(WC()->cart->get_total('edit'));
+        if ( is_wc_endpoint_url('order-pay') )
+        {
+            global $wp;
+            $orderId = (int)$wp->query_vars['order-pay'];
+            $order = wc_get_order($orderId);
+
+            if ($order) {
+                $total = $order->get_total('edit');
+            }
+        }
+        return $total;
+    }
 }
