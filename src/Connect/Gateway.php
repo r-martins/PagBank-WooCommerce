@@ -592,7 +592,19 @@ class Gateway extends WC_Payment_Gateway_CC
 	 */
 	public function getDefaultInstallments(): array
 	{
-        return Params::getInstallments(WC()->cart->get_total('edit'), '555566');
+        $total = WC()->cart->get_total('edit');
+        if ( is_wc_endpoint_url('order-pay') )
+        {
+            global $wp;
+            $orderId = $wp->query_vars['order-pay'];
+            $order = wc_get_order($orderId);
+
+            if ($order) {
+                $total = $order->get_total('edit');
+            }
+        }
+        
+        return Params::getInstallments($total, '555566');
     }
 
     public static function notification()
