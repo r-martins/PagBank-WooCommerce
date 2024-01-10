@@ -367,9 +367,10 @@ class Gateway extends WC_Payment_Gateway_CC
                     'before'
                 );
                 if ( $this->get_option('cc_3ds') === 'yes') {
+                    $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
-                        'var pagseguro_connect_3d_session = \''.$api->get3DSession().'\';',
+                        'var pagseguro_connect_3d_session = \''.$threeDSession.'\';',
                         'before'
                     );
                     wp_add_inline_script(
@@ -377,6 +378,11 @@ class Gateway extends WC_Payment_Gateway_CC
                         'var pagseguro_connect_cc_3ds_allow_continue = \''.Params::getConfig('cc_3ds_allow_continue', 'no').'\';',
                         'before'
                     );
+                // add user notice
+                    if ($threeDSession === '' && Params::getConfig('cc_3ds_allow_continue', 'no') === 'no') {
+                        wc_add_notice(__('Erro ao obter a sessão 3D Secure PagBank. Pagamento com cartão de crédito foi '
+                            .'desativado. Por favor recarregue a página.', 'pagbank-connect'), 'error');
+                    }
                 }
                 $environment = $api->getIsSandbox() ? 'SANDBOX' : 'PROD';
                 wp_add_inline_script(

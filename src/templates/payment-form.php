@@ -3,6 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var Gateway $this */
 
 use RM_PagBank\Connect\Gateway;
+use RM_PagBank\Helpers\Api;
 
 $available_methods = ['cc', 'pix', 'boleto'];
 $style = $active = [];
@@ -16,9 +17,12 @@ for ($x=0, $c=count($available_methods), $first = true; $x < $c; $x++){
     }
 }
 unset($x, $c, $first);
+
+$apiHelper = new Api();
+$isCcEnabledAndHealthy = $apiHelper->isCcEnabledAndHealthy();
 ?>
 <div class="ps-connect-buttons-container">
-    <?php if ($this->get_option('cc_enabled') === 'yes'):?>
+    <?php if ($isCcEnabledAndHealthy):?>
         <button type="button" class="ps-button <?php echo esc_attr($active['cc']) ?? ''?>" id="btn-pagseguro-cc">
 			<img src="<?php echo esc_url(plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('cc_title'));?>" title="<?php echo esc_attr($this->get_option('cc_title'));?>"/>
 		</button>
@@ -35,7 +39,7 @@ unset($x, $c, $first);
     <?php endif;?>
 </div>
 <!--Initialize PagSeguro payment form fieldset with tabs-->
-<?php if ($this->get_option('cc_enabled') === 'yes'):?>
+<?php if ($isCcEnabledAndHealthy):?>
     <fieldset id="ps-connect-payment-cc" class="ps_connect_method" style="<?php esc_attr_e($style['cc'], 'pagbank-connect');?>" <?php echo !isset($active['cc']) ? 'disabled' : '';  ?>>
         <input type="hidden" name="ps_connect_method" value="cc"/>
         <?php require 'payments/creditcard.php'; ?>

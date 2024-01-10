@@ -148,18 +148,36 @@ class Api
     }
 
     /**
-     * @throws Exception
+     * Returns the 3D Secure session string to be used in the JS or empty string if not available/fails
+     * @return string
      */
     public function get3DSession(): string
     {
-        $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 20);
-        
-        if (isset($resp['session']))
-        {
-            return $resp['session'];
+        try {
+            $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 20);
+            if (isset($resp['session'])) {
+                return $resp['session'];
+            }
+        } catch (Exception $e) {
+            // shhh
         }
+
+        return '';
+    }
+
+    /**
+     * Checks if the credit card payment method is enabled and healthy (3d session is available or not required)
+     * @return bool
+     * @throws Exception
+     */
+    public function isCcEnabledAndHealthy(): bool
+    {
+        $isEnabled = $this->getPaymentGateway()->get_option('cc_enabled') === 'yes';
+        $is3dEnabled = $this->getPaymentGateway()->get_option('cc_3ds') === 'yes';
+        $threeDSession = $this->get3DSession();
+        $canContinueWithNo3d = $this->getPaymentGateway()->get_option('cc_3ds_allow_continue') === 'yes';
         
-        throw new Exception(__('Erro ao obter a sessão 3D Secure', 'pagbank-connect'));
+        return $isEnabled && ($is3dEnabled && ($threeDSession || $canContinueWithNo3d));
     }
 
 
