@@ -29,9 +29,22 @@ jobs:
       - name: Copy files
         run: |
           rsync -r --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/
+          
+      - name: Sync assets directory
+        run: |
+          rsync -r ./assets/ ./svn/assets/
 
       - name: Commit and push to WordPress SVN
         run: |
           cd ./svn/trunk/
           svn add --force * --auto-props --parents --depth infinity -q
           svn ci -m "Deploying version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
+          
+      - name: Copy trunk to latest tag
+        run: |
+          # Get the latest tag name
+          latest_tag=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .tag_name)
+
+          # Copy the trunk to the tags directory with the name of the latest tag
+          svn copy ./svn/trunk/ ./svn/tags/$latest_tag/ --message "Creating tag $latest_tag" --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
+        shell: bash -O extglob {0}
