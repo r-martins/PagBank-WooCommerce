@@ -23,17 +23,17 @@ $isCcEnabledAndHealthy = $apiHelper->isCcEnabledAndHealthy();
 ?>
 <div class="ps-connect-buttons-container">
     <?php if ($isCcEnabledAndHealthy):?>
-        <button type="button" class="ps-button <?php echo esc_attr($active['cc']) ?? ''?>" id="btn-pagseguro-cc">
+        <button type="button" class="ps-button <?php echo isset($active['cc']) ? 'active' : ''?>" id="btn-pagseguro-cc">
 			<img src="<?php echo esc_url(plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('cc_title'));?>" title="<?php echo esc_attr($this->get_option('cc_title'));?>"/>
 		</button>
     <?php endif;?>
     <?php if ($this->get_option('pix_enabled') === 'yes'):?>
-        <button type="button" class="ps-button <?php echo esc_attr($active['pix']) ?? ''?>" id="btn-pagseguro-pix">
+        <button type="button" class="ps-button <?php echo isset($active['pix']) ? 'active' : ''?>" id="btn-pagseguro-pix">
 			<img src="<?php echo esc_url(plugins_url('public/images/pix.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('pix_title'));?>" title="<?php echo esc_attr($this->get_option('pix_title'));?>"/>
 		</button>
     <?php endif;?>
     <?php if ($this->get_option('boleto_enabled') === 'yes'):?>
-        <button type="button" class="ps-button <?php echo esc_attr($active['boleto']) ?? ''?>" id="btn-pagseguro-boleto">
+        <button type="button" class="ps-button <?php echo isset($active['boleto']) ? 'active' : ''?>" id="btn-pagseguro-boleto">
 			<img src="<?php echo esc_url(plugins_url('public/images/boleto.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('boleto_title'));?>" title="<?php echo esc_attr($this->get_option('boleto_title'));?>"/>
 		</button>
     <?php endif;?>
