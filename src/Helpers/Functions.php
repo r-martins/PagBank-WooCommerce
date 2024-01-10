@@ -111,4 +111,32 @@ class Functions
                 return __('Desconhecido', 'pagbank-connect');
         }
     }
+
+    /**
+     * Convert a given weight to kg, based on the current configured weight unit
+     * @param float $weight
+     *
+     * @return float
+     */
+    public static function convertToKg(float $weight): float
+    {
+        $currentUnit = get_option('woocommerce_weight_unit');
+
+        switch ($currentUnit) {
+            case 'g':
+                $weightInKg = $weight / 1000;
+                break;
+            case 'lbs':
+                $weightInKg = $weight * 0.45359237;
+                break;
+            case 'oz':
+                $weightInKg = $weight * 0.02834952;
+                break;
+            default:
+                $weightInKg = $weight;
+                break;
+        }
+        
+        return $weightInKg;
+    }
 }

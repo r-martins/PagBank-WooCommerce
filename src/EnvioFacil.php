@@ -182,6 +182,7 @@ class EnvioFacil extends WC_Shipping_Method
 			$dimensions = array_map('floatval', $dimensions);
 
 			$weight = floatval($product->get_weight());
+            $weight = Functions::convertToKg($weight);
 			 $return['length'] += $dimensions['length'] * $content['quantity'];
 			 $return['height'] += $dimensions['height'] * $content['quantity'];
 			 $return['width'] += $dimensions['width'] * $content['quantity'];
@@ -213,9 +214,12 @@ class EnvioFacil extends WC_Shipping_Method
 			return false;
 		}
 
-		if ($dimensions['weight'] > 10)
+		if ($dimensions['weight'] > 10 || $dimensions['weight'] < 0.3)
 		{
-			Functions::log('Peso inválido: ' . $dimensions['weight'] . '. Deve ser menor que 10.', 'debug');
+            Functions::log(
+                'Peso inválido: '.$dimensions['weight'].'. Deve ser menor que 10kg e maior que 0.3.',
+                'debug'
+            );
 			return false;
 		}
 
