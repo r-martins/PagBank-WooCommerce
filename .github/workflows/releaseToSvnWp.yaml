@@ -43,9 +43,14 @@ jobs:
       - name: Copy trunk to latest tag
         run: |
           # Get the latest tag name
-          latest_tag=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .tag_name)
+          latest_tag=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/tags" | jq -r '.[0].name')
 
           # Copy the trunk to the tags directory with the name of the latest tag
-          svn copy ./svn/trunk/ ./svn/tags/$latest_tag/ 
+          svn copy ./svn/trunk/ ./svn/tags/$latest_tag/
+      
+          # Navigate to the root of the SVN working copy
+          cd ./svn/
+      
+          # Commit the changes
           svn ci -m "Creating tag $latest_tag" --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
         shell: bash -O extglob {0}
