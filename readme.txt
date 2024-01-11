@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.6
+Stable tag: 4.2.7
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -33,14 +33,14 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 * Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === Instalação automática ===
-* Navegue até Plugins > Adicionar Novo e procure por \"PagBank Ricardo Martins\"
+* Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
 * Clique no botão para instalar e ative o plugin
 * Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
 * Clique no PagBank Connect para acessar as configurações do módulo
-* Clique em \"Obter Credenciais\". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação.
+* Clique em "Obter Credenciais". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação.
 * Ao clicar no modelo de recebimento desejado, você será levado para o site do PagBank, onde deverá se logar com sua conta e autorizar nossa aplicação.
 * Em seguida, será levado(a) de volta para nosso site, onde deverá preencher as informações do responsável técnico por sua loja.
 * Feito isso, sua *Connect Key* será exibida e enviada para o e-mail informado. Use ela nas configurações da sua loja.
@@ -113,6 +113,18 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.2.7 =
+* Correção: Erro era exibido no admin após última atualização. :O (Fatal error: Uncaught Error: Call to a member function get_total() on null) 
+
+= 4.2.6 =
+* Melhoria: PagBank deixa de ser exibido se valor total do pedido for menor que R$1,00, evitando erro 40002 charges[0].amount.value is invalid. PagBank não aceita pedidos abaixo deste valor.
+* Correção: Sempre usávamos kg como medida de peso para cálculo do envio fácil, fazendo com que lojas que configuraram o peso em outra medida tivesse o cálculo incorreto (geralmente não devolvendo nenhuma cotação).
+* Correção: quando um cliente decide pagar um pedido posteriormente indo em Minha conta > Pedidos > Pagar, o dropdown de parcelas do cartão não carregava como esperado. (Reportado por Therus)
+* Correção: em warning logado (undefined index $active['boleto'] e $active['pix']
+* Correção: exceção era gerada se a API do 3D Secure estiver fora do ar e o recurso ativo.
+* Melhoria: caso a opção de 3D Secure esteja ativo, mas a API 3D estiver fora do ar, o cartão de crédito não será exibido para o cliente caso a opção de "Permitir concluir" não estiver marcada. Nestes casos, um aviso será exibido pedindo que recarregue a página. (Reportado por Martin)
+
+
 = 4.2.5 =
 * Correção: em versões antigas do WooCommerce (ex: 6.4), em pedidos com cartao, o checkout era recarregado ao tentar finalizar compra, sem concluir o pedido. (#2)
 * Melhorias e refatoracao no JS de cartão de crédito, que agora não é mais inserido na página de sucesso desnecessariamente.
