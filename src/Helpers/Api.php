@@ -240,6 +240,10 @@ class Api
      */
     public static function getOrderTotal(): float
     {
+        if ( ! WC()->cart ) {
+            return 0;
+        }
+        
         $total = floatval(WC()->cart->get_total('edit'));
         if ( is_wc_endpoint_url('order-pay') )
         {

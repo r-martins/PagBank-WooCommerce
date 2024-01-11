@@ -660,6 +660,10 @@ class Gateway extends WC_Payment_Gateway_CC
      */
     public function disableIfOrderLessThanOneReal($gateways)
     {
+        if ( is_admin() ){
+            return $gateways;
+        }
+        
         // Get the current cart total
         $total = Api::getOrderTotal();
 
