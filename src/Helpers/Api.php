@@ -172,12 +172,14 @@ class Api
      */
     public function isCcEnabledAndHealthy(): bool
     {
-        $isEnabled = $this->getPaymentGateway()->get_option('cc_enabled') === 'yes';
+        $isCcEnabled = $this->getPaymentGateway()->get_option('cc_enabled') === 'yes';
         $is3dEnabled = $this->getPaymentGateway()->get_option('cc_3ds') === 'yes';
         $threeDSession = $this->get3DSession();
         $canContinueWithNo3d = $this->getPaymentGateway()->get_option('cc_3ds_allow_continue') === 'yes';
-        
-        return $isEnabled && ($is3dEnabled && ($threeDSession || $canContinueWithNo3d));
+        //returns true if
+        //credit card is enabled and 3d disabled
+        //or if credit card is enabled, 3d enabled and 3d session is available or can continue with no 3d
+        return $isCcEnabled && (!$is3dEnabled || ($is3dEnabled && ($threeDSession || $canContinueWithNo3d)));
     }
 
 
