@@ -113,6 +113,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.2.8 =
+* Correção: após 4.2.6, ao desabilitar o 3d secure, o cartão de crédito deixava de ser exibido no checkout. (Reportado por Junior Marins)
+
 = 4.2.7 =
 * Correção: Erro era exibido no admin após última atualização. :O (Fatal error: Uncaught Error: Call to a member function get_total() on null) 
 
