@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.8
+Stable tag: 4.2.9
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -113,6 +113,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.2.9 =
+* Re-correção do problema anterior. Algo deu errado na publicação.
+
 = 4.2.8 =
 * Correção: após 4.2.6, ao desabilitar o 3d secure, o cartão de crédito deixava de ser exibido no checkout. (Reportado por Junior Marins)
 
