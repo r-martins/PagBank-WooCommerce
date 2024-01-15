@@ -44,6 +44,10 @@ jobs:
         run: |
           ls -la
         
+      - name: LS Trunk
+        run: |
+          ls -la ./svn/trunk/
+        
       - name: Commit and push to WordPress SVN
         run: |
           cd ./svn/trunk/
