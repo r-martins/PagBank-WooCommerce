@@ -38,7 +38,11 @@ jobs:
 
       - name: Commit and push to WordPress SVN
         run: |
-          cd ../svn/trunk/
+          ls ./svn/trunk
+          ls ../../svn/trunk
+          ls
+          pwd
+          cd ./svn/trunk/
           svn add --force * --auto-props --parents --depth infinity -q
           svn ci -m "Deploying version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
           
