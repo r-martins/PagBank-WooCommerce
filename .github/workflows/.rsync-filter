@@ -8,3 +8,4 @@
 - *vendor/phpunit/php-code-coverage/src/Report/*.dist
 - *vendor/theseer/tokenizer/.php_cs.dist
 - ./assets/*
+- ./svn/*
