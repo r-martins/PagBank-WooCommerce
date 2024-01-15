@@ -28,7 +28,7 @@ jobs:
         
       - name: Copy files
         run: |
-          rsync -r --delete --ignore-missing-args --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/
+          rsync -r --delete --ignore-missing-args --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/ || exit 0
           
       - name: Sync assets directory
         run: |
