@@ -1,8 +1,6 @@
 name: Deploy to WordPress SVN
 
 on:
-  release:
-    types: [published]
   push:
     branches:
       - master
@@ -28,7 +26,7 @@ jobs:
         
       - name: Copy files
         run: |
-          rsync -r --delete --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/
+          rsync -r --delete --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/ || exit 0
           
       - name: Sync assets directory
         run: |
