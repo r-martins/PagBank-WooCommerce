@@ -72,7 +72,14 @@ class Common
         $customer = new Customer();
         $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $customer->setEmail($this->order->get_billing_email());
-        $customer->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf'))) ;
+        
+        //cpf or cnpj
+        $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cpf'));
+        if (empty($taxId)) {
+            $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cnpj'));
+        }
+        
+        $customer->setTaxId($taxId);
         $phone = new Phone();
         $number = Params::extractPhone($this->order);
         $phone->setArea((int)$number['area']);
