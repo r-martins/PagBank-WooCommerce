@@ -23,9 +23,15 @@ jobs:
         run: |
           svn checkout --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}" https://plugins.svn.wordpress.org/pagbank-connect/ ./svn --no-auth-cache
         shell: bash -O extglob {0}
-        
+
+      - name: PWD B4
+        run: |
+          pwd
+          
       - name: Copy files
         run: |
+          pwd
+          ls -la
           rsync -r --delete --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/ || exit 0
           
       - name: Sync assets directory
