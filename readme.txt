@@ -5,13 +5,13 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.10
+Stable tag: 4.2.11
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
-Aceite Pix, Cartão de Crédito e Boleto de forma transparente e economize nas taxas oficiais.
+PIX, Cartão de Crédito, Boleto + Envio Fácil e ainda economize nas taxas oficiais do PagSeguro.
 
-Use autenticação 3D Secure e reduza os custos com chargebacks.
+Autenticação 3D: menos chargeback e mais aprovações.
 
 == Description ==
 
@@ -113,6 +113,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.2.11 =
+* Correção: imagem e códigos pix e boleto não eram exibidos se recurso de High-performance order storage (HPOS) estivesse ativado
 
 = 4.2.10 =
 * Correção: compras com CNPJ exibiam erro 40002. (Reportado por Therus)
