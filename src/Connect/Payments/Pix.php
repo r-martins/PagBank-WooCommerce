@@ -58,9 +58,10 @@ class Pix extends Common
 	 * @noinspection SpellCheckingInspection
 	 **/
 	public function getThankyouInstructions($order_id){
-        $qr_code = get_post_meta($order_id, 'pagbank_pix_qrcode', true);
-        $qr_code_text = get_post_meta($order_id, 'pagbank_pix_qrcode_text', true);
-        $qr_code_exp = get_post_meta($order_id, 'pagbank_pix_qrcode_expiration', true);
+        $order = new WC_Order($order_id);
+        $qr_code = $order->get_meta('pagbank_pix_qrcode');
+        $qr_code_text = $order->get_meta('pagbank_pix_qrcode_text');
+        $qr_code_exp = $order->get_meta('pagbank_pix_qrcode_expiration');
         require_once dirname(__FILE__) . '/../../templates/pix-instructions.php';
     }
 }
