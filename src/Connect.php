@@ -45,9 +45,6 @@ class Connect
         // Load plugin files
         self::includes();
 
-        // Add Gateway
-        add_filter('woocommerce_payment_gateways', array(__CLASS__, 'addGateway'));
-
         // Add action links
         add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( self::class, 'addPluginActionLinks' ) );
 

@@ -43,6 +43,9 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 add_action('init', [Connect::class, 'init']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 
+// Add Gateway
+add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
+
 //envio facil
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
