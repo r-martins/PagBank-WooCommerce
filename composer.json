@@ -2,7 +2,7 @@
     "name": "ricardomartins/pagbank-woocommerce",
     "description": "Integração PagBank (PagSeguro) WooCommerce com desconto nas taxas oficiais",
     "type": "wordpress-plugin",
-    "version": "4.2.11",
+    "version": "4.2.12",
     "license": "GPL-3.0",
     "autoload": {
         "psr-4": {

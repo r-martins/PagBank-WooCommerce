@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.11
+Stable tag: 4.2.12
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -113,6 +113,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.2.12 =
+* Correção/Melhoria: quando usado em conjunto com alguns plugins, em alguns casos não era exibido na lista de meios de pagamento disponíveis, e as configurações do plugin não eram carregadas. (Reportado por Leonardo)
 
 = 4.2.11 =
 * Correção: imagem e códigos pix e boleto não eram exibidos se recurso de High-performance order storage (HPOS) estivesse ativado
