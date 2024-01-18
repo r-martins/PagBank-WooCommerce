@@ -27,7 +27,7 @@ $payment = json_decode($subscription->payment_info);
 ?>
 <tr class="woocommerce-table__line-item order_item">
     <td class="woocommerce-table__product-name product-name">
-        <strong><?php _e('Forma de Pagamento', RM_PagBank\Connect::DOMAIN)?></strong>
+        <strong><?php _e('Forma de Pagamento', 'pagbank-connect')?></strong>
     </td>
     <td class="woocommerce-table__product-total product-total">
         <?php echo Functions::getFriendlyPaymentMethodName($payment->method);?>
@@ -37,13 +37,13 @@ $payment = json_decode($subscription->payment_info);
 <?php if ( $payment->method == 'credit_card' ) :?>
 <tr class="woocommerce-table__line-item order_item">
     <td class="woocommerce-table__product-name product-name">
-        <strong><?php _e('Cartão de Crédito', RM_PagBank\Connect::DOMAIN)?></strong>
+        <strong><?php _e('Cartão de Crédito', 'pagbank-connect')?></strong>
     </td>
     <td class="woocommerce-table__product-total product-total">
-        <img src="<?php echo esc_url(plugins_url('public/images/credit-cards/' . $payment->card->brand . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)) ?>" class="cc-brand payment_methods cc-<?php echo $payment->card->brand?>" title="<?php echo $payment->card->brand;?>"/><br/>
+        <img src="<?php echo esc_url(plugins_url('public/images/credit-cards/' . $payment->card->brand . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)) ?>" class="cc-brand payment_methods cc-<?php echo $payment->card->brand?>" title="<?php echo esc_attr($payment->card->brand);?>" style="height: 20px;" alt="<?php echo esc_attr($payment->card->brand);?>"/><br/>
         <?php echo $payment->card->number?>
         <br/>
-        <?php echo esc_html(strtoupper($payment->card->holder_name)); ?> - <?php echo $payment->card->expiration_date?>
+        <?php echo esc_html(strtoupper($payment->card->holder_name)); ?> - <?php echo esc_attr($payment->card->expiration_date)?>
     </td>
 </tr>
 <?php endif; 
