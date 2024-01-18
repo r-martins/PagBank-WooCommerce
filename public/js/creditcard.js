@@ -526,7 +526,8 @@ jQuery(document.body).on('update_installments', ()=>{
         error: (response)=>{
             alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
             console.info('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
-                'para ver os possíveis problemas na obtenção das parcelas.');
+                'para ver os possíveis problemas na obtenção das parcelas. Note que cartões de teste falharão ' +
+                'na maioria dos casos.');
         }
     });
 });

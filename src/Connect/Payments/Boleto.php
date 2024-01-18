@@ -98,11 +98,12 @@ class Boleto extends Common
 	 * @noinspection SpellCheckingInspection
 	 */
 	public function getThankyouInstructions($order_id){
-        $boleto_barcode = get_post_meta($order_id, 'pagbank_boleto_barcode', true);
-        $boleto_barcode_formatted = get_post_meta($order_id, 'pagbank_boleto_barcode_formatted', true);
-        $boleto_due_date = get_post_meta($order_id, 'pagbank_boleto_due_date', true);
-        $boleto_pdf = get_post_meta($order_id, 'pagbank_boleto_pdf', true);
-        $boleto_png = get_post_meta($order_id, 'pagbank_boleto_png', true);
+        $order = new WC_Order($order_id);
+        $boleto_barcode = $order->get_meta('pagbank_boleto_barcode');
+        $boleto_barcode_formatted = $order->get_meta('pagbank_boleto_barcode_formatted');
+        $boleto_due_date = $order->get_meta('pagbank_boleto_due_date');
+        $boleto_pdf = $order->get_meta('pagbank_boleto_pdf');
+        $boleto_png = $order->get_meta('pagbank_boleto_png');
         require_once dirname(__FILE__) . '/../../templates/boleto-instructions.php';
     }
 

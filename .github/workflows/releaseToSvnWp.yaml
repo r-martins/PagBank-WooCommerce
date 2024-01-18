@@ -1,0 +1,83 @@
+name: Deploy to WordPress SVN
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v2
+
+      - name: Setup SVN
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - name: Checkout WordPress SVN repo
+        run: |
+          svn checkout --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}" https://plugins.svn.wordpress.org/pagbank-connect/ ./svn --no-auth-cache
+        shell: bash -O extglob {0}
+
+      - name: PWD B4
+        run: |
+          pwd
+          
+      - name: Copy files
+        run: |
+          pwd
+          ls -la
+          rsync -r --delete --filter='merge .github/workflows/.rsync-filter' ./ ./svn/trunk/ || exit 0
+          
+      - name: Sync assets directory
+        run: |
+          rsync -r --delete ./assets/ ./svn/assets/
+          cd ./svn/assets/
+          svn add --force * --auto-props --parents --depth infinity -q
+          svn ci -m "Updating assets for version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
+        shell: bash -O extglob {0}
+
+      - name: PWD
+        run: |
+          pwd
+        
+      - name: LS
+        run: |
+          ls -la
+        
+      - name: LS Trunk
+        run: |
+          ls -la ./svn/trunk/
+        
+      - name: Commit and push to WordPress SVN
+        run: |
+          cd ./svn/trunk/
+          svn add --force * --auto-props --parents --depth infinity -q
+          svn ci -m "Deploying version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
+          
+      - name: Delete missing files
+        run: |
+          cd ./svn/trunk/
+          svn status | grep '^!' | cut -c9- | xargs -d '\n' svn delete
+          svn ci -m "Deleting missing files for version ${{ github.ref }} from GitHub." --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
+        shell: bash -O extglob {0}
+        
+      - name: Copy trunk to latest tag
+        run: |
+          # Get the latest tag name
+          latest_tag=$(grep "Version:" rm-pagbank.php | awk -F' ' '{print $3}')
+
+          # Copy the trunk to the tags directory with the name of the latest tag
+          svn copy ./svn/trunk/ ./svn/tags/$latest_tag/
+      
+          # Navigate to the root of the SVN working copy
+          cd ./svn/
+      
+          # Commit the changes
+          svn ci -m "Creating tag $latest_tag" --username ${{ secrets.SVN_USERNAME }} --password="${{ secrets.SVN_PASSWORD }}"
+        shell: bash -O extglob {0}

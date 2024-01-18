@@ -109,7 +109,8 @@ return array(
         'label'       => __('Permitir concluir', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Alguns cartões não possuem suporte a autenticação 3D. <br/>'
-            .'Ao marcar esta opção, o cliente poderá concluir a compra mesmo que o cartão não suporte tal recurso.',
+            .'Ao marcar esta opção, o cliente poderá concluir a compra mesmo que o cartão não suporte tal recurso <br/>'
+            .'ou se a obtenção da sessão 3D Secure junto ao PagBank falhar.',
         'default'     => 'no',
     ],
 );

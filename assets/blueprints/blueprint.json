@@ -1,0 +1,21 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "preferredVersions": {
+    "php": "8.2",
+    "wp": "latest"
+  },
+    "plugins": [
+        "woocommerce",
+        "woocommerce-extra-checkout-fields-for-brazil",
+        "pagbank-connect"
+    ],
+  "steps": [
+    {"step":  "activatePlugin", "pluginName": "WooCommerce" , "pluginPath": "/wordpress/wp-content/plugins/woocommerce"},
+    {"step":  "activatePlugin", "pluginName": "Extra Checkout Fields For Brazil" , "pluginPath": "/wordpress/wp-content/plugins/woocommerce-extra-checkout-fields-for-brazil"},
+    {"step":  "activatePlugin", "pluginName": "PagBank Connect by Ricardo Martins" , "pluginPath": "/wordpress/wp-content/plugins/pagbank-connect"},
+    {
+      "step": "runPHP",
+      "code": "$product = new WC_Product();$product->set_name('Your Product Name');$product->set_status('publish'); $product->set_regular_price('Your Product Price');      $product->set_description('Your Product Description');      $product->set_short_description('Your Product Short Description');      $product->set_sku('Your Product SKU');      $product->set_stock_status('instock');      $product_id = $product->save();      "
+    }
+  ]
+}

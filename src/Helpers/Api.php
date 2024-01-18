@@ -149,18 +149,39 @@ class Api
     }
 
     /**
-     * @throws Exception
+     * Returns the 3D Secure session string to be used in the JS or empty string if not available/fails
+     * @return string
      */
     public function get3DSession(): string
     {
-        $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 20);
-        
-        if (isset($resp['session']))
-        {
-            return $resp['session'];
+        try {
+            $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 20);
+            if (isset($resp['session'])) {
+                return $resp['session'];
+            }
+        } catch (Exception $e) {
+            // shhh
         }
+
+        return '';
+    }
+
+    /**
+     * Checks if the credit card payment method is enabled and healthy (3d session is available or not required)
+     * @return bool
+     * @throws Exception
+     */
+    public function isCcEnabledAndHealthy(): bool
+    {
+        $isCcEnabled = $this->getPaymentGateway()->get_option('cc_enabled') === 'yes';
+        $is3dEnabled = $this->getPaymentGateway()->get_option('cc_3ds') === 'yes';
+        $threeDSession = $this->get3DSession();
+        $canContinueWithNo3d = $this->getPaymentGateway()->get_option('cc_3ds_allow_continue') === 'yes';
         
-        throw new Exception(__('Erro ao obter a sessão 3D Secure', 'pagbank-connect'));
+        //returns true if
+        //credit card is enabled and 3d disabled
+        //or if credit card is enabled, 3d enabled and 3d session is available or can continue with no 3d
+        return $isCcEnabled && (!$is3dEnabled || ($is3dEnabled && ($threeDSession || $canContinueWithNo3d)));
     }
 
 
@@ -215,5 +236,29 @@ class Api
      */
     public static function getOrderHash(WC_Order $order){
         return substr(wp_hash($order->get_id()), 0, 5);
+    }
+
+    /**
+     * Get order total wether from cart, or from order-pay page
+     * @return float
+     */
+    public static function getOrderTotal(): float
+    {
+        if ( ! WC()->cart ) {
+            return 0;
+        }
+        
+        $total = floatval(WC()->cart->get_total('edit'));
+        if ( is_wc_endpoint_url('order-pay') )
+        {
+            global $wp;
+            $orderId = (int)$wp->query_vars['order-pay'];
+            $order = wc_get_order($orderId);
+
+            if ($order) {
+                $total = $order->get_total('edit');
+            }
+        }
+        return $total;
     }
 }

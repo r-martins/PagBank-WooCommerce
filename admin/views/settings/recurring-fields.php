@@ -8,7 +8,7 @@ return array(
         'label'       => __( 'Habilitar', Connect::DOMAIN ),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'yes'
+        'default'     => 'no'
 	],
 	'recurring_payments'  => [
         'title'       => __( 'Meios de Pagamento Aceitos', Connect::DOMAIN ),

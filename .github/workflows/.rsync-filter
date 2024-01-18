@@ -1,0 +1,11 @@
+- *.git*
+- *node_modules*
+- *.idea*
+- *.DS_Store*
+- *phpcs.xml.dist
+- *bin/install-wp-tests.sh
+- *phpunit.xml.dist
+- *vendor/phpunit/php-code-coverage/src/Report/*.dist
+- *vendor/theseer/tokenizer/.php_cs.dist
+- ./assets/*
+- *svn/*
