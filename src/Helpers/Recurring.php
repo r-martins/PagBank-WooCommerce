@@ -68,7 +68,12 @@ class Recurring
      */
     public function isCartRecurring(WC_Cart $cart = null): bool
     {
-        if (!$cart) $cart = WC()->cart;
+        if (!$cart) 
+            $cart = WC()->cart;
+        
+        if (! $cart) 
+            return false;
+        
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
             if ($product->get_meta('_recurring_enabled') == 'yes') 
