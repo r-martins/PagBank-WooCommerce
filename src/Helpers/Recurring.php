@@ -71,7 +71,7 @@ class Recurring
         if (!$cart) 
             $cart = WC()->cart;
         
-        if (! $cart) 
+        if (!$cart) 
             return false;
         
         foreach ($cart->get_cart() as $cartItem) {

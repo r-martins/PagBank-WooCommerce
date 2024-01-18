@@ -306,7 +306,7 @@ class Recurring
         ];
         
         if ($paymentMethod == 'credit_card') {
-            $initialChargeInfo = $order->get_meta('_pagbank_order_charges');
+            $initialChargeInfo = $order->get_meta('pagbank_order_charges');
             if ( ! isset($initialChargeInfo[0])){
                 Functions::log('Não foi possível carregar as informações do pagamento inicial para gerar os '
                     .'detalhes da recorrência.', 'critical', ['order id' => $order->get_id()] );
