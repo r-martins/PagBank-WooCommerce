@@ -292,9 +292,8 @@ jQuery(document).ready(function ($) {
                 nonce: rm_pagbank_nonce,
             },
             success: (response)=>{
-                cartTotal = response;
                 //convert to cents
-                cartTotal = parseFloat(cartTotal).toFixed(2) * 100;
+                cartTotal = parseInt(parseFloat(response.toString()).toFixed(2) * 100);
             },
             error: (response)=>{
                 alert('Erro ao obter o total do pedido. Verifique os logs em WooCommerce > Status > Logs ' +

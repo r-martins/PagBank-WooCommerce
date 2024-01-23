@@ -340,7 +340,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 'pagseguro-connect-checkout',
                 plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 ['jquery'],
-                true,
+                WC_PAGSEGURO_CONNECT_VERSION,
                 true
             );
 			wp_add_inline_script(
@@ -354,7 +354,7 @@ class Gateway extends WC_Payment_Gateway_CC
                     'pagseguro-connect-creditcard',
                     plugins_url('public/js/creditcard.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                     ['jquery', 'jquery-payment'],
-                    true,
+                    WC_PAGSEGURO_CONNECT_VERSION,
                     true
                 );
                 wp_localize_script(
@@ -394,7 +394,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 wp_enqueue_script('pagseguro-checkout-sdk',
                     'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js',
                     [],
-                    false,
+                    WC_PAGSEGURO_CONNECT_VERSION,
                     true
                 );
             }
