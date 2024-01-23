@@ -8,6 +8,7 @@ use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Recurring;
 use WC_Data_Exception;
 use WC_Meta_Data;
@@ -90,7 +91,6 @@ class RecurringOrder
 //        $this->updateSubscription($subscription, $order);
     }
     
-    // @TODO Finish/Adapt it for recurring orders
 
     /**
      * @throws WC_Data_Exception|Connect\Exception
@@ -145,8 +145,10 @@ class RecurringOrder
                 $params = $method->prepare();
                 break;
             default:
-                
-                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido')));
+                Functions::log('Invalid payment method: ' . $payment_method, 'error',[
+                    'subscription' => $subscription->id,
+                    'paymentInfo' => $paymentInfo,
+                ]);
                 return array(
                     'result' => 'fail',
                     'redirect' => '',
@@ -184,7 +186,7 @@ class RecurringOrder
             }
         }
         // endregion
-
+        return 0;
     }
     
 //    public function addMetaFromOriginalOrder(&$order, $initialOrder){

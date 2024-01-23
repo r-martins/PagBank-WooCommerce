@@ -245,9 +245,13 @@ class Recurring
         return $msg;
     }
 
-    public static function getAdminSubscriptionDetailsUrl($orderId)
+    public static function getAdminSubscriptionDetailsUrl($order)
     {
         global $wpdb;
+
+        $parentId = $order->get_parent_id('edit');
+        $orderId = $parentId > 0 ? $parentId : $order->get_id();
+        
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$orderId}";
         $subscription = $wpdb->get_row($sql);
         if ( ! $subscription) return '#';

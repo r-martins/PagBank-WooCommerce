@@ -1,6 +1,6 @@
 <?php
 /**
- * Subscription Details table
+ * Subscription Details table (customer view)
  *
  * Shows subscription details
  *

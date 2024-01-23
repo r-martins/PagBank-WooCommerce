@@ -180,12 +180,17 @@ class Gateway extends WC_Payment_Gateway_CC
             if ($subscription->status != $shouldBeStatus) {
                 $recurring->updateSubscription($subscription, [
                     'status' => $shouldBeStatus,
+                ]);
+            }
+            
+            if ($shouldBeStatus == 'ACTIVE') {
+                $recurring->updateSubscription($subscription, [
                     'next_bill_at' => $recurringHelper->calculateNextBillingDate(
                         $frequency,
                         $cycle
-                    )->format('Y-m-d')
+                    )->format('Y-m-d H:i:s')
                 ]);
-            }            
+            }
         }
     }
     

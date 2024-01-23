@@ -23,7 +23,9 @@ class Recurring
 
     public function init()
     {
-        if (Params::getConfig('recurring_enabled') != 'yes') return;
+        if (Params::getConfig('recurring_enabled') != 'yes') {
+            return;
+        }
 
         //region admin management
         add_action('woocommerce_product_data_panels', [$this, 'addRecurringTabContent']);
@@ -63,6 +65,7 @@ class Recurring
         add_action('rm_pagbank_view_subscription_order_list', [$this, 'getSubscriptionOrderList'], 10, 1);
         add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
         add_filter('rm_pagbank_account_recurring_actions', [$this, 'filterAllowedActions'], 10, 2);
+        add_filter('woocommerce_my_account_my_orders_actions', [$this, 'filterRecurringOrderActions'], 10, 2);
         //endregion
         
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
@@ -561,6 +564,22 @@ class Recurring
         return $actions;
     }
 
+    /**
+     * Removes the pay action from recurring orders, specially when the order is a recurring order details page
+     * @param $actions
+     * @param $order
+     *
+     * @return array
+     */
+    public function filterRecurringOrderActions($actions, $order): array
+    {
+        if ($order->get_meta('_pagbank_is_recurring') && isset($actions['pay'])) {
+            unset($actions['pay']);
+        }
+        
+        return $actions;
+    }
+
     // region frontend subscription management -edit api endpoint (/wc-api/rm-pagbank-subscription-edit)
 
     /**
@@ -612,8 +631,18 @@ class Recurring
 
     }
 
+    /**
+     * @param stdClass $subscription
+     *
+     * @return void
+     */
     public function cancelSubscriptionAction(\stdClass $subscription): void
     {
+        $fromAdmin = isset($_GET['fromAdmin']);
+        if ($fromAdmin) {
+            $this->cancelSubscription($subscription, __('Cancelado pelo administrador', 'pagbank-connect'), 'ADMIN');
+            return;
+        }
         $this->cancelSubscription($subscription, __('Cancelado pelo cliente', 'pagbank-connect'), 'CUSTOMER');
     }
     
@@ -621,7 +650,7 @@ class Recurring
      * Cancels the specified subscription
      * @param stdClass $subscription The subscription to be canceled (row from pagbank_recurring table)
      * @param string   $reason     The reason for cancellation (will be visible to the customer)
-     * @param string   $reasonType The reason type (CUSTOMER or FAILURE)
+     * @param string   $reasonType The reason type (CUSTOMER, ADMIN or FAILURE)
      *
      * @return bool
      */
@@ -645,6 +674,13 @@ class Recurring
                 case 'CUSTOMER':
                     do_action(
                         'pagbank_recurring_subscription_canceled_by_customer_notification',
+                        $subscription,
+                        $initialOrder
+                    );
+                    break;
+                case 'ADMIN':
+                    do_action(
+                        'pagbank_recurring_subscription_canceled_by_admin_notification',
                         $subscription,
                         $initialOrder
                     );

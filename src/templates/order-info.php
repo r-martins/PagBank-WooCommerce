@@ -21,8 +21,8 @@ $charge_id = $order->get_meta('pagbank_charge_id');
     </span>
     <?php endif;?>
     
-    <?php if($order->get_meta('_recurring_cycle') > 0):?>
-    <a href="<?php echo Recurring::getAdminSubscriptionDetailsUrl($order->get_id())?>" class="recurring-label">
+    <?php if($order->get_meta('_pagbank_is_recurring') > 0 || $order->get_meta('_recurring_cycle') > 0):?>
+    <a href="<?php echo Recurring::getAdminSubscriptionDetailsUrl($order)?>" class="recurring-label">
         <span class="recurring-icon"></span>
         <span class="recurring"><?php echo __('Pedido Recorrente', 'pagbank-connect')?></span>
     </a>

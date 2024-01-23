@@ -28,7 +28,7 @@ class RecurringDashboard
             return $order->get_id();
         }, $orders);
 
-        $ids_string = implode(', ', $ids);
+        $ids_string = '0' . implode(', ', $ids);
         
         global $wpdb;
         //select from pagbank_recurring where initial order is one of those

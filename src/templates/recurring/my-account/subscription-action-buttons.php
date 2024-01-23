@@ -21,10 +21,13 @@ do_action('rm_pagbank_before_account_recurring_action_buttons', $subscription);
 if ( ! isset($subscription->id) || ! $subscription->id ) {
     return;
 }
+$isAdminEndpoint = is_admin() && ! defined( 'DOING_AJAX' );
+$cancelURL = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=cancel&id=' . $subscription->id;
+$cancelURL .= $isAdminEndpoint ? '&fromAdmin=1' : '';
 $actions = apply_filters('rm_pagbank_account_recurring_actions', [
     'cancel' => [
         'name' => __('Cancelar Assinatura', RM_PagBank\Connect::DOMAIN),
-        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=cancel&id=' . $subscription->id,
+        'url' => $cancelURL,
         'class' => 'subscription-button cancel',
     ],
     'uncancel' => [
