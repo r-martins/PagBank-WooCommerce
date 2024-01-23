@@ -273,9 +273,9 @@ class EnvioFacil extends WC_Shipping_Method
 			echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
 		}
 		echo wp_kses_post( wpautop( $this->get_method_description() ) );
-		echo esc_html( __('Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>', 'pagbank-connect') );
-		echo '<p>' . esc_html( __('⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do frete. Faça suas simulações antes. ;)', 'pagbank-connect') ) . '</p>';
-		echo '<p>' . esc_html( __('<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce" target="_blank">Ver documentação ↗</a>', 'pagbank-connect') ) . '</p>';
+		echo __('Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>', 'pagbank-connect') ;
+		echo '<p>' . __('⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do frete. Faça suas simulações antes. ;)', 'pagbank-connect') . '</p>';
+		echo '<p><a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce" target="_blank">' . __('Ver documentação ↗', 'pagbank-connect') . '</a>' . '</p>';
 		echo $this->get_admin_options_html(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
 	}
 

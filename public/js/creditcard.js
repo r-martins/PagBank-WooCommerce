@@ -224,7 +224,12 @@ jQuery(document).ready(function ($) {
     }
     let originalSubmitHandler = () => {};
     if ($._data($('form.woocommerce-checkout')[0], "events") !== undefined) {
-        originalSubmitHandler = $._data($('form.woocommerce-checkout')[0], "events").submit[0].handler ?? null;
+        let formCheckout = $('form.woocommerce-checkout')[0];
+        let formEvents = $._data(formCheckout, "events");
+        
+        if (formEvents && formEvents.submit) {
+            originalSubmitHandler = formEvents.submit[0].handler;
+        }
     }
     
     $('form.woocommerce-checkout').off('submit');

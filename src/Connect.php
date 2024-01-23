@@ -125,6 +125,8 @@ class Connect
                     'installments_options_min_total' => Params::getConfig('cc_installments_options_min_total'),
                     'installments_options_limit_installments' => Params::getConfig('cc_installments_options_limit_installments'),
                     'installments_options_max_installments' => Params::getConfig('cc_installments_options_max_installments'),
+                    '3d_secure' => Params::getConfig('cc_3ds'),
+                    '3d_secure_allow_continue' => Params::getConfig('cc_3ds_allow_continue'),
                 ]
             ]
         ];
