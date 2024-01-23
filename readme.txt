@@ -1,11 +1,11 @@
-=== PagBank Connect (PagSeguro) ===
+=== PagSeguro / PagBank Connect ===
 Contributors: martins56
 Tags: woocommerce, pagseguro, payment, pagbank, pix, boleto, visa, mastercard, cartão de crédito
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.13
+Stable tag: 4.2.14
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -15,27 +15,29 @@ Autenticação 3D: menos chargeback e mais aprovações.
 
 == Description ==
 
-https://www.youtube.com/watch?v=eN_WaK-1SQc
-
 Esta é a forma mais fácil de integrar sua loja com PagBank (PagSeguro).
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
+https://www.youtube.com/watch?v=wnzA0KQZCQs
+
 Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
-* Termos de uso e softwares terceiros *
+https://www.youtube.com/watch?v=eN_WaK-1SQc
+
+* Termos de uso e softwares terceiros
 Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html) do desenvolvedor.
 
 == Installation ==
-=== Instalação manual ===
-* Baixe o arquivo zip e descompacte ele em sua máquina
-* Faça upload dos arquivos na pasta /wp-content/plugins/rm-pagbank
-* Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
-* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
-
 === Instalação automática ===
 * Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
 * Clique no botão para instalar e ative o plugin
 * Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+
+=== Instalação manual ===
+* Baixe o [arquivo zip](https://codeload.github.com/r-martins/PagBank-WooCommerce/zip/refs/heads/master) e descompacte ele em sua máquina
+* Faça upload dos arquivos na pasta /wp-content/plugins/pagbank-connect, usando seu FTP
+* Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
+* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -48,6 +50,12 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 * Se desejar, configure opções de parcelamento, e validade do boleto e código pix de acordo com suas necessidades.
 
 == Frequently Asked Questions ==
+= PagSeguro ou PagBank? =
+
+Em 2023 o PagBank e o PagSeguro se tornaram uma única empresa: PagBank.
+
+E não se preocupe, os serviços que você usa não serão afetados.
+
 = Quais os requisitos para usar esta integração? =
 
 * Ter WooCommerce 4.0 ou superior
@@ -60,9 +68,9 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 
 Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará cerca de 0,60% a menos e estará isento da taxa de R$0,40 por transação.
 
-Taxas menores são aplicadas para transações parceladas, PIX e Boleto.
+Taxas menores são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
-Consulte mais sobre elas no nosso site.
+Consulte mais sobre elas no [nosso site](https://pagseguro.ricardomartins.net.br/connect/autorizar.html).
 
 = Eu tenho uma taxa ou condição negociada menor que estas. O que faço? =
 
@@ -72,8 +80,9 @@ Ao usar nossa integração, nossas taxas e condições serão aplicadas ao invé
 
 Se mesmo assim você possuir uma taxa ou condição melhor, e se compromete a faturar mais de R$20 mil / mês (pedidos aprovados usando nossa integração), podemos incluir sua loja em uma aplicação especial.
 
-Entre em [Contato conosco](https://pagsegurotransparente.zendesk.com/hc/pt-br/requests/new) para obter um convite e instruções. 
-Ao fazer isso, informe o url da sua loja e e-mail do responsável por ela. O e-mail do responsável deve ser @urldaloja.xyz.
+Ao [autorizar sua conta](https://pagseguro.ricardomartins.net.br/connect/autorizar.html), escolha a opção "Suas condições e taxas".
+
+Sua Connect key será gerada respeitando as taxas e condições negociadas que você tem com o PagSeguro/PagBank.
 
 = Tenho outra pergunta não listada aqui =
 
@@ -87,15 +96,15 @@ Sim.
 
 E quando há uma transação no PagBank, um link para ela é exibida na página do pedido. Assim você pode confirmar novamente o status do mesmo.
 
-= Como posso testar usando a Sandbox? =
+Caso utilize Cloudflare ou CDN, certifique-se de [configurá-lo corretamente](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/115002699823-Usu%C3%A1rios-Cloudflare-e-CDN-s) e liberar os IPs do PagSeguro para evitar bloqueios nas notificações.
+
+= Posso testar usando a Sandbox? =
 
 Sim. Basta clicar no botão 'Obter Connect Key para Testes' localizado nas configurações do plugin, seguir as instruções, e informar sua Connect Key de testes no campo indicado.
 
 Um link para mais detalhes sobre como utilizar a Sandbox está disponível na página de configurações do plugin.
 
-A equipe do PagBank está trabalhando numa correção.
-
-Enquanto isso, você pode testar com dados reais e realizar o estorno. As tarifas e taxas são reembolsadas, não incidindo nenhum custo.
+Você também pode testar com dados reais e realizar o estorno. As tarifas e taxas são reembolsadas, não incidindo nenhum custo.
 
 = Este é um plugin oficial? =
 
@@ -113,6 +122,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.2.14 =
+* Correção: dependendo do valor total do pedido, quando a autenticação 3d estava ativada, o erro 'amount.value must be an integer' era exibido
+* Melhoria: pequeno ajuste na mensagem de erro acima
+* Melhoria: algumas atualizações do plugin não surtiam efeito para alguns usuários devido a cache forçado do navegador ou configuração de outros plugins
 
 = 4.2.13 =
 * Correção: Parametro inválido (payment_method.card.encrypted) era exibido em alguns cenários, impedindo a finalização da compra.
