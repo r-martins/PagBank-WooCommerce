@@ -36,6 +36,7 @@ jQuery(document).ready(function($) {
             'must be between 1 and 24': 'deve ser entre 1 e 24',
             'only ISO 3166-1 alpha-3 values are accepted': 'deve ser um código ISO 3166-1 alpha-3',
             'either paymentMethod.card.id or paymentMethod.card.encrypted should be informed': 'deve ser informado o cartão de crédito criptografado ou o id do cartão',
+            'must be an integer number': 'deve ser um número inteiro',
         };
     
         const parameters = {
