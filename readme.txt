@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.2.14
+Stable tag: 4.3.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -26,6 +26,20 @@ https://www.youtube.com/watch?v=eN_WaK-1SQc
 
 * Termos de uso e softwares terceiros
 Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html) do desenvolvedor.
+
+== Features ==
+* Suporte a PIX, Cartão de Crédito e Boleto
+* Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
+* Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
+* Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
+* Diversas [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
+* Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto)
+* Permite definir validade de boletos e código PIX
+* Atualições automáticas de status de pedidos
+* Configure como quer exibir o nome da loja na fatura do cartão de crédito
+* Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
+
+
 
 == Installation ==
 === Instalação automática ===
@@ -123,6 +137,9 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 
 == Changelog ==
 
+= 4.3.0 =
+* Adicionado suporte a venda recorrente (clube de assinatura) sem depender de outros plugins
+
 = 4.2.14 =
 * Correção: dependendo do valor total do pedido, quando a autenticação 3d estava ativada, o erro 'amount.value must be an integer' era exibido
 * Melhoria: pequeno ajuste na mensagem de erro acima
@@ -210,3 +227,4 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 5. Admin - Tela do Pedido
 6. Envio Fácil
 7. Autenticação 3D Secure
+8. Pedidos Recorrentes (assinaturas)

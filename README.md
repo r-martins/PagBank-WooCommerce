@@ -17,6 +17,7 @@ Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
   <img alt="Admin - Tela do Pedido" src="https://i.imgur.com/CIgTLnv.jpg" title="Admin - Tela do Pedido"/>
   <img alt="Envio Fácil" src="https://i.imgur.com/nQlOBfx.jpg" title="Envio Fácil"/>  
   <img alt="3D Secure" src="https://i.imgur.com/hqhgWfM.jpg" title="3D Secure"/>  
+  <img alt="Venda Recorrente com Woo" src="https://imgur.com/7pQNwkv.jpg" title="Pedidos Recorrentes"/>  
 </details>
 
 # Descrição
