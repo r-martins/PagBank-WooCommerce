@@ -384,6 +384,12 @@ class Gateway extends WC_Payment_Gateway_CC
                 'pagseguro-connect-checkout',
                 plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
+            wp_add_inline_style(
+                'pagseguro-connect-checkout', apply_filters(
+                    'rm_pagbank_checkout_css', 
+                    '.ps-button svg{ fill: ' . Params::getConfig('icons_color', 'gray') . '};'
+                )
+            );
         }
     }
     
