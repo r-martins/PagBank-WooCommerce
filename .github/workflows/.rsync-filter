@@ -9,3 +9,8 @@
 - *vendor/theseer/tokenizer/.php_cs.dist
 - ./assets/*
 - *svn/*
+- *.codacy.yml
+- *.eslintrc.json
+- *.stylelintrc.json
+- *phpmd.xml
+- *phpcs.xml
