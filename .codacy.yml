@@ -19,3 +19,4 @@ exclude_paths:
   - '*.xml'
   - '*.css'
   - '*.editorconfig'
+  - '**/.github/**'
