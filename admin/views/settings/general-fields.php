@@ -52,13 +52,23 @@ return array(
     'shipping_param' => [
         'title'		=> __('Endereço de Entrega', 'pagbank-connect'),
         'type'		=> 'select',
-        'description' => '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029" target="_blank">' . __('Saiba mais', 'pagbank-connect') . '</a>',
+        'description' => '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029" '
+            .'target="_blank">' . __('Saiba mais', 'pagbank-connect') . '</a>',
         'default'	=> '',
         'options'	=> [
             ''		    => __('Fornecer ao PagBank sempre que aplicável', 'pagbank-connect'),
             'validate'	=> __('Não fornecer se estiver incompleto', 'pagbank-connect'),
             'never'		=> __('Nunca fornecer ao PagBank', 'pagbank-connect'),
         ],
+    ],
+    'icons_color' => [
+        'title'		=> __('Cor dos Ícones', 'pagbank-connect'),
+        'type'		=> 'text',
+        'description' => __('Escolha as cores do ícone dos meios de pagamento no checkout. <br/>'
+            .'Para mais customizações, veja este <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles'
+            .'/18278019489677">artigo</a>.', 'pagbank-connect'),
+        'default'	=> 'gray',
+        'class' => 'icon-color-picker'
     ],
 	'enabled'              => [
         'title'   => __( 'Habilitar/Desabilitar', 'pagbank-connect' ),

@@ -20,7 +20,7 @@ $cvc_field = '<p class="form-row form-row-last">
 $default_fields = [
     'card-holer-name' => '<p class="form-row form-row-wide">
 				<label for="' . esc_attr( $this->id ) . '-card-holder">' . esc_html__( 'Titular do Cartão', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
-				<input id="' . esc_attr( $this->id ) . '-card-holder-name" class="input-text wc-credit-card-form-holder-name" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" type="text" placeholder="' . esc_html__( 'JOSÉ DA SILVA', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-holder-name' ) . ' />
+				<input id="' . esc_attr( $this->id ) . '-card-holder-name" class="input-text wc-credit-card-form-holder-name" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" type="text" placeholder="' . esc_html__( 'como gravado no cartão', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-holder-name' ) . ' />
 			</p>',
     'card-number-field' => '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'woocommerce' ) . '&nbsp;<span class="required">*</span></label>

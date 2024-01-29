@@ -10,7 +10,7 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
 	border: 1px solid #ccc;
 }
 li.payment_method_rm-pagbank label{
-    display: flex;
+    /*display: flex;*/
 }
 li.payment_method_rm-pagbank label img {
     width: 8rem;
@@ -30,7 +30,7 @@ li.payment_method_rm-pagbank label img {
 	background-color: unset;
 	max-width: 5rem;
 }
-.ps-button img {
+.ps-button svg {
 	filter: contrast(0%);
 }
 
@@ -41,6 +41,11 @@ li.payment_method_rm-pagbank label img {
 #ps-connect-payment-boleto, #ps-connect-payment-cc, #ps-connect-payment-pix, #wc-rm-pagbank-cc-form {
 	border: 0;
 }
+
+/*#btn-pagseguro-cc, #btn-pagseguro-boleto, #btn-pagseguro-pix {*/
+/*    background-color: unset;*/
+/*}*/
+
 /*region pagbank cc flags*/
 #payment .payment_methods .payment_box .wc-credit-card-form-card-number.elo{
     background-image: url('../images/credit-cards/elo.svg');

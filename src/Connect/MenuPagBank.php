@@ -89,7 +89,9 @@ SVG;
         // Register an empty style sheet
         wp_register_style('rm-pagbank-admin', false);
         wp_enqueue_style('rm-pagbank-admin');
-
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_script('wp-color-picker');
+        
         // Add custom CSS styles
         $custom_css = '
         .wp-list-table .column-id {

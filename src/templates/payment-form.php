@@ -27,18 +27,18 @@ $isCcEnabledAndHealthy = $apiHelper->isCcEnabledAndHealthy();
 ?>
 <div class="ps-connect-buttons-container">
     <?php if ($isCcEnabledAndHealthy):?>
-        <button type="button" class="ps-button <?php echo isset($active['cc']) ? 'active' : ''?>" id="btn-pagseguro-cc">
-			<img src="<?php echo esc_url(plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('cc_title'));?>" title="<?php echo esc_attr($this->get_option('cc_title'));?>"/>
+        <button type="button" class="ps-button <?php echo isset($active['cc']) ? 'active' : ''?>" id="btn-pagseguro-cc" title="<?php _e('Cartão de Crédito', 'pagbank-connect');?>">
+			<?php echo file_get_contents(plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>
 		</button>
     <?php endif;?>
     <?php if ($pixEnabled):?>
-        <button type="button" class="ps-button <?php echo isset($active['pix']) ? 'active' : ''?>" id="btn-pagseguro-pix">
-			<img src="<?php echo esc_url(plugins_url('public/images/pix.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('pix_title'));?>" title="<?php echo esc_attr($this->get_option('pix_title'));?>"/>
+        <button type="button" class="ps-button <?php echo isset($active['pix']) ? 'active' : ''?>" id="btn-pagseguro-pix" title="<?php _e('PIX', 'pagbank-connect');?>">
+            <?php echo file_get_contents(plugins_url('public/images/pix.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>
 		</button>
     <?php endif;?>
     <?php if ($boletoEnabled):?>
-        <button type="button" class="ps-button <?php echo isset($active['boleto']) ? 'active' : ''?>" id="btn-pagseguro-boleto">
-			<img src="<?php echo esc_url(plugins_url('public/images/boleto.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>" alt="<?php echo esc_attr($this->get_option('boleto_title'));?>" title="<?php echo esc_attr($this->get_option('boleto_title'));?>"/>
+        <button type="button" class="ps-button <?php echo isset($active['boleto']) ? 'active' : ''?>" id="btn-pagseguro-boleto" title="<?php _e('Boleto', 'pagbank-connect');?>">
+            <?php echo file_get_contents(plugins_url('public/images/boleto.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE))?>
 		</button>
     <?php endif;?>
 </div>

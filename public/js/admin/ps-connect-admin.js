@@ -31,7 +31,7 @@ jQuery(document).ready(function($) {
         };
     }
 
-    $('#woocommerce_rm-pagbank_cc_installment_options').change(hideOrShowFixedOptions());
+    $(document).on('change', '#woocommerce_rm-pagbank_cc_installment_options', hideOrShowFixedOptions());
     hideOrShowFixedOptions().call($('#woocommerce_rm-pagbank_cc_installment_options'));
 
     //display woocommerce_rm-pagbank_cc_installment_options_min_total based on #woocommerce_rm-pagbank_cc_installment_options == min_total
@@ -45,7 +45,7 @@ jQuery(document).ready(function($) {
         };
     }
 
-    $('#woocommerce_rm-pagbank_cc_installment_options').change(hideOrShowMinTotalOptions());
+    $(document).on('change', '#woocommerce_rm-pagbank_cc_installment_options', hideOrShowMinTotalOptions());
     hideOrShowMinTotalOptions().call($('#woocommerce_rm-pagbank_cc_installment_options'));
 
 
@@ -60,7 +60,7 @@ jQuery(document).ready(function($) {
         };
     }
 
-    $('#woocommerce_rm-pagbank_cc_installments_options_limit_installments').change(hideOrShowMasInstallmentsOptions());
+    $(document).on('change', '#woocommerce_rm-pagbank_cc_installments_options_limit_installments', hideOrShowMasInstallmentsOptions());
     hideOrShowMasInstallmentsOptions().call($('#woocommerce_rm-pagbank_cc_installments_options_limit_installments'));
 
     //endregion
@@ -75,4 +75,6 @@ jQuery(document).ready(function($) {
 		$(p).insertAfter('#woocommerce_rm-pagbank_connect_key');
 	}
 	//endregion
+
+    $(".icon-color-picker").wpColorPicker({defaultColor: 'gray'});
 });
