@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.3.0
+Stable tag: 4.3.1
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -136,6 +136,17 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.3.1 =
+* Correção em erro grave que eliminava CSS de várias páginas causando quebras de layout em vários cenários, mesmo onde o plugin não era inserido (Reportado por William T. e outros). O problema foi introduzido na versão 4.3.0.
+* Ajustes no CSS de configuracao de cor dos icones, logo e afins
+* Agora é possível escolher a cor dos ícones via admin
+* Corrigido css que fazia o nome ou logo do PagBank aparecerem abaixo do radio button
+* Em algumas situações, era provável que uma autenticação 3D fosse rejeitada ocorrendo erro 'authentication_method.id' invalido. É provável que isso ocorresse quando um consumidor esperasse mais de 11 minutos para preencher e concluir os dados do checkout, e somente quando um outro cliente chegou ao checkout há menos de 20 minutos mas não concluiu uma compra (Reportado por William T.). Também melhoramos a mensagem de erro nestes casos, recomendando atualização de página.
+* Melhoria na forma como os ícones são inseridos para possibilitar personalização via css (não usarmos mais <img..)
+* Correção em aviso de depreciação do jQuery .change (embora isso não afetava o funcionamento do plugin)
+* Ao invés de mostrar JOSÉ DA SILVA como placeholder do campo de titular de cartão, agora exibimos "como gravado no cartão", e o nome sempre será em caixa alta
+* Ícones de pagamento podem ter ficado maior em alguns checkouts. Instruções para personalização foram adicionados ao admin.
 
 = 4.3.0 =
 * Adicionado suporte a venda recorrente (clube de assinatura) sem depender de outros plugins
