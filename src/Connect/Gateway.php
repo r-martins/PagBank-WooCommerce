@@ -370,27 +370,28 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * Add css files for checkout and success page
 	 * @return void
 	 */
-	public static function addStyles(){
+	public static function addStyles($styles){
         //thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
-            wp_enqueue_style(
-                'pagseguro-connect-pix',
-                plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
-            );
+            $styles['pagseguro-connect-pix'] = [
+                'src'     => plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
+                'version' => WC_PAGSEGURO_CONNECT_VERSION,
+                'media'   => 'all',
+                'has_rtl' => false,
+            ];
         }
 
         if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
-            wp_enqueue_style(
-                'pagseguro-connect-checkout',
-                plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
-            );
-            wp_add_inline_style(
-                'pagseguro-connect-checkout', apply_filters(
-                    'rm_pagbank_checkout_css', 
-                    '.ps-button svg{ fill: ' . Params::getConfig('icons_color', 'gray') . '};'
-                )
-            );
+            $styles['pagseguro-connect-checkout'] = [
+                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
+                'version' => WC_PAGSEGURO_CONNECT_VERSION,
+                'media'   => 'all',
+                'has_rtl' => false,
+            ];
         }
+        return $styles;
     }
     
     public static function addStylesWoo($styles)

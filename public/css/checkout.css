@@ -12,6 +12,11 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
 li.payment_method_rm-pagbank label{
     /*display: flex;*/
 }
+
+li.payment_method_rm-pagbank label img{
+    max-width: 6vw;
+}
+
 li.payment_method_rm-pagbank label img {
     width: 8rem;
 }
