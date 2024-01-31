@@ -65,7 +65,7 @@ return array(
         'title'		=> __('Cor dos Ícones', 'pagbank-connect'),
         'type'		=> 'text',
         'description' => __('Escolha as cores do ícone dos meios de pagamento no checkout. <br/>'
-            .'Para mais customizações, veja este <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles'
+            .'Para mais customizações visuais, veja este <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles'
             .'/18278019489677">artigo</a>.', 'pagbank-connect'),
         'default'	=> 'gray',
         'class' => 'icon-color-picker'

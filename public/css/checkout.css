@@ -36,7 +36,7 @@ li.payment_method_rm-pagbank label img {
 	max-width: 5rem;
 }
 .ps-button svg {
-	filter: contrast(0%);
+	/*filter: contrast(0%);*/
 }
 
 .ps_connect_method .form-row-full{
