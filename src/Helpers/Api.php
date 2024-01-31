@@ -155,7 +155,7 @@ class Api
     public function get3DSession(): string
     {
         try {
-            $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 20);
+            $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 5);
             if (isset($resp['session'])) {
                 return $resp['session'];
             }

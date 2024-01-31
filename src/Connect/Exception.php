@@ -71,6 +71,10 @@ class Exception extends \Exception
                 return $parameterName . ' - ' . esc_html( __('Cidade do Endereço', 'pagbank-connect') );
             case strpos($parameterName, 'address.region') !== false:
                 return $parameterName . ' - ' . esc_html( __('Estado do Endereço', 'pagbank-connect') );
+            case 'charges[0].payment_method.authentication_method.id':
+                return 'authentication_method.id - ' . esc_html( __('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect') );
+            case 'customer.name':
+                return esc_html( __('Nome do Cliente', 'pagbank-connect') );
         }
         
         return $parameterName;
