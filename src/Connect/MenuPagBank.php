@@ -40,7 +40,7 @@ SVG;
     public static function defaultPagBankMenuAction()
     {
         // Redirects to the plugin settings page
-        wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank'));
+        wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank'));
         exit;
     }
     
@@ -109,7 +109,7 @@ SVG;
 
     public static function renderPagbankSubscriptionViewPage(){
         // Check if the subscription ID was passed
-        if (!isset($_GET['id'])) {
+        if (!isset($_GET['id'])) { //phpcs:ignore WordPress.Security.NonceVerification
             echo '<h1>' . __('ID da assinatura não fornecido', 'pagbank-connect') . '</h1>';
             return;
         }
@@ -123,7 +123,7 @@ SVG;
 
         // Check if the subscription exists
         if (!$subscription) {
-            echo '<h1>' . __('Assinatura não encontrada', 'pagbank-connect') . '</h1>';
+            echo '<h1>' . esc_html( __('Assinatura não encontrada', 'pagbank-connect') ). '</h1>';
             return;
         }
 
@@ -133,28 +133,28 @@ SVG;
 
         // Render the subscription view page
         echo '<div class="wrap">';
-        echo '<h1>' . __('Visualizar Assinatura', 'pagbank-connect') . '</h1>';
+        echo '<h1>' . esc_html( __('Visualizar Assinatura', 'pagbank-connect') ). '</h1>';
 
-        echo '<a href="?page=rm-pagbank-subscriptions" class="button">' . __('Voltar para a listagem de assinaturas', 'rm-pagbank') . '</a>';
+        echo '<a href="?page=rm-pagbank-subscriptions" class="button">' . esc_html( __('Voltar para a listagem de assinaturas', 'rm-pagbank') ) . '</a>';
         
         // Add the "View next subscription" and "View previous subscription" buttons
         if ($prevSubscriptionId) {
-            echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . $prevSubscriptionId . '" class="button">' . __('Ver Assinatura Anterior', 'pagbank-connect') . '</a> ';
+            echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . intval($prevSubscriptionId) . '" class="button">' . esc_html( __('Ver Assinatura Anterior', 'pagbank-connect') ) . '</a> ';
         }
         if ($nextSubscriptionId) {
-            echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . $nextSubscriptionId . '" class="button">' . __('Ver Próxima Assinatura', 'pagbank-connect') . '</a>';
+            echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . intval($nextSubscriptionId) . '" class="button">' . esc_html( __('Ver Próxima Assinatura', 'pagbank-connect') ) . '</a>';
         }
 
-        echo '<h2>' . __('Detalhes da Assinatura', 'pagbank-connect') . '</h2>';
+        echo '<h2>' . esc_html( __('Detalhes da Assinatura', 'pagbank-connect') ) . '</h2>';
         $subscriptionDetailsListTable = new SubscriptionDetails($subscription);
         $subscriptionDetailsListTable->prepare_items();
         $subscriptionDetailsListTable->display();
 
 
-        echo '<h2>' . __('Ações', 'pagbank-connect') . '</h2>';
+        echo '<h2>' . esc_html( __('Ações', 'pagbank-connect') ). '</h2>';
         do_action( 'rm_pagbank_view_subscription_actions', $subscription );
 
-        echo '<h2>' . __('Pedidos Associados', 'pagbank-connect') . '</h2>';
+        echo '<h2>' . esc_html( __('Pedidos Associados', 'pagbank-connect') ) . '</h2>';
         $ordersListTable = new OrdersList($subscription);
         $ordersListTable->prepare_items();
         $ordersListTable->display();

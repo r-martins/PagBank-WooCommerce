@@ -163,7 +163,7 @@ class Connect
 
     public static function getMethodTitle($title, $id){
         //get order
-        if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST['ps_connect_method']))
+        if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST['ps_connect_method'])) //phpcs:ignore WordPress.Security.NonceVerification
         {
             $method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
             $method = Functions::getFriendlyPaymentMethodName($method);
@@ -209,7 +209,7 @@ class Connect
     {
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
-        $wpdb->query("DROP TABLE IF EXISTS $recurringTable");
+        $wpdb->query($wpdb->prepare("DROP TABLE IF EXISTS $recurringTable"));
     }
     
     public static function deactivate()

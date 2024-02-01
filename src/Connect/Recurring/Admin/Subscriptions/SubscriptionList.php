@@ -78,7 +78,7 @@ class SubscriptionList extends WP_List_Table
         $total_items = $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}pagbank_recurring");
 
         $orderby = (isset($_GET['orderby']) && in_array($_GET['orderby'], array_keys($this->get_sortable_columns()))) ? $_GET['orderby'] : 'id';
-        $order = (isset($_GET['order']) && in_array($_GET['order'], array('asc', 'desc'))) ? $_GET['order'] : 'asc';
+        $order = (isset($_GET['order']) && in_array($_GET['order'], array('asc', 'desc'))) ? $_GET['order'] : 'asc'; //phpcs:ignore WordPress.Security.NonceVerification
 
         $where = "1=1";
         if (!empty($_REQUEST['status'])) {

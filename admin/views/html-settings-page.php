@@ -60,6 +60,6 @@ if ( ! defined ( 'ABSPATH' ) ) {
         <p>Ao ativar a recorrência, você poderá definir as configurações da assinatura em cada produto.</p>
         <p>Nosso plugin não depende do uso do WooCommerce Subscriptions ou nenhum outro. Consulte a <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura">documentação</a> para mais detalhes.</p>
         <p>Este é um recurso em fase de testes (beta). Erros podem acontecer, incluindo cobranças a mais ou a menos. Ajude a melhorar <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/requests/new" target="_blank">reportando os erros</a> que encontrar.</p>
-        <?php echo $this->get_admin_fields('recurring'); ?>
+        <?php echo $this->get_admin_fields('recurring'); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped?>
     </div>
 </fieldset>

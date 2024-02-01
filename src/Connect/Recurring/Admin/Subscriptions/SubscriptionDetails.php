@@ -37,6 +37,7 @@ class SubscriptionDetails extends WP_List_Table
             <tbody id="the-list"
                 <?php
                 if ( $singular ) {
+                    $singular = esc_attr( $singular );
                     echo " data-wp-lists='list:$singular'";
                 }
                 ?>

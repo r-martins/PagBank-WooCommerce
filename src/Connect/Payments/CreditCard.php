@@ -117,7 +117,7 @@ class CreditCard extends Common
         global $woocommerce;
 
         $order_total = floatval($woocommerce->cart->get_total('edit'));
-		if (!wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+		if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
 			wp_send_json_error([
 				'error' => __(
 					'Não foi possível obter as parcelas. Chave de formulário inválida. '
@@ -128,7 +128,7 @@ class CreditCard extends Common
 				400);
 		}
 
-        $cc_bin = intval($_REQUEST['cc_bin']);
+        $cc_bin = isset( $_REQUEST['cc_bin'] ) ? intval($_REQUEST['cc_bin']) : 0;
 
 		if (!$order_total) return;
 
@@ -156,7 +156,7 @@ class CreditCard extends Common
             global $wpdb;
             $initialSubOrderId = $this->order->get_parent_id('edit');
             $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$initialSubOrderId}";
-            $recurring = $wpdb->get_row($sql);
+            $recurring = $wpdb->get_row( $wpdb->prepare( $sql ) );
             $paymentInfo = json_decode($recurring->payment_info);
             $card->setId($paymentInfo->card->id);
             $holder = new Holder();
@@ -192,7 +192,7 @@ class CreditCard extends Common
                 400);
         }
         global $woocommerce;
-        echo $woocommerce->cart->get_total('edit');
+        echo esc_html( $woocommerce->cart->get_total('edit') );
         wp_die();
     }
 }

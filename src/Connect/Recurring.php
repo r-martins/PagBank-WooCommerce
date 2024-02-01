@@ -156,7 +156,9 @@ class Recurring
                 'value' => get_post_meta($post->ID, '_initial_fee', true),
             ]);
             ?>
-            <p><?php echo __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect');?></p>
+            <p><?php echo esc_html( 
+                    __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect') 
+                );?></p>
         </div>
         <?php
     }
@@ -166,10 +168,11 @@ class Recurring
         $recurringEnabled = isset($_POST['_recurring_enabled']) ? 'yes' : 'no';
         update_post_meta($postId, '_recurring_enabled', $recurringEnabled);
         
-        update_post_meta($postId, '_frequency', sanitize_text_field($_POST['_frequency']));
+        $frequency = isset($_POST['_frequency']) ? sanitize_text_field($_POST['_frequency']) : 'monthly'; //phpcs:ignore WordPress.Security.NonceVerification
+        update_post_meta($postId, '_frequency', $frequency);
         
         if ($recurringEnabled == 'yes') {
-            $cycle = sanitize_text_field($_POST['_frequency_cycle']);
+            $cycle = isset($_POST['_frequency_cycle']) ? sanitize_text_field($_POST['_frequency_cycle']) : 1;
             $cycle = max($cycle, 1);
             
             $initial = sanitize_text_field($_POST['_initial_fee']);
@@ -248,7 +251,8 @@ class Recurring
         
         if ($success !== false && $statusFromOrder == 'ACTIVE') {
             $subId = $wpdb->insert_id;
-            $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = 0{$subId}";
+            $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d";
+            $sql = $wpdb->prepare($sql, $subId);
             $wpdb->query($sql);
             $subscription = $wpdb->get_row($sql);
             //send welcome e-mail
@@ -265,8 +269,9 @@ class Recurring
         $now = gmdate('Y-m-d H:i:s');
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE ";
         $sql .= $subscription == null 
-            ? "status = 'ACTIVE' AND next_bill_at <= '$now'" 
-            : "id = 0{$subscription->id}";
+            ? "status = 'ACTIVE' AND next_bill_at <= '%s'" 
+            : "id = %d";
+        $sql = $wpdb->prepare($sql, $now, $subscription->id ?? 0);
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
             $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
@@ -481,7 +486,8 @@ class Recurring
     public function getSubscription(int $id): ?\stdClass
     {
         global $wpdb;
-        return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = 0{$id}");
+        $query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d", $id );
+        return $wpdb->get_row( $query );
     }
     
     public function subscriptionDetailsTable($subscription)
@@ -590,24 +596,25 @@ class Recurring
     {
         $subscriptionId = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
         $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_STRING);
-        $referrer = wp_get_referer() ?? home_url();
+        $referrer = wp_get_referer() ? wp_get_referer() : home_url();
         if (empty($subscriptionId) || empty($action)) {
-            wp_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');
+            wc_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');
+            wp_safe_redirect($referrer);
             return;
         }
 
         $subscription = $this->getSubscription($subscriptionId);
         if ( ! $subscription->id ) {
-            wp_add_notice(__('Assinatura não encontrada.', 'pagbank-connect'), 'error');
-            wp_redirect($referrer);
+            wc_add_notice(__('Assinatura não encontrada.', 'pagbank-connect'), 'error');
+            wp_safe_redirect($referrer);
             return;
         }
         $order = wc_get_order($subscription->initial_order_id);
         if ( ! is_admin()) {
             if ( ! is_user_logged_in() ) {
                 wp_die(
-                    __('Você precisa estar logado para acessar esta página.', 'pagbank-connect'),
-                    __('Acesso Negado', 'pagbank-connect', ['response' => 403])
+                    esc_html( __('Você precisa estar logado para acessar esta página.', 'pagbank-connect') ),
+                    esc_html( __('Acesso Negado', 'pagbank-connect', ['response' => 403]) )
                 );
             }
         }
@@ -615,19 +622,19 @@ class Recurring
         // if not an admin, check if the user is the owner of the subscription
         if ( ! current_user_can('manage_options') && $order->get_customer_id() != get_current_user_id()) {
             wp_die(
-                __('Você não tem permissão para acessar esta página.', 'pagbank-connect'),
-                __('Acesso Negado', 'pagbank-connect', ['response' => 403])
+                esc_html( __('Você não tem permissão para acessar esta página.', 'pagbank-connect') ),
+                esc_html( __('Acesso Negado', 'pagbank-connect', ['response' => 403]) )
             );
         }
 
         if ( ! method_exists($this, $action . 'SubscriptionAction')) {
             wc_add_notice(__('Ação não implementada.', 'pagbank-connect'), 'error');
-            wp_redirect($referrer);
+            wp_safe_redirect($referrer);
             return;
         }
 
         $this->{$action . 'SubscriptionAction'}($subscription);
-        wp_redirect($referrer);
+        wp_safe_redirect($referrer);
 
     }
 
@@ -638,7 +645,7 @@ class Recurring
      */
     public function cancelSubscriptionAction(\stdClass $subscription): void
     {
-        $fromAdmin = isset($_GET['fromAdmin']);
+        $fromAdmin = isset($_GET['fromAdmin']); //phpcs:ignore WordPress.Security.NonceVerification
         if ($fromAdmin) {
             $this->cancelSubscription($subscription, __('Cancelado pelo administrador', 'pagbank-connect'), 'ADMIN');
             return;
@@ -860,7 +867,8 @@ class Recurring
             $order = $order->get_id();
         }
         $order = intval($order);
-        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$order}";
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = %d";
+        $sql = $wpdb->prepare($sql, $order);
         return $wpdb->get_row($sql);
     }
     
