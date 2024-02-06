@@ -48,14 +48,14 @@ class Api
 
         $transientKey = 'cache_' . md5($url . serialize($header));
         $cached = get_transient($transientKey);
-        if ($cached !== false){
+        if ($cached !== false) {
             return $cached;
         }
         
         $resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
 
 		if (is_wp_error($resp)) {
-			throw new Exception('Erro na requisição: ' . $resp->get_error_message());
+			throw new Exception('Erro na requisição: ' . esc_attr($resp->get_error_message()));
 		}
 
 		$response = wp_remote_retrieve_body($resp);
@@ -65,10 +65,10 @@ class Api
 
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Resposta inválida da API: ' . $response);
+            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
         }
 
-        if ($cacheMin > 0){
+        if ($cacheMin > 0) {
             set_transient($transientKey, $decoded_response, $cacheMin * 60);
         }
         

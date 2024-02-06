@@ -63,7 +63,7 @@ class Functions
             $class .= ' is-dismissible';
         }
 
-        echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', 'pagbank-connect' ) . '</strong> ' . $msg . '</p></div>';
+        echo '<div class="' . $class . '"><p><strong>' . esc_html_e( 'PagBank Connect', 'pagbank-connect' ) . '</strong> ' . esc_html($msg) . '</p></div>';
     }
 
     /**

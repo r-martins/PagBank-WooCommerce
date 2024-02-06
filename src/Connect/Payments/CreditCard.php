@@ -181,7 +181,7 @@ class CreditCard extends Common
      */
     public static function getCartTotal()
     {
-        if (!wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
             wp_send_json_error([
                 'error' => __(
                     'Não foi possível obter o total. Chave de formulário inválida. '

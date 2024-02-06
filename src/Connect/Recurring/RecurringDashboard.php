@@ -24,16 +24,21 @@ class RecurringDashboard
             'limit' => -1
         ]);
 
-        $ids = array_map(function($order) {
+        $ids = array_map(function ($order) {
             return $order->get_id();
         }, $orders);
 
-        $ids_string = '0' . implode(', ', $ids);
+        $ids_string_placeholders = implode(', ', array_fill(0, count($ids), '%d'));
         
         global $wpdb;
         //select from pagbank_recurring where initial order is one of those
         $table = $wpdb->prefix . 'pagbank_recurring';
-        $subscriptions = $wpdb->get_results("SELECT * FROM $table WHERE initial_order_id IN ( $ids_string) ORDER BY id DESC");
+        $subscriptions = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM `$table` WHERE initial_order_id IN ( $ids_string_placeholders ) ORDER BY id DESC",
+                $ids
+            )
+        );
         
         if ( ! empty($subscriptions))
         {

@@ -78,11 +78,12 @@ class SubscriptionList extends WP_List_Table
         $total_items = $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}pagbank_recurring");
 
         $orderby = (isset($_GET['orderby']) && in_array($_GET['orderby'], array_keys($this->get_sortable_columns()))) ? $_GET['orderby'] : 'id';
+        $orderby = wp_unslash($orderby);
         $order = (isset($_GET['order']) && in_array($_GET['order'], array('asc', 'desc'))) ? $_GET['order'] : 'asc'; //phpcs:ignore WordPress.Security.NonceVerification
 
         $where = "1=1";
         if (!empty($_REQUEST['status'])) {
-            $status = sanitize_text_field($_REQUEST['status']);
+            $status = sanitize_text_field(wp_unslash($_REQUEST['status']));
             $where .= " AND status = '$status'";
         }
         if (!empty($_REQUEST['order_id'])) {
@@ -115,18 +116,19 @@ class SubscriptionList extends WP_List_Table
     }
     
     public function extra_tablenav($which) {
+        $page = $_REQUEST['page'] ?? '';
     if ($which == "top"){
         ?>
         <form method="get">
-            <input type="hidden" name="page" value="<?php echo $_REQUEST['page'] ?>" />
+            <input type="hidden" name="page" value="<?php echo esc_attr($page) ?>" />
             <div class="alignleft actions bulkactions">
                 <select name="status" id="filter-by-status">
-                    <option value=""><?php _e('Todos os status', 'rm-pagbank');?></option>
+                    <option value=""><?php echo esc_attr('Todos os status', 'rm-pagbank');?></option>
                     <?php foreach (Recurring::getAllStatuses() as $value => $status):?>
-                        <option value="<?php echo $value;?>"><?php echo $status;?></option>
+                        <option value="<?php echo esc_attr($value);?>"><?php echo esc_attr($status);?></option>
                     <?php endforeach;?>
                 </select>
-                <input type="text" name="order_id" id="filter-by-order-id" placeholder="<?php _e('ID do Pedido', 'rm-pagbank');?>">
+                <input type="text" name="order_id" id="filter-by-order-id" placeholder="<?php echo esc_attr(__('ID do Pedido', 'rm-pagbank'));?>">
                 <?php submit_button(__('Filtrar'), 'button', 'filter_action', false);?>
             </div>
         </form>

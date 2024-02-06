@@ -175,7 +175,7 @@ class Recurring
             $cycle = isset($_POST['_frequency_cycle']) ? sanitize_text_field($_POST['_frequency_cycle']) : 1;
             $cycle = max($cycle, 1);
             
-            $initial = sanitize_text_field($_POST['_initial_fee']);
+            $initial = sanitize_text_field($_POST['_initial_fee'] ?? 0);
             $initial = floatval(str_replace(',', '.', $initial));
             $initial = floatval(number_format(max(0, $initial), 2, '.', ''));
             update_post_meta($postId, '_frequency_cycle', $cycle);
@@ -252,9 +252,8 @@ class Recurring
         if ($success !== false && $statusFromOrder == 'ACTIVE') {
             $subId = $wpdb->insert_id;
             $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d";
-            $sql = $wpdb->prepare($sql, $subId);
-            $wpdb->query($sql);
-            $subscription = $wpdb->get_row($sql);
+//            $wpdb->query($wpdb->prepare($sql, $subId));
+            $subscription = $wpdb->get_row($wpdb->prepare($sql, $subId));
             //send welcome e-mail
             do_action('pagbank_recurring_subscription_created_notification', $subscription, $order);
         }
@@ -270,8 +269,9 @@ class Recurring
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE ";
         $sql .= $subscription == null 
             ? "status = 'ACTIVE' AND next_bill_at <= '%s'" 
-            : "id = %d";
-        $sql = $wpdb->prepare($sql, $now, $subscription->id ?? 0);
+            : "id = 0%d";
+        $nowOrId = $subscription == null ? $now : $subscription->id;
+        $sql = $wpdb->prepare($sql, $nowOrId);
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
             $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
@@ -386,13 +386,18 @@ class Recurring
         }
 
         if (isset($_GET['action'])) {
-            do_action('rm_pagbank_manage_subscription_action', $_GET['action']);
+            do_action('rm_pagbank_manage_subscription_action', wp_slash($_GET['action']));
             $subscription = $this->getSubscription($subscriptionId);
         }
         
         $order = wc_get_order($subscription->initial_order_id);
         if ($order->get_customer_id('edit') !== get_current_user_id()) {
-            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+            wc_get_template(
+                'recurring/my-account/subscription-not-found.php',
+                [],
+                Connect::DOMAIN,
+                WC_PAGSEGURO_CONNECT_TEMPLATES_DIR
+            );
             return;
         }
         
@@ -863,13 +868,12 @@ class Recurring
     {
         global $wpdb;
         
-        if ($order instanceof WC_Order){
+        if ($order instanceof WC_Order) {
             $order = $order->get_id();
         }
         $order = intval($order);
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = %d";
-        $sql = $wpdb->prepare($sql, $order);
-        return $wpdb->get_row($sql);
+        return $wpdb->get_row($wpdb->prepare($sql, $order));
     }
     
     public function getThankyouInstructions($order)

@@ -26,7 +26,7 @@ class SubscriptionDetails extends WP_List_Table
 
         $this->screen->render_screen_reader_content( 'heading_list' );
         ?>
-        <table class="wp-list-table <?php echo implode( ' ', $this->get_table_classes() ); ?>">
+        <table class="wp-list-table <?php echo esc_attr(implode( ' ', $this->get_table_classes() )); ?>">
             <?php $this->print_table_description(); ?>
             <thead>
             <tr>
@@ -37,11 +37,9 @@ class SubscriptionDetails extends WP_List_Table
             <tbody id="the-list"
                 <?php
                 if ( $singular ) {
-                    $singular = esc_attr( $singular );
-                    echo " data-wp-lists='list:$singular'";
+                    ?> data-wp-lists="list:<?= esc_attr($singular) ?>"<?php
                 }
-                ?>
-            >
+                ?>>
             <?php $this->display_rows_or_placeholder(); ?>
             </tbody>
         </table>
