@@ -1,0 +1,39 @@
+name: PHP_CodeSniffer
+
+on:
+  push:
+    branches: [ feature/186959925-codeImprov ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  phpcs:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer, cs2pr
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHP_CodeSniffer
+        uses: php-actions/phpcs@v4
+        with:
+          standard: WordPress
+
+      - name: Generate report
+        uses: php-actions/report-phpcs@v1
+
+      - name: Upload report
+        uses: actions/upload-artifact@v2
+        with:
+          name: phpcs-report
+          path: ./report
