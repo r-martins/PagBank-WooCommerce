@@ -24,6 +24,7 @@
         "ext-json": "*"
     },
     "require-dev": {
-        "yoast/phpunit-polyfills": "^2.0"
+        "yoast/phpunit-polyfills": "^2.0",
+        "squizlabs/php_codesniffer": "*"
     }
 }
