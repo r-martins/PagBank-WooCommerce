@@ -35,7 +35,7 @@ $discountText = Params::getDiscountText('pix');
     <?php echo wp_kses($text, 'strong'); ?>
     <?php if ($isCartRecurring) :?>
         <p class="form-row form-row-wide">
-            <?php echo $recHelper->getRecurringTermsFromCart('pix');?>
+            <?php echo wp_kses($recHelper->getRecurringTermsFromCart('pix'), 'strong');?>
         </p>
     <?php endif;?>
     <?php if ($hasDiscount): ?>

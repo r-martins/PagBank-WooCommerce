@@ -138,7 +138,7 @@ class Api
                 'error',
                 ['request' => $params, 'endpoint' => $endpoint]
             );
-            throw new Exception('Resposta inválida da API: ' . $response);
+            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
         }
 
         Functions::log('Response from '.$endpoint.': ' . wp_json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');

@@ -98,7 +98,14 @@ class SubscriptionList extends WP_List_Table
             'total_pages' => ceil($total_items / $per_page)
         ]);
 
-        $this->items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d", $per_page, ($current_page - 1) * $per_page), ARRAY_A);
+        $this->items = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d",
+                $per_page,
+                ($current_page - 1) * $per_page
+            ),
+            ARRAY_A
+        );
     }
 
     public function get_sortable_columns()

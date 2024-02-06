@@ -105,7 +105,7 @@ class RecurringOrder
                 __('Erro ao decodificar informações de pagamento para processar assinatura.', Connect::DOMAIN),
                 'FAILURE'
             );
-            throw new Exception('Erro ao decodificar informações de pagamento para subscription ' . $subscription->id);
+            throw new Exception('Erro ao decodificar informações de pagamento para subscription ' . esc_attr($subscription->id));
         }
         
         $payment_method = $paymentInfo->method; 

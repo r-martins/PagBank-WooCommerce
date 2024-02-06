@@ -252,8 +252,9 @@ class Recurring
         $parentId = $order->get_parent_id('edit');
         $orderId = $parentId > 0 ? $parentId : $order->get_id();
         
-        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$orderId}";
-        $subscription = $wpdb->get_row($sql);
+        $table = $wpdb->prefix . 'pagbank_recurring';
+        $sql = "SELECT * FROM `$table` WHERE initial_order_id = 0%d";
+        $subscription = $wpdb->get_row($wpdb->prepare($sql, $orderId));
         if ( ! $subscription) return '#';
         return admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $subscription->id);
 

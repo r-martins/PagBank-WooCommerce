@@ -73,7 +73,7 @@ $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_f
         <?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
         <?php if ($isCartRecurring) :?>
             <p class="form-row form-row-wide">
-                <?php echo $recHelper->getRecurringTermsFromCart('creditcard');?>
+                <?php echo wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong');?>
             </p>
         <?php endif;?>
         <div class="clear"></div>
