@@ -6,6 +6,7 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use RM_PagBank\Connect;
+use WC_Admin_Settings;
 
 /**
  * Class Functions
@@ -138,5 +139,69 @@ class Functions
         }
         
         return $weightInKg;
+    }
+
+    /**
+     * Checks if the inputed discount value is a valid fixed or % discount value (used both in boleto and pix)
+     *
+     * @param $value
+     *
+     * @return float|int|string
+     */
+    public static function validateDiscountValue($value, $allowNegative = false)
+    {
+        if (empty($value)) {
+            return $value;
+        }
+
+        //remove spaces
+        $value = str_replace(' ', '', $value);
+        //replace comma with dot
+        $value = str_replace(',', '.', $value);
+
+        if (strpos($value, '%')) {
+            $value = str_replace('%', '', $value);
+
+            if (!is_numeric($value) || $value > 100 || (!$allowNegative && $value < 0)) {
+                $positive = $allowNegative ? '' : __('positivo', 'pagbank-connect');
+                WC_Admin_Settings::add_error(
+                    __(sprintf('O desconto deve ser um número %s ou percentual de 0 a 100.', $positive), 'pagbank-connect')
+                );
+
+                return '';
+            }
+
+            return $value.'%';
+        }
+
+        if (!is_numeric($value) || (!$allowNegative && $value < 0)) {
+            WC_Admin_Settings::add_error(
+                __('O desconto deve ser um número positivo ou percentual de 0 a 100', 'pagbank-connect')
+            );
+
+            return '';
+        }
+
+        return $value;
+    }
+
+    public static function applyPriceAdjustment($price, $adjustment)
+    {
+        if (empty($adjustment) || $adjustment === 0) {
+            return $price;
+        }
+
+        if (strpos($adjustment, '%')) {
+            $adjustment = str_replace('%', '', $adjustment);
+            if ($adjustment < 0) {
+                $price = $price - ($price * (abs($adjustment) / 100));
+            } else {
+                $price = $price + ($price * ($adjustment / 100));
+            }
+        } else {
+            $price = $price + $adjustment;
+        }
+
+        return round($price, 2);
     }
 }

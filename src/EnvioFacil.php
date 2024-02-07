@@ -76,72 +76,85 @@ class EnvioFacil extends WC_Shipping_Method
 	 *
 	 * @param array $package Package array.
 	 */
-	public function calculate_shipping($package = array()): array {
-		$destinationPostcode = $package['destination']['postcode'];
-		$destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
+    public function calculate_shipping($package = array()): array
+    {
+        $destinationPostcode = $package['destination']['postcode'];
+        $destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
 
-		$senderPostcode = $this->get_option('origin_postcode', get_option('woocommerce_store_postcode'));
-		$senderPostcode = preg_replace('/[^0-9]/', '', $senderPostcode);
+        $senderPostcode = $this->get_option('origin_postcode', get_option('woocommerce_store_postcode'));
+        $senderPostcode = preg_replace('/[^0-9]/', '', $senderPostcode);
 
-		$productValue = $package['contents_cost'];
+        $productValue = $package['contents_cost'];
 
-		$dimensions = $this->getDimensionsAndWeight($package);
+        $dimensions = $this->getDimensionsAndWeight($package);
 
-		$isValid = $this->validateDimensions($dimensions);
+        $isValid = $this->validateDimensions($dimensions);
 
-		if ( !$isValid || !$dimensions ) return [];
+        if (!$isValid || !$dimensions) {
+            return [];
+        }
 
-		//body
-		$params = [
-			'sender' => $senderPostcode,
-			'receiver' => $destinationPostcode,
-			'length' => $dimensions['length'],
-			'height' => $dimensions['height'],
-			'width' => $dimensions['width'],
-			'weight' => $dimensions['weight'],
-			'value' => max($productValue, 0.1)
-		];
-		$url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
-		$ret = wp_remote_get($url, [
-			'headers' => [
-				'Authorization' => 'Bearer ' . Params::getConfig('connect_key')
-			],
-			'timeout' => 10,
-			'sslverify' => false,
-			'httpversion' => '1.1'
-		]);
+        //body
+        $params = [
+            'sender' => $senderPostcode,
+            'receiver' => $destinationPostcode,
+            'length' => $dimensions['length'],
+            'height' => $dimensions['height'],
+            'width' => $dimensions['width'],
+            'weight' => $dimensions['weight'],
+            'value' => max($productValue, 0.1)
+        ];
+        $url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
+        $ret = wp_remote_get($url, [
+            'headers' => [
+                'Authorization' => 'Bearer '.Params::getConfig('connect_key'),
+            ],
+            'timeout' => 10,
+            'sslverify' => false,
+            'httpversion' => '1.1'
+        ]);
 
 
-		if (is_wp_error($ret)) {
-			return [];
-		}
-		$ret = wp_remote_retrieve_body($ret);
-		$ret = json_decode($ret, true);
+        if (is_wp_error($ret)) {
+            return [];
+        }
+        $ret = wp_remote_retrieve_body($ret);
+        $ret = json_decode($ret, true);
 
-		if (isset($ret['error_messages'])) {
-			Functions::log('Erro ao calcular o frete: ' . print_r($ret['error_messages'], true), 'debug');
-			return [];
-		}
+        if (isset($ret['error_messages'])) {
+            Functions::log('Erro ao calcular o frete: '.print_r($ret['error_messages'], true), 'debug');
 
-		foreach ($ret as $provider) {
-			if (!isset($provider['provider']) || !isset($provider['providerMethod'])
-				|| !isset($provider['contractValue'])) {
-				continue;
-			}
+            return [];
+        }
 
-			$rate = array(
-				'id' => 'ef-' . $provider['provider'],
-				'label' => $provider['provider'] . ' - ' . $provider['providerMethod'] . sprintf(__(' - %d dias úteis', 'pagbank-connect'), $provider['estimateDays']),
-				'cost' => $provider['contractValue'],
-				'calc_tax' => 'per_order'
-			);
+        foreach ($ret as $provider) {
+            if (!isset($provider['provider']) || !isset($provider['providerMethod'])
+                || !isset($provider['contractValue'])) {
+                continue;
+            }
 
-			if ( ! $rate['cost'] )
-				continue;
+            $addDays = $this->get_option('add_days', 0);
+            $provider['estimateDays'] += $addDays;
+            
+            $adjustment = $this->get_option('adjustment_fee', 0);
+            $provider['contractValue'] = Functions::applyPriceAdjustment($provider['contractValue'], $adjustment);
+            $rate = array(
+                'id'       => 'ef-'.$provider['provider'],
+                'label'    => $provider['provider'].' - '.$provider['providerMethod'].sprintf(
+                    __(' - %d dias úteis', 'pagbank-connect'),
+                    $provider['estimateDays']
+                ),
+                'cost'     => $provider['contractValue'],
+                'calc_tax' => 'per_order',
+            );
 
-			$this->add_rate( $rate );
-		}
-		return [];
+            if (!$rate['cost']) {
+                continue;
+            }
+
+            $this->add_rate($rate);
+        }
+        return [];
 	}
 
 	/**
@@ -226,27 +239,47 @@ class EnvioFacil extends WC_Shipping_Method
 		return true;
 	}
 
-	public function init_form_fields()
-	{
-		$this->form_fields = [
-			'enabled'            => [
-				'title'   => __( 'Habilitar', 'pagbank-connect' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Habilitar', 'pagbank-connect' ),
-				'default' => 'no',
-			],
-			'origin_postcode'    => [
-				'title'       => __( 'CEP de Origem', 'pagbank-connect' ),
-				'type'        => 'text',
-				'description' => __( 'CEP de onde suas mercadorias serão enviadas. '
-					.'Se não informado, o CEP da loja será utilizado.', 'pagbank-connect' ),
-				'desc_tip'    => true,
-				'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
-				'default'     => $this->getBasePostcode(),
-			],
-		];
+    public function init_form_fields()
+    {
+        $this->form_fields = [
+            'enabled'         => [
+                'title'   => __('Habilitar', 'pagbank-connect'),
+                'type'    => 'checkbox',
+                'label'   => __('Habilitar', 'pagbank-connect'),
+                'default' => 'no',
+            ],
+            'origin_postcode' => [
+                'title'       => __('CEP de Origem', 'pagbank-connect'),
+                'type'        => 'text',
+                'description' => __(
+                    'CEP de onde suas mercadorias serão enviadas. '.'Se não informado, o CEP da loja será utilizado.',
+                    'pagbank-connect'
+                ),
+                'desc_tip'    => true,
+                'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
+                'default'     => $this->getBasePostcode(),
+            ],
+            'adjustment_fee'    => [
+                'title'       => __('Ajuste de preço', 'pagbank-connect'),
+                'type'        => 'text',
+                'description' => __(
+                    'Acrescente ou remova um valor fixo ou percentual do frete. <br/>' .
+                    'Use o sinal de menos para descontar. <br/>Adicione o símbolo % para um valor percentual.',
+                    'pagbank-connect'
+                ),
+                'placeholder' => __('% ou fixo, positivo ou negativo', 'pagbank-connect'),
+                'desc_tip'    => true,
+            ],
+            'add_days' => [
+                'title'       => __('Adicionar', 'pagbank-connect'),
+                'type'        => 'number',
+                'description' => __('dias à estimativa do frete.', 'pagbank-connect'),
+                'desc_tip'    => false,
+                'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
+            ],
+        ];
 
-	}
+    }
 
 	/**
 	 * Get base postcode.
@@ -273,11 +306,26 @@ class EnvioFacil extends WC_Shipping_Method
 			echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
 		}
 		echo wp_kses_post( wpautop( $this->get_method_description() ) );
-		echo esc_html(__('Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>', 'pagbank-connect'));
-		echo '<p>' . esc_html(__('⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do frete. Faça suas simulações antes. ;)', 'pagbank-connect')) . '</p>';
-		echo '<p><a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce" target="_blank">' . esc_html(__('Ver documentação ↗', 'pagbank-connect')) . '</a>' . '</p>';
-		echo $this->get_admin_options_html(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
-	}
+        echo wp_kses(
+            __(
+                'Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas '
+                .'credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>',
+                'pagbank-connect'
+            ),
+            'strong'
+        );
+        echo '<p>'.esc_html(
+                __(
+                    '⚠️ Use com cautela. Este serviço usa uma API desencorajada pelo PagBank para o cálculo do'
+                    .' frete. Faça suas simulações antes. ;)',
+                    'pagbank-connect'
+                )
+            ).'</p>';
+        echo '<p><a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-'
+            .'Envio-F%C3%A1cil-com-WooCommerce" target="_blank">'
+            .esc_html(__('Ver documentação ↗', 'pagbank-connect')).'</a>'.'</p>';
+        echo $this->get_admin_options_html(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
+    }
 
 	/**
 	 * Validates if the method can be enabled with the configured connect key
@@ -288,8 +336,8 @@ class EnvioFacil extends WC_Shipping_Method
 	 * @noinspection PhpUnused
 	 * @noinspection PhpUnusedParameterInspection
 	 */
-	public function validate_enabled_field(string $value): string
-	{
+    public function validate_enabled_field(string $value) : string
+    {
 		// We can't rely on the passed $value here, because WordPress always sends 'enabled' as value
 		$value = filter_input(INPUT_POST, 'woocommerce_'. $this->id . '_enabled', FILTER_SANITIZE_STRING);
 		$value = $value == '1' ? 'yes' : 'no';
@@ -308,6 +356,17 @@ class EnvioFacil extends WC_Shipping_Method
 
 		return $value;
 	}
+
+    public function validate_adjustment_fee_field($key, $value) {
+        return Functions::validateDiscountValue($value, true);
+    }
+    
+    public function validate_add_days_field($key, $value) {
+        if ($value === '') {
+            return '';
+        }
+        return absint($value);
+    }
 
 	public function init_settings()
 	{

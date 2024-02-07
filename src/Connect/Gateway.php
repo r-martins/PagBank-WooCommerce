@@ -287,41 +287,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
     }
 
-	/**
-	 * Checks if the inputed discount value is a valid fixed or % discount value (used both in boleto and pix)
-	 * @param $value
-	 *
-	 * @return float|int|string
-	 */
-	public function validateDiscountValue($value)
-    {
-        if (empty($value)){
-            return $value;
-        }
-
-        //remove spaces
-        $value = str_replace(' ', '', $value);
-        //replace comma with dot
-        $value = str_replace(',', '.', $value);
-
-        if (strpos($value, '%')){
-            $value = str_replace('%', '', $value);
-
-            if (!is_numeric($value) || $value < 0 || $value > 100) {
-                WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100.', 'pagbank-connect'));
-                return '';
-            }
-            return $value . '%';
-        }
-
-        if (!is_numeric($value) || $value < 0 ) {
-            WC_Admin_Settings::add_error(__('O desconto deve ser um número positivo ou percentual de 0 a 100', 'pagbank-connect'));
-            return '';
-        }
-        return $value;
-    }
-
-	/**
+    /**
 	 * Validates PIX discount field
 	 *
 	 * @param $key
@@ -332,7 +298,7 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return float|int|string
 	 */
 	public function validate_pix_discount_field($key, $value){
-        return $this->validateDiscountValue($value);
+        return Functions::validateDiscountValue($value);
     }
 
 	/**
@@ -346,7 +312,7 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return float|int|string
 	 */
 	public function validate_boleto_discount_field($key, $value){
-        return $this->validateDiscountValue($value);
+        return Functions::validateDiscountValue($value);
     }
 
     /**
