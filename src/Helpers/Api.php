@@ -132,7 +132,7 @@ class Api
 		$response = wp_remote_retrieve_body($response);
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            $response = $response === '' ? __('"Resposta vazia"', Connect::DOMAIN) : $response;
+            $response = $response === '' ? __('"Resposta vazia"', 'pagbank-connect') : $response;
             Functions::log(
                 'Resposta inválida da API: '.$response,
                 'error',

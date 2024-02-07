@@ -25,8 +25,8 @@ if ( ! class_exists( 'CanceledSubscription', false ) ) :
 		 */
 		public function __construct() {
 			$this->id             = 'pagbank_canceled_sub';
-			$this->title          = __( 'PagBank - Assinatura Cancelada', Connect::DOMAIN );
-			$this->description    = __( 'Email enviado quando uma assinatura é cancelada.', Connect::DOMAIN );
+			$this->title          = __( 'PagBank - Assinatura Cancelada', 'pagbank-connect' );
+			$this->description    = __( 'Email enviado quando uma assinatura é cancelada.', 'pagbank-connect' );
             $this->template_base  = WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/';
 			$this->template_html  = 'emails/canceled-subscription.php';
 			$this->template_plain = 'emails/plain/canceled-subscription.php';
@@ -53,7 +53,7 @@ if ( ! class_exists( 'CanceledSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_subject() {
-			return $this->format_string(__( '[{site_title}]: Sua assinatura #{subscription_number} foi cancelada.', Connect::DOMAIN ));
+			return $this->format_string(__( '[{site_title}]: Sua assinatura #{subscription_number} foi cancelada.', 'pagbank-connect' ));
 		}
 
 		/**
@@ -63,7 +63,7 @@ if ( ! class_exists( 'CanceledSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_heading() {
-			return __( 'Assinatura Cancelada: #{subscription_number}', Connect::DOMAIN );
+			return __( 'Assinatura Cancelada: #{subscription_number}', 'pagbank-connect' );
 		}
 
 		/**
@@ -148,7 +148,7 @@ if ( ! class_exists( 'CanceledSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_additional_content() {
-			return __( 'Obrigado pela preferência.', Connect::DOMAIN );
+			return __( 'Obrigado pela preferência.', 'pagbank-connect' );
 		}
 
 		/**

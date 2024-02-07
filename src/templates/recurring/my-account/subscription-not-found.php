@@ -11,7 +11,7 @@
 defined( 'ABSPATH' ) || exit;
 /** @var stdClass $subscription */
 ?>
-<?php _e('Assinatura não encontrada', RM_PagBank\Connect::DOMAIN) ?>
+<?php _e('Assinatura não encontrada', 'pagbank-connect') ?>
 <br/>
 <!--wordpress button to go back-->
 <a href="<?php echo wc_get_endpoint_url( 'rm-pagbank-subscriptions' ); ?>" class="woocommerce-button button wc-backward"><?php _e( 'Voltar', 'woocommerce' ); ?></a>

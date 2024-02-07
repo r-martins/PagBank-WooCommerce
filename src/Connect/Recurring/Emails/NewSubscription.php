@@ -26,8 +26,8 @@ if ( ! class_exists( 'NewSubscription', false ) ) :
 		 */
 		public function __construct() {
 			$this->id             = 'pagbank_new_sub';
-			$this->title          = __( 'PagBank - Nova Assinatura', Connect::DOMAIN );
-			$this->description    = __( 'Email enviado quando uma assinatura é criada.', Connect::DOMAIN );
+			$this->title          = __( 'PagBank - Nova Assinatura', 'pagbank-connect' );
+			$this->description    = __( 'Email enviado quando uma assinatura é criada.', 'pagbank-connect' );
             $this->template_base  = WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/';
 			$this->template_html  = 'emails/new-subscription.php';
 			$this->template_plain = 'emails/plain/new-subscription.php';
@@ -53,7 +53,7 @@ if ( ! class_exists( 'NewSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_subject() {
-			return __( '[{site_title}]: Sua assinatura #{id} foi criada.', Connect::DOMAIN );
+			return __( '[{site_title}]: Sua assinatura #{id} foi criada.', 'pagbank-connect' );
 		}
 
 		/**
@@ -63,7 +63,7 @@ if ( ! class_exists( 'NewSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_heading() {
-			return __( 'Assinatura Criada: #{id}', Connect::DOMAIN );
+			return __( 'Assinatura Criada: #{id}', 'pagbank-connect' );
 		}
 
 		/**
@@ -148,7 +148,7 @@ if ( ! class_exists( 'NewSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_additional_content() {
-			return __( 'Obrigado pela preferência.', Connect::DOMAIN );
+			return __( 'Obrigado pela preferência.', 'pagbank-connect' );
 		}
 
 		/**

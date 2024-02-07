@@ -4,30 +4,30 @@ use RM_PagBank\Connect;
 
 return array(
 	'recurring_enabled'            => [
-        'title'       => __( 'Habilitar', Connect::DOMAIN),
-        'label'       => __( 'Habilitar', Connect::DOMAIN ),
+        'title'       => __( 'Habilitar', 'pagbank-connect'),
+        'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
         'default'     => 'no'
 	],
 	'recurring_payments'  => [
-        'title'       => __( 'Meios de Pagamento Aceitos', Connect::DOMAIN ),
+        'title'       => __( 'Meios de Pagamento Aceitos', 'pagbank-connect' ),
         'type'        => 'multiselect',
         'class' => 'recurring_attr',
 		'default' => 'cc',
 		'options'	=> [
-			'cc' => __('Cartão de Crédito', Connect::DOMAIN),
+			'cc' => __('Cartão de Crédito', 'pagbank-connect'),
 //          Coming soon
-//			'pix' => __('PIX', Connect::DOMAIN),
-//			'boleto' => __('Boleto', Connect::DOMAIN),
+//			'pix' => __('PIX', 'pagbank-connect'),
+//			'boleto' => __('Boleto', 'pagbank-connect'),
 		]
 	],
 //  Coming soon
 //	'recurring_notice_days' => [
-//		'title'       => __( 'Notificar X dias antes', Connect::DOMAIN ),
+//		'title'       => __( 'Notificar X dias antes', 'pagbank-connect' ),
 //		'type'        => 'number',
 //        'visible'     => false,
-//		'description' => __( 'Quantos dias antes do vencimento da assinatura o cliente deve ser notificado por e-mail? (Válido para Boleto e Pix)', Connect::DOMAIN ),
+//		'description' => __( 'Quantos dias antes do vencimento da assinatura o cliente deve ser notificado por e-mail? (Válido para Boleto e Pix)', 'pagbank-connect' ),
 //		'default'     => 3,
 //		'custom_attributes' => [
 //			'min' => 1,
@@ -35,14 +35,14 @@ return array(
 //		],
 //	],
     'recurring_process_frequency' => [
-        'title'       => __( 'Frequência de Processamento', Connect::DOMAIN ),
+        'title'       => __( 'Frequência de Processamento', 'pagbank-connect' ),
         'type'        => 'select',
-        'description' => __( 'Com que frequência o plugin deve verificar se há pagamentos recorrentes a serem processados?', Connect::DOMAIN ),
+        'description' => __( 'Com que frequência o plugin deve verificar se há pagamentos recorrentes a serem processados?', 'pagbank-connect' ),
         'default'     => 'hourly',
         'options'     => [
-            'hourly' => __( 'A cada hora', Connect::DOMAIN ),
-            'twicedaily' => __( 'Duas vezes ao dia', Connect::DOMAIN ),
-            'daily' => __( 'Diariamente', Connect::DOMAIN ),
+            'hourly' => __( 'A cada hora', 'pagbank-connect' ),
+            'twicedaily' => __( 'Duas vezes ao dia', 'pagbank-connect' ),
+            'daily' => __( 'Diariamente', 'pagbank-connect' ),
         ],
     ],
 );

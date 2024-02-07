@@ -33,11 +33,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
 
 <?php /* translators: %s: Customer first name */ ?>
-<p><?php printf( esc_html__( 'Olá %s,', Connect::DOMAIN ), esc_html( $order->get_billing_first_name() ) ); ?></p>
+<p><?php printf( esc_html__( 'Olá %s,', 'pagbank-connect' ), esc_html( $order->get_billing_first_name() ) ); ?></p>
     <p><?php echo sprintf(
             esc_html(
                 'Sua assinatura #%d foi criada com sucesso. Veja alguns detalhes da sua assinatura abaixo:',
-                Connect::DOMAIN
+                'pagbank-connect'
             ),
             $subscription->id
         ); ?></p>
@@ -66,7 +66,7 @@ do_action( 'woocommerce_email_customer_details', $order, $sent_to_admin, $plain_
 <p><?php echo sprintf(
         esc_html(
             'Sua próxima cobrança acontecerá em %s.',
-            Connect::DOMAIN
+            'pagbank-connect'
         ),
         wp_date('d/m/Y', strtotime($subscription->next_bill_at))
     ); ?></p>

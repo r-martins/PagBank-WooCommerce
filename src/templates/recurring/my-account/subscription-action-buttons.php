@@ -26,28 +26,28 @@ $cancelURL = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=can
 $cancelURL .= $isAdminEndpoint ? '&fromAdmin=1' : '';
 $actions = apply_filters('rm_pagbank_account_recurring_actions', [
     'cancel' => [
-        'name' => __('Cancelar Assinatura', RM_PagBank\Connect::DOMAIN),
+        'name' => __('Cancelar Assinatura', 'pagbank-connect'),
         'url' => $cancelURL,
         'class' => 'subscription-button cancel',
     ],
     'uncancel' => [
-        'name' => __('Suspender Cancelamento', RM_PagBank\Connect::DOMAIN),
+        'name' => __('Suspender Cancelamento', 'pagbank-connect'),
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=uncancel&id=' . $subscription->id,
         'class' => 'subscription-button uncancel',
     ],
     'pause' => [
-        'name' => __('Pausar Assinatura', RM_PagBank\Connect::DOMAIN),
+        'name' => __('Pausar Assinatura', 'pagbank-connect'),
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pause&id=' . $subscription->id,
         'class' => 'subscription-button suspend',
     ],
     'unpause' => [
-        'name' => __('Resumir Assinatura', RM_PagBank\Connect::DOMAIN),
+        'name' => __('Resumir Assinatura', 'pagbank-connect'),
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id,
         'class' => 'subscription-button suspend',
     ],
     // Coming soon
     /*'update' => [
-        'name' => __('Atualizar Cartão', RM_PagBank\Connect::DOMAIN),
+        'name' => __('Atualizar Cartão', 'pagbank-connect'),
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=update&id=' . $subscription->id,
         'class' => 'subscription-button update',
     ]*/

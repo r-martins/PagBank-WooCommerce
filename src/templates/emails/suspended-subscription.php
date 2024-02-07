@@ -38,11 +38,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
 
 <?php /* translators: %s: Customer first name */ ?>
-    <p><?php printf(esc_html__('Olá %s,', Connect::DOMAIN), esc_html($order->get_billing_first_name())); ?></p>
+    <p><?php printf(esc_html__('Olá %s,', 'pagbank-connect'), esc_html($order->get_billing_first_name())); ?></p>
     <p><?php echo sprintf(
             esc_html(
                 'Sua assinatura #%d foi suspensa.',
-                Connect::DOMAIN
+                'pagbank-connect'
             ),
             $subscription->id
         ); ?></p>
@@ -53,7 +53,7 @@ do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
         echo sprintf(
             esc_html(
                 'Razão: %s.',
-                Connect::DOMAIN
+                'pagbank-connect'
             ),
             $subscription->suspended_reason
         ); ?></p>

@@ -26,8 +26,8 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 */
 		public function __construct() {
 			$this->id             = 'pagbank_canceled_sub';
-			$this->title          = __( 'PagBank - Assinatura Pausada', Connect::DOMAIN );
-			$this->description    = __( 'Email enviado quando uma assinatura é pausada.', Connect::DOMAIN );
+			$this->title          = __( 'PagBank - Assinatura Pausada', 'pagbank-connect' );
+			$this->description    = __( 'Email enviado quando uma assinatura é pausada.', 'pagbank-connect' );
             $this->template_base  = WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/';
 			$this->template_html  = 'emails/paused-subscription.php';
 			$this->template_plain = 'emails/plain/paused-subscription.php';
@@ -56,7 +56,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 */
 		public function get_default_subject() {
             return $this->format_string(
-                __('[{site_title}]: Sua assinatura #{id} foi pausada.', Connect::DOMAIN)
+                __('[{site_title}]: Sua assinatura #{id} foi pausada.', 'pagbank-connect')
             );
 		}
 
@@ -67,7 +67,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_heading() {
-			return $this->format_string(__( 'Assinatura Pausada: #{id}', Connect::DOMAIN ));
+			return $this->format_string(__( 'Assinatura Pausada: #{id}', 'pagbank-connect' ));
 		}
 
 		/**
@@ -152,7 +152,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_additional_content() {
-			return __( 'Obrigado pela preferência.', Connect::DOMAIN );
+			return __( 'Obrigado pela preferência.', 'pagbank-connect' );
 		}
 
 		/**

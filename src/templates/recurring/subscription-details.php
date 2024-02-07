@@ -27,13 +27,13 @@ wc_print_notices();
 <section class="woocommerce-order-details">
     <?php do_action( 'rm_pagbank_recurring_details_before_subscription_table', $subscription ); ?>
    
-    <h2 class="woocommerce-order-details__title"><?php esc_html_e( 'Detalhes da Assinatura', RM_PagBank\Connect::DOMAIN ); ?></h2>
+    <h2 class="woocommerce-order-details__title"><?php esc_html_e( 'Detalhes da Assinatura', 'pagbank-connect' ); ?></h2>
 
     <table class="woocommerce-table woocommerce-table--order-details shop_table order_details">
 
         <thead>
         <tr>
-            <th class="woocommerce-table__product-name product-name"><?php esc_html_e( 'Informações de Pagamento', RM_PagBank\Connect::DOMAIN ); ?></th>
+            <th class="woocommerce-table__product-name product-name"><?php esc_html_e( 'Informações de Pagamento', 'pagbank-connect' ); ?></th>
             <th class="woocommerce-table__product-table product-total">&nbsp;</th>
         </tr>
         </thead>
@@ -47,55 +47,55 @@ wc_print_notices();
         
         <tfoot>
             <tr>
-                <th scope="row"><?php _e('Valor da assinatura', RM_PagBank\Connect::DOMAIN)?></th>
+                <th scope="row"><?php _e('Valor da assinatura', 'pagbank-connect')?></th>
                 <td><?php echo wc_price( $subscription->recurring_amount );?></td>
             </tr>
             <tr>
-                <th scope="row"><?php _e('Status', RM_PagBank\Connect::DOMAIN)?></th>
+                <th scope="row"><?php _e('Status', 'pagbank-connect')?></th>
                 <td><?php echo Recurring::getFriendlyStatus($subscription->status);?></td>
             </tr>
             <tr>
-                <th scope="row"><?php _e('Cobrança', RM_PagBank\Connect::DOMAIN)?></th>
+                <th scope="row"><?php _e('Cobrança', 'pagbank-connect')?></th>
                 <td><?php echo Recurring::getFriendlyType($subscription->recurring_type);?></td>
             </tr>
             <?php if ( in_array($subscription->status, ['ACTIVE', 'PENDING', 'SUSPENDED']) ): ?>
                 <tr>
-                    <th scope="row"><?php _e('Próxima Cobrança', RM_PagBank\Connect::DOMAIN)?></th>
+                    <th scope="row"><?php _e('Próxima Cobrança', 'pagbank-connect')?></th>
                     <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
                 </tr>
             <?php endif;?>
 
             <?php if ( in_array($subscription->status, ['CANCELED']) ): ?>
                 <tr>
-                    <th scope="row"><?php _e('Cancelada em', RM_PagBank\Connect::DOMAIN)?></th>
+                    <th scope="row"><?php _e('Cancelada em', 'pagbank-connect')?></th>
                     <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->canceled_at));?></td>
                 </tr>
             <?php endif;?>
 
             <?php if ( in_array($subscription->status, ['PAUSED']) ): ?>
                 <tr>
-                    <th scope="row"><?php _e('Pausada em', RM_PagBank\Connect::DOMAIN)?></th>
+                    <th scope="row"><?php _e('Pausada em', 'pagbank-connect')?></th>
                     <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->paused_at));?></td>
                 </tr>
             <?php endif;?>
 
             <?php if ( ! empty($subscription->canceled_reason) ): ?>
                 <tr>
-                    <th scope="row"><?php _e('Razão do Cancelamento', RM_PagBank\Connect::DOMAIN)?></th>
+                    <th scope="row"><?php _e('Razão do Cancelamento', 'pagbank-connect')?></th>
                     <td><?php echo esc_html($subscription->canceled_reason);?></td>
                 </tr>
             <?php endif;?>
 
             <?php if ( $subscription->status == 'PENDING_CANCEL' ): ?>
                 <tr>
-                    <th scope="row"><?php _e('Assinatura será cancelada em', RM_PagBank\Connect::DOMAIN)?></th>
+                    <th scope="row"><?php _e('Assinatura será cancelada em', 'pagbank-connect')?></th>
                     <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
                 </tr>
             <?php endif;?>
 
             <?php if ( ! empty($subscription->suspended_reason) ): ?>
                 <tr>
-                    <th scope="row"><?php _e('Razão da Suspensão', RM_PagBank\Connect::DOMAIN)?></th>
+                    <th scope="row"><?php _e('Razão da Suspensão', 'pagbank-connect')?></th>
                     <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->suspended_reason));?></td>
                 </tr>
             <?php endif;?>

@@ -33,11 +33,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
 
 <?php /* translators: %s: Customer first name */ ?>
-<p><?php printf( esc_html__( 'Olá %s,', Connect::DOMAIN ), esc_html( $order->get_billing_first_name() ) ); ?></p>
+<p><?php printf( esc_html__( 'Olá %s,', 'pagbank-connect' ), esc_html( $order->get_billing_first_name() ) ); ?></p>
     <p><?php echo sprintf(
             esc_html(
                 'Sua assinatura #%d foi pausada. A próxima cobrança que ocorreria em %s não acontecerá. Quando desejar, você pode retomar sua assinatura a qualquer momento ou data.',
-                Connect::DOMAIN
+                'pagbank-connect'
             ),
             $subscription->id,
             wp_date('d/m/Y', strtotime($subscription->next_bill_at))

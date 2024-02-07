@@ -17,46 +17,46 @@ class Recurring
     {
         switch ($status) {
             case 'ACTIVE':
-                return __('Ativo', Connect::DOMAIN);
+                return __('Ativo', 'pagbank-connect');
             case 'PAUSED':
-                return __('Pausado', Connect::DOMAIN);
+                return __('Pausado', 'pagbank-connect');
             case 'PENDING_CANCEL':
-                return __('Cancelamento Pendente', Connect::DOMAIN);
+                return __('Cancelamento Pendente', 'pagbank-connect');
             case 'SUSPENDED':
-                return __('Suspenso', Connect::DOMAIN);
+                return __('Suspenso', 'pagbank-connect');
             case 'PENDING':
-                return __('Pendente', Connect::DOMAIN);
+                return __('Pendente', 'pagbank-connect');
             case 'CANCELED':
-                return __('Cancelado', Connect::DOMAIN);
+                return __('Cancelado', 'pagbank-connect');
             default:
-                return __('Desconhecido', Connect::DOMAIN);
+                return __('Desconhecido', 'pagbank-connect');
         }
     }
     
     public static function getAllStatuses()
     {
         return [
-            'ACTIVE' => __('Ativo', Connect::DOMAIN),
-            'PAUSED' => __('Pausado', Connect::DOMAIN),
-            'PENDING_CANCEL' => __('Cancelamento Pendente', Connect::DOMAIN),
-            'SUSPENDED' => __('Suspenso', Connect::DOMAIN),
-            'PENDING' => __('Pendente', Connect::DOMAIN),
-            'CANCELED' => __('Cancelado', Connect::DOMAIN),];
+            'ACTIVE' => __('Ativo', 'pagbank-connect'),
+            'PAUSED' => __('Pausado', 'pagbank-connect'),
+            'PENDING_CANCEL' => __('Cancelamento Pendente', 'pagbank-connect'),
+            'SUSPENDED' => __('Suspenso', 'pagbank-connect'),
+            'PENDING' => __('Pendente', 'pagbank-connect'),
+            'CANCELED' => __('Cancelado', 'pagbank-connect'),];
     }
 
     public static function getFriendlyType($type): string
     {
         switch (strtoupper($type)) {
             case 'DAILY':
-                return __('Diário', Connect::DOMAIN);
+                return __('Diário', 'pagbank-connect');
             case 'WEEKLY':
-                return __('Semanal', Connect::DOMAIN);
+                return __('Semanal', 'pagbank-connect');
             case 'MONTHLY':
-                return __('Mensal', Connect::DOMAIN);
+                return __('Mensal', 'pagbank-connect');
             case 'YEARLY':
-                return __('Anual', Connect::DOMAIN);
+                return __('Anual', 'pagbank-connect');
             default:
-                return __('Desconhecido', Connect::DOMAIN);
+                return __('Desconhecido', 'pagbank-connect');
         }
     }
 
@@ -130,11 +130,11 @@ class Recurring
     public function translateFrequency($frequency)
     {
         $available = [
-            'daily' => __('Diário', Connect::DOMAIN),
-            'weekly' => __('Semanal', Connect::DOMAIN),
-            'monthly' => __('Mensal', Connect::DOMAIN),
-            'yearly' => __('Anual', Connect::DOMAIN),
-            'default' => __('Desconhecido', Connect::DOMAIN)
+            'daily' => __('Diário', 'pagbank-connect'),
+            'weekly' => __('Semanal', 'pagbank-connect'),
+            'monthly' => __('Mensal', 'pagbank-connect'),
+            'yearly' => __('Anual', 'pagbank-connect'),
+            'default' => __('Desconhecido', 'pagbank-connect')
         ];
         
         if (in_array($frequency, array_keys($available)))
@@ -146,11 +146,11 @@ class Recurring
     public function translateFrequencyTermsPlural($frequency)
     {
         $available = [
-            'daily' => __('dias', Connect::DOMAIN),
-            'weekly' => __('semanas', Connect::DOMAIN),
-            'monthly' => __('meses', Connect::DOMAIN),
-            'yearly' => __('anos', Connect::DOMAIN),
-            'default' => __('desconhecido', Connect::DOMAIN)
+            'daily' => __('dias', 'pagbank-connect'),
+            'weekly' => __('semanas', 'pagbank-connect'),
+            'monthly' => __('meses', 'pagbank-connect'),
+            'yearly' => __('anos', 'pagbank-connect'),
+            'default' => __('desconhecido', 'pagbank-connect')
         ];
 
         if (in_array($frequency, array_keys($available)))
@@ -191,9 +191,9 @@ class Recurring
     public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
     {
         if (!$cart) $cart = WC()->cart;
-        $msg = __('O valor de R$ %s será cobrado %s.', Connect::DOMAIN);
+        $msg = __('O valor de R$ %s será cobrado %s.', 'pagbank-connect');
         $total = $cart->get_total('edit');
-        $frequency = __('mensalmente', Connect::DOMAIN);
+        $frequency = __('mensalmente', 'pagbank-connect');
         $initialFee = 0;
         //get cicle and frequency from the first recurring product
         foreach ($cart->get_cart() as $cartItem) {
@@ -206,40 +206,40 @@ class Recurring
                 if ($cycle == 1){
                     switch ($frequency){
                         case 'daily':
-                            $frequency = __('diariamente', Connect::DOMAIN);
+                            $frequency = __('diariamente', 'pagbank-connect');
                             break 2;
                         case 'weekly':
-                            $frequency = __('semanalmente', Connect::DOMAIN);
+                            $frequency = __('semanalmente', 'pagbank-connect');
                             break 2;
                         case 'monthly':
-                            $frequency = __('mensalmente', Connect::DOMAIN);
+                            $frequency = __('mensalmente', 'pagbank-connect');
                             break 2;
                         case 'yearly':
-                            $frequency = __('anualmente', Connect::DOMAIN);
+                            $frequency = __('anualmente', 'pagbank-connect');
                             break 2;
                     }
                 }
-                $frequency = sprintf(__('a cada %d %s', Connect::DOMAIN), $cycle, $this->translateFrequencyTermsPlural($frequency));
+                $frequency = sprintf(__('a cada %d %s', 'pagbank-connect'), $cycle, $this->translateFrequencyTermsPlural($frequency));
                 break;       
             }
         }
         $msg = sprintf($msg, wc_price($total), $frequency);
         $initialFee = $product->get_meta('_initial_fee');
         if ($initialFee > 0){
-            $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', Connect::DOMAIN), wc_price($initialFee)) . '</p>';;
+            $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', 'pagbank-connect'), wc_price($initialFee)) . '</p>';;
         }
         
         $recurringNoticeDays = (int)Params::getConfig('recurring_notice_days', 0);
         if ($paymentMethod != 'creditcard' && $recurringNoticeDays > 0){
             switch ($paymentMethod){
                 case 'pix':
-                    $msg .= '<p>' . sprintf(__('Um código PIX será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays) . '</p>';
+                    $msg .= '<p>' . sprintf(__('Um código PIX será enviado para seu e-mail %d dias antes de cada vencimento.', 'pagbank-connect'), $recurringNoticeDays) . '</p>';
                     break;
                 case 'boleto':
-                    $msg .= '<p>' . sprintf(__('Um novo boleto será enviado para seu e-mail %d dias antes de cada vencimento.', Connect::DOMAIN), $recurringNoticeDays) . '</p>';
+                    $msg .= '<p>' . sprintf(__('Um novo boleto será enviado para seu e-mail %d dias antes de cada vencimento.', 'pagbank-connect'), $recurringNoticeDays) . '</p>';
                     break;
             }
-            $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', Connect::DOMAIN);
+            $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', 'pagbank-connect');
         }
         
         return $msg;

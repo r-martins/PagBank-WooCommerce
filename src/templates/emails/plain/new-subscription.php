@@ -24,12 +24,12 @@ echo esc_html( wp_strip_all_tags( $email_heading ) );
 echo "\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n";
 
 /* translators: %s: Customer first name */
-echo sprintf( esc_html__( 'Olá %s,', Connect::DOMAIN ), esc_html( $order->get_billing_first_name() ) ) . "\n\n";
+echo sprintf( esc_html__( 'Olá %s,', 'pagbank-connect' ), esc_html( $order->get_billing_first_name() ) ) . "\n\n";
 /* translators: %s: Site title */
 echo sprintf(
     esc_html(
         'Sua assinatura #%d foi criada com sucesso. A próxima cobrança ocorrerá em %s.',
-        Connect::DOMAIN
+        'pagbank-connect'
     ),
     $subscription->id,
     wp_date('d/m/Y', strtotime($subscription->next_bill_at)) . "\n\n"

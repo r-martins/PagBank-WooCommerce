@@ -102,7 +102,7 @@ class RecurringOrder
         if (json_last_error() !== JSON_ERROR_NONE) {
             $recurring->cancelSubscription(
                 $subscription->id,
-                __('Erro ao decodificar informações de pagamento para processar assinatura.', Connect::DOMAIN),
+                __('Erro ao decodificar informações de pagamento para processar assinatura.', 'pagbank-connect'),
                 'FAILURE'
             );
             throw new Exception('Erro ao decodificar informações de pagamento para subscription ' . esc_attr($subscription->id));
@@ -180,7 +180,7 @@ class RecurringOrder
                 //@TODO suspend subscription instead of cancelling
                 $recurring->cancelSubscription(
                     $subscription->id,
-                    __('Pagamento recusado durante a renovação da assinatura.', Connect::DOMAIN),
+                    __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect'),
                     'FAILURE'
                 );
             }
