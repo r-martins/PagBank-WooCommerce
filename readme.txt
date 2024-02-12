@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.3.1
+Stable tag: 4.4.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -136,6 +136,18 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.4.0 =
+* Agora é possível adicionar X dias ao cálculo de frete (Envio Fácil) 
+* Agora é possível ajustar o preço do frete de forma fixa ou percentual, como desconto ou acréscimo (Envio Fácil)
+* Redução de requisições ajax no checkout com 3d
+* Melhoria para contornar erro de credit_car_bin not found quando estamos testando em Sandbox (já que o PagBank não atualiza os cartões de teste).
+* Pequenos ajustes estéticos de código e espaçamentos, e conformidade com padrões do PCP.
+* Melhorias de segurança.
+* Correção de erro em payment_method.authentication_method.id invalid_parameter quando alguns pagamentos em 3D com parcelamento maior que 1 parcela era finalizado.
+* Corrige problema com exibição de validade do código pix quando era maior que 60 minutos e menos que 1 dia. Nesses cenários a validade do Pix não era informada ao cliente no frontend.
+* Corrigindo erro Call to undefined function wp_add_notice em alguns cenários no admin.
+* Melhoria em mensagens de erro de e-mail inválido, nome do titular do cartão inválido e cartão criptografado com problema.
 
 = 4.3.1 =
 * Correção em erro grave que eliminava CSS de várias páginas causando quebras de layout em vários cenários, mesmo onde o plugin não era inserido (Reportado por William T. e outros). O problema foi introduzido na versão 4.3.0.
