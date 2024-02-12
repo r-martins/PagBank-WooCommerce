@@ -283,26 +283,9 @@ jQuery(document).ready(function ($) {
             checkoutFormDataObj[field.name] = field.value;
         });
         let cartTotal;
-        $.ajax({
-            url: ajax_object.ajax_url,
-            method: 'POST',
-            async: false,
-            data: {
-                action: 'get_cart_total',
-                nonce: rm_pagbank_nonce,
-            },
-            success: (response)=>{
-                //convert to cents
-                cartTotal = parseInt(parseFloat(response.toString()).toFixed(2) * 100);
-            },
-            error: (response)=>{
-                alert('Erro ao obter o total do pedido. Verifique os logs em WooCommerce > Status > Logs ' +
-                    'para ver os possíveis problemas na obtenção do total do pedido.');
-                console.log('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
-                    'para ver os possíveis problemas na obtenção do total do pedido.');
-            }
-            
-        });
+        let selectedInstallments = $('#rm-pagbank-card-installments').val();
+        cartTotal = window.ps_cc_installments.find((installment, idx, installments) => installments[idx].installments == selectedInstallments ).total_amount
+        cartTotal = parseInt(parseFloat(cartTotal.toString()).toFixed(2) * 100);
 
         let expiryVal = $('#rm-pagbank-card-expiry').val();
         
@@ -348,7 +331,7 @@ jQuery(document).ready(function ($) {
                 dataOnly: false
             }
         }
-        
+        console.debug('PagBank 3DS Request Amount: ' + request.data.amount.value);
         //disable place order button
         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').block({
             message: 'Autenticação 3D em andamento', 
@@ -405,7 +388,7 @@ jQuery(document).ready(function ($) {
                     break;
             }
         }).catch((err) => {
-            if(err instanceof PagSeguro.PagSeguroError ) {
+            if (err instanceof PagSeguro.PagSeguroError ) {
                 console.error(err);
                 console.debug('PagBank: ' + err.detail);
                 let errMsgs = err.detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
@@ -416,7 +399,7 @@ jQuery(document).ready(function ($) {
         })
         //endregion
         
-       return false;
+        return false;
     });
     //endregion
 
@@ -526,6 +509,7 @@ jQuery(document.body).on('update_installments', ()=>{
                 option.text(text + additional_text);
                 select.append(option);
             }
+            window.ps_cc_installments = response;
         },
         error: (response)=>{
             alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');

@@ -647,8 +647,8 @@ class Gateway extends WC_Payment_Gateway_CC
         $order = wc_get_order($order_id);
         switch ($order->get_meta('pagbank_payment_method')) {
             case 'boleto':
-                    $method = new Boleto($order);
-                    break;
+                $method = new Boleto($order);
+                break;
             case 'pix':
                 $method = new Payments\Pix($order);
                 break;

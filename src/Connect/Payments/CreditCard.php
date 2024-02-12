@@ -68,7 +68,7 @@ class CreditCard extends Common
 		if ($paymentMethod->getInstallments() > 1)
 		{
 			$selectedInstallments = $paymentMethod->getInstallments();
-			$installments = Params::getInstallments($this->order->get_total(), $this->order->get_meta('_pagbank_card_first_digits'));
+			$installments = Params::getInstallments($this->order->get_total(), $this->order->get_meta('_pagbank_card_first_digits'));            
 			$installment = Params::extractInstallment($installments, $selectedInstallments);
 			if ($installment['fees']){
 				$interest = new Interest();
@@ -192,6 +192,7 @@ class CreditCard extends Common
                 400);
         }
         global $woocommerce;
+        Params::getInstallments(floatval($woocommerce->cart->get_total('edit')), intval($_POST['ccBin']));
         echo esc_html( $woocommerce->cart->get_total('edit') );
         wp_die();
     }

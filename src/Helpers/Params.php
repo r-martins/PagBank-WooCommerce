@@ -148,9 +148,14 @@ class Params
         $params['payment_methods'] = 'CREDIT_CARD';
         $params['value']  = self::convertToCents($orderTotal);
         $params['credit_card_bin'] = $bin;
+        
+        if (Params::getConfig('is_sandbox') == 'yes') {
+            $params['credit_card_bin'] = '555566'; //Because test credit card numbers are not accepted by the API
+        }
 
-        if ($mi = self::getMaxInstallments())
+        if ($mi = self::getMaxInstallments()) {
             $params['max_installments'] = $mi;
+        }
 
         $params['max_installments_no_interest'] = self::getMaxInstallmentsNoInterest($orderTotal);
 
@@ -210,8 +215,8 @@ class Params
 	 */
 	public static function extractInstallment($installments, $installmentNumber)
 	{
-		foreach ($installments as $installment){
-			if ($installment['installments'] == $installmentNumber){
+		foreach ($installments as $installment) {
+			if ($installment['installments'] == $installmentNumber) {
 				return $installment;
 			}
 		}

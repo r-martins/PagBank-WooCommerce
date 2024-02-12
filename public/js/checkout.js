@@ -38,6 +38,7 @@ jQuery(document).ready(function($) {
             'either paymentMethod.card.id or paymentMethod.card.encrypted should be informed': 'deve ser informado o cartão de crédito criptografado ou o id do cartão',
             'must be an integer number': 'deve ser um número inteiro',
             'card holder name must contain a first and last name': 'o nome do titular do cartão deve conter um primeiro e último nome',
+            'must be a well-formed email address': 'deve ser um endereço de e-mail válido',
         };
     
         const parameters = {
@@ -49,7 +50,8 @@ jQuery(document).ready(function($) {
             'paymentMethod.installments': 'parcelas',
             'billingAddress.country': 'país de cobrança',
             'paymentMethod.card': 'cartão de crédito',
-            'paymentMethod.card.encrypted': 'cartão de crédito criptografado'
+            'paymentMethod.card.encrypted': 'cartão de crédito criptografado',
+            'customer.email': 'e-mail',
         };
 
         // Get the code, description, and parameterName from the errorMessage object
