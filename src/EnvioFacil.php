@@ -275,7 +275,6 @@ class EnvioFacil extends WC_Shipping_Method
                 'type'        => 'number',
                 'description' => __('dias à estimativa do frete.', 'pagbank-connect'),
                 'desc_tip'    => false,
-                'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
             ],
         ];
 
