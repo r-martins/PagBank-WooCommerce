@@ -53,8 +53,8 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('woocommerce_thankyou_' . $this->id, [$this, 'addThankyouInstructions']);
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
-        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles']);
-        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts']);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
     }
@@ -471,32 +471,59 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * Add css file to admin
 	 * @return void
 	 */
-	public function addAdminStyles(){
+	public function addAdminStyles($hook){
         //admin pages
-        if (!is_admin())
+        if (!is_admin()) {
             return;
+        }
 
         wp_enqueue_style(
             'pagseguro-connect-admin-css',
             plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
         );
 
+        if ($hook == 'plugins.php') {
+            wp_enqueue_style(
+                'pagseguro-connect-deactivate',
+                plugins_url('public/css/admin/deactivate.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
+            );
+        }
     }
 
 	/**
 	 * Add js file to admin, only in the plugin settings page
 	 * @return void
 	 */
-	public function addAdminScripts(){
-        if(!is_admin())
+	public function addAdminScripts($hook){
+        if (!is_admin()) {
             return;
+        }
 
         global $current_section; //only when ?section=rm-pagbank (plugin config page)
-        if ($current_section == Connect::DOMAIN)
+        if ($current_section == Connect::DOMAIN) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
+        }
+        
+        if ($hook == 'plugins.php') {
+            $feedbackModal = file_get_contents(WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/feedback-modal.php');
+            wp_enqueue_script(
+                'pagbank-connect-deactivate',
+                plugins_url('public/js/admin/deactivate.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery', 'jquery-ui-dialog'],
+                WC_PAGSEGURO_CONNECT_VERSION,
+            );
+            wp_localize_script(
+                'pagbank-connect-deactivate',
+                'pagbankConnect',
+                ['feedbackModalHtml' => $feedbackModal]
+            );
+        }
+        
     }
 
 	/**
