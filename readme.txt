@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.4.1
+Stable tag: 4.4.2
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -136,6 +136,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.4.2 =
+* Correção: ao tentar finalizar pagamentos com Boleto usando CNPJ um erro 40002 era exibido. Reportado por Patrick (ctec).
 
 = 4.4.1 =
 * Melhoria: Quando o usuário começava a digitar um cartão, o sistema detectava a bandeira como Visa, mesmo que não fosse um cartão deste tipo. Só após o sexto dígito é que a bandeira correta era identificada. Reportado por Lucas Melo.
