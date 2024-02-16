@@ -125,11 +125,21 @@ class Common
 	{
         $address = new Address();
         $address->setStreet($this->order->get_shipping_address_1('edit'));
-        $address->setNumber($this->order->get_meta('_shipping_number'));
-        if( ! empty($this->order->get_meta('_shipping_complement')) )
-            $address->setComplement($this->order->get_meta('_shipping_complement'));
         
-        $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
+        //Usually virtual orders don't have shipping address' attributes replicated. So we use billing address instead.
+        $address->setNumber($this->order->get_meta('_billing_number'));
+        if (!empty($this->order->get_meta('_shipping_number'))) {
+            $address->setNumber($this->order->get_meta('_shipping_number'));
+        }
+        
+        if ( !empty($this->order->get_meta('_shipping_complement'))) {
+            $address->setComplement($this->order->get_meta('_shipping_complement'));
+        }
+
+        $address->setLocality($this->order->get_meta('_billing_neighborhood'));
+        if (!empty($this->order->get_meta('_shipping_neighborhood'))) {
+            $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
+        }
         
         $address->setCity($this->order->get_shipping_city('edit'));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
