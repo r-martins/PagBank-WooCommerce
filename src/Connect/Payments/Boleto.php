@@ -60,9 +60,16 @@ class Boleto extends Common
         $instruction_lines->setLine1(Params::getConfig('boleto_line_1', 'Não aceitar após vencimento'));
         $instruction_lines->setLine2(Params::getConfig('boleto_line_2', 'Obrigado por sua compra.'));
         $boleto->setInstructionLines($instruction_lines);
+
+        //cpf or cnpj
+        $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cpf'));
+        if (empty($taxId)) {
+            $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cnpj'));
+        }
+        
         $holder = new Holder();
         $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
-        $holder->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
+        $holder->setTaxId($taxId);
         $holder->setEmail($this->order->get_billing_email());
 
         $holderAddress = new Address();
