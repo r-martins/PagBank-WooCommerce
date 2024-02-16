@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.4.0
+Stable tag: 4.4.1
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -136,6 +136,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.4.1 =
+* Melhoria: Quando o usuário começava a digitar um cartão, o sistema detectava a bandeira como Visa, mesmo que não fosse um cartão deste tipo. Só após o sexto dígito é que a bandeira correta era identificada. Reportado por Lucas Melo.
+* Correção: Logo PagBank aparecia muito pequeno em dispositivos móveis. Reportado por Jhonny Robson
+* Correção: o campo de Adicionar X dias à estimativa de frete trazia o cep da loja como placeholder. (oops) Embora pudesse causar certa confusão, o valor não era somado (indevidamente) à estimativa.
+* Correção: em alguns cenários de compra de Produtos Virtuais, atributos de endereço de cobrança não eram repassados corretamente para o endereço de envio, ocasionando erro na finalização de compra (Bairro, Numero, etc). Reportado por Marcio Gazetta.
 
 = 4.4.0 =
 * Agora é possível adicionar X dias ao cálculo de frete (Envio Fácil) 
