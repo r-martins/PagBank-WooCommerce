@@ -85,6 +85,8 @@ class Connect
     {
         $plugin_links   = array();
         $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', 'pagbank-connect' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url( 'https://pagsegurotransparente.zendesk.com/hc/pt-br' ) . '" target="_blank">' . __( 'Documentação', 'pagbank-connect' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url( 'https://pagsegurotransparente.zendesk.com/hc/pt-br/requests/new' ) . '" target="_blank">' . __( 'Suporte', 'pagbank-connect' ) . '</a>';
 
         return array_merge( $plugin_links, $links );
     }

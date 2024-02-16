@@ -50,7 +50,7 @@
                 </li>
                 <!-- Adicione mais opções aqui -->
             </ul>
-            <input type="checkbox" name="autorizaContato"/>Gostaria de ser contatado para falar sobre isso.
+            <input type="checkbox" name="autorizaContato"/>Gostaria de ser contatado para falar sobre isso. <span class="dashicons dashicons-editor-help" title="Usaremos o e-mail do responsável técnico ou e-mail do usuário atual para entrar em contato com você."></span> 
         </div>
     </div>
     <div class="pagbank-feedback-footer">
