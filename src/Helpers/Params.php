@@ -281,7 +281,7 @@ class Params
 	{
         $discountConfig = self::getConfig($method . '_discount', 0);
         $discountType = self::getDiscountType($discountConfig);
-        if ( ! $discountType){
+        if ( ! $discountType || is_wc_endpoint_url('order-pay')) {
             return '';
         }
 
