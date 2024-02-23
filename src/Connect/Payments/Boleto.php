@@ -42,7 +42,7 @@ class Boleto extends Common
         $amount = new Amount();
         $orderTotal = $this->order->get_total();
 
-        if ($discountConfig = Params::getConfig('boleto_discount', 0)){
+        if (($discountConfig = Params::getConfig('boleto_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
             $discount = floatval(Params::getDiscountValue($discountConfig, $orderTotal));
             $this->order->set_discount_total(floatval($this->order->get_discount_total()) + $discount);
             $this->order->set_total($this->order->get_total() - $discount);
