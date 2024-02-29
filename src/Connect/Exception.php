@@ -75,6 +75,8 @@ class Exception extends \Exception
                 return 'authentication_method.id - ' . esc_html( __('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect') );
             case 'customer.name':
                 return esc_html( __('Nome do Cliente', 'pagbank-connect') );
+            case 'customer.email':
+                return esc_html( __('E-mail do Cliente', 'pagbank-connect') );
         }
         
         return $parameterName;
