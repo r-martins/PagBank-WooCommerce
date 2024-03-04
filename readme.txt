@@ -1,6 +1,6 @@
 === PagSeguro / PagBank Connect ===
 Contributors: martins56
-Tags: woocommerce, pagseguro, payment, pagbank, pix, boleto, visa, mastercard, cartão de crédito
+Tags: pagseguro,pagbank,pix,cartão de crédito,recorrência
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
@@ -38,7 +38,7 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 * Atualições automáticas de status de pedidos
 * Configure como quer exibir o nome da loja na fatura do cartão de crédito
 * Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
-
+* Suporte a [High-Performance Order Storage (HPOS)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
 
 
 == Installation ==

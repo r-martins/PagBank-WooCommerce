@@ -2,8 +2,10 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use Automattic\WooCommerce\Utilities\OrderUtil;
 use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Customer;
@@ -75,10 +77,12 @@ class Common
         $customer->setEmail($this->order->get_billing_email());
         
         //cpf or cnpj
-        $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cpf'));
+        $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cpf', 'billing_cpf');
         if (empty($taxId)) {
-            $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cnpj'));
+            $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cnpj', 'billing_cnpj');
         }
+        
+        $taxId = Params::removeNonNumeric($taxId);
         
         $customer->setTaxId($taxId);
         $phone = new Phone();
@@ -125,20 +129,39 @@ class Common
 	{
         $address = new Address();
         $address->setStreet($this->order->get_shipping_address_1('edit'));
-        
         //Usually virtual orders don't have shipping address' attributes replicated. So we use billing address instead.
-        $address->setNumber($this->order->get_meta('_billing_number'));
-        if (!empty($this->order->get_meta('_shipping_number'))) {
-            $address->setNumber($this->order->get_meta('_shipping_number'));
+        $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
+        $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_shipping_number', 'shipping_number');
+        $shippingComplement = Functions::getParamFromOrderMetaOrPost(
+            $this->order,
+            '_shipping_complement',
+            'shipping_complement'
+        );
+        $billingComplement = $this->order->get_billing_address_2('edit');
+        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
+            $this->order,
+            '_billing_neighborhood',
+            'billing_neighborhood'
+        );
+        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost(
+            $this->order,
+            '_shipping_neighborhood',
+            'shipping_neighborhood'
+        );
+        
+        $address->setNumber($billingNumber);
+        if (!empty($shippingNumber)) {
+            $address->setNumber($shippingNumber);
         }
         
-        if ( !empty($this->order->get_meta('_shipping_complement'))) {
-            $address->setComplement($this->order->get_meta('_shipping_complement'));
+        $address->setComplement($billingComplement);
+        if (!empty($shippingComplement)) {
+            $address->setComplement($shippingComplement);
         }
 
-        $address->setLocality($this->order->get_meta('_billing_neighborhood'));
-        if (!empty($this->order->get_meta('_shipping_neighborhood'))) {
-            $address->setLocality($this->order->get_meta('_shipping_neighborhood'));
+        $address->setLocality($billingNeighborhood);
+        if (!empty($shippingNeighborhood)) {
+            $address->setLocality($shippingNeighborhood);
         }
         
         $address->setCity($this->order->get_shipping_city('edit'));
