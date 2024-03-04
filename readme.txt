@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.4.4
+Stable tag: 4.5.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -136,6 +136,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.5.0 =
+* Adicionado suporte a HPOS (High-Performance Order Storage) para ambientes com este recurso ativado.
+* Correção de problemas relacionados aos campos de endereço quando HPOS está ativo.
+* Correção em erro 40002 quando o campo complemento de endereço não foi preenchido
 
 = 4.4.4 =
 * Correção: em alguns cenários, quando havia algum erro e o cliente tentava finalizar um pedido com cartão novamente, um erro 40002 em payment_method.card.encrypted era exibido
