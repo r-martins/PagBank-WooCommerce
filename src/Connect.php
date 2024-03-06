@@ -45,9 +45,23 @@ class Connect
         
         self::addPagBankMenu();
         
-        if (Params::getConfig('recurring_enabled')){
+        if (Params::getConfig('recurring_enabled')) {
             $recurring = new Connect\Recurring();
             $recurring->init();
+        }
+        
+        //if pix enabled
+        if (Params::getConfig('pix_enabled')) {
+            //region cron to cancel expired pix non-paid payments
+            add_action('rm_pagbank_cron_cancel_expired_pix', [__CLASS__, 'cancelExpiredPix']);
+            if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
+                wp_schedule_event(
+                    time(),
+                    'hourly',
+                    'rm_pagbank_cron_cancel_expired_pix'
+                );
+            }
+            //endregion
         }
     }
 
@@ -65,7 +79,6 @@ class Connect
      */
     public static function includes()
     {
-        
     }
 
     /**
@@ -216,6 +229,75 @@ class Connect
     {
         $timestamp = wp_next_scheduled('rm_pagbank_cron_process_recurring_payments');
         wp_unschedule_event($timestamp, 'rm_pagbank_cron_process_recurring_payments');
+    }
+    
+    public static function cancelExpiredPix()
+    {
+        //list all orders with pix payment method and status pending created longer than configured expiry time
+        $expiryMinutes = Params::getConfig('pix_expiry_minutes');
+        
+        $daysAgo = 180; //we don't need orders older than 180 days (pix can't have a longer expiry date)
+        $newerThanDate = gmdate('Y-m-d H:i:s', strtotime("-$daysAgo days"));
+        $olderThanDate = gmdate('Y-m-d H:i:s', strtotime("-$expiryMinutes minutes"));
+
+        $olderOrders = wc_get_orders([
+            'limit' => -1,
+            'status' => 'pending',
+            'date_created' => '<' . $olderThanDate,
+            'meta_query' => [
+                'relation' => 'AND',
+                [
+                    'key' => 'pagbank_payment_method',
+                    'value' => 'pix',
+                ],
+                [
+                    'key' => 'pagbank_payment_method',
+                    'compare' => 'EXISTS',
+                ]
+            ]
+        ]);
+
+        $newerOrders = wc_get_orders([
+            'limit' => -1,
+            'status' => 'pending',
+            'date_created' => '>' . $newerThanDate,
+            'meta_query' => [
+                'relation' => 'AND',
+                [
+                    'key' => 'pagbank_payment_method',
+                    'value' => 'pix',
+                ],
+                [
+                    'key' => 'pagbank_payment_method',
+                    'compare' => 'EXISTS',
+                ]
+            ]
+        ]);
+
+        // Extract the IDs from the order objects
+        $olderOrderIds = array_map(function ($order) {
+            return $order->get_id();
+        }, $olderOrders);
+
+        $newerOrderIds = array_map(function ($order) {
+            return $order->get_id();
+        }, $newerOrders);
+
+        // Find the intersection of the two arrays
+        $commonOrders = array_intersect($olderOrderIds, $newerOrderIds);
+
+        if (defined('SAVEQUERIES') && SAVEQUERIES) {
+            Functions::log(print_r($GLOBALS['wpdb']->queries, true), 'debug');
+        }
+        
+        foreach ($commonOrders as $order) {
+            //cancel order
+            $order = wc_get_order($order);
+            $order->update_status(
+                'cancelled',
+                __('PagBank: Pix expirou e o pagamento não foi identificado.', 'pagbank-connect')
+            );
+        }
     }
 
     private static function addPagBankMenu()
