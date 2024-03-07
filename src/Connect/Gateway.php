@@ -337,9 +337,9 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public static function addStyles($styles){
-        wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
-        wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
-        
+//        wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
+//        wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
+//        
         //thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             $styles['pagseguro-connect-pix'] = [
@@ -351,23 +351,23 @@ class Gateway extends WC_Payment_Gateway_CC
             ];
         }
 
-        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
-            $styles['pagseguro-connect-checkout'] = [
-                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                'deps'    => [],
-                'version' => WC_PAGSEGURO_CONNECT_VERSION,
-                'media'   => 'all',
-                'has_rtl' => false,
-            ];
-
-            
-            wp_add_inline_style(
-                'pagbank-connect-inline-css', apply_filters(
-                    'pagbank-connect-inline-css',
-                    '.ps-button svg{ fill: ' . Params::getConfig('icons_color', 'gray') . '};'
-                )
-            );
-        }
+//        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
+//            $styles['pagseguro-connect-checkout'] = [
+//                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+//                'deps'    => [],
+//                'version' => WC_PAGSEGURO_CONNECT_VERSION,
+//                'media'   => 'all',
+//                'has_rtl' => false,
+//            ];
+//
+//            
+//            wp_add_inline_style(
+//                'pagbank-connect-inline-css', apply_filters(
+//                    'pagbank-connect-inline-css',
+//                    '.ps-button svg{ fill: ' . Params::getConfig('icons_color', 'gray') . '};'
+//                )
+//            );
+//        }
         return $styles;
     }
     
