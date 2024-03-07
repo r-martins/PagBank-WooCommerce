@@ -236,63 +236,31 @@ class Connect
         //list all orders with pix payment method and status pending created longer than configured expiry time
         $expiryMinutes = Params::getConfig('pix_expiry_minutes');
         
-        $daysAgo = 180; //we don't need orders older than 180 days (pix can't have a longer expiry date)
-        $newerThanDate = gmdate('Y-m-d H:i:s', strtotime("-$daysAgo days"));
-        $olderThanDate = gmdate('Y-m-d H:i:s', strtotime("-$expiryMinutes minutes"));
+        $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
 
-        $olderOrders = wc_get_orders([
-            'limit' => -1,
-            'status' => 'pending',
-            'date_created' => '<' . $olderThanDate,
-            'meta_query' => [
-                'relation' => 'AND',
-                [
-                    'key' => 'pagbank_payment_method',
-                    'value' => 'pix',
-                ],
-                [
-                    'key' => 'pagbank_payment_method',
-                    'compare' => 'EXISTS',
-                ]
-            ]
-        ]);
-
-        $newerOrders = wc_get_orders([
-            'limit' => -1,
-            'status' => 'pending',
-            'date_created' => '>' . $newerThanDate,
-            'meta_query' => [
-                'relation' => 'AND',
-                [
-                    'key' => 'pagbank_payment_method',
-                    'value' => 'pix',
-                ],
-                [
-                    'key' => 'pagbank_payment_method',
-                    'compare' => 'EXISTS',
-                ]
-            ]
-        ]);
-
-        // Extract the IDs from the order objects
-        $olderOrderIds = array_map(function ($order) {
-            return $order->get_id();
-        }, $olderOrders);
-
-        $newerOrderIds = array_map(function ($order) {
-            return $order->get_id();
-        }, $newerOrders);
-
-        // Find the intersection of the two arrays
-        $commonOrders = array_intersect($olderOrderIds, $newerOrderIds);
-
-        if (defined('SAVEQUERIES') && SAVEQUERIES) {
-            Functions::log(print_r($GLOBALS['wpdb']->queries, true), 'debug');
-        }
+        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
+            if (isset($query_vars['meta_query'])) {
+                $meta_query = $wp_query_args['meta_query'] ?? [];
+                $wp_query_args['meta_query'] = array_merge($meta_query, $query_vars['meta_query']);
+            }
+            return $wp_query_args;
+        }, 10, 2);
         
-        foreach ($commonOrders as $order) {
+        $expiredOrders = wc_get_orders([
+            'limit' => -1,
+            'status' => 'pending',
+            'date_created' => '<' . $expiredDate,
+            'meta_query' => [
+                [
+                    'key' => 'pagbank_payment_method',
+                    'value' => 'pix',
+                    'compare' => '='
+                ]
+            ]
+        ]);
+
+        foreach ($expiredOrders as $order) {
             //cancel order
-            $order = wc_get_order($order);
             $order->update_status(
                 'cancelled',
                 __('PagBank: Pix expirou e o pagamento não foi identificado.', 'pagbank-connect')
