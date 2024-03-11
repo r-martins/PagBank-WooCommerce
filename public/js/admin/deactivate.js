@@ -19,13 +19,40 @@ jQuery(document).ready(function($) {
             "Cancel": function() {
                 $(this).dialog("close");
             }
+        },
+        open: function() {
+            $(this).attr('style', '');
         }
     });
     
     $('#the-list').on('click', '#deactivate-pagbank-connect', function(e) {
+        window.pagbank_deactivate_event = e;
         e.preventDefault();
-        var deactivateUrl = $(this).attr('href');
+        window.pagbank_deactivate_url = $(this).attr('href');
         feedbackModal.dialog('open');
+    });
+    
+    $('.pagbank-feedback-footer .button-deactivate').on('click', function(e) {
+       //serialize form and send an ajax request
+         e.preventDefault();
+         var feedbackData = jQuery('#pagbank-feedback-form').serialize()
+            $.ajax({
+                type: 'POST',
+                url: ajaxurl,
+                data: {
+                    action: 'ps_deactivate_feedback',
+                    feedback: feedbackData,
+                    nonce: pagbankFeedbackFormNonce
+                },
+                success: function(response) {
+                    console.log(response);
+                }
+            })
+            .always(function() {
+                feedbackModal.dialog('close');
+                window.location.href = window.pagbank_deactivate_url;
+            })   ;
+         
     });
     
 });

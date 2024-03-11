@@ -517,6 +517,10 @@ class Gateway extends WC_Payment_Gateway_CC
                 ['jquery', 'jquery-ui-dialog'],
                 WC_PAGSEGURO_CONNECT_VERSION,
             );
+            wp_add_inline_script(
+                'pagbank-connect-deactivate',
+                'var pagbankFeedbackFormNonce = "' . wp_create_nonce('pagbank_connect_send_feedback') . '";'
+            );
             wp_localize_script(
                 'pagbank-connect-deactivate',
                 'pagbankConnect',

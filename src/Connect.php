@@ -33,6 +33,7 @@ class Connect
         add_action('woocommerce_api_rm_ps_notif', [__CLASS__, 'notification']);
         add_action('wp_ajax_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
+        add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
 
         // Load plugin files
         self::includes();
@@ -231,6 +232,43 @@ class Connect
     {
         $timestamp = wp_next_scheduled('rm_pagbank_cron_process_recurring_payments');
         wp_unschedule_event($timestamp, 'rm_pagbank_cron_process_recurring_payments');
+    }
+    
+    public static function deactivateFeedback()
+    {
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'pagbank_connect_send_feedback')) {
+            wp_send_json_error([
+                'error' => __(
+                    'Chave de formulário inválida. '
+                    .'Recarregue a página e tente novamente.',
+                    'pagbank-connect'
+                ),
+            ],
+                400);
+        }
+        parse_str($_REQUEST['feedback'], $formData);
+        
+        if (isset($formData['selected-reason'])) {
+            $reason = $formData['selected-reason'];
+            $openTicket = $formData['autorizaContato'] ?? false;
+            $siteUrl = get_site_url();
+            
+            /** @var WP_User $currentUser */
+            $currentUser = wp_get_current_user();
+            $email = $currentUser->user_email;
+
+            //https://docs.google.com/forms/d/e/1FAIpQLSd4cTW1fWcFZwhJmoICTVc9--rEggj-aJMAqpxv6KFf9dIOjw/formResponse?&submit=Submit?usp=pp_url&entry.160403419=Quebrou+layout&entry.581422256=foo@bar.com&entry.1295704444=https://uol.com.br&entry.715814172=Sim
+            $url = 'https://docs.google.com/forms/d/e/1FAIpQLSd4cTW1fWcFZwhJmoICTVc9--rEggj-aJMAqpxv6KFf9dIOjw/formResponse?&submit=Submit?usp=pp_url';
+            $params = http_build_query([
+                'entry.160403419' => $reason,
+                'entry.581422256' => $email,
+                'entry.1295704444' => $siteUrl,
+                'entry.715814172' => $openTicket ? 'Sim' : 'Não',
+                'entry.1095777573' => Params::getConfig('connect_key'),
+            ]);
+            $ok = wp_remote_get($url . '&' . $params);
+        }
+        
     }
     
     public static function cancelExpiredPix()
