@@ -45,9 +45,23 @@ class Connect
         
         self::addPagBankMenu();
         
-        if (Params::getConfig('recurring_enabled')){
+        if (Params::getConfig('recurring_enabled')) {
             $recurring = new Connect\Recurring();
             $recurring->init();
+        }
+        
+        //if pix enabled
+        if (Params::getConfig('pix_enabled')) {
+            //region cron to cancel expired pix non-paid payments
+            add_action('rm_pagbank_cron_cancel_expired_pix', [__CLASS__, 'cancelExpiredPix']);
+            if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
+                wp_schedule_event(
+                    time(),
+                    'hourly',
+                    'rm_pagbank_cron_cancel_expired_pix'
+                );
+            }
+            //endregion
         }
     }
 
@@ -65,7 +79,6 @@ class Connect
      */
     public static function includes()
     {
-        
     }
 
     /**
@@ -218,6 +231,43 @@ class Connect
     {
         $timestamp = wp_next_scheduled('rm_pagbank_cron_process_recurring_payments');
         wp_unschedule_event($timestamp, 'rm_pagbank_cron_process_recurring_payments');
+    }
+    
+    public static function cancelExpiredPix()
+    {
+        //list all orders with pix payment method and status pending created longer than configured expiry time
+        $expiryMinutes = Params::getConfig('pix_expiry_minutes');
+        
+        $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
+
+        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
+            if (isset($query_vars['meta_query'])) {
+                $meta_query = $wp_query_args['meta_query'] ?? [];
+                $wp_query_args['meta_query'] = array_merge($meta_query, $query_vars['meta_query']);
+            }
+            return $wp_query_args;
+        }, 10, 2);
+        
+        $expiredOrders = wc_get_orders([
+            'limit' => -1,
+            'status' => 'pending',
+            'date_created' => '<' . $expiredDate,
+            'meta_query' => [
+                [
+                    'key' => 'pagbank_payment_method',
+                    'value' => 'pix',
+                    'compare' => '='
+                ]
+            ]
+        ]);
+
+        foreach ($expiredOrders as $order) {
+            //cancel order
+            $order->update_status(
+                'cancelled',
+                __('PagBank: Pix expirou e o pagamento não foi identificado.', 'pagbank-connect')
+            );
+        }
     }
 
     private static function addPagBankMenu()

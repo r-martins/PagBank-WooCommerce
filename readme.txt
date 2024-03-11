@@ -1,11 +1,11 @@
 === PagSeguro / PagBank Connect ===
 Contributors: martins56
-Tags: woocommerce, pagseguro, payment, pagbank, pix, boleto, visa, mastercard, cartão de crédito
+Tags: pagseguro,pagbank,pix,cartão de crédito,recorrência
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.4.0
+Stable tag: 4.5.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -38,7 +38,7 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 * Atualições automáticas de status de pedidos
 * Configure como quer exibir o nome da loja na fatura do cartão de crédito
 * Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
-
+* Suporte a [High-Performance Order Storage (HPOS)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
 
 
 == Installation ==
@@ -136,6 +136,28 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.5.0 =
+* Adicionado suporte a HPOS (High-Performance Order Storage) para ambientes com este recurso ativado.
+* Correção de problemas relacionados aos campos de endereço quando HPOS está ativo.
+* Correção em erro 40002 quando o campo complemento de endereço não foi preenchido
+
+= 4.4.4 =
+* Correção: em alguns cenários, quando havia algum erro e o cliente tentava finalizar um pedido com cartão novamente, um erro 40002 em payment_method.card.encrypted era exibido
+* Melhoria em mensagem específica de erro quando o e-mail do cliente está incorreto
+
+
+= 4.4.3 =
+* Correção: ao tentar pagar um pedido novamente descontos de PIX ou Boleto eram re-aplicados. Reportado por Fabio (Kaizen digital) e Igor Onofri.
+
+= 4.4.2 =
+* Correção: ao tentar finalizar pagamentos com Boleto usando CNPJ um erro 40002 era exibido. Reportado por Patrick (ctec).
+
+= 4.4.1 =
+* Melhoria: Quando o usuário começava a digitar um cartão, o sistema detectava a bandeira como Visa, mesmo que não fosse um cartão deste tipo. Só após o sexto dígito é que a bandeira correta era identificada. Reportado por Lucas Melo.
+* Correção: Logo PagBank aparecia muito pequeno em dispositivos móveis. Reportado por Jhonny Robson
+* Correção: o campo de Adicionar X dias à estimativa de frete trazia o cep da loja como placeholder. (oops) Embora pudesse causar certa confusão, o valor não era somado (indevidamente) à estimativa.
+* Correção: em alguns cenários de compra de Produtos Virtuais, atributos de endereço de cobrança não eram repassados corretamente para o endereço de envio, ocasionando erro na finalização de compra (Bairro, Numero, etc). Reportado por Marcio Gazetta.
 
 = 4.4.0 =
 * Agora é possível adicionar X dias ao cálculo de frete (Envio Fácil) 

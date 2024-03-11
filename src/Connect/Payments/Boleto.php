@@ -42,7 +42,7 @@ class Boleto extends Common
         $amount = new Amount();
         $orderTotal = $this->order->get_total();
 
-        if ($discountConfig = Params::getConfig('boleto_discount', 0)){
+        if (($discountConfig = Params::getConfig('boleto_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
             $discount = floatval(Params::getDiscountValue($discountConfig, $orderTotal));
             $this->order->set_discount_total(floatval($this->order->get_discount_total()) + $discount);
             $this->order->set_total($this->order->get_total() - $discount);
@@ -60,9 +60,16 @@ class Boleto extends Common
         $instruction_lines->setLine1(Params::getConfig('boleto_line_1', 'Não aceitar após vencimento'));
         $instruction_lines->setLine2(Params::getConfig('boleto_line_2', 'Obrigado por sua compra.'));
         $boleto->setInstructionLines($instruction_lines);
+
+        //cpf or cnpj
+        $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cpf'));
+        if (empty($taxId)) {
+            $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cnpj'));
+        }
+        
         $holder = new Holder();
         $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
-        $holder->setTaxId(Params::removeNonNumeric($this->order->get_meta('_billing_cpf')));
+        $holder->setTaxId($taxId);
         $holder->setEmail($this->order->get_billing_email());
 
         $holderAddress = new Address();

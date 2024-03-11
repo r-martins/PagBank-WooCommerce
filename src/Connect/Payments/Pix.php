@@ -33,7 +33,7 @@ class Pix extends Common
         $amount = new Amount();
         $orderTotal = $this->order->get_total();
 
-        if ($discountConfig = Params::getConfig('pix_discount', 0)){
+        if (($discountConfig = Params::getConfig('pix_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
             $discount = Params::getDiscountValue($discountConfig, $orderTotal);
             $this->order->set_discount_total(floatval($this->order->get_discount_total()) + $discount);
             $this->order->set_total($this->order->get_total() - $discount);

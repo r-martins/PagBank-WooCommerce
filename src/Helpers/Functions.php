@@ -7,6 +7,7 @@ use DateTimeZone;
 use Exception;
 use RM_PagBank\Connect;
 use WC_Admin_Settings;
+use WC_Order;
 
 /**
  * Class Functions
@@ -203,5 +204,28 @@ class Functions
         }
 
         return round($price, 2);
+    }
+
+    /**
+     * Get a parameter from the order meta or from the $_POST array if not present
+     *
+     * @param WC_Order $order
+     * @param          $metaParam
+     * @param          $postParam
+     * @param          $default
+     *
+     * @return array|mixed|string|null
+     */
+    public static function getParamFromOrderMetaOrPost(WC_Order $order, $metaParam, $postParam, $default = '')
+    {
+        if ($order->get_meta($metaParam)) {
+            return $order->get_meta($metaParam);
+        }
+
+        if (isset($_POST[$postParam])) {
+            return sanitize_text_field(wp_unslash(($_POST[$postParam])));
+        }
+
+        return $default;
     }
 }

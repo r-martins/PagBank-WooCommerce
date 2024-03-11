@@ -27,7 +27,12 @@ class Address implements JsonSerializable
 
     public function jsonSerialize()
     {
-        return get_object_vars($this);
+        $vars = get_object_vars($this);
+        if (empty($vars['complement'])) {
+            unset($vars['complement']);
+        }
+        
+        return $vars;
     }
 
     public function setStreet(string $street)
