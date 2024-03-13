@@ -35,7 +35,12 @@ jQuery(document).ready(function($) {
     $('.pagbank-feedback-footer .button-deactivate').on('click', function(e) {
        //serialize form and send an ajax request
          e.preventDefault();
-         var feedbackData = jQuery('#pagbank-feedback-form').serialize()
+        var selectedReason = jQuery('input[name="selected-reason"]:checked').val();
+        if (!selectedReason) {
+            window.location.href = window.pagbank_deactivate_url;
+            return true;
+        }
+        var feedbackData = jQuery('#pagbank-feedback-form').serialize()
             $.ajax({
                 type: 'POST',
                 url: ajaxurl,

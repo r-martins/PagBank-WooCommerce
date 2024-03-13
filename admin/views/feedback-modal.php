@@ -55,8 +55,8 @@
             </form>
         </div>
         <div class="pagbank-feedback-footer">
-            <a href="#" class="button button-secondary button-deactivate allow-deactivate">Deactivate</a>
-            <a href="#" class="button button-primary button-close">Cancel</a>
+            <a href="#" class="button button-secondary button-deactivate allow-deactivate">Desativar</a>
+            <a href="#" class="button button-primary button-close">Cancelar</a>
         </div>
     </div>
 </div>
