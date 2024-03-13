@@ -5,11 +5,11 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.5.0
+Stable tag: 4.6.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
-PIX, Cartão de Crédito, Boleto + Envio Fácil e ainda economize nas taxas oficiais do PagSeguro.
+PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
 
 Autenticação 3D: menos chargeback e mais aprovações.
 
@@ -21,6 +21,17 @@ Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Ca
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
 Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
+
+Além disso, você também pode aceitar pagamentos recorrentes e criar clubes de assinatura sem depender de plugins de terceiros.
+
+https://www.youtube.com/watch?v=FOPwBTRryNM
+
+
+**Problemas com aprovação de pagamentos e chargebacks em transações com cartão de crédito?**
+
+Nossa integração suporta [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a taxa de aprovação.
+
+Tudo pra você vender mais sem sequer precisar se preocupar em contratar um serviço de antifraude.
 
 https://www.youtube.com/watch?v=eN_WaK-1SQc
 
@@ -136,6 +147,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.6.0 =
+* Pedidos PIX agora são cancelados automaticamente após periodo de expiração se não forem pagos
+* Em alguns checkouts com plugins personalizados (ex: cartflows) o CSS de nosso plugin não era inserido corretamente, ocasionando quebra de layout e ignorando as cores dos ícones configuradas.
+* Ao desativar nosso plugin, agora exibimos uma pergunta sobre o motivo da desativação, para que possamos melhorar o plugin.
 
 = 4.5.0 =
 * Adicionado suporte a HPOS (High-Performance Order Storage) para ambientes com este recurso ativado.
