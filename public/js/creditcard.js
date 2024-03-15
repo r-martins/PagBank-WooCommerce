@@ -238,7 +238,11 @@ jQuery(document).ready(function ($) {
             $('form.woocommerce-checkout').trigger('submit');
             return true;
         }
-       
+        
+        if (encryptCard() === false){
+            return false;
+        }
+        
        //if 3ds is not enabled, continue
         if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
             isSubmitting = true;
@@ -260,10 +264,6 @@ jQuery(document).ready(function ($) {
             session: pagseguro_connect_3d_session,
             env: pagseguro_connect_environment,
         });
-
-        if (encryptCard() === false){
-            return false;
-        }
        
         var checkoutFormData = $(this).serializeArray();
         // Convert the form data to an object
