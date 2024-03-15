@@ -5,13 +5,13 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 4.6.0
+Stable tag: 4.6.1
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
 
-Autenticação 3D: menos chargeback e mais aprovações.
+Autenticação 3D: menos chargeback e mais aprovações
 
 == Description ==
 
@@ -147,6 +147,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.6.1 =
+* Correção: quando o cliente digitava um cartão inválido ou incompleto e tentava finalizar o pedido, ocasionando falha na criptografia do cartão, o pedido ainda era submetido para o backend e gerando outros erros desnecessários, especialmente se outros campos também estivessem errados ou faltando. O mais clássico era o erro 40002 de encrypted_card.id incorreto.
+* Correção: ao desativar e ativar novamente o plugin, um erro de SQL era gerado internamente devido a um bug no WordPress e uma mensagem de que o plugin teria gerado cerca de 1400 caracteres de saída inesperada durante a ativação era exibida no backend.
 
 = 4.6.0 =
 * Pedidos PIX agora são cancelados automaticamente após periodo de expiração se não forem pagos
