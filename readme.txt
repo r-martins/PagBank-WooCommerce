@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro,pagbank,pix,cartão de crédito,recorrência
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 6.4
+Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.6.1
+Stable tag: 4.6.2
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -147,6 +147,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.6.2 =
+* Adicionado suporte ao WooCommerce 6.5
+* Adicionado dependencia do plugin Brazilian Market on WooCommerce, evitando erros de campos obrigatórios em algumas lojas
+* Pequenas melhorias de segurança (wp standards compliance)
 
 = 4.6.1 =
 * Correção: quando o cliente digitava um cartão inválido ou incompleto e tentava finalizar o pedido, ocasionando falha na criptografia do cartão, o pedido ainda era submetido para o backend e gerando outros erros desnecessários, especialmente se outros campos também estivessem errados ou faltando. O mais clássico era o erro 40002 de encrypted_card.id incorreto.

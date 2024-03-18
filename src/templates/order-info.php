@@ -11,13 +11,14 @@ if ($order->get_meta('pagbank_payment_method') == ''){
 	return;
 }
 $charge_id = $order->get_meta('pagbank_charge_id');
+$wpKsesSvg = ['svg'  => ['xmlns'   => [], 'width'   => [], 'height'  => [], 'viewbox' => [], 'version' => [],], 'path' => ['d' => [],],];
 ?>
 <p class="form-field form-field-wide">
-    <img src="<?php echo plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)?>" style="width: 100px; height: auto; margin-right: 10px; float: left;" alt="PagBank Logo"/>
+    <img src="<?php echo wp_kses(plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), $wpKsesSvg);?>" style="width: 100px; height: auto; margin-right: 10px; float: left;" alt="PagBank Logo"/>
 	<?php if($order->get_meta('pagbank_is_sandbox') == 1):?>
         <span class="sandbox-label">
         <span class="sandbox-icon"></span>
-        <span class="sandbox" title="<?php _e('Ambiente de Testes', 'pagbank-connect')?>"><?php echo __('Sandbox', 'pagbank-connect')?></span>
+        <span class="sandbox" title="<?php esc_attr_e('Ambiente de Testes', 'pagbank-connect')?>"><?php esc_html_e('Sandbox', 'pagbank-connect')?></span>
     </span>
     <?php endif;?>
     

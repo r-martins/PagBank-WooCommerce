@@ -17,7 +17,7 @@ $isCartRecurring = $recHelper->isCartRecurring();
 <p class="instructions">
     <?php echo wp_kses($this->get_option('boleto_instructions'), 'strong'); ?>
     <br/>
-    <?php echo sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', esc_attr($expiry), 'pagbank-connect' ), esc_attr($expiry) ); ?>
+    <?php echo esc_html(sprintf( _n( 'Seu boleto vencerá amanhã.', 'Seu boleto vence em %d dias.', esc_attr($expiry), 'pagbank-connect' ), esc_attr($expiry) )); ?>
     <?php if ($isCartRecurring) :?>
         <p class="form-row form-row-wide">
             <?php echo wp_kses($recHelper->getRecurringTermsFromCart('boleto'), 'strong');?>
