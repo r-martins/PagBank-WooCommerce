@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.6.2
+Stable tag: 4.6.3
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -63,6 +63,11 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 * Faça upload dos arquivos na pasta /wp-content/plugins/pagbank-connect, usando seu FTP
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
 * Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+
+=== A gente instala pra você ===
+Se você preferir, podemos instalar e configurar o plugin para você sem nenhum custo.
+
+[Saiba mais](https://pagseguro.ricardomartins.net.br/woocommerce/agenteinstala.html).
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -147,6 +152,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.6.3 =
+* Melhoria/Correção: quando determinada configuracao do php era realizada, os ícones dos meios de pagamento não eram exibidos. Reportado por Daniel Carvalho.
 
 = 4.6.2 =
 * Adicionado suporte ao WooCommerce 6.5
