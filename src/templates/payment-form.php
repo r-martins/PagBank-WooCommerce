@@ -45,17 +45,17 @@ $wpKsesSvg = ['svg'  => ['xmlns'   => [], 'width'   => [], 'height'  => [], 'vie
 <div class="ps-connect-buttons-container">
     <?php if ($isCcEnabledAndHealthy):?>
         <button type="button" class="ps-button <?php echo isset($active['cc']) ? 'active' : ''?>" id="btn-pagseguro-cc" title="<?php esc_attr_e('Cartão de Crédito', 'pagbank-connect');?>">
-			<?php echo wp_kses(file_get_contents(plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)), $wpKsesSvg)?>
+			<?php echo wp_kses(file_get_contents(plugin_dir_path(WC_PAGSEGURO_CONNECT_PLUGIN_FILE) . 'public/images/cc.svg'), $wpKsesSvg)?>
 		</button>
     <?php endif;?>
     <?php if ($pixEnabled):?>
         <button type="button" class="ps-button <?php echo isset($active['pix']) ? 'active' : ''?>" id="btn-pagseguro-pix" title="<?php esc_attr_e('PIX', 'pagbank-connect');?>">
-            <?php echo wp_kses(file_get_contents(plugins_url('public/images/pix.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)), $wpKsesSvg)?>
+            <?php echo wp_kses(file_get_contents(plugin_dir_path(WC_PAGSEGURO_CONNECT_PLUGIN_FILE) . 'public/images/pix.svg'), $wpKsesSvg)?>
 		</button>
     <?php endif;?>
     <?php if ($boletoEnabled):?>
         <button type="button" class="ps-button <?php echo isset($active['boleto']) ? 'active' : ''?>" id="btn-pagseguro-boleto" title="<?php esc_attr_e('Boleto', 'pagbank-connect');?>">
-            <?php echo wp_kses(file_get_contents(plugins_url('public/images/boleto.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)), $wpKsesSvg)?>
+            <?php echo wp_kses(file_get_contents(plugin_dir_path(WC_PAGSEGURO_CONNECT_PLUGIN_FILE) . 'public/images/boleto.svg'), $wpKsesSvg)?>
 		</button>
     <?php endif;?>
 </div>
