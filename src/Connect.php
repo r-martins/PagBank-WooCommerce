@@ -310,8 +310,13 @@ class Connect
         foreach ($expiredOrders as $order) {
             //cancel order
             $order->update_status(
-                'cancelled',
-                __('PagBank: Pix expirou e o pagamento não foi identificado.', 'pagbank-connect')
+                'cancelled'                
+            );
+            
+            //send cancelled order email to customer
+            $order->add_order_note(
+                __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
+                true
             );
         }
     }
