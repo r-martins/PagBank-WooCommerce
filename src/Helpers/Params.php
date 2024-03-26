@@ -246,25 +246,32 @@ class Params
         return false;
     }
 
-	/**
-	 * Return the total discount amount value for the order based on the discount config value (% or fixed)
-	 * @param $configValue
-	 * @param $orderTotal
-	 *
-	 * @return float
-	 */
-	public static function getDiscountValue($configValue, $orderTotal): float
+    /**
+     * Return the total discount amount value for the order based on the discount config value (% or fixed)
+     *
+     * @param string $configValue
+     * @param WC_Order $order
+     * @param bool $excludesShipping
+     *
+     * @return float
+     */
+    public static function getDiscountValue($configValue, $order, $excludesShipping): float
     {
+        $orderTotal = $order->get_total();
+        if ($excludesShipping) {
+            $orderTotal -= $order->get_shipping_total();
+        }
+        
         $discountType = self::getDiscountType($configValue);
-        if ( ! $discountType){
+        if (!$discountType) {
             return 0;
         }
 
-        if ('FIXED' == $discountType){
+        if ('FIXED' == $discountType) {
             return floatval($configValue);
         }
 
-        if ('PERCENT' == $discountType){
+        if ('PERCENT' == $discountType) {
             return floatval($orderTotal) * (floatval($configValue) / 100);
         }
 

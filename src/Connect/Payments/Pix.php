@@ -32,9 +32,10 @@ class Pix extends Common
 
         $amount = new Amount();
         $orderTotal = $this->order->get_total();
+        $discountExcludesShipping = Params::getConfig('pix_discount_excludes_shipping', false) == 'yes';
 
         if (($discountConfig = Params::getConfig('pix_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
-            $discount = Params::getDiscountValue($discountConfig, $orderTotal);
+            $discount = Params::getDiscountValue($discountConfig, $this->order, $discountExcludesShipping);
             $this->order->set_discount_total(floatval($this->order->get_discount_total()) + $discount);
             $this->order->set_total($this->order->get_total() - $discount);
             $orderTotal = $orderTotal - $discount;

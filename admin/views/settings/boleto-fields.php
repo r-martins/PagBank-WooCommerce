@@ -58,4 +58,15 @@ return array(
 		'default'     => 0,
 		'desc_tip'    => false,
 	],
+    'boleto_discount_excludes_shipping' => [
+        'title'       => __('Excluir Frete', 'pagbank-connect'),
+        'label'       => __('Não aplicar ao Frete', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => __(
+            'Se marcado, o desconto não será aplicado sobre o valor do frete.',
+            'pagbank-connect'
+        ),
+        'default'     => 'no',
+        'desc_tip'    => true,
+    ], 
 );
