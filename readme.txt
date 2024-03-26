@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.6.3
+Stable tag: 4.7.0
 License: GPLv3
 License URI: https://opensource.org/license/gpl-3-0/
 
@@ -152,6 +152,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.7.0 =
+* Melhoria: cliente passa a receber e-mail informando que o pedido foi cancelado automaticamente após expiração do PIX. Sugerido por Fellipe (The Growth Space). 
+* Melhoria: agora é possível excluir o valor frete ao dar desconto em boleto e pix, aplicando o desconto somente aos produtos. Sugerido por Fabio (Kaizen Digital). 
 
 = 4.6.3 =
 * Melhoria/Correção: quando determinada configuracao do php era realizada, os ícones dos meios de pagamento não eram exibidos. Reportado por Daniel Carvalho.
