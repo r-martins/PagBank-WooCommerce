@@ -1,6 +1,14 @@
 # PagBank Connect (PagSeguro) - Nova Geração
 ## Com Descontos nas Taxas Oficiais
-### Por Ricardo Martins
+*Por Ricardo Martins - Parceiro Oficial PagBank desde 2015.*
+
+[![Versão mínima do PHP](https://img.shields.io/badge/php-%3E%3D%207.4-8892BF.svg?style=flat-square)](https://php.net/)
+[![Última versão](https://img.shields.io/github/v/release/r-martins/PagBank-WooCommerce)](https://github.com/r-martins/PagBank-WooCommerce)
+![Último commit (develop)](https://img.shields.io/github/last-commit/r-martins/PagBank-WooCommerce/develop)
+![WordPress Plugin: Tested WP Version](https://img.shields.io/wordpress/plugin/tested/pagbank-connect)
+![Downloads por mês](https://img.shields.io/wordpress/plugin/dm/pagbank-connect)
+![Avaliação dos clientes no WordPress](https://img.shields.io/wordpress/plugin/stars/pagbank-connect?color=yellow)
+
 
 Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
 
@@ -30,6 +38,12 @@ Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Ca
 Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
 # Instalação
+
+## WP-CLI (mais fácil e rápido)
+Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
+* Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
+* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
+
 ## Instalação manual
 * Baixe o [arquivo zip](https://github.com/r-martins/PagBank-WooCommerce/archive/refs/heads/master.zip)
 * Crie um diretorio em wp-content/plugins chamado rm-pagbank

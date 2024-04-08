@@ -1,20 +1,21 @@
 === PagSeguro / PagBank Connect ===
 Contributors: martins56
-Tags: pagseguro,pagbank,pix,cartão de crédito,recorrência
+Tags: pagseguro, pagbank, pix, cartão de crédito, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.7.0
+Stable tag: 4.7.1
 License: GPLv3
-License URI: https://opensource.org/license/gpl-3-0/
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
 
-Autenticação 3D: menos chargeback e mais aprovações
+Autenticação 3D: menos chargeback e mais aprovações com PagSeguro.
 
 == Description ==
 
+** Aceite PagSeguro e PagBank (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce. **
 Esta é a **forma mais fácil de integrar sua loja com PagBank (PagSeguro)**.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
@@ -31,12 +32,11 @@ https://www.youtube.com/watch?v=FOPwBTRryNM
 
 Nossa integração suporta [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a taxa de aprovação.
 
-Tudo pra você vender mais sem sequer precisar se preocupar em contratar um serviço de antifraude.
+Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocupar em contratar um serviço de antifraude.
 
-https://www.youtube.com/watch?v=eN_WaK-1SQc
 
 * Termos de uso e softwares terceiros
-Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html) do desenvolvedor.
+Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html) do desenvolvedor.
 
 == Features ==
 * Suporte a PIX, Cartão de Crédito e Boleto
@@ -164,6 +164,14 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.7.1 =
+* Melhorias gerais no JavaScript do plugin
+* Melhoria: adicionado métodos de criptografia no Helper do plugin. Por enquanto usado somente em um caso específico na página de pagamento avulso (order-pay).
+* Correção: cálculo de parcelas poderia falhar em alguns cenários quando usado em modo Sandbox, exibindo uma opção com mensagem "undefined...".
+* Correção: ao fazer um pedido com pix ou boleto e navegar até a área de meus pedidos, o cliente pode clicar em Pagar e escolher outro meio de pagamento. No entanto, pagamento com cartão e 3Ds não funcionava nesta página. Refizemos algumas coisas para tornar isso possível. Isso também traz compatibilidade a plugins de autorização de pedido (como Order Approval for Woocommerce). Reportado por Tiago da Tikovolpe.
+* Melhoria: instalação via composer agora sugere que habilite extensão openssl do PHP, a fim de ter melhor criptografia. No momento a criptografia só é usada para o número do pedido, na página de pagamento avulso (/order-pay).
+* Melhorias: code standards
 
 = 4.7.0 =
 * Melhoria: cliente passa a receber e-mail informando que o pedido foi cancelado automaticamente após expiração do PIX. Sugerido por Fellipe (The Growth Space). 
