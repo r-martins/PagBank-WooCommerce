@@ -228,4 +228,43 @@ class Functions
 
         return $default;
     }
+
+    /**
+     * Encrypts data using openssl and aes-256-cbc algorithm or base64 if openssl is not available
+     * @param $data
+     *
+     * @return string
+     */
+    public static function encrypt($data): string
+    {
+        $key = Params::getConfig('connect_key');
+
+        if (extension_loaded('openssl')) {
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+            $encrypted = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
+            return base64_encode($encrypted . '::' . $iv);
+        }
+
+        return base64_encode($data);
+    }
+
+    /**
+     * Decrypts data using openssl and aes-256-cbc algorithm or base64 if openssl is not available
+     * @param $data
+     *
+     * @return false|string
+     */
+    public static function decrypt($data)
+    {
+        $key = Params::getConfig('connect_key');
+        if (extension_loaded('openssl')) {
+            if (!empty($data)) {
+                list($encrypted_data, $iv) = explode('::', base64_decode($data), 2);
+                return openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, 0, $iv);
+            }
+        }
+        
+        // Fallback to base64 decoding if OpenSSL is not available
+        return base64_decode($data);
+    }
 }

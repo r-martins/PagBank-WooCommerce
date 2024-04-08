@@ -23,6 +23,9 @@
         "ext-curl": "*",
         "ext-json": "*"
     },
+    "suggest": {
+        "ext-openssl": "Enabling the OpenSSL extension allows you to use secure encryption and decryption functions."
+    },
     "require-dev": {
         "yoast/phpunit-polyfills": "^2.0",
         "squizlabs/php_codesniffer": "*",

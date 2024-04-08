@@ -3,6 +3,7 @@
 namespace RM_PagBank\Connect\Payments;
 
 use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\AuthenticationMethod;
@@ -27,19 +28,20 @@ class CreditCard extends Common
 {
     public string $code = 'credit_card';
 
-	/**
+    /**
 	 * @param WC_Order $order
 	 */
-	public function __construct(WC_Order $order)
+    public function __construct(WC_Order $order)
     {
         parent::__construct($order);
     }
 
-	/**
-	 * Create the array with the data to be sent to the API on CreditCard payments
-	 * @return array
-	 */
-	public function prepare():array
+    /**
+     * Create the array with the data to be sent to the API on CreditCard payments
+     *
+     * @return array
+     */
+    public function prepare():array
     {
         $return = $this->getDefaultParameters();
         $charge = new Charge();
@@ -56,7 +58,7 @@ class CreditCard extends Common
         $paymentMethod->setCard($card);
 
         //3ds
-        if ($this->order->get_meta('_pagbank_card_3ds_id') && Params::getConfig('cc_3ds') === 'yes'){
+        if ($this->order->get_meta('_pagbank_card_3ds_id') && Params::getConfig('cc_3ds') === 'yes') {
             $authMethod = new AuthenticationMethod();
             $authMethod->setType('THREEDS');
             $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
@@ -65,23 +67,25 @@ class CreditCard extends Common
         
         $charge->setPaymentMethod($paymentMethod);
 
-		if ($paymentMethod->getInstallments() > 1)
-		{
-			$selectedInstallments = $paymentMethod->getInstallments();
-			$installments = Params::getInstallments($this->order->get_total(), $this->order->get_meta('_pagbank_card_first_digits'));            
-			$installment = Params::extractInstallment($installments, $selectedInstallments);
-			if ($installment['fees']){
-				$interest = new Interest();
-				$interest->setInstallments($installment['fees']['buyer']['interest']['installments']);
-				$interest->setTotal($installment['fees']['buyer']['interest']['total']);
-				$buyer = new Buyer();
-				$buyer->setInterest($interest);
-				$fees = new Fees();
-				$fees->setBuyer($buyer);
-				$amount->setFees($fees);
-				$amount->setValue($installment['total_amount_raw']);
-			}
-		}
+        if ($paymentMethod->getInstallments() > 1) {
+            $selectedInstallments = $paymentMethod->getInstallments();
+            $installments = Params::getInstallments(
+                $this->order->get_total(),
+                $this->order->get_meta('_pagbank_card_first_digits')
+            );
+            $installment = Params::extractInstallment($installments, $selectedInstallments);
+            if ($installment['fees']) {
+                $interest = new Interest();
+                $interest->setInstallments($installment['fees']['buyer']['interest']['installments']);
+                $interest->setTotal($installment['fees']['buyer']['interest']['total']);
+                $buyer = new Buyer();
+                $buyer->setInterest($interest);
+                $fees = new Fees();
+                $fees->setBuyer($buyer);
+                $amount->setFees($fees);
+                $amount->setValue($installment['total_amount_raw']);
+            }
+        }
 
         //region Recurring initial or subsequent order
         $recurring = new Recurring();
@@ -109,35 +113,61 @@ class CreditCard extends Common
         return $return;
     }
 
-	/**
-	 * Outputs the installment options to populate the select field on checkout
-	 * @return void
-	 */
-	public static function getAjaxInstallments(){
-        global $woocommerce;
+    /**
+    * Outputs the installment options to populate the select field on checkout
+    * @return void
+    */
+    public static function getAjaxInstallments()
+    {
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+            wp_send_json_error(
+                [
+                    'error' => __(
+                        'Não foi possível obter as parcelas. Chave de formulário inválida. '
+                        .'Recarregue a página e tente novamente.',
+                        'pagbank-connect'
+                    ),
+                ],
+                400
+            );
+        }
 
-        $order_total = floatval($woocommerce->cart->get_total('edit'));
-		if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
-			wp_send_json_error([
-				'error' => __(
-					'Não foi possível obter as parcelas. Chave de formulário inválida. '
-					.'Recarregue a página e tente novamente.',
-					'pagbank-connect'
-				),
-			],
-				400);
-		}
+        $ccBin = isset($_REQUEST['cc_bin']) ? intval($_REQUEST['cc_bin']) : 0;
+        $ccBin = Params::getConfig('is_sandbox', false) ? 555566 : $ccBin; // always use 555566 for sandbox
 
-        $cc_bin = isset( $_REQUEST['cc_bin'] ) ? intval($_REQUEST['cc_bin']) : 0;
+        //order id provided when  in order-pay page
+        $orderId = !empty($_POST['order_id']) ? Functions::decrypt(
+            sanitize_text_field($_POST['order_id'])
+        ) : 0;
+        
+        $orderTotal = 0;
+        
+        if ($orderId) {
+            $order = wc_get_order($orderId);
+            if ($order) {
+                $orderTotal = floatval($order->get_total('edit'));
+            }
+        }
 
-		if (!$order_total) return;
+        if (!$orderTotal) {
+            global $woocommerce;
+            $orderTotal = floatval($woocommerce->cart->get_total('edit'));
+        }
+        
+        if ($orderTotal <= 0) {
+            wp_send_json(
+                ['error' => __('Não foi possível obter as parcelas. Total do pedido inválido.', 'pagbank-connect')],
+                400
+            );
+        }
 
-        $installments = Params::getInstallments($order_total, $cc_bin);
-        if (isset($installments['error'])){
-			$error = $installments['error'] ?? '';
-			wp_send_json(
+        $installments = Params::getInstallments($orderTotal, $ccBin);
+        if (isset($installments['error'])) {
+            $error = $installments['error'];
+            wp_send_json(
                 ['error' => sprintf(__('Não foi possível obter as parcelas. %s', 'pagbank-connect'), $error)],
-				400);
+                400
+            );
         }
         wp_send_json($installments);
     }
@@ -195,5 +225,66 @@ class CreditCard extends Common
         Params::getInstallments(floatval($woocommerce->cart->get_total('edit')), intval($_POST['ccBin']));
         echo esc_html( $woocommerce->cart->get_total('edit') );
         wp_die();
+    }
+
+    /**
+     * Adds order details to /order-pay page in order to correctly process credit card payments (with 3Ds)
+     * @param $template_name
+     *
+     * @return void
+     */
+    public static function orderPayScript($template_name)
+    {
+        if (strpos($template_name, 'checkout/form-pay.php') === false) {
+            return;
+        }
+
+        $orderId = isset($GLOBALS['order-pay']) ? intval($GLOBALS['order-pay']) : false;
+        $order = wc_get_order($orderId);
+        
+        if (!$order) {
+            return;
+        }
+
+        //HPOS compatibility
+        $billingNumber = !empty($order->get_meta('_billing_number')) ? $order->get_meta('_billing_number')
+            : $order->get_billing_address_2();
+        
+        $billingNeighborhood = !empty($order->get_meta('_billing_neighborhood')) ? $order->get_meta(
+            '_billing_neighborhood'
+        ) : 'n/d';
+        
+        $orderDetails = [
+            'data' => [
+                'customer' => [
+                    'name'           => $order->get_billing_first_name().' '.$order->get_billing_last_name(),
+                    'email'          => $order->get_billing_email(),
+                    'phones'         => [
+                        [
+                            'country' => '55',
+                            'area'    => substr(Params::removeNonNumeric($order->get_billing_phone()), 0, 2),
+                            'number'  => substr(Params::removeNonNumeric($order->get_billing_phone()), 2),
+                            'type'    => 'MOBILE'
+                        ]
+                    ],
+                ],
+                'amount'         => [
+                    'currency' => 'BRL',
+                    'value'    => intval(round($order->get_total('edit') * 100)),
+                ],
+                'billingAddress' => [
+                    'street'     => preg_replace('/\s+/', ' ', $order->get_billing_address_1()),
+                    'number'     => $billingNumber,
+                    'complement' => $billingNeighborhood,
+                    'regionCode' => preg_replace('/\s+/', ' ', $order->get_billing_state()),
+                    'country'    => 'BRA',
+                    'city'       => preg_replace('/\s+/', ' ', $order->get_billing_city()),
+                    'postalCode' => Params::removeNonNumeric($order->get_billing_postcode()),
+                ],
+            ],
+            'encryptedOrderId' => Functions::encrypt($orderId),
+        ];
+
+        echo '<script type="text/javascript">var pagBankOrderDetails = ' . wp_json_encode($orderDetails) . ';</script>';
     }
 }

@@ -11,6 +11,7 @@ use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Customer;
 use RM_PagBank\Object\Item;
 use RM_PagBank\Object\Phone;
+use WC_Customer;
 use WC_Order;
 use WC_Order_Item_Product;
 
@@ -82,6 +83,15 @@ class Common
             $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cnpj', 'billing_cnpj');
         }
         
+        if (empty($taxId)) {
+            //probably is coming from the /order-pay page
+            $wcCustomer = new WC_Customer($this->order->get_customer_id());
+            $taxId = $wcCustomer->get_meta('billing_cpf');
+            if (empty($taxId)) {
+                $taxId = $wcCustomer->get_meta('billing_cnpj');
+            }
+        }
+
         $taxId = Params::removeNonNumeric($taxId);
         
         $customer->setTaxId($taxId);

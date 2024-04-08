@@ -15,12 +15,12 @@ Autenticação 3D: menos chargeback e mais aprovações
 
 == Description ==
 
-Esta é a forma mais fácil de integrar sua loja com PagBank (PagSeguro).
+Esta é a **forma mais fácil de integrar sua loja com PagBank (PagSeguro)**.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
-Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
+Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2015**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
 Além disso, você também pode aceitar pagamentos recorrentes e criar clubes de assinatura sem depender de plugins de terceiros.
 
@@ -64,20 +64,27 @@ Ao instalar e usar este plugin, você concorda com as [Regras de uso do PagBank]
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
 * Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
-=== A gente instala pra você ===
+=== A gente instala pra você 🙀 ===
 Se você preferir, podemos instalar e configurar o plugin para você sem nenhum custo.
 
 [Saiba mais](https://pagseguro.ricardomartins.net.br/woocommerce/agenteinstala.html).
 
+=== WP-CLI ===
+Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/). 
+
+* Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
+* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
+ 
+
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
 * Clique no PagBank Connect para acessar as configurações do módulo
-* Clique em "Obter Credenciais". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação.
-* Ao clicar no modelo de recebimento desejado, você será levado para o site do PagBank, onde deverá se logar com sua conta e autorizar nossa aplicação.
+* Clique em "Obter Connect Key". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação.
+* Ao clicar no modelo de recebimento desejado, você será levado(a) para o site do PagBank, onde deverá se logar com sua conta e autorizar nossa aplicação.
 * Em seguida, será levado(a) de volta para nosso site, onde deverá preencher as informações do responsável técnico por sua loja.
 * Feito isso, sua *Connect Key* será exibida e enviada para o e-mail informado. Use ela nas configurações da sua loja.
-* Salve as configurações e você está pronto para vender.
-* Se desejar, configure opções de parcelamento, e validade do boleto e código pix de acordo com suas necessidades.
+* Salve as configurações e sua loja está pronta para vender.
+* Se desejar, configure [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento), e validade do boleto e código pix de acordo com suas necessidades.
 
 == Frequently Asked Questions ==
 = PagSeguro ou PagBank? =
@@ -143,6 +150,11 @@ Não. Este é um plugin desenvolvido por Ricardo Martins, assim como outros para
 Apesar da parceria entre o desenvolvedor e o PagBank que concede descontos e benefícios, este NÃO é um produto oficial.
 
 PagSeguro e PagBank são marcas do UOL.
+
+
+= O plugin é compatível com o WooCommerce Subscriptions? =
+
+Você não precisa do plugin WooCommerce Subscriptions ou nenhum outro para aceitar [pagamentos recorrentes com nossa integração](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce).
 
 
 = Posso modificar e comercializar este plugin? =

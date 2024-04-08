@@ -144,34 +144,34 @@ jQuery(document).ready(function ($) {
         }
     }];
 
-    //cardsFriendly é usado apenas para permitir que o setCardType remova os cartões incorretos, mas não para verificar
+    //cardsFriendly is used only to allow setCardType to remove incorrect cards, but not to check the card
     const cardsFriendly = [
         {type: 'elo', patterns: [], length: [], cssLength: [], format: '', luhn: false},
         {type: 'aura', patterns: [], length: [], cssLength: [], format: '', luhn: false},
         {type: 'hipercard', patterns: [], length: [], cssLength: [], format: '', luhn: false},
     ]
-    $.extend($.payment.cardsPagBank, typesPagBank);
+    // $.extend($.payment.cardsPagBank, typesPagBank);
     $.extend($.payment.cards, cardsFriendly);
 
-    // método original
+    // original method
     const originalCardType = $.payment.cardType;
 
-    // Estendemos a cardType do jqueryPayment
+    // Extending the cardType method from jqueryPayment
     $.extend($.payment, {
-        cardType: function(num) {
-            // Tentamos buscar no nosso array de cartões
+        cardType: function (num) {
+            // Try to find in our card array
             let cardTypes = getCardTypes(num);
             if (cardTypes.length > 0) {
                 return cardTypes[0].type;
             }
 
-            // Se não encontrarmos, retornamos o resultado original
+            // if we don't find, we return the original result
             return originalCardType.call(this, num);
         }
     });
 
     /**
-     * Retorna o tipo de cartão
+     * Gets the credit card types from the card number
      * @param cardNumber
      * @returns {*|*[]}
      */
@@ -184,9 +184,9 @@ jQuery(document).ready(function ($) {
             return result;
         }
 
-        if (cardNumber === '') {
-            return $.extend(true, [], $.payment.cardsPagBank);
-        }
+        // if (cardNumber === '') {
+        //     return $.extend(true, [], $.payment.cardsPagBank);
+        // }
 
         for (let i = 0; i < typesPagBank.length; i++) {
             let value = typesPagBank[i];
@@ -201,61 +201,62 @@ jQuery(document).ready(function ($) {
     /*endregion*/
 
 
-    $(document.body).on('updated_checkout', function(e) {
+    $(document.body).on('updated_checkout', function (e) {
         $(document.body).trigger('update_installments');
     });
 
     //region 3ds authentication
     let isSubmitting = false;
-    if (!$('form.woocommerce-checkout').length) {
+    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review';
+    if (!$(checkoutFormIdentifiers).length) {
         console.debug('PagBank: checkout form not found');
         return true;
     }
     let originalSubmitHandler = () => {};
-    if ($._data($('form.woocommerce-checkout')[0], "events") !== undefined) {
-        let formCheckout = $('form.woocommerce-checkout')[0];
+    // get the original submit handler for checkout or order-pay page
+    if ($._data($(checkoutFormIdentifiers)[0], "events") !== undefined) {
+        let formCheckout = $('form.woocommerce-checkout, form#order_review')[0];
         let formEvents = $._data(formCheckout, "events");
         
         if (formEvents && formEvents.submit) {
             originalSubmitHandler = formEvents.submit[0].handler;
         }
     }
-    
-    $('form.woocommerce-checkout').off('submit');
-    $('form.woocommerce-checkout').on('submit', async function (e) {
+
+    let pagBankSubmitHandler = async function (e) {
         console.debug('PagBank: submit');
-        
+
         if (isSubmitting) {
             return true;
         }
         e.preventDefault();
         e.stopImmediatePropagation();
-        
+
         if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
             $('#payment_method_rm-pagbank').is(':checked') === false) {
             isSubmitting = true;
-            $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
-            $('form.woocommerce-checkout').trigger('submit');
+            $(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            $(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
-        
-        if (encryptCard() === false){
+
+        if (encryptCard() === false) {
             return false;
         }
-        
-       //if 3ds is not enabled, continue
+
+        //if 3ds is not enabled, continue
         if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
             isSubmitting = true;
-            $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
-            $('form.woocommerce-checkout').trigger('submit');
+            $(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            $(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
-        
+
         //if 3ds authorization is successful, continue
         if ('undefined' !== typeof pagbank3dAuthorized && pagbank3dAuthorized === true) {
             isSubmitting = true;
-            $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
-            $('form.woocommerce-checkout').trigger('submit');
+            $(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            $(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
 
@@ -264,7 +265,7 @@ jQuery(document).ready(function ($) {
             session: pagseguro_connect_3d_session,
             env: pagseguro_connect_environment,
         });
-       
+
         var checkoutFormData = $(this).serializeArray();
         // Convert the form data to an object
         var checkoutFormDataObj = {};
@@ -277,21 +278,9 @@ jQuery(document).ready(function ($) {
         cartTotal = parseInt(parseFloat(cartTotal.toString()).toFixed(2) * 100);
 
         let expiryVal = $('#rm-pagbank-card-expiry').val();
-        
-        const request = {
+
+        let request = {
             data: {
-                customer: {
-                    name: checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'],
-                    email: checkoutFormDataObj['billing_email'],
-                    phones: [
-                    {
-                        country: '55',
-                        area: checkoutFormDataObj['billing_phone'].replace(/\D/g, '').substring(0, 2),
-                        number: checkoutFormDataObj['billing_phone'].replace(/\D/g, '').substring(2),
-                        type: 'MOBILE'
-                    }
-                    ]
-                },
                 paymentMethod: {
                     type: 'CREDIT_CARD',
                     installments: $('#rm-pagbank-card-installments').val()*1,
@@ -303,6 +292,24 @@ jQuery(document).ready(function ($) {
                             name: $('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '),
                         }
                     }
+                },
+                dataOnly: false
+            }
+        }
+        
+        let orderData = typeof pagBankOrderDetails !== 'undefined'
+            ? pagBankOrderDetails.data //if order-pay page
+            : { //if checkout page get from form fields
+                customer: {
+                    name: checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'],
+                    email: checkoutFormDataObj['billing_email'],
+                    phones: [
+                        {
+                            country: '55',
+                            area: checkoutFormDataObj['billing_phone'].replace(/\D/g, '').substring(0, 2),
+                            number: checkoutFormDataObj['billing_phone'].replace(/\D/g, '').substring(2),
+                            type: 'MOBILE'
+                    }]
                 },
                 amount: {
                     value: cartTotal,
@@ -316,13 +323,17 @@ jQuery(document).ready(function ($) {
                     country: 'BRA',
                     city: checkoutFormDataObj['billing_city'].replace(/\s+/g, ' '),
                     postalCode: checkoutFormDataObj['billing_postcode'].replace(/\D+/g, '')
-                },
-                dataOnly: false
-            }
-        }
+                }
+        };
+
+        request.data = {
+            ...request.data,
+            ...orderData
+        };
+        
         console.debug('PagBank 3DS Request Amount: ' + request.data.amount.value);
         //disable place order button
-        jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').block({
+        jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').block({
             message: 'Autenticação 3D em andamento',
             overlayCSS: {
                 background: '#fff',
@@ -330,8 +341,8 @@ jQuery(document).ready(function ($) {
             },
             css: {border: 0}
         });
-        
-        PagSeguro.authenticate3DS(request).then( result => {
+
+        PagSeguro.authenticate3DS(request).then(result => {
             switch (result.status) {
                 case 'CHANGE_PAYMENT_METHOD':
                     // The user must change the payment method used
@@ -347,8 +358,8 @@ jQuery(document).ready(function ($) {
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
                         isSubmitting = true;
-                        $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
-                        $('form.woocommerce-checkout').trigger('submit');
+                        $('form.woocommerce-checkout, form#order_review').on('submit', originalSubmitHandler);
+                        $('form.woocommerce-checkout, form#order_review').trigger('submit');
                         return true;
                     }
                     alert('Autenticação 3D falhou. Tente novamente.');
@@ -362,10 +373,10 @@ jQuery(document).ready(function ($) {
                         console.debug('PagBank: 3DS não suportado pelo cartão. Continuando sem 3DS.');
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
-                        
+
                         isSubmitting = true;
-                        $('form.woocommerce-checkout').on('submit', originalSubmitHandler);
-                        $('form.woocommerce-checkout').trigger('submit');
+                        $('form.woocommerce-checkout, form#order_review').on('submit', originalSubmitHandler);
+                        $('form.woocommerce-checkout, form#order_review').trigger('submit');
                         return true;
                     }
                     alert('Seu cartão não suporta autenticação 3D. Escolha outro método de pagamento ou cartão.');
@@ -387,12 +398,17 @@ jQuery(document).ready(function ($) {
             }
         })
         //endregion
-        
+
         return false;
-    });
+    }
+    
+    $(checkoutFormIdentifiers).off('submit');
+    $(checkoutFormIdentifiers).on('submit', pagBankSubmitHandler);
+    
+    
     //endregion
 
-    $('form.woocommerce-checkout').off('checkout_place_order').on('checkout_place_order', async function (e) {
+    $(checkoutFormIdentifiers).off('checkout_place_order').on('checkout_place_order', async function (e) {
         console.debug('PagBank: checkout_place_order');
         
         //if not pagseguro connect or not credit card, return
@@ -435,10 +451,10 @@ jQuery(document).ready(function ($) {
     
 });
 
-jQuery(document.body).on('init_checkout', ()=>{
+// jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('keyup change paste', '#rm-pagbank-card-number', (e)=>{
         window.ps_cc_has_changed = true;
-        if ('undefined' !== typeof pagseguro_connect_3d_session){
+        if ('undefined' !== typeof pagseguro_connect_3d_session) {
             pagbank3dAuthorized = false;
         }
         let cardNumber = jQuery(e.target).val();
@@ -454,59 +470,62 @@ jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('input change paste', '#rm-pagbank-card-holder-name', (e)=>{
         jQuery(e.target).val(jQuery(e.target).val().toUpperCase());
     });
-});
+// });
 
-jQuery(document.body).on('update_installments', ()=>{
-    //if success, update the installments select with the response
-    //if error, show error message
-    let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
-    let total = jQuery('.order-total bdi').html();
-    //extract amount from total, removing html elements
-    total = total.replace(/<[^>]*>?/gm, '');
-    //remove ,
-    total = total.replace(/,/g, '');
-    //replace , with .
-    total = total.replace(/\./g, ',');
-    //remove non numbers and . ,
-    total = total.replace(/[^0-9,]/g, '');
-
-
-    //convert to cents
-    let orderTotal = parseFloat(total).toFixed(2) * 100;
-	if (orderTotal < 100){
-		return;
-	}
-    // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');
-    let url = ajax_object.ajax_url;
-    jQuery.ajax({
-        url: url,
-        method: 'POST',
-        data: {
-            cc_bin: ccBin,
-			nonce: rm_pagbank_nonce,
-            action: 'ps_get_installments',
-        },
-        success: (response)=>{
-            let select = jQuery('#rm-pagbank-card-installments');
-            select.empty();
-            for (let i = 0; i < response.length; i++) {
-                let option = jQuery('<option></option>');
-                option.attr('value', response[i].installments);
-                let text = response[i].installments + 'x de R$ ' + response[i].installment_amount;
-                let additional_text = ' (sem juros)';
-                if (response[i].interest_free === false)
-                    additional_text = ' (Total R$ ' + response[i].total_amount + ')';
-
-                option.text(text + additional_text);
-                select.append(option);
-            }
-            window.ps_cc_installments = response;
-        },
-        error: (response)=>{
-            alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
-            console.info('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
-                'para ver os possíveis problemas na obtenção das parcelas. Note que cartões de teste falharão ' +
-                'na maioria dos casos.');
+    jQuery(document.body).on('update_installments', ()=> {
+        //if success, update the installments select with the response
+        //if error, show error message
+        let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
+        let total = jQuery('.order-total bdi, .product-total bdi').html();
+        //extract amount from total, removing html elements
+        total = total.replace(/<[^>]*>?/gm, '');
+        //remove ,
+        total = total.replace(/,/g, '');
+        //replace , with .
+        total = total.replace(/\./g, ',');
+        //remove non numbers and . ,
+        total = total.replace(/[^0-9,]/g, '');
+    
+    
+        //convert to cents
+        let orderTotal = parseFloat(total).toFixed(2) * 100;
+        if (orderTotal < 100) {
+            return;
         }
+        // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');
+        let url = ajax_object.ajax_url;
+        let encryptedOrderId = typeof pagBankOrderDetails !== 'undefined' ?
+            pagBankOrderDetails?.encryptedOrderId : null;
+        jQuery.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                cc_bin: ccBin,
+                nonce: rm_pagbank_nonce,
+                action: 'ps_get_installments',
+                order_id: encryptedOrderId,
+            },
+            success: (response)=>{
+                let select = jQuery('#rm-pagbank-card-installments');
+                select.empty();
+                for (let i = 0; i < response.length; i++) {
+                    let option = jQuery('<option></option>');
+                    option.attr('value', response[i].installments);
+                    let text = response[i].installments + 'x de R$ ' + response[i].installment_amount;
+                    let additional_text = ' (sem juros)';
+                    if (response[i].interest_free === false)
+                        additional_text = ' (Total R$ ' + response[i].total_amount + ')';
+    
+                    option.text(text + additional_text);
+                    select.append(option);
+                }
+                window.ps_cc_installments = response;
+            },
+            error: (response)=>{
+                alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
+                console.info('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
+                    'para ver os possíveis problemas na obtenção das parcelas. Note que cartões de teste falharão ' +
+                    'na maioria dos casos.');
+            }
+        });
     });
-});
