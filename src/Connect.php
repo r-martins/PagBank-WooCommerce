@@ -255,6 +255,7 @@ class Connect
         
         if (isset($formData['selected-reason'])) {
             $reason = $formData['selected-reason'];
+            $commment = $formData['comment'] ?? '';
             $openTicket = $formData['autorizaContato'] ?? false;
             $siteUrl = get_site_url();
             
@@ -274,6 +275,8 @@ class Connect
                 'entry.16669314' => 'WooCommerce',
                 'entry.760515818' => WC()->version,
                 'entry.764056986' => WC_PAGSEGURO_CONNECT_VERSION,
+                'entry.817525399' => $commment
+                
             ]);
             $url .= '&' . $params;
             wp_remote_get($url);

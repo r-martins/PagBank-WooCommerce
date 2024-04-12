@@ -5,7 +5,7 @@
         </div>
         <div class="pagbank-feedback-panel active" data-panel-id="reasons">
             <form id="pagbank-feedback-form" action="#">
-                <h3><strong>Conta pra gente porque está desativando o PagBank?</strong></h3>
+                <h3><strong>Conta pra gente porque está desativando o PagBank? (opcional)</strong></h3>
                 <ul id="reasons-list">
                     <li class="reason li-active" data-input-type="" data-input-placeholder="">
                         <label>
@@ -51,7 +51,12 @@
                     </li>
                     <!-- Adicione mais opções aqui -->
                 </ul>
-                <input type="checkbox" name="autorizaContato"/>Gostaria de ser contatado para falar sobre isso. <span class="dashicons dashicons-editor-help" title="Usaremos o e-mail do responsável técnico ou e-mail do usuário atual para entrar em contato com você."></span>
+                <div class="reason-comment">
+                    <textarea name="comment" placeholder="Comentários/motivo? (opcional)" cols="50"></textarea>
+                </div>
+                <div class="autoriza-contato">
+                    <input type="checkbox" id="autorizaContato" name="autorizaContato"/><label for="autorizaContato">Gostaria de ser contatado para falar sobre isso.</label> <span class="dashicons dashicons-editor-help" title="Usaremos o e-mail do responsável técnico ou e-mail do usuário atual para entrar em contato com você."></span>
+                </div>
             </form>
         </div>
         <div class="pagbank-feedback-footer">
