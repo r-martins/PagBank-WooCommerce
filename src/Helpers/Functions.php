@@ -267,4 +267,20 @@ class Functions
         // Fallback to base64 decoding if OpenSSL is not available
         return base64_decode($data);
     }
+
+    /**
+     * Check if the block checkout is in use
+     * @return bool
+     */
+    public static function isBlockCheckoutInUse(): bool
+    {
+        // Get the ID of the checkout page.
+        $checkout_page_id = wc_get_page_id('checkout');
+
+        // Get the content of the checkout page.
+        $checkout_page_content = get_post_field('post_content', $checkout_page_id);
+
+        // Check if the content contains the `woocommerce_checkout` block.
+        return strpos($checkout_page_content, '<!-- wp:woocommerce/checkout ') !== false;
+    }
 }
