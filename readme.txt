@@ -5,17 +5,17 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.7.1
+Stable tag: 4.7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
-
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
 
-Autenticação 3D: menos chargeback e mais aprovações com PagSeguro.
+Autenticação 3D: menos chargeback e mais aprovações.
 
 == Description ==
 
-** Aceite PagSeguro e PagBank (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce. **
+**Aceite PagSeguro e PagBank (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
+
 Esta é a **forma mais fácil de integrar sua loja com PagBank (PagSeguro)**.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
@@ -164,6 +164,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.7.2 =
+* Melhoria: agora ao desativar o plugin damos a opção de você adicionar um comentário com mais detalhes sobre o motivo da desativação.
+* Melhoria: agora exibimos um aviso no admin caso o checkout em blocos esteja em uso.
 
 = 4.7.1 =
 * Melhorias gerais no JavaScript do plugin
