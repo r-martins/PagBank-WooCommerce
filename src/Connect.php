@@ -253,7 +253,7 @@ class Connect
         }
         parse_str($_REQUEST['feedback'], $formData);
         
-        if (isset($formData['selected-reason'])) {
+        if (isset($formData['selected-reason']) || isset($formData['comment'])) {
             $reason = $formData['selected-reason'];
             $commment = $formData['comment'] ?? '';
             $openTicket = $formData['autorizaContato'] ?? false;

@@ -36,7 +36,8 @@ jQuery(document).ready(function($) {
        //serialize form and send an ajax request
          e.preventDefault();
         var selectedReason = jQuery('input[name="selected-reason"]:checked').val();
-        if (!selectedReason) {
+        var comment = jQuery('#pagbank-feedback-form textarea[name="comment"]').val();
+        if (!selectedReason && !comment) {
             window.location.href = window.pagbank_deactivate_url;
             return true;
         }
