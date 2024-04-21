@@ -293,15 +293,31 @@ class CreditCard extends Common
      * @return void
      */
     public static function saveProductInstallmentsTransientForAll()
-    {
-        $product_ids = wc_get_products(array(
-            'status' => 'publish',
-            'limit' => -1,
-            'return' => 'ids',
-        ));
+    {   
+        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
 
-        foreach ($product_ids as $product_id) {
-            self::updateProductInstallmentsTransient($product_id);
+        if ($cc_enabled_installments === 'yes') {
+            $product_ids = wc_get_products(array(
+                'status' => 'publish',
+                'limit' => -1,
+                'return' => 'ids',
+            ));
+
+            foreach ($product_ids as $product_id) {
+                self::updateProductInstallmentsTransient($product_id);
+            }
+        } else if($cc_enabled_installments === 'no'){
+            $product_ids = wc_get_products(array(
+                'status' => 'publish',
+                'limit' => -1,
+                'return' => 'ids',
+            ));
+
+            foreach ($product_ids as $product_id) {
+                delete_transient('product_installment_info_' . $product_id);
+                delete_transient('wc_related_' . $product_id);
+                delete_transient('timeout_wc_related_' . $product_id);
+            }
         }
     }
 
@@ -320,14 +336,11 @@ class CreditCard extends Common
 
         $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
 
-        if ($cc_enabled_installments) {
+        if ($cc_enabled_installments === 'yes') {
             $installment_info = '';
             for ($i = 1; $i <= 12; $i++) {
                 $installment_amount = $product->get_price() / $i;
-                $installment_info .= '<tr>';
-                $installment_info .= '<td>' . sprintf(__('Parcela %d', 'pagbank-connect'), $i) . '</td>';
                 $installment_info .= '<td>R$ ' . number_format($installment_amount, 2, ',', '.') . '</td>';
-                $installment_info .= '</tr>';
             }
 
             set_transient('product_installment_info_' . $product_id, $installment_info, WEEK_IN_SECONDS);
@@ -346,7 +359,15 @@ class CreditCard extends Common
 
         $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
 
-        if ($cc_enabled_installments) {
+        if ($cc_enabled_installments === 'yes') {
+
+            wp_enqueue_style(
+                'pagseguro-connect-single-product',
+                plugins_url('public/css/single-product.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
+            );
+
             $product_id = $product->get_id();
 
             $installment_info = get_transient('product_installment_info_' . $product_id);
@@ -357,9 +378,9 @@ class CreditCard extends Common
             }
 
             if ($installment_info) {
-                echo '<div class="installment-table">';
-                echo '<h3>Tabela de Parcelamento</h3>';
-                echo '<table>' . $installment_info . '</table>';
+                echo '<div class="rm_installment-table">';
+                echo '<h3>PARCELAMENTO PAGBANK</h3>';
+                echo '<table><tr>' . $installment_info . '</tr></table>';
                 echo '</div>';
             }
         }

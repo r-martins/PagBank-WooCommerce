@@ -1,0 +1,54 @@
+/**
+Não modifique este arquivo.
+Se desejar fazer alterações visuais, faça isso em Aparência > Personalizar > CSS Adicional e reescreva a regra que deseja modificar.
+
+Do not modify this file.
+If you wish to make visual changes, do so in Appearance> Customize> Additional CSS and rewrite the rule you want to modify.
+ */
+.rm_installment-table{
+    border: 1px solid #000;
+    border-radius: 12px;
+}
+
+.rm_installment-table h3 {
+    text-align: center;
+    margin: 0;
+    background: #dfdfdf;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 22px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.rm_installment-table table {
+    width: 100%;
+    position: relative;
+}
+
+.rm_installment-table table::after {
+    content: "";
+    width: 1px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    background: #dfdfdf;
+    z-index: 999;
+}
+
+.rm_installment-table table tr {}
+
+.rm_installment-table table tr td {
+    display: inline-block;
+    width: 50%;
+    padding: 10px 0;
+    box-sizing: border-box;
+    border-bottom: 1px solid #dfdfdf;
+    text-align: center;
+}
+
+.rm_installment-table table tr td:last-child, .rm_installment-table table tr td:nth-last-child(2) {
+    margin-right: 0;
+    border-bottom: none;
+}
