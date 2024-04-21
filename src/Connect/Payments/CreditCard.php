@@ -296,7 +296,9 @@ class CreditCard extends Common
     {   
         $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
 
-        if ($cc_enabled_installments === 'yes') {
+        $generate_transient = get_transient('product_installment_enabled');
+
+        if ($cc_enabled_installments === 'yes' && !$generate_transient) {
             $product_ids = wc_get_products(array(
                 'status' => 'publish',
                 'limit' => -1,
@@ -306,6 +308,9 @@ class CreditCard extends Common
             foreach ($product_ids as $product_id) {
                 self::updateProductInstallmentsTransient($product_id);
             }
+
+            set_transient('product_installment_enabled', true);
+
         } else if($cc_enabled_installments === 'no'){
             $product_ids = wc_get_products(array(
                 'status' => 'publish',
@@ -318,6 +323,8 @@ class CreditCard extends Common
                 delete_transient('wc_related_' . $product_id);
                 delete_transient('timeout_wc_related_' . $product_id);
             }
+
+            set_transient('product_installment_enabled', false);
         }
     }
 
@@ -337,10 +344,30 @@ class CreditCard extends Common
         $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
 
         if ($cc_enabled_installments === 'yes') {
-            $installment_info = '';
-            for ($i = 1; $i <= 12; $i++) {
-                $installment_amount = $product->get_price() / $i;
-                $installment_info .= '<td>'.$i.'x de R$' . number_format($installment_amount, 2, ',', '.') . '<small>Sem juros</small></td>';
+
+            $default_installments = Params::getInstallments($product->get_price(), '555566');
+
+            if ($default_installments) {
+                $installment_info = '';
+                
+                $iteration = 0;
+                foreach ($default_installments as $installment) {
+
+                    if ($iteration % 2 == 0) {
+                        $installment_info .= '<tr>';
+                    }
+
+                    $amout = number_format($installment['installment_amount'], 2, ',', '.');
+                    $total_amount = number_format($installment['total_amount'], 2, ',', '.');
+
+                    $installment_info .= '<td>' . $installment['installments'] . 'x de R$ ' . $amout . ($installment['interest_free'] ? '<small> Sem juros</small>' : '<small> Total: R$' . $total_amount . '</small>') . '</td>';
+                    
+                    if ($iteration % 2 != 0 || $iteration == count($default_installments) - 1) {
+                        $installment_info .= '</tr>';
+                    }
+                    
+                    $iteration++;
+                }
             }
 
             set_transient('product_installment_info_' . $product_id, $installment_info, WEEK_IN_SECONDS);
@@ -380,7 +407,7 @@ class CreditCard extends Common
             if ($installment_info) {
                 echo '<div class="rm_installment-table">';
                 echo '<h3>PARCELAMENTO PAGBANK</h3>';
-                echo '<table><tr>' . $installment_info . '</tr></table>';
+                echo '<table>' . $installment_info . '</table>';
                 echo '</div>';
             }
         }

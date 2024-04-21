@@ -38,25 +38,44 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     z-index: 999;
 }
 
-.rm_installment-table table tr {}
+.rm_installment-table table tr {
+    display: block;
+    border-bottom: 1px solid #dfdfdf;
+}
+
+.rm_installment-table table tr:last-child {
+    margin-right: 0;
+    border-bottom: none;
+}
 
 .rm_installment-table table tr td {
     display: inline-block;
     width: 50%;
     padding: 10px 0;
     box-sizing: border-box;
-    border-bottom: 1px solid #dfdfdf;
     text-align: center;
+    font-size: 16px;
     color: #222;
 }
 
-.rm_installment-table table tr td:last-child, .rm_installment-table table tr td:nth-last-child(2) {
-    margin-right: 0;
-    border-bottom: none;
-}
 
 .rm_installment-table table tr td small {
     display: block;
     font-size: 11px;
     font-weight: bold;
+}
+
+
+@media screen and (max-width: 480px) {
+    .rm_installment-table h3 {
+        font-size: 18px;
+    }
+
+    .rm_installment-table table tr td {
+        font-size: 14px;
+    }
+
+    .rm_installment-table table tr td small {
+        font-size: 10px;
+    }
 }
