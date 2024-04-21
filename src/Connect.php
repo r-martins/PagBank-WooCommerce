@@ -35,6 +35,11 @@ class Connect
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
+        if (Params::getConfig('cc_enabled_installment')) {
+            add_action('init', [CreditCard::class, 'saveProductInstallmentsTransientForAll']);
+        }
+        add_action('woocommerce_update_product', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 1);
+        add_action('woocommerce_single_product_summary', [CreditCard::class, 'getProductInstallments'], 25);
 
         // Load plugin files
         self::includes();
@@ -137,6 +142,7 @@ class Connect
                 ],
 				'cc' => [
                     'enabled' => Params::getConfig('cc_enabled'),
+                    'enabled_installment' => Params::getConfig('cc_enabled_installment'),
                     'installment_options' => Params::getConfig('cc_installment_options'),
                     'installment_options_fixed' => Params::getConfig('cc_installment_options_fixed'),
                     'installments_options_min_total' => Params::getConfig('cc_installments_options_min_total'),

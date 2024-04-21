@@ -287,4 +287,81 @@ class CreditCard extends Common
 
         echo '<script type="text/javascript">var pagBankOrderDetails = ' . wp_json_encode($orderDetails) . ';</script>';
     }
+
+    /**
+     * Function to save the installment table HTML as transient for all products
+     * @return void
+     */
+    public static function saveProductInstallmentsTransientForAll()
+    {
+        $product_ids = wc_get_products(array(
+            'status' => 'publish',
+            'limit' => -1,
+            'return' => 'ids',
+        ));
+
+        foreach ($product_ids as $product_id) {
+            self::updateProductInstallmentsTransient($product_id);
+        }
+    }
+
+    /**
+     * Function to update the transient when the product is updated
+     * @param int $product_id The ID of the product being updated
+     * @return void
+     */
+    public static function updateProductInstallmentsTransient($product_id) 
+    {
+        delete_transient('product_installment_info_' . $product_id);
+
+        $product = wc_get_product($product_id);
+
+        if (!$product) return;
+
+        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
+
+        if ($cc_enabled_installments) {
+            $installment_info = '';
+            for ($i = 1; $i <= 12; $i++) {
+                $installment_amount = $product->get_price() / $i;
+                $installment_info .= '<tr>';
+                $installment_info .= '<td>' . sprintf(__('Parcela %d', 'pagbank-connect'), $i) . '</td>';
+                $installment_info .= '<td>R$ ' . number_format($installment_amount, 2, ',', '.') . '</td>';
+                $installment_info .= '</tr>';
+            }
+
+            set_transient('product_installment_info_' . $product_id, $installment_info, WEEK_IN_SECONDS);
+        }
+    }
+
+    /**
+     * Outputs the installment table for the product
+     * @return void
+     */
+    public static function getProductInstallments()
+    {
+        global $product;
+
+        if (!$product) return;
+
+        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
+
+        if ($cc_enabled_installments) {
+            $product_id = $product->get_id();
+
+            $installment_info = get_transient('product_installment_info_' . $product_id);
+
+            if (!$installment_info) {
+                self::updateProductInstallmentsTransient($product_id);
+                $installment_info = get_transient('product_installment_info_' . $product_id);
+            }
+
+            if ($installment_info) {
+                echo '<div class="installment-table">';
+                echo '<h3>Tabela de Parcelamento</h3>';
+                echo '<table>' . $installment_info . '</table>';
+                echo '</div>';
+            }
+        }
+    }
 }
