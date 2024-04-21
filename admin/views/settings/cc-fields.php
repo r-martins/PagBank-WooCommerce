@@ -79,7 +79,7 @@ return array(
 		'title'       => __('Informações de Parcelamento', 'pagbank-connect'),
 		'label'       => __('Exibir informações de parcelamento na tela do produto?', 'pagbank-connect'),
 		'type'        => 'checkbox',
-		'description' => 'Selecione esta opção para exibir as opções de parcelamento disponíveis para este produto.<br/>Ao selecionar uma tabela de parcelamento será exibido após o preço do produto, mostrando o valor parcelado.',
+		'description' => 'Selecione esta opção para exibir as opções de parcelamento disponíveis para seus produtos.<br/>Ao selecionar uma tabela de parcelamento será exibido após o preço do produto, mostrando o valor parcelado.',
 		'default'     => 'false',
 	],
 	'cc_soft_descriptor' => [
