@@ -340,7 +340,7 @@ class CreditCard extends Common
             $installment_info = '';
             for ($i = 1; $i <= 12; $i++) {
                 $installment_amount = $product->get_price() / $i;
-                $installment_info .= '<td>R$ ' . number_format($installment_amount, 2, ',', '.') . '</td>';
+                $installment_info .= '<td>'.$i.'x de R$' . number_format($installment_amount, 2, ',', '.') . '<small>Sem juros</small></td>';
             }
 
             set_transient('product_installment_info_' . $product_id, $installment_info, WEEK_IN_SECONDS);
