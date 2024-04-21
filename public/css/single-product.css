@@ -6,7 +6,7 @@ Do not modify this file.
 If you wish to make visual changes, do so in Appearance> Customize> Additional CSS and rewrite the rule you want to modify.
  */
 .rm_installment-table{
-    border: 1px solid #000;
+    border: 1px solid #dfdfdf;
     border-radius: 12px;
 }
 
@@ -19,6 +19,7 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     font-size: 22px;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
+    color: #222;
 }
 
 .rm_installment-table table {
@@ -46,6 +47,7 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     box-sizing: border-box;
     border-bottom: 1px solid #dfdfdf;
     text-align: center;
+    color: #222;
 }
 
 .rm_installment-table table tr td:last-child, .rm_installment-table table tr td:nth-last-child(2) {
