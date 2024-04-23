@@ -31,6 +31,8 @@ foreach ($installments as $installment) {
 <div class="rm_installment-table">
     <h3><?php echo esc_html(__('Parcelamento PagBank', 'pagbank-connect'));?></h3>
     <table>
-        <?php echo $installment_info; ?>
+        <?php if($installment_info) {
+            echo $installment_info;
+        } ?>
     </table>
 </div>
