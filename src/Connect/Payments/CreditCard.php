@@ -289,46 +289,6 @@ class CreditCard extends Common
     }
 
     /**
-     * Function to save the installment table HTML as transient for all products
-     * @return void
-     */
-    public static function saveProductInstallmentsTransientForAll()
-    {   
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
-
-        $generate_transient = get_transient('product_installment_enabled');
-
-        if ($cc_enabled_installments === 'yes' && !$generate_transient) {
-            $product_ids = wc_get_products(array(
-                'status' => 'publish',
-                'limit' => -1,
-                'return' => 'ids',
-            ));
-
-            foreach ($product_ids as $product_id) {
-                self::updateProductInstallmentsTransient($product_id);
-            }
-
-            set_transient('product_installment_enabled', true);
-
-        } else if($cc_enabled_installments === 'no'){
-            $product_ids = wc_get_products(array(
-                'status' => 'publish',
-                'limit' => -1,
-                'return' => 'ids',
-            ));
-
-            foreach ($product_ids as $product_id) {
-                delete_transient('product_installment_info_' . $product_id);
-                delete_transient('wc_related_' . $product_id);
-                delete_transient('timeout_wc_related_' . $product_id);
-            }
-
-            set_transient('product_installment_enabled', false);
-        }
-    }
-
-    /**
      * Function to update the transient when the product is updated
      * @param int $product_id The ID of the product being updated
      * @return void
@@ -348,29 +308,23 @@ class CreditCard extends Common
             $default_installments = Params::getInstallments($product->get_price(), '555566');
 
             if ($default_installments) {
-                $installment_info = '';
-                
-                $iteration = 0;
+                $installments = [];
+
                 foreach ($default_installments as $installment) {
-
-                    if ($iteration % 2 == 0) {
-                        $installment_info .= '<tr>';
-                    }
-
                     $amout = number_format($installment['installment_amount'], 2, ',', '.');
                     $total_amount = number_format($installment['total_amount'], 2, ',', '.');
-
-                    $installment_info .= '<td>' . $installment['installments'] . 'x de R$ ' . $amout . ($installment['interest_free'] ? '<small> Sem juros</small>' : '<small> Total: R$' . $total_amount . '</small>') . '</td>';
-                    
-                    if ($iteration % 2 != 0 || $iteration == count($default_installments) - 1) {
-                        $installment_info .= '</tr>';
-                    }
-                    
-                    $iteration++;
+                    $installments[] = [
+                        'installments' => $installment['installments'],
+                        'amount' => $amout,
+                        'interest_free' => $installment['interest_free'],
+                        'total_amount' => $total_amount
+                    ];
                 }
+
+                $installments_data = json_encode($installments);
             }
 
-            set_transient('product_installment_info_' . $product_id, $installment_info, WEEK_IN_SECONDS);
+            set_transient('product_installment_info_' . $product_id, $installments_data, YEAR_IN_SECONDS);
         }
     }
 
@@ -405,11 +359,57 @@ class CreditCard extends Common
             }
 
             if ($installment_info) {
-                echo '<div class="rm_installment-table">';
-                echo '<h3>PARCELAMENTO PAGBANK</h3>';
-                echo '<table>' . $installment_info . '</table>';
-                echo '</div>';
+                $template_name = 'product-installments.php';
+                $template_path = locate_template($template_name);
+                if (!$template_path) {
+                    $template_path = dirname(__FILE__) . '/../../templates/product/' . $template_name;
+                }
+
+                $args = json_decode($installment_info);
+
+                load_template($template_path, false, $args);
             }
         }
+    }
+
+    /**
+     * Function to delete the installment table HTML as transient for all products
+     * @return void
+     */
+    public static function deleteProductInstallmentsTransientForAll()
+    {   
+        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
+
+        $cc_installment_options = Params::getConfig('cc_installment_options');
+        $cc_installment_options_fixed = Params::getConfig('cc_installment_options_fixed');
+        $cc_installments_options_min_total = Params::getConfig('cc_installments_options_min_total');
+        $cc_installments_options_limit_installments = Params::getConfig('cc_installments_options_limit_installments');
+        $cc_installments_options_max_installments = Params::getConfig('cc_installments_options_max_installments');
+
+        $installment_options = array(
+            'installments' => $cc_installment_options,
+            'installments_fixed' => $cc_installment_options_fixed,
+            'min_total' => $cc_installments_options_min_total,
+            'limit_installments' => $cc_installments_options_limit_installments,
+            'max_installments' => $cc_installments_options_max_installments
+        );
+
+        $installment_options = json_encode($installment_options);
+
+        if($cc_enabled_installments === 'no' || $installment_options !== get_transient('product_installment_options')){
+            $product_ids = wc_get_products(array(
+                'status' => 'publish',
+                'limit' => -1,
+                'return' => 'ids',
+            ));
+
+            foreach ($product_ids as $product_id) {
+                delete_transient('product_installment_info_' . $product_id);
+                delete_transient('wc_related_' . $product_id);
+                delete_transient('timeout_wc_related_' . $product_id);
+            }
+        }
+
+        set_transient('product_installment_options', $installment_options, YEAR_IN_SECONDS);
     }
 }
