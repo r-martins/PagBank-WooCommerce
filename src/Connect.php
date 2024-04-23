@@ -36,7 +36,7 @@ class Connect
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
         add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 2);
-        add_action('woocommerce_single_product_summary', [CreditCard::class, 'getProductInstallments'], 25);
+        add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
         add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
 
         // Load plugin files
