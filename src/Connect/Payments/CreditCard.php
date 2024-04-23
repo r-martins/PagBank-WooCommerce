@@ -293,38 +293,47 @@ class CreditCard extends Common
      * @param int $product_id The ID of the product being updated
      * @return void
      */
-    public static function updateProductInstallmentsTransient($product_id) 
+    public static function updateProductInstallmentsTransient($product, $updatedProps)
     {
-        delete_transient('product_installment_info_' . $product_id);
+        if (!array_intersect(['regular_price', 'sale_price', 'product_page'], $updatedProps)) {
+            return;
+        }
+        
+        if (!$product) {
+            return;
+        }
+        
+        delete_transient('rm_pagbank_product_installment_info_' . $product->get_id());
 
-        $product = wc_get_product($product_id);
+        $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
 
-        if (!$product) return;
-
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
-
-        if ($cc_enabled_installments === 'yes') {
-
+        if ($ccInstallmentProductPage === 'yes') {
             $default_installments = Params::getInstallments($product->get_price(), '555566');
 
             if ($default_installments) {
                 $installments = [];
 
                 foreach ($default_installments as $installment) {
-                    $amout = number_format($installment['installment_amount'], 2, ',', '.');
+                    $amount = number_format($installment['installment_amount'], 2, ',', '.');
                     $total_amount = number_format($installment['total_amount'], 2, ',', '.');
                     $installments[] = [
                         'installments' => $installment['installments'],
-                        'amount' => $amout,
+                        'amount' => $amount,
                         'interest_free' => $installment['interest_free'],
                         'total_amount' => $total_amount
                     ];
                 }
 
-                $installments_data = json_encode($installments);
+                $installmentsData = wp_json_encode($installments);
             }
 
-            set_transient('product_installment_info_' . $product_id, $installments_data, YEAR_IN_SECONDS);
+            if (!empty($installmentsData)) {
+                set_transient(
+                    'rm_pagbank_product_installment_info_'.$product->get_id(),
+                    $installmentsData,
+                    YEAR_IN_SECONDS
+                );
+            }
         }
     }
 
@@ -336,26 +345,20 @@ class CreditCard extends Common
     {
         global $product;
 
-        if (!$product) return;
+        if (!$product || $product->get_meta('_recurring_enabled') == 'yes') {
+            return;
+        }
 
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
+        $ccEnabledInstallments = Params::getConfig('cc_installment_product_page');
 
-        if ($cc_enabled_installments === 'yes') {
-
-            wp_enqueue_style(
-                'pagseguro-connect-single-product',
-                plugins_url('public/css/single-product.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                [],
-                WC_PAGSEGURO_CONNECT_VERSION
-            );
-
+        if ($ccEnabledInstallments === 'yes') {
             $product_id = $product->get_id();
 
-            $installment_info = get_transient('product_installment_info_' . $product_id);
+            $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);
 
             if (!$installment_info) {
-                self::updateProductInstallmentsTransient($product_id);
-                $installment_info = get_transient('product_installment_info_' . $product_id);
+                self::updateProductInstallmentsTransient($product, ['product_page']);
+                $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);
             }
 
             if ($installment_info) {
@@ -373,12 +376,12 @@ class CreditCard extends Common
     }
 
     /**
-     * Function to delete the installment table HTML as transient for all products
+     * Function to delete the installment transients if the configuration has changed
      * @return void
      */
-    public static function deleteProductInstallmentsTransientForAll()
-    {   
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
+    public static function deleteInstallmentsTransientIfConfigHasChanged()
+    {
+        $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
 
         $cc_installment_options = Params::getConfig('cc_installment_options');
         $cc_installment_options_fixed = Params::getConfig('cc_installment_options_fixed');
@@ -396,7 +399,10 @@ class CreditCard extends Common
 
         $installment_options = json_encode($installment_options);
 
-        if($cc_enabled_installments === 'no' || $installment_options !== get_transient('product_installment_options')){
+        if ($ccInstallmentProductPage === 'no'
+            || $installment_options !== get_transient(
+                'pagbank_product_installment_options'
+            )) {
             $product_ids = wc_get_products(array(
                 'status' => 'publish',
                 'limit' => -1,
@@ -404,12 +410,12 @@ class CreditCard extends Common
             ));
 
             foreach ($product_ids as $product_id) {
-                delete_transient('product_installment_info_' . $product_id);
+                delete_transient('rm_pagbank_product_installment_info_' . $product_id);
                 delete_transient('wc_related_' . $product_id);
                 delete_transient('timeout_wc_related_' . $product_id);
             }
         }
 
-        set_transient('product_installment_options', $installment_options, YEAR_IN_SECONDS);
+        set_transient('pagbank_product_installment_options', $installment_options, YEAR_IN_SECONDS);
     }
 }

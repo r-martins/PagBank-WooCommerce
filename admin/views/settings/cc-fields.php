@@ -75,7 +75,7 @@ return array(
 			'max' => 18,
 		],
 	],
-	'cc_enabled_installment'                     => [
+	'cc_installment_product_page'                     => [
 		'title'       => __('Informações de Parcelamento', 'pagbank-connect'),
 		'label'       => __('Exibir informações de parcelamento na tela do produto?', 'pagbank-connect'),
 		'type'        => 'checkbox',
