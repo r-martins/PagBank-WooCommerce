@@ -32,7 +32,7 @@ foreach ($installments as $installment) {
     <h3><?php echo esc_html(__('Parcelamento PagBank', 'pagbank-connect'));?></h3>
     <table>
         <?php if($installment_info) {
-            echo $installment_info;
+            echo esc_html( $installment_info );
         } ?>
     </table>
 </div>
