@@ -19,6 +19,22 @@ jQuery(document).ready(function($) {
     }
     //endregion
 
+    //region Displaying Product Page installments' options
+    function hideOrShowProductPageInstallmentsOptions()
+    {
+        return function () {
+            if ($(this).is(':checked')) {
+                $('#woocommerce_rm-pagbank_cc_installment_product_page_type').closest('tr').show();
+            } else {
+                $('#woocommerce_rm-pagbank_cc_installment_product_page_type').closest('tr').hide();
+            }
+        };
+    }
+    $(document).on('change', '#woocommerce_rm-pagbank_cc_installment_product_page', hideOrShowProductPageInstallmentsOptions());
+    hideOrShowProductPageInstallmentsOptions().call($('#woocommerce_rm-pagbank_cc_installment_product_page'));
+    
+    //endregion
+    
     //region Displaying and hiding credit card options
     //display #woocommerce_rm-pagbank_cc_installment_options_fixed based on #woocommerce_rm-pagbank_cc_installment_options == fixed
     function hideOrShowFixedOptions() {
