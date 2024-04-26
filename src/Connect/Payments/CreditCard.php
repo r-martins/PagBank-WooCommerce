@@ -362,14 +362,23 @@ class CreditCard extends Common
             }
 
             if ($installment_info) {
-                $template_name = 'product-installments.php';
-                $template_path = locate_template($template_name);
+                $type = Params::getConfig('cc_installment_product_page_type', 'table');
+                $type = preg_replace("/[^a-z\-]/", "", $type); //safety is paramount
+                $template_name = "product-installments-$type.php";
+                $template_path = locate_template('pagbank-connect/' . $template_name);
+                $args = json_decode($installment_info);
+                
                 if (!$template_path) {
                     $template_path = dirname(__FILE__) . '/../../templates/product/' . $template_name;
+                    if (!file_exists($template_path)) {
+                        return;
+                    }
                 }
-
-                $args = json_decode($installment_info);
-
+                
+                if (!$args) {
+                    return;
+                }
+                
                 load_template($template_path, false, $args);
             }
         }
