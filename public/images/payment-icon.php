@@ -8,6 +8,12 @@ $allowedMethods = ['cc', 'pix', 'boleto'];
 $iconColor = Params::getConfig('icons_color', 'gray');
 $method = sanitize_text_field($_GET['method'] ?? '');
 $method = in_array($_GET['method'], $allowedMethods) ? $_GET['method'] : 'cc';
+
+if (extension_loaded('DOM') === false) {
+    echo file_get_contents(__DIR__ . '/' . $method . '.svg');
+    exit;
+}
+
 $doc = new DOMDocument();
 $doc->load(__DIR__ . '/' . $method . '.svg');
 
