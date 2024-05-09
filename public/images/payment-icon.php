@@ -1,4 +1,6 @@
 <?php
+@ob_start(); // Start output buffering
+
 require __DIR__ . '/../../../../../wp-load.php';
 
 use RM_PagBank\Helpers\Params;
@@ -11,6 +13,8 @@ $method = in_array($_GET['method'], $allowedMethods) ? $_GET['method'] : 'cc';
 
 if (extension_loaded('DOM') === false) {
     echo file_get_contents(__DIR__ . '/' . $method . '.svg');
+    $output = @ob_get_clean(); // Get the buffer content and clean it
+    echo $output !== false ? trim($output): ''; // Output the cleaned buffer content
     exit;
 }
 
@@ -36,3 +40,7 @@ foreach ($paths as $path) {
 }
 
 echo $doc->saveXML();
+
+$output = @ob_get_clean(); // Get the buffer content and clean it
+
+echo $output !== false ? trim($output): ''; // Output the cleaned buffer content
