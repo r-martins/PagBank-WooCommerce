@@ -60,5 +60,9 @@ jQuery(document).ready(function($) {
             })   ;
          
     });
+
+    jQuery('.pagbank-feedback-footer .button-close').on('click', function(e) {
+        feedbackModal.dialog('close');
+    });
     
 });
