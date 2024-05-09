@@ -6,9 +6,13 @@ use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
+use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
+use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
 
 /**
  * Class Connect
@@ -93,9 +97,37 @@ class Connect
      *
      * @return array
      */
-    public static function addGateway(array $gateways ): array
+    public static function addGateway(array $gateways): array
     {
+        $section = sanitize_text_field($_GET['section'] ?? '');
+        $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
+
+        // if cart is recurring only show PagBank as payment method
+        $recHelper = new Recurring();
+        $isCartRecurring = $recHelper->isCartRecurring();
+        if ($isCartRecurring) {
+            return [$isStandalone ? new StandaloneCc() : new Gateway()];
+        }
+        
+        if ($isStandalone
+            && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
+            $pix = new StandalonePix();
+            $pix->id = Connect::DOMAIN . '-pix';
+            $gateways[] = $pix;
+
+            $cc = new StandaloneCc();
+            $cc->id = Connect::DOMAIN . '-cc';
+            $gateways[] = $cc;
+
+            $boleto = new StandaloneBoleto();
+            $boleto->id = Connect::DOMAIN . '-boleto';
+            $gateways[] = $boleto;
+            
+            return $gateways;
+        }
+        
         $gateways[] = new Gateway();
+        
         return $gateways;
     }
 
@@ -123,6 +155,7 @@ class Connect
             ],
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
+            'standalone' => Params::getConfig('standalone'),
             'settings' => [
 				'enabled' => Params::getConfig('enabled'),
 				'cc_enabled' => Params::getConfig('cc_enabled'),

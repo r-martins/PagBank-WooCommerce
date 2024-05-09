@@ -232,8 +232,10 @@ jQuery(document).ready(function ($) {
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        if ($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
-            $('#payment_method_rm-pagbank').is(':checked') === false) {
+        if (($('#ps-connect-payment-cc').attr('disabled') !== undefined ||
+            $('#payment_method_rm-pagbank').is(':checked') === false) &&
+            jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc') //when using standalone methods 
+        {
             isSubmitting = true;
             $(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             $(checkoutFormIdentifiers).trigger('submit');
@@ -412,8 +414,10 @@ jQuery(document).ready(function ($) {
         console.debug('PagBank: checkout_place_order');
         
         //if not pagseguro connect or not credit card, return
-        if (jQuery('#ps-connect-payment-cc').attr('disabled') !== undefined ||
-            jQuery('#payment_method_rm-pagbank').is(':checked') === false) {
+        if ((jQuery('#ps-connect-payment-cc').attr('disabled') !== undefined ||
+            jQuery('#payment_method_rm-pagbank').is(':checked') === false) &&
+            jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc') //when using standalone methods 
+        {
             return true;
         }
         

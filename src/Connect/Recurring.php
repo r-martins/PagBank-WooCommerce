@@ -284,7 +284,7 @@ class Recurring
         $recHelper = new RecurringHelper();
         
         if (! $recHelper->isCartRecurring()) 
-            return;
+            return true;
         
         $order = wc_get_order($orderId);
         foreach ($order->get_items() as $item){

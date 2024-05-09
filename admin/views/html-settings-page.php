@@ -19,7 +19,7 @@ $isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
     <div class="pslogo-container">
         <img src="<?php echo esc_url(plugins_url('public/images/pagseguro-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo" alt="PagBank Icon"/>
         <?php
-        echo '<h2>' . esc_html( $this->get_method_title() );
+        echo '<h2>' . esc_html( __('PagBank Connect') );
         wc_back_link( __( 'Voltar para Pagamentos', 'pagbank-connect' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
         ?>
     </div>

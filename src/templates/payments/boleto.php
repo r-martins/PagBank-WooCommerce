@@ -28,3 +28,4 @@ $isCartRecurring = $recHelper->isCartRecurring();
         <?php echo wp_kses($discountText, 'strong'); ?>
     <?php endif; ?>
 </p>
+<input type="hidden" name="ps_connect_method" value="boleto"/>

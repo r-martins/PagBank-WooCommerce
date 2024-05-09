@@ -14,7 +14,7 @@ return array(
         'title'       => __( 'Título Principal', 'pagbank-connect' ),
         'type'        => 'safe_text',
         'description' => __( 'Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect' ),
-        'default'     => __( 'PIX', 'pagbank-connect' ),
+        'default'     => __( 'PIX via PagBank', 'pagbank-connect' ),
         'desc_tip'    => true,
         'class' => 'pix_attr'
 	],

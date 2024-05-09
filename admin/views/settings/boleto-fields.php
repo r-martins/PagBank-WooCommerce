@@ -15,7 +15,7 @@ return array(
 		'title'       => __('Title', 'pagbank-connect'),
 		'type'        => 'safe_text',
 		'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),
-		'default'     => __('Boleto', 'pagbank-connect'),
+		'default'     => __('Boleto via PagBank', 'pagbank-connect'),
 		'desc_tip'    => true,
 	],
 	'boleto_instructions' => [
