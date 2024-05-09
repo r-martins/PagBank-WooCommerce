@@ -370,6 +370,15 @@ class Gateway extends WC_Payment_Gateway_CC
                 'has_rtl' => false,
             ];
         }
+        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
+            $styles['pagseguro-connect-checkout'] = [
+                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
+                'version' => WC_PAGSEGURO_CONNECT_VERSION,
+                'media'   => 'all',
+                'has_rtl' => false,
+            ];
+        }
 
 //        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
 //            $styles['pagseguro-connect-checkout'] = [

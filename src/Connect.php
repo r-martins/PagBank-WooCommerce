@@ -42,6 +42,7 @@ class Connect
         add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 2);
         add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
         add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
+        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
 
         // Load plugin files
         self::includes();
@@ -359,6 +360,27 @@ class Connect
                 __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
                 true
             );
+        }
+    }
+    
+    public static function redirectStandaloneConfigPage()
+    {
+        global $pagenow;
+        if (isset($_GET['page']) && $_GET['page'] == 'wc-settings' && isset($_GET['tab']) && $_GET['tab'] == 'checkout'
+            && isset($_GET['section'])) {
+            switch ($_GET['section']) {
+                case 'rm-pagbank-cc':
+                    wp_redirect(
+                        admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-credit-card')
+                    );
+                    break;
+                case 'rm-pagbank-pix':
+                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-pix'));
+                    break;
+                case 'rm-pagbank-boleto':
+                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-boleto'));
+                    break;
+            }
         }
     }
 

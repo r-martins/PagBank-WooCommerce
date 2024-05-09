@@ -6,12 +6,12 @@ use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Api;
 
-wp_enqueue_style(
-    'pagseguro-connect-checkout',
-    plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-    [],
-    WC_PAGSEGURO_CONNECT_VERSION
-);
+//wp_enqueue_style(
+//    'pagseguro-connect-checkout',
+//    plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+//    [],
+//    WC_PAGSEGURO_CONNECT_VERSION
+//);
 wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
 wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
 wp_add_inline_style(
