@@ -22,6 +22,14 @@ class Boleto extends Gateway
             'pagbank-connect'
         );
         $this->title = $this->get_option('boleto_title', __('Boleto via PagBank', 'pagbank-connect'));
-
+    }
+    
+    public function init_settings()
+    {
+        parent::init_settings();
+        $this->enabled = !empty($this->settings['boleto_enabled']) && 'yes' === $this->settings['boleto_enabled']
+            ? 'yes' : 'no';
+        $this->enabled = ($this->enabled === 'yes'
+            && !empty($this->settings['enabled']) && 'yes' === $this->settings['enabled']) ? 'yes' : 'no';
     }
 }

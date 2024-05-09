@@ -24,4 +24,13 @@ class CreditCard extends Gateway
         );
         $this->title = $this->get_option('cc_title', __('Cartão de Crédito via PagBank', 'pagbank-connect'));
     }
+
+    public function init_settings()
+    {
+        parent::init_settings();
+        $this->enabled = !empty($this->settings['cc_enabled']) && 'yes' === $this->settings['cc_enabled'] ? 'yes'
+            : 'no';
+        $this->enabled = ($this->enabled === 'yes'
+            && !empty($this->settings['enabled']) && 'yes' === $this->settings['enabled']) ? 'yes' : 'no';
+    }
 }
