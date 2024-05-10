@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.9.2
+Stable tag: 4.9.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -164,6 +164,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.9.3 =
+* Correção: quando usado em conjunto com alguns plugins, chamadas ao jQuery falhavam e impediam a finalização do checkout com erros na criptografia do cartão, entre outras coisas.
+* Correção: quando linhas em branco eram inseridas pelo wp-load ou um de seus arquivos/plugins, a imagem dinâmica dos ícones das formas de pagamento não eram exibidas corretamente.
+* Correção: ao desativar o plugin um modal de feedback é exibido. No entanto, se a pessoa mudasse de ideia e clicasse em Cancelar, nada acontecia.
 
 = 4.9.2 =
 * Correção: ícones muito grandes em alguns temas
