@@ -10,17 +10,18 @@ if (!defined('ABSPATH')) {
 }
 /** @var stdClass $args */
 
-$maxInsterestsFree = 0;
+$maxInterestFree = 0;
 foreach ($args as $installment) {
     if ($installment->interest_free === false) {
         break;
     }
-    $maxInsterestsFree++;
+    $maxInterestFree++;
 }
 
-if (!$maxInsterestsFree) {
+if (!$maxInterestFree) {
     return;
 }
+$maxInterestFree--;
 ?>
 <div class="woocommerce pagbank-connect-installments">
     <p><?php echo sprintf(
@@ -29,7 +30,7 @@ if (!$maxInsterestsFree) {
             .'R$ %s</strong> sem juros no Cartão de Crédito com PagBank',
             'pagbank-connect'
         ),
-        $args[$maxInsterestsFree]->installments,
-        wc_format_localized_price($args[$maxInsterestsFree]->amount)
+            $args[$maxInterestFree]->installments,
+        wc_format_localized_price($args[$maxInterestFree]->amount)
     ); ?>.</p>
 </div>
