@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.9.3
+Stable tag: 4.10.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -46,10 +46,10 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto)
 * Permite definir validade de boletos e código PIX
 * Atualições automáticas de status de pedidos
-* Configure como quer exibir o nome da loja na fatura do cartão de crédito
+* Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
 * Suporte a [High-Performance Order Storage (HPOS)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
-* Exibição de informações de parcelas na página de produto em 3 formatos diferentes
+* Exibição de [informações de parcelas na página de produto em 3 formatos diferentes](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
 * Permite exibir os meios de pagamento de [forma individual ou agrupada](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26581505001357-Separar-meios-de-pagamento) (melhor experiência)
 
 
@@ -164,6 +164,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.10.0 =
+* Emails: agora o administrador e cliente só receberão e-mails notificando que um pedido foi criado se o mesmo tiver sido pago.
+* Correção/Mudança: agora pessoas com permissão de gerente de loja e administradores poderão ter acesso ao menu PagBank. Antes somente administradores tinham acesso.
+* Agora é possível usar o shortcode [rm_pagbank_credit_card_installments] para exibir as parcelas de um produto em layouts personalizados.
+* Corrigido Erro na exibição das parcelas quando opção 'Texto com parcela máxima' era selecionado em alguns cenários.
+
 
 = 4.9.3 =
 * Correção: quando usado em conjunto com alguns plugins, chamadas ao jQuery falhavam e impediam a finalização do checkout com erros na criptografia do cartão, entre outras coisas.
