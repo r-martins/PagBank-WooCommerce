@@ -30,7 +30,7 @@ SVG;
         add_menu_page(
             'PagBank Connect', // Page title
             'PagBank', // Menu title
-            'manage_options', // Required capability to view the menu
+            'manage_woocommerce', // Required capability to view the menu
             'rm-pagbank', // Page slug
             [MenuPagBank::class, 'defaultPagBankMenuAction'], // Function that renders the menu page
             $icon, // Menu icon
@@ -51,7 +51,7 @@ SVG;
             'rm-pagbank', // Slug of the parent menu page
             __('Configurações', 'pagbank-connect'), // Page title
             __('Configurações', 'pagbank-connect'), // Submenu title
-            'manage_options', // Required capability to view the submenu
+            'manage_woocommerce', // Required capability to view the submenu
             'rm-pagbank', // Submenu page slug
             [MenuPagBank::class, 'addPagBankMenu'] // Function that renders the submenu page
         );
@@ -59,7 +59,7 @@ SVG;
             'rm-pagbank',
             __('Assinaturas', 'pagbank-connect'),
             __('Assinaturas', 'pagbank-connect'),
-            'manage_options',
+            'manage_woocommerce',
             'rm-pagbank-subscriptions',
             [MenuPagBank::class, 'renderPagbankSubscriptionsListPage']
         );
@@ -68,7 +68,7 @@ SVG;
             null, /// null so it doesn't appear in the menu
             'Visualizar Assinatura', // Page title
             'Visualizar Assinatura', // Submenu title
-            'manage_options', // Required capability to view the submenu
+            'manage_woocommerce', // Required capability to view the submenu
             'rm-pagbank-subscriptions-view', // Submenu page slug
             [MenuPagBank::class, 'renderPagbankSubscriptionViewPage'] // Function that renders the submenu page
         );
