@@ -10,11 +10,11 @@
  * @wordpress-plugin
  * Plugin Name:       PagBank Connect
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente e muito mais.
- * Version:           4.7.2
+ * Version:           4.10.0
  * Requires at least: 5.2
  * Tested up to:      6.5
  * Requires PHP:      7.4
- * Author:            Ricardo Martins
+ * Author:            Ricardo Martins (PagSeguro/PagBank Integrações)
  * Author URI:        https://magenteiro.com
  * License:           GPL-3.0
  * License URI:       https://opensource.org/license/gpl-3/
@@ -32,7 +32,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.7.2' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.10.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );

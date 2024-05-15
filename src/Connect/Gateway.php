@@ -23,6 +23,10 @@ use WP_Error;
  */
 class Gateway extends WC_Payment_Gateway_CC
 {
+    /**
+     * @var true
+     */
+    private static $addedScripts = false;
 
     public function __construct()
     {
@@ -48,15 +52,6 @@ class Gateway extends WC_Payment_Gateway_CC
 		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', 'pagbank-connect'));
 		$this->description = $this->get_option('description');
 		$this->init_settings();
-
-		add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
-        add_action('woocommerce_thankyou_' . $this->id, [$this, 'addThankyouInstructions']);
-        add_action('wp_enqueue_styles', [$this, 'addStyles']);
-        add_action('wp_enqueue_scripts', [$this, 'addScripts']);
-        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
-        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
-        add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
-        add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
     }
 
     public function init_settings(){
@@ -78,6 +73,15 @@ class Gateway extends WC_Payment_Gateway_CC
 				$this->title = '';
 				break;
 		}
+
+        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+        add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
+        add_action('wp_enqueue_styles', [$this, 'addStyles']);
+        add_action('wp_enqueue_scripts', [$this, 'addScripts']);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
+        add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
+        add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
 	}
 
     /**
@@ -188,13 +192,14 @@ class Gateway extends WC_Payment_Gateway_CC
                     'next_bill_at' => $recurringHelper->calculateNextBillingDate(
                         $frequency,
                         $cycle
-                    )->format('Y-m-d H:i:s')
+                    )->format('Y-m-d H:i:s'),
                 ]);
             }
         }
     }
     
     public function admin_options() {
+        $this->id = Connect::DOMAIN;
         $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
 //        wp_enqueue_script( 'pagseguro-admin', plugins_url( 'public/js/admin/admin' . $suffix . '.js', plugin_dir_path( __FILE__ ) ), array( 'jquery' ), WC_PAGSEGURO_VERSION, true );
@@ -319,7 +324,22 @@ class Gateway extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
-        include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
+        if (Params::getConfig('standalone', 'yes') == 'no') {
+            include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
+            return;
+        }
+        
+        switch (get_class($this)){
+            case 'RM_PagBank\Connect\Standalone\Pix':
+                include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/pix.php';
+                break;
+            case 'RM_PagBank\Connect\Standalone\CreditCard':
+                include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard.php';
+                break;
+            case 'RM_PagBank\Connect\Standalone\Boleto':
+                include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/boleto.php';
+                break;
+        }
     }
 
     /**
@@ -344,6 +364,15 @@ class Gateway extends WC_Payment_Gateway_CC
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             $styles['pagseguro-connect-pix'] = [
                 'src'     => plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
+                'version' => WC_PAGSEGURO_CONNECT_VERSION,
+                'media'   => 'all',
+                'has_rtl' => false,
+            ];
+        }
+        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
+            $styles['pagseguro-connect-checkout'] = [
+                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 'deps'    => [],
                 'version' => WC_PAGSEGURO_CONNECT_VERSION,
                 'media'   => 'all',
@@ -390,7 +419,12 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * Add js files for checkout and success page
 	 * @return void
 	 */
-    public function addScripts(){
+    public function addScripts() {
+
+        // If the method has already been called, return early
+        if (self::$addedScripts) {
+            return;
+        }
         $api = new Api();
 		//thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
@@ -463,7 +497,7 @@ class Gateway extends WC_Payment_Gateway_CC
                     true
                 );
             }
-
+            self::$addedScripts = true;
         }
     }
 
@@ -502,7 +536,7 @@ class Gateway extends WC_Payment_Gateway_CC
         }
 
         global $current_section; //only when ?section=rm-pagbank (plugin config page)
-        if ($current_section == Connect::DOMAIN) {
+        if (strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
@@ -545,6 +579,11 @@ class Gateway extends WC_Payment_Gateway_CC
 
         //sanitize $_POST['ps_connect_method']
         $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+        
+        if (Params::getConfig('standalone', 'yes') == 'yes') {
+            $payment_method = filter_input(INPUT_POST, 'payment_method', FILTER_SANITIZE_STRING);
+            $payment_method = str_replace('rm-pagbank-', '', $payment_method);
+        }
 
         $recurringHelper = new \RM_PagBank\Helpers\Recurring();
         if ($recurringHelper->isCartRecurring()) {
@@ -609,12 +648,14 @@ class Gateway extends WC_Payment_Gateway_CC
                 wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect')));
                 return array(
                     'result' => 'fail',
-                    'redirect' => ''
+                    'redirect' => '',
                 );
         }
 
         $order->add_meta_data('pagbank_payment_method', $method->code, true);
 
+        //force payment method, to avoid problems with standalone methods
+        $order->set_payment_method(Connect::DOMAIN);
 
         try {
             $api = new Api();
@@ -628,7 +669,7 @@ class Gateway extends WC_Payment_Gateway_CC
             wc_add_wp_error_notices(new WP_Error('api_error', $e->getMessage()));
             return array(
                 'result' => 'fail',
-                'redirect' => ''
+                'redirect' => '',
             );
         }
         $method->process_response($order, $resp);
@@ -647,23 +688,26 @@ class Gateway extends WC_Payment_Gateway_CC
                 wc_add_wp_error_notices(new WP_Error('api_error', 'Pagamento Recusado. ' . $additional_error));
                 return [
                     'result' => 'fail',
-                    'redirect' => ''
+                    'redirect' => '',
                 ];
             }
         }
         // endregion
 
-        // some notes to customer (replace true with false to make it private)
-        $order->add_order_note( 'PagBank: Pedido criado com sucesso!', true );
+        // some notes to customer (or keep them private if order is pending)
+        $shouldNotify = $order->get_status('edit') !== 'pending';
+        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
         
         // sends the new order email
-        $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
-        $newOrderEmail->trigger($order->get_id());
+        if ($shouldNotify) {
+            $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
+            $newOrderEmail->trigger($order->get_id());
+        }
 
         $woocommerce->cart->empty_cart();
         return array(
             'result' => 'success',
-            'redirect' => $this->get_return_url($order)
+            'redirect' => $this->get_return_url($order),
         );
     }
 
@@ -779,5 +823,9 @@ class Gateway extends WC_Payment_Gateway_CC
         }
 
         return $gateways;
+    }
+
+    public function field_name( $name ) {
+        return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }
 }

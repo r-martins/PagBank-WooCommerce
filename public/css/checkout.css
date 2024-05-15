@@ -17,6 +17,13 @@ li.payment_method_rm-pagbank label img{
     max-width: calc(50px + 6vw);
 }
 
+.wc_payment_method.payment_method_rm-pagbank-pix > label:nth-child(2) > img:nth-child(1),
+.wc_payment_method.payment_method_rm-pagbank-cc > label:nth-child(2) > img:nth-child(1),
+.wc_payment_method.payment_method_rm-pagbank-boleto > label:nth-child(2) > img:nth-child(1)
+{
+    max-height: 35px;
+}
+
 li.payment_method_rm-pagbank label img {
     width: 8rem;
 }

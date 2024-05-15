@@ -5,11 +5,10 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.7.2
+Stable tag: 4.10.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
-
 Autenticação 3D: menos chargeback e mais aprovações.
 
 == Description ==
@@ -47,16 +46,24 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto)
 * Permite definir validade de boletos e código PIX
 * Atualições automáticas de status de pedidos
-* Configure como quer exibir o nome da loja na fatura do cartão de crédito
+* Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
 * Suporte a [High-Performance Order Storage (HPOS)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
+* Exibição de [informações de parcelas na página de produto em 3 formatos diferentes](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
+* Permite exibir os meios de pagamento de [forma individual ou agrupada](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26581505001357-Separar-meios-de-pagamento) (melhor experiência)
 
 
 == Installation ==
-=== Instalação automática ===
+=== Instalação automática via painel ===
 * Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
 * Clique no botão para instalar e ative o plugin
 * Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+
+=== WP-CLI ===
+Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/). 
+
+* Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
+* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
 
 === Instalação manual ===
 * Baixe o [arquivo zip](https://codeload.github.com/r-martins/PagBank-WooCommerce/zip/refs/heads/master) e descompacte ele em sua máquina
@@ -67,14 +74,7 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 === A gente instala pra você 🙀 ===
 Se você preferir, podemos instalar e configurar o plugin para você sem nenhum custo.
 
-[Saiba mais](https://pagseguro.ricardomartins.net.br/woocommerce/agenteinstala.html).
-
-=== WP-CLI ===
-Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/). 
-
-* Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
-* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
- 
+[Saiba mais](https://pagseguro.ricardomartins.net.br/woocommerce/agenteinstala.html). 
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -164,6 +164,31 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.10.0 =
+* Emails: agora o administrador e cliente só receberão e-mails notificando que um pedido foi criado se o mesmo tiver sido pago.
+* Correção/Mudança: agora pessoas com permissão de gerente de loja e administradores poderão ter acesso ao menu PagBank. Antes somente administradores tinham acesso.
+* Agora é possível usar o shortcode [rm_pagbank_credit_card_installments] para exibir as parcelas de um produto em layouts personalizados.
+* Corrigido Erro na exibição das parcelas quando opção 'Texto com parcela máxima' era selecionado em alguns cenários.
+
+
+= 4.9.3 =
+* Correção: quando usado em conjunto com alguns plugins, chamadas ao jQuery falhavam e impediam a finalização do checkout com erros na criptografia do cartão, entre outras coisas.
+* Correção: quando linhas em branco eram inseridas pelo wp-load ou um de seus arquivos/plugins, a imagem dinâmica dos ícones das formas de pagamento não eram exibidas corretamente.
+* Correção: ao desativar o plugin um modal de feedback é exibido. No entanto, se a pessoa mudasse de ideia e clicasse em Cancelar, nada acontecia.
+
+= 4.9.2 =
+* Correção: ícones muito grandes em alguns temas
+* Correção: ao clicar em "Configurar" na lista de pagamentos (ao invés de ir em PagBank > Configurações) nenhuma alteração feita era salva.
+
+= 4.9.1 =
+* Correção: quando exibir meios de pagamento de forma separada estava ativada, os meios de pagamento apareciam mesmo quando desativados.
+
+= 4.9.0 =
+* Agora é possível exibir os meios de pagamento de forma individual (ideal para caso você aceite outros meios de pagamento além do PagBank)
+* Agora quando um carrinho for recorrente (contiver produtos recorrentes PagBank), somente os meios PagBank suportados serão exibidos. 
+
+= 4.8.0 =
+* Agora é possível exibir informações de parcelamento na página do produto em 3 formatos diferentes
 
 = 4.7.2 =
 * Melhoria: agora ao desativar o plugin damos a opção de você adicionar um comentário com mais detalhes sobre o motivo da desativação.

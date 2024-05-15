@@ -225,8 +225,8 @@ class Api
      */
     public static function getPaymentGateway()
     {
-        $gateways = WC_Payment_Gateways::instance();
-        return $gateways->payment_gateways()[Connect::DOMAIN] ?? false;
+//        $gateways = WC_Payment_Gateways::instance();
+        return new Connect\Gateway() ?? false;
     }
 
     /**

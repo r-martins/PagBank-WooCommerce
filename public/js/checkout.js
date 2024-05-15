@@ -1,19 +1,19 @@
 //add listener to the buttons in .ps-connect-buttons-container and display the fieldsets based on the button clicked
 jQuery(document).ready(function($) {
 
-    $(document).on('click', '.ps-connect-buttons-container button', function(e) {
-        let methodName = $(this).attr('id').replace('btn-pagseguro-', '')
+    jQuery(document).on('click', '.ps-connect-buttons-container button', function(e) {
+        let methodName = jQuery(this).attr('id').replace('btn-pagseguro-', '')
 
         //disable all fieldsets with .ps-connect-method
-        $('.ps_connect_method').hide()
-        $('.ps_connect_method').attr('disabled', true)
+        jQuery('.ps_connect_method').hide()
+        jQuery('.ps_connect_method').attr('disabled', true)
 
         //enable the fieldset with the id of the button clicked
-        $('#ps-connect-payment-' + methodName).show()
-        $('#ps-connect-payment-' + methodName).removeAttr('disabled')
+        jQuery('#ps-connect-payment-' + methodName).show()
+        jQuery('#ps-connect-payment-' + methodName).removeAttr('disabled')
 
-        $('.ps-connect-buttons-container button').removeClass('active')
-        $(this).addClass('active')
+        jQuery('.ps-connect-buttons-container button').removeClass('active')
+        jQuery(this).addClass('active')
 
     })
     

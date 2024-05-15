@@ -13,6 +13,13 @@ return array(
 		'description' => '',
 		'default'     => 'yes',
 	],
+    'cc_title'              => [
+        'title'       => __( 'Título Principal', 'pagbank-connect' ),
+        'type'        => 'safe_text',
+        'description' => __( 'Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect' ),
+        'default'     => __( 'Cartão de Crédito via PagBank', 'pagbank-connect' ),
+        'desc_tip'    => true,
+    ],
 	'cc_installment_options'                     => [
 		'title'   => __('Opções de Parcelamento', 'pagbank-connect'),
 		'type'    => 'select',
@@ -75,12 +82,25 @@ return array(
 			'max' => 18,
 		],
 	],
-	'cc_enabled_installment'                     => [
+	'cc_installment_product_page'                     => [
 		'title'       => __('Informações de Parcelamento', 'pagbank-connect'),
 		'label'       => __('Exibir informações de parcelamento na tela do produto?', 'pagbank-connect'),
 		'type'        => 'checkbox',
-		'description' => 'Selecione esta opção para exibir as opções de parcelamento disponíveis para seus produtos.<br/>Ao selecionar uma tabela de parcelamento será exibido após o preço do produto, mostrando o valor parcelado.',
-		'default'     => 'false',
+		'description' => 'Selecione esta opção para exibir as opções de parcelamento disponíveis para seus produtos.',
+		'default'     => 'no',
+	],
+	'cc_installment_product_page_type' => [
+        'title'       => __('Formato das informações de parcelamento', 'pagbank-connect'),
+        'type'        => 'select',
+        'description' => __(
+            '',
+            'pagbank-connect'
+        ),
+        'options'     => [
+            'table'  => __('Tabela com todas as parcelas', 'pagbank-connect'),
+            'text-installment-free' => __('Texto com parcela máxima sem juros', 'pagbank-connect'),
+            'text-installment-max' => __('Texto com parcela máxima', 'pagbank-connect'),
+        ],
 	],
 	'cc_soft_descriptor' => [
 		'title'             => __('Identificador na Fatura', 'pagbank-connect'),

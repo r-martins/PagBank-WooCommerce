@@ -1,8 +1,8 @@
 jQuery(document).ready(function($) {
     console.debug('PagBank: Deactivate script loaded');
 
-    // var feedbackModal = $('<div id="pagbank-feedback-modal" title="Send feedback" style="display:none;"><p>Please enter your feedback:</p><textarea id="feedback-text" style="width:100%;"></textarea></div>').appendTo('body');
-    var feedbackModal = $(pagbankConnect.feedbackModalHtml).appendTo('body');
+    // var feedbackModal = jQuery('<div id="pagbank-feedback-modal" title="Send feedback" style="display:none;"><p>Please enter your feedback:</p><textarea id="feedback-text" style="width:100%;"></textarea></div>').appendTo('body');
+    var feedbackModal = jQuery(pagbankConnect.feedbackModalHtml).appendTo('body');
 
     // Inicializa o modal
     feedbackModal.dialog({
@@ -11,28 +11,28 @@ jQuery(document).ready(function($) {
         buttons: {
             "Send": function() {
                 // Aqui você pode adicionar o código para enviar o feedback
-                console.log($('#feedback-text').val());
-                $(this).dialog("close");
+                console.log(jQuery('#feedback-text').val());
+                jQuery(this).dialog("close");
                 // Quando o feedback for enviado, você pode redirecionar para a URL de desativação
                 // window.location.href = deactivateUrl;
             },
             "Cancel": function() {
-                $(this).dialog("close");
+                jQuery(this).dialog("close");
             }
         },
         open: function() {
-            $(this).attr('style', '');
+            jQuery(this).attr('style', '');
         }
     });
     
-    $('#the-list').on('click', '#deactivate-pagbank-connect', function(e) {
+    jQuery('#the-list').on('click', '#deactivate-pagbank-connect', function(e) {
         window.pagbank_deactivate_event = e;
         e.preventDefault();
-        window.pagbank_deactivate_url = $(this).attr('href');
+        window.pagbank_deactivate_url = jQuery(this).attr('href');
         feedbackModal.dialog('open');
     });
     
-    $('.pagbank-feedback-footer .button-deactivate').on('click', function(e) {
+    jQuery('.pagbank-feedback-footer .button-deactivate').on('click', function(e) {
        //serialize form and send an ajax request
          e.preventDefault();
         var selectedReason = jQuery('input[name="selected-reason"]:checked').val();
@@ -42,7 +42,7 @@ jQuery(document).ready(function($) {
             return true;
         }
         var feedbackData = jQuery('#pagbank-feedback-form').serialize()
-            $.ajax({
+            jQuery.ajax({
                 type: 'POST',
                 url: ajaxurl,
                 data: {
@@ -59,6 +59,10 @@ jQuery(document).ready(function($) {
                 window.location.href = window.pagbank_deactivate_url;
             })   ;
          
+    });
+
+    jQuery('.pagbank-feedback-footer .button-close').on('click', function(e) {
+        feedbackModal.dialog('close');
     });
     
 });

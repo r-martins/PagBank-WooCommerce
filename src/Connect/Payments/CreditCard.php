@@ -289,88 +289,51 @@ class CreditCard extends Common
     }
 
     /**
-     * Function to save the installment table HTML as transient for all products
-     * @return void
-     */
-    public static function saveProductInstallmentsTransientForAll()
-    {   
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
-
-        $generate_transient = get_transient('product_installment_enabled');
-
-        if ($cc_enabled_installments === 'yes' && !$generate_transient) {
-            $product_ids = wc_get_products(array(
-                'status' => 'publish',
-                'limit' => -1,
-                'return' => 'ids',
-            ));
-
-            foreach ($product_ids as $product_id) {
-                self::updateProductInstallmentsTransient($product_id);
-            }
-
-            set_transient('product_installment_enabled', true);
-
-        } else if($cc_enabled_installments === 'no'){
-            $product_ids = wc_get_products(array(
-                'status' => 'publish',
-                'limit' => -1,
-                'return' => 'ids',
-            ));
-
-            foreach ($product_ids as $product_id) {
-                delete_transient('product_installment_info_' . $product_id);
-                delete_transient('wc_related_' . $product_id);
-                delete_transient('timeout_wc_related_' . $product_id);
-            }
-
-            set_transient('product_installment_enabled', false);
-        }
-    }
-
-    /**
      * Function to update the transient when the product is updated
      * @param int $product_id The ID of the product being updated
      * @return void
      */
-    public static function updateProductInstallmentsTransient($product_id) 
+    public static function updateProductInstallmentsTransient($product, $updatedProps)
     {
-        delete_transient('product_installment_info_' . $product_id);
+        if (!array_intersect(['regular_price', 'sale_price', 'product_page'], $updatedProps)) {
+            return;
+        }
+        
+        if (!$product) {
+            return;
+        }
+        
+        delete_transient('rm_pagbank_product_installment_info_' . $product->get_id());
 
-        $product = wc_get_product($product_id);
+        $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
 
-        if (!$product) return;
-
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
-
-        if ($cc_enabled_installments === 'yes') {
-
+        if ($ccInstallmentProductPage === 'yes') {
             $default_installments = Params::getInstallments($product->get_price(), '555566');
 
             if ($default_installments) {
-                $installment_info = '';
-                
-                $iteration = 0;
+                $installments = [];
+
                 foreach ($default_installments as $installment) {
-
-                    if ($iteration % 2 == 0) {
-                        $installment_info .= '<tr>';
-                    }
-
-                    $amout = number_format($installment['installment_amount'], 2, ',', '.');
+                    $amount = number_format($installment['installment_amount'], 2, ',', '.');
                     $total_amount = number_format($installment['total_amount'], 2, ',', '.');
-
-                    $installment_info .= '<td>' . $installment['installments'] . 'x de R$ ' . $amout . ($installment['interest_free'] ? '<small> Sem juros</small>' : '<small> Total: R$' . $total_amount . '</small>') . '</td>';
-                    
-                    if ($iteration % 2 != 0 || $iteration == count($default_installments) - 1) {
-                        $installment_info .= '</tr>';
-                    }
-                    
-                    $iteration++;
+                    $installments[] = [
+                        'installments' => $installment['installments'],
+                        'amount' => $amount,
+                        'interest_free' => $installment['interest_free'],
+                        'total_amount' => $total_amount
+                    ];
                 }
+
+                $installmentsData = wp_json_encode($installments);
             }
 
-            set_transient('product_installment_info_' . $product_id, $installment_info, WEEK_IN_SECONDS);
+            if (!empty($installmentsData)) {
+                set_transient(
+                    'rm_pagbank_product_installment_info_'.$product->get_id(),
+                    $installmentsData,
+                    YEAR_IN_SECONDS
+                );
+            }
         }
     }
 
@@ -382,34 +345,86 @@ class CreditCard extends Common
     {
         global $product;
 
-        if (!$product) return;
+        if (!$product || $product->get_meta('_recurring_enabled') == 'yes') {
+            return;
+        }
 
-        $cc_enabled_installments = Params::getConfig('cc_enabled_installment');
+        $ccEnabledInstallments = Params::getConfig('cc_installment_product_page');
 
-        if ($cc_enabled_installments === 'yes') {
-
-            wp_enqueue_style(
-                'pagseguro-connect-single-product',
-                plugins_url('public/css/single-product.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                [],
-                WC_PAGSEGURO_CONNECT_VERSION
-            );
-
+        if ($ccEnabledInstallments === 'yes') {
             $product_id = $product->get_id();
 
-            $installment_info = get_transient('product_installment_info_' . $product_id);
+            $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);
 
             if (!$installment_info) {
-                self::updateProductInstallmentsTransient($product_id);
-                $installment_info = get_transient('product_installment_info_' . $product_id);
+                self::updateProductInstallmentsTransient($product, ['product_page']);
+                $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);
             }
 
             if ($installment_info) {
-                echo '<div class="rm_installment-table">';
-                echo '<h3>PARCELAMENTO PAGBANK</h3>';
-                echo '<table>' . $installment_info . '</table>';
-                echo '</div>';
+                $type = Params::getConfig('cc_installment_product_page_type', 'table');
+                $type = preg_replace("/[^a-z\-]/", "", $type); //safety is paramount
+                $template_name = "product-installments-$type.php";
+                $template_path = locate_template('pagbank-connect/' . $template_name);
+                $args = json_decode($installment_info);
+                
+                if (!$template_path) {
+                    $template_path = dirname(__FILE__) . '/../../templates/product/' . $template_name;
+                    if (!file_exists($template_path)) {
+                        return;
+                    }
+                }
+                
+                if (!$args) {
+                    return;
+                }
+                
+                load_template($template_path, false, $args);
             }
         }
+    }
+
+    /**
+     * Function to delete the installment transients if the configuration has changed
+     * @return void
+     */
+    public static function deleteInstallmentsTransientIfConfigHasChanged()
+    {
+        $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
+
+        $cc_installment_options = Params::getConfig('cc_installment_options');
+        $cc_installment_options_fixed = Params::getConfig('cc_installment_options_fixed');
+        $cc_installments_options_min_total = Params::getConfig('cc_installments_options_min_total');
+        $cc_installments_options_limit_installments = Params::getConfig('cc_installments_options_limit_installments');
+        $cc_installments_options_max_installments = Params::getConfig('cc_installments_options_max_installments');
+
+        $installment_options = array(
+            'installments' => $cc_installment_options,
+            'installments_fixed' => $cc_installment_options_fixed,
+            'min_total' => $cc_installments_options_min_total,
+            'limit_installments' => $cc_installments_options_limit_installments,
+            'max_installments' => $cc_installments_options_max_installments
+        );
+
+        $installment_options = json_encode($installment_options);
+
+        if ($ccInstallmentProductPage === 'no'
+            || $installment_options !== get_transient(
+                'pagbank_product_installment_options'
+            )) {
+            $product_ids = wc_get_products(array(
+                'status' => 'publish',
+                'limit' => -1,
+                'return' => 'ids',
+            ));
+
+            foreach ($product_ids as $product_id) {
+                delete_transient('rm_pagbank_product_installment_info_' . $product_id);
+                delete_transient('wc_related_' . $product_id);
+                delete_transient('timeout_wc_related_' . $product_id);
+            }
+        }
+
+        set_transient('pagbank_product_installment_options', $installment_options, YEAR_IN_SECONDS);
     }
 }

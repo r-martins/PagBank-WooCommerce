@@ -6,9 +6,13 @@ use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
+use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
+use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
 
 /**
  * Class Connect
@@ -35,9 +39,11 @@ class Connect
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
-        add_action('wp_loaded', [CreditCard::class, 'saveProductInstallmentsTransientForAll']);
-        add_action('woocommerce_update_product', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 1);
-        add_action('woocommerce_single_product_summary', [CreditCard::class, 'getProductInstallments'], 25);
+        add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 2);
+        add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
+        add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
+        add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
+        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
 
         // Load plugin files
         self::includes();
@@ -93,9 +99,37 @@ class Connect
      *
      * @return array
      */
-    public static function addGateway(array $gateways ): array
+    public static function addGateway(array $gateways): array
     {
+        $section = sanitize_text_field($_GET['section'] ?? '');
+        $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
+
+        // if cart is recurring only show PagBank as payment method
+        $recHelper = new Recurring();
+        $isCartRecurring = $recHelper->isCartRecurring();
+        if ($isCartRecurring) {
+            return [$isStandalone ? new StandaloneCc() : new Gateway()];
+        }
+        
+        if ($isStandalone
+            && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
+            $pix = new StandalonePix();
+            $pix->id = Connect::DOMAIN . '-pix';
+            $gateways[] = $pix;
+
+            $cc = new StandaloneCc();
+            $cc->id = Connect::DOMAIN . '-cc';
+            $gateways[] = $cc;
+
+            $boleto = new StandaloneBoleto();
+            $boleto->id = Connect::DOMAIN . '-boleto';
+            $gateways[] = $boleto;
+            
+            return $gateways;
+        }
+        
         $gateways[] = new Gateway();
+        
         return $gateways;
     }
 
@@ -123,6 +157,7 @@ class Connect
             ],
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
+            'standalone' => Params::getConfig('standalone'),
             'settings' => [
 				'enabled' => Params::getConfig('enabled'),
 				'cc_enabled' => Params::getConfig('cc_enabled'),
@@ -140,7 +175,7 @@ class Connect
                 ],
 				'cc' => [
                     'enabled' => Params::getConfig('cc_enabled'),
-                    'enabled_installment' => Params::getConfig('cc_enabled_installment'),
+                    'enabled_installment' => Params::getConfig('cc_installment_product_page'),
                     'installment_options' => Params::getConfig('cc_installment_options'),
                     'installment_options_fixed' => Params::getConfig('cc_installment_options_fixed'),
                     'installments_options_min_total' => Params::getConfig('cc_installments_options_min_total'),
@@ -326,6 +361,27 @@ class Connect
                 __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
                 true
             );
+        }
+    }
+    
+    public static function redirectStandaloneConfigPage()
+    {
+        global $pagenow;
+        if (isset($_GET['page']) && $_GET['page'] == 'wc-settings' && isset($_GET['tab']) && $_GET['tab'] == 'checkout'
+            && isset($_GET['section'])) {
+            switch ($_GET['section']) {
+                case 'rm-pagbank-cc':
+                    wp_redirect(
+                        admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-credit-card')
+                    );
+                    break;
+                case 'rm-pagbank-pix':
+                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-pix'));
+                    break;
+                case 'rm-pagbank-boleto':
+                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-boleto'));
+                    break;
+            }
         }
     }
 

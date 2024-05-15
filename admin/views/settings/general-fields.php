@@ -27,6 +27,19 @@ return array(
         'desc'  => '',
         'id'    => 'wc_pagseguro_connect_general_options',
 	],
+    'standalone' => [
+        'title' => esc_html(__( 'Separar meios de pagamento', 'pagbank-connect')),
+        'label' => esc_html(__('Mostrar meios de pagamento de forma individual', 'pagbank-connect')),
+        'type'  => 'checkbox',
+        'desc_tip' => true,
+        'description' => esc_html(
+            __(
+                'Recomendável se você aceita outros gateways de pagamento. É apenas uma configuração visual.',
+                'pagbank-connect'
+            )), 
+        'default' => 'yes',
+        'id'    => 'wc_pagseguro_connect_together_options',
+    ],
 	'title' => [
         'title'       => esc_html( __( 'Título Principal' , 'pagbank-connect' ) ),
         'type'        => 'text',

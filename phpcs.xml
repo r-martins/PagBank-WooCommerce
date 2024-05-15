@@ -2,7 +2,11 @@
 <ruleset name="WordPress Theme Coding Standards">
 	<description>Use "WordPress" as the sniffer context, but add exclusions.</description>
 
-  <exclude-pattern>/vendor/*</exclude-pattern>
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+  <exclude-pattern>*/.idea/*</exclude-pattern>
+  <exclude-pattern>*/.git/*</exclude-pattern>
+  <exclude-pattern>*/.github/*</exclude-pattern>
+  <exclude-pattern>*/.vscode/*</exclude-pattern>
 
 	<rule ref="WordPress">
 		<exclude name="Generic.WhiteSpace.ScopeIndent.IncorrectExact" />

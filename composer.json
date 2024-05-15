@@ -2,7 +2,7 @@
     "name": "ricardomartins/pagbank-woocommerce",
     "description": "Integração PagBank (PagSeguro) WooCommerce com desconto nas taxas oficiais",
     "type": "wordpress-plugin",
-    "version": "4.7.2",
+    "version": "4.10.0",
     "license": "GPL-3.0",
     "autoload": {
         "psr-4": {
@@ -21,7 +21,8 @@
     "require": {
         "php": ">=7.4",
         "ext-curl": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+        "ext-dom": "*"
     },
     "suggest": {
         "ext-openssl": "Enabling the OpenSSL extension allows you to use secure encryption and decryption functions."
