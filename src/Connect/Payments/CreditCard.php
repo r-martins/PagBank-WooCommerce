@@ -351,7 +351,9 @@ class CreditCard extends Common
 
         $ccEnabledInstallments = Params::getConfig('cc_installment_product_page');
 
-        if ($ccEnabledInstallments === 'yes') {
+        $calledByDoShortcode = Functions::isCalledByDoShortcode();
+
+        if ($ccEnabledInstallments === 'yes' || $calledByDoShortcode) {
             $product_id = $product->get_id();
 
             $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);

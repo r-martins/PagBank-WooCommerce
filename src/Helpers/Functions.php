@@ -283,4 +283,23 @@ class Functions
         // Check if the content contains the `woocommerce_checkout` block.
         return strpos($checkout_page_content, '<!-- wp:woocommerce/checkout ') !== false;
     }
+
+    /**
+     * Check if the current call was made using by do_shortcode function
+     * @return bool
+     */
+    public static function isCalledByDoShortcode(): bool
+    {
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+        $calledByDoShortcode = false;
+
+        foreach ($backtrace as $trace) {
+            if (isset($trace['function']) && $trace['function'] === 'do_shortcode_tag') {
+                $calledByDoShortcode = true;
+                break;
+            }
+        }
+        
+        return $calledByDoShortcode;
+    }
 }
