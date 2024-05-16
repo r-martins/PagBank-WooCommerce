@@ -44,6 +44,7 @@ class Connect
         add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
         add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
         add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
+        add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
 
         // Load plugin files
         self::includes();
@@ -103,13 +104,6 @@ class Connect
     {
         $section = sanitize_text_field($_GET['section'] ?? '');
         $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
-
-        // if cart is recurring only show PagBank as payment method
-        $recHelper = new Recurring();
-        $isCartRecurring = $recHelper->isCartRecurring();
-        if ($isCartRecurring) {
-            return [$isStandalone ? new StandaloneCc() : new Gateway()];
-        }
         
         if ($isStandalone
             && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
@@ -382,6 +376,29 @@ class Connect
                     wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-boleto'));
                     break;
             }
+        }
+    }
+    
+    public static function removeOtherPaymentMethodsWhenRecurring()
+    {
+        // Check if WooCommerce is active
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
+        
+        // if cart is recurring only show PagBank as payment method
+        $recHelper = new Recurring();
+        $isCartRecurring = $recHelper->isCartRecurring();
+        if ($isCartRecurring) {
+            add_filter('woocommerce_available_payment_gateways', function ($gateways) {
+                $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
+                if ($isStandalone) {
+                    $cc = new StandaloneCc();
+                    $cc->id = Connect::DOMAIN . '-cc';
+                    return [$cc->id => $cc];
+                }
+                return [Connect::DOMAIN => new Gateway()];
+            });
         }
     }
 
