@@ -89,9 +89,18 @@ return array(
         'title'       => __('Informações de Parcelamento', 'pagbank-connect'),
         'label'       => __('Exibir informações de parcelamento na tela do produto?', 'pagbank-connect'),
         'type'        => 'checkbox',
-        'description' => 'Se preferir, você pode <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br'
+        'description' => 'Veja <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br'
             .'/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produt'
-            .'o#shortcode" target="_blank">usar um shortcode</a> para inserir em outro lugar.',
+            .'o" target="_blank">como funciona</a>.',
+        'default'     => 'no',
+    ],
+    'cc_installment_shortcode_enabled'              => [
+        'title'       => __('Shortcode de parcelamento', 'pagbank-connect'),
+        'label'       => __('Habilitar', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => 'Veja <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br'
+            .'/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produt'
+            .'o#shortcode" target="_blank">como usar</a>.',
         'default'     => 'no',
     ],
     'cc_installment_product_page_type'         => [
@@ -100,7 +109,7 @@ return array(
         'description' => __(
             '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597'
             .'-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto" target="_blank"'
-            .'>Saiba mais </a><span class="dashicons dashicons-external"></span>',
+            .'>Saiba mais </a>',
             'pagbank-connect'
         ),
         'options'     => [
@@ -128,11 +137,12 @@ return array(
         'title'       => __('Autenticação 3D', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
-        'description' => 'Habilita a autenticação 3D Secure para compras com cartão de crédito. <br/>'
+        'description' => 'Habilita a autenticação <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/a'
+            .'rticles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback" '
+            .'target="_blank">3D Secure</a> para compras com cartão de crédito. <br/>'
             .'A autenticação 3D Secure é um protocolo de segurança que adiciona uma camada extra de proteção '
-            .'para compras online, <br/> e evita que chargebacks de compras não reconhecidas sejam cobrados do lojista. <br/>'
-            .'Para mais informações, consulte a <a href="https://dev.pagbank.uol.com.br/docs/'
-            .'cobrando-com-autenticacao-3ds" target="_blank">documentação</a>.',
+            .'para compras online, <br/> e evita que chargebacks de compras não reconhecidas sejam '
+            .'cobrados do lojista.',
         'default'     => 'yes',
     ],
     'cc_3ds_allow_continue'                    => [

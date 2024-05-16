@@ -1,6 +1,7 @@
 <?php
-
-use RM_PagBank\Connect;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 return array(
 	'recurring_enabled'            => [

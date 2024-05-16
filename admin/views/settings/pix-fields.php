@@ -1,6 +1,7 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-use RM_PagBank\Connect;
+if (!defined('ABSPATH')) {
+    exit;
+} // Exit if accessed directly
 
 return array(
 	'pix_enabled'            => [
