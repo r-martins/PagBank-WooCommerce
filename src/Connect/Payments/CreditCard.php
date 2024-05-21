@@ -311,7 +311,7 @@ class CreditCard extends Common
         if ($ccInstallmentProductPage === 'yes' || $ccShortcodeInUse === 'yes') {
             $default_installments = Params::getInstallments($product->get_price(), '555566');
 
-            if ($default_installments) {
+            if ($default_installments && !isset($default_installments['error'])) {
                 $installments = [];
 
                 foreach ($default_installments as $installment) {

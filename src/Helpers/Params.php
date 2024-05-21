@@ -129,6 +129,7 @@ class Params
             $min_total = (int)self::getConfig('cc_installments_options_min_total', 50);
             $min_total = max(5, $min_total); //avoiding blanks
             $installments = floor($orderTotal / $min_total);
+            $installments = $installments == 1 ? 0 : $installments; //1 is not acceptable as a value by the api
             return $installments > 18 ? 18 : $installments;
 //        }
     }
