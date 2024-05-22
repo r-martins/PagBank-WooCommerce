@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.10.1
+Stable tag: 4.10.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -164,6 +164,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.10.2 =
+* Correção em erro no cálculo de parcelas. Em alguns cenários, dependendo das regras de parcelamento, quando o total de parcelas sem juros era = 1, poderia ocasionar erro na pagina de produto (se as parcelas estivessem sendo exibidas la) e no dropdown de parcelamento do checkout.
+* Correções diversas em warnings e notices em versões mais novas do PHP 8.1 e 8.2 que poderiam aparecer no admin, e em algumas etapas do pedido quando modo debug estava ativo. 
+
 = 4.10.1 =
 * Correção de erro "get_cart was called incorrectly" era exibido quando usado em conjunto com alguns outros plugins (como Mercado Pago), em alguns casos quebrando o carrinho.
 * Alteramos a forma como o uso de shortcode de parcelamento é usado. Agora você deve habilitar ele nas configurações. Isso evita que ele seja adicionado em duplicidade.
