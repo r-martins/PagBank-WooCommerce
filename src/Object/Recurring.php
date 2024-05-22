@@ -16,6 +16,7 @@ class Recurring implements JsonSerializable
 {
     protected string $type;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

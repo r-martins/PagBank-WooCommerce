@@ -17,6 +17,7 @@ class InstructionLines implements JsonSerializable
     private string $line_1;
     private string $line_2;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

@@ -12,6 +12,7 @@ class Item implements JsonSerializable
     private int $quantity;
     private int $unit_amount;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

@@ -22,6 +22,7 @@ class PaymentMethod implements JsonSerializable
     private Boleto $boleto;
     private AuthenticationMethod $authentication_method;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

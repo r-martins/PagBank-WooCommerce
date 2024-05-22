@@ -19,6 +19,7 @@ class Phone implements JsonSerializable
     private int $number;
     private string $type = 'MOBILE';
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

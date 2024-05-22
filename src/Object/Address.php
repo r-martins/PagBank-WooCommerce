@@ -25,6 +25,7 @@ class Address implements JsonSerializable
     private string $country = 'BRA';
     private $postal_code;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         $vars = get_object_vars($this);

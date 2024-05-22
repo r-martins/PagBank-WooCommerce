@@ -34,6 +34,7 @@ class Charge implements JsonSerializable
         'CANCELED'     // Indica que a cobrança foi cancelada.
     ];
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

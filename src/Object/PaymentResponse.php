@@ -18,6 +18,7 @@ class PaymentResponse implements JsonSerializable
     protected string $message;
     protected string $reference;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

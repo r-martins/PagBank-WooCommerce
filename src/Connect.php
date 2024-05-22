@@ -215,7 +215,7 @@ class Connect
         //get order
         if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST['ps_connect_method'])) //phpcs:ignore WordPress.Security.NonceVerification
         {
-            $method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+            $method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
             $method = Functions::getFriendlyPaymentMethodName($method);
             $title = Params::getConfig('title') . ' - ' . $method;
         }

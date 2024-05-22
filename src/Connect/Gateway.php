@@ -531,11 +531,12 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public function addAdminScripts($hook){
-        if (!is_admin()) {
+        global $current_section; //only when ?section=rm-pagbank (plugin config page)
+        
+        if (!is_admin() || !$current_section) {
             return;
         }
 
-        global $current_section; //only when ?section=rm-pagbank (plugin config page)
         if (strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
@@ -578,12 +579,13 @@ class Gateway extends WC_Payment_Gateway_CC
         $order = wc_get_order( $order_id );
 
         //sanitize $_POST['ps_connect_method']
-        $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+        $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
 
         $recurringHelper = new \RM_PagBank\Helpers\Recurring();
         
         if (Params::getConfig('standalone', 'yes') == 'yes') {
-            $payment_method = filter_input(INPUT_POST, 'payment_method', FILTER_SANITIZE_STRING);
+            $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
+            
             $payment_method = str_replace('rm-pagbank-', '', $payment_method);
             if ($recurringHelper->isCartRecurring()) {
                 $payment_method = 'cc'; //@TODO change when supporting other methods for recurring orders
@@ -633,23 +635,27 @@ class Gateway extends WC_Payment_Gateway_CC
 				);
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-encrypted', FILTER_SANITIZE_STRING),
+                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),                    
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_holder_name',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-holder-name', FILTER_SANITIZE_STRING),
+                    htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_3ds_id',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-3d', FILTER_SANITIZE_STRING) ?? false,
+                    isset($_POST['rm-pagbank-card-3d']) 
+                        ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8') 
+                        : false,
                 );
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
             default:
-                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect')));
+                wc_add_wp_error_notices(
+                    new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect'))
+                );
                 return array(
                     'result' => 'fail',
                     'redirect' => '',
@@ -755,7 +761,7 @@ class Gateway extends WC_Payment_Gateway_CC
     public static function notification()
     {
         $body = file_get_contents('php://input');
-        $hash = filter_input(INPUT_GET, 'hash', FILTER_SANITIZE_STRING);
+        $hash = htmlspecialchars($_GET['hash'], ENT_QUOTES, 'UTF-8');
 
         Functions::log('Notification received: ' . $body, 'debug', ['hash' => $hash]);
 
@@ -771,7 +777,7 @@ class Gateway extends WC_Payment_Gateway_CC
             wp_die('ID ou Reference não informados', 400);
 
         // Sanitize $reference and $id
-        $reference = filter_var($reference, FILTER_SANITIZE_STRING);
+        $reference = htmlspecialchars($reference, ENT_QUOTES, 'UTF-8');
 
         // Validate hash
         $order = wc_get_order($reference);

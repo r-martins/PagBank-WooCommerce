@@ -18,6 +18,7 @@ class Boleto implements JsonSerializable
     private InstructionLines $instruction_lines;
     private Holder $holder;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);
