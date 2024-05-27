@@ -13,6 +13,7 @@ use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
+use WC_Order;
 
 /**
  * Class Connect
@@ -45,7 +46,7 @@ class Connect
         add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
         add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
-
+        add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         // Load plugin files
         self::includes();
 
@@ -399,6 +400,75 @@ class Connect
                 }
                 return [Connect::DOMAIN => new Gateway()];
             });
+        }
+    }
+
+    /**
+     * Check if the last pix order has a valid pix key
+     * @return void
+     */
+    public static function checkPixOrderKeys()
+    {
+        $userId = get_current_user_id();
+
+        // Check if the notice has been dismissed for this user
+        if (get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true)) {
+            return;
+        }
+
+        $validationFailed = true;
+        //get the pix key from the last pix order
+        $lastPixOrder = wc_get_orders([
+            'limit' => 1,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'meta_query' => [
+                'relation' => 'AND',
+                [
+                    'key' => 'pagbank_payment_method',
+                    'value' => 'pix',
+                ],
+                [
+                    'key' => 'pagbank_is_sandbox',
+                    'value' => '0',
+                ]
+            ]
+        ]);
+
+        if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
+            return;
+        }
+        
+        $pixKey = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode_text');
+        $validationFailed = Functions::isValidPixCode($pixKey) === false;
+
+        if ($validationFailed) {
+            $qrCodeImg = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode');
+            $helpUrl = 'https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido';
+            $openTicket = 'https://bit.ly/ticketnovo';
+            $orderLink = admin_url('post.php?post=' . $lastPixOrder[0]->get_id() . '&action=edit');
+            $orderId = $lastPixOrder[0]->get_id();
+            ?>
+            <div class="notice notice-error is-dismissible pagbank-pix-notice">
+                <p><?php echo sprintf(
+                        __(
+                            'O último código <a href="%s">código PIX</a> gerado no pedido <a href="%s">%s</a> parece inválido. Isso ocorre porque você provavelmente não possui chaves PIX aleatórias cadastradas no PagBank. <a href="%s">Clique aqui</a> para saber mais.',
+                            'pagbank-connect'
+                        ),
+                        $qrCodeImg,
+                        $orderLink,
+                        $orderId,
+                        $helpUrl
+                    ); ?></p>
+                <p><?php echo sprintf(
+                        __(
+                            'Obs: esta validação de chaves está em fase de testes. Se você acha que a chave gerada está correta, <a href="%s">clique aqui</a> e nos mande o conteúdo de <code>pagbank_pix_qrcode_text</code> do pedido para analisarmos.',
+                            'pagbank-connect'
+                        ),
+                        $openTicket
+                    ); ?></p>
+            </div>
+            <?php
         }
     }
 

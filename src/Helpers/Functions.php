@@ -302,4 +302,19 @@ class Functions
         
         return $calledByDoShortcode;
     }
+
+    /**
+     * Validates if the generated QrCode is valid (BETA)
+     * @param $pixCode
+     *
+     * @return bool
+     */
+    public static function isValidPixCode($pixCode): bool
+    {
+        if (strpos($pixCode, 'br.gov.bcb.pix') !== false && strpos($pixCode, 'pagseguro.com') !== false) {
+            return true;
+        }
+        
+        return false;
+    }
 }

@@ -82,6 +82,15 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
+        ;
+        
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', function() {
+            // Get the current user ID
+            $userId = get_current_user_id();
+
+            // Set the user meta value
+            update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
+        });
 	}
 
     /**
@@ -533,8 +542,26 @@ class Gateway extends WC_Payment_Gateway_CC
 	public function addAdminScripts($hook){
         global $current_section; //only when ?section=rm-pagbank (plugin config page)
         
-        if (!is_admin() || !$current_section) {
+        if (!is_admin()) {
             return;
+        }
+
+        # region Add general script to handle the pix notice dismissal (and maybe other features in the future)
+        wp_register_script(
+            'pagseguro-connect-admin-pix-notice',
+            plugins_url('public/js/admin/ps-connect-admin-general.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['jquery']
+        );
+        $scriptData = array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'action' => 'pagbank_dismiss_pix_order_keys_notice'
+        );
+        wp_localize_script('pagseguro-connect-admin-pix-notice', 'script_data', $scriptData);
+        wp_enqueue_script('pagseguro-connect-admin-pix-notice');
+        # endregion
+        
+        if (!$current_section) {
+            return;   
         }
 
         if (strpos($current_section, Connect::DOMAIN) !== false) {
@@ -834,7 +861,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
         return $gateways;
     }
-
+    
     public function field_name( $name ) {
         return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }
