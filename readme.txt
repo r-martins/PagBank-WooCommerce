@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.10.2
+Stable tag: 4.11.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -164,6 +164,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.11.0 =
+* Melhoria: agora o plugin exibe uma mensagem de erro no admin caso o código PIX esteja sendo gerado incorretamente por conta de algum problema em sua conta PagBank (geralmente porque você não cadastrou a chave aleatória).
+* Correção: o valor dos produtos era informado de forma incorreta ao PagBank quando múltiplos do mesmo item estavam presentes no pedido (embora o valor cobrado estivesse correto).
+
 = 4.10.2 =
 * Correção em erro no cálculo de parcelas. Em alguns cenários, dependendo das regras de parcelamento, quando o total de parcelas sem juros era = 1, poderia ocasionar erro na pagina de produto (se as parcelas estivessem sendo exibidas la) e no dropdown de parcelamento do checkout.
 * Correções diversas em warnings e notices em versões mais novas do PHP 8.1 e 8.2 que poderiam aparecer no admin, e em algumas etapas do pedido quando modo debug estava ativo. 
