@@ -14,6 +14,7 @@ use RM_PagBank\Object\Phone;
 use WC_Customer;
 use WC_Order;
 use WC_Order_Item_Product;
+use WC_Product;
 
 /**
  * Common methods shared between payment methods
@@ -115,11 +116,13 @@ class Common
         
         /** @var WC_Order_Item_Product $item */
         foreach ($this->order->get_items() as $item) {
+            /** @var WC_Product $product */
+            $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
             $itemObj->setName($item['name']);
             $itemObj->setQuantity($item['quantity']);
-            $itemObj->setUnitAmount(Params::convertToCents($item['line_subtotal']));
+            $itemObj->setUnitAmount(Params::convertToCents($product->get_price('edit')));
             
             if ($item['line_subtotal'] == 0) {
                 continue;
