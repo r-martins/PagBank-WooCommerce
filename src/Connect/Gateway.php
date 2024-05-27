@@ -540,7 +540,6 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public function addAdminScripts($hook){
-        global $current_section; //only when ?section=rm-pagbank (plugin config page)
         
         if (!is_admin()) {
             return;
@@ -559,12 +558,10 @@ class Gateway extends WC_Payment_Gateway_CC
         wp_localize_script('pagseguro-connect-admin-pix-notice', 'script_data', $scriptData);
         wp_enqueue_script('pagseguro-connect-admin-pix-notice');
         # endregion
-        
-        if (!$current_section) {
-            return;   
-        }
 
-        if (strpos($current_section, Connect::DOMAIN) !== false) {
+        global $current_section; //only when ?section=rm-pagbank (plugin config page)
+        
+        if ($current_section && strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
