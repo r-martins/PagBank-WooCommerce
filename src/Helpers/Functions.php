@@ -317,4 +317,20 @@ class Functions
         
         return false;
     }
+
+    /**
+     * Adds a meta query filter to the main query
+     * @return void
+     */
+    public static function addMetaQueryFilter(): void
+    {
+        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
+            if (isset($query_vars['meta_query'])) {
+                $meta_query = $wp_query_args['meta_query'] ?? [];
+                $wp_query_args['meta_query'] = array_merge($meta_query, $query_vars['meta_query']);
+            }
+
+            return $wp_query_args;
+        }, 10, 2);
+    }
 }

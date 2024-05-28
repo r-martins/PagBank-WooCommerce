@@ -76,6 +76,8 @@ class Connect
             }
             //endregion
         }
+
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [Gateway::class, 'dismissPixOrderKeysNotice']);
     }
 
     /**
@@ -324,13 +326,7 @@ class Connect
         
         $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
 
-        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
-            if (isset($query_vars['meta_query'])) {
-                $meta_query = $wp_query_args['meta_query'] ?? [];
-                $wp_query_args['meta_query'] = array_merge($meta_query, $query_vars['meta_query']);
-            }
-            return $wp_query_args;
-        }, 10, 2);
+        Functions::addMetaQueryFilter();
         
         $expiredOrders = wc_get_orders([
             'limit' => -1,
@@ -410,13 +406,18 @@ class Connect
     public static function checkPixOrderKeys()
     {
         $userId = get_current_user_id();
+        $isPixEnabled = Params::getConfig('pix_enabled') == 'yes';
 
         // Check if the notice has been dismissed for this user
-        if (get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true)) {
+        if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true)) {
             return;
         }
 
         $validationFailed = true;
+
+        //enable meta query filter
+        Functions::addMetaQueryFilter();
+        
         //get the pix key from the last pix order
         $lastPixOrder = wc_get_orders([
             'limit' => 1,

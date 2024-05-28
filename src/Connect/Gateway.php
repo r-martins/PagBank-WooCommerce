@@ -824,6 +824,14 @@ class Gateway extends WC_Payment_Gateway_CC
         wp_die('OK', 200);
     }
 
+    public static function dismissPixOrderKeysNotice() {
+        // Get the current user ID
+        $userId = get_current_user_id();
+
+        // Set the user meta value
+        update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
+    }
+
 	/**
 	 * Adds order info to the admin order page by including the order info template
 	 *
