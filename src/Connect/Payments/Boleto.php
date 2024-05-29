@@ -63,29 +63,28 @@ class Boleto extends Common
         $boleto->setInstructionLines($instruction_lines);
 
         //cpf or cnpj
-        $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cpf'));
-        if (empty($taxId)) {
-            $taxId = Params::removeNonNumeric($this->order->get_meta('_billing_cnpj'));
-        }
+        $customerData = $this->getCustomerData();
+        $taxId = $customerData->getTaxId();
         
         $holder = new Holder();
         $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         $holder->setTaxId($taxId);
         $holder->setEmail($this->order->get_billing_email());
 
+        $address = $this->getBillingAddress();
         $holderAddress = new Address();
         $holderAddress->setCountry('BRA');
-        $holderAddress->setCity($this->order->get_billing_city());
-        $holderAddress->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode()));
-        $locality = $this->order->get_meta('_billing_neighborhood');
+        $holderAddress->setCity($address->getCity());
+        $holderAddress->setPostalCode($address->getPostalCode());
+        $locality = $address->getLocality();
         
         $holderAddress->setLocality($locality);
-        $holderAddress->setStreet($this->order->get_billing_address_1());
-        $holderAddress->setNumber($this->order->get_meta('_billing_number'));
-        $holderAddress->setRegionCode($this->order->get_billing_state());
+        $holderAddress->setStreet($address->getStreet());
+        $holderAddress->setNumber($address->getNumber());
+        $holderAddress->setRegionCode($address->getRegionCode());
 
-        if($this->order->get_meta('_billing_complement'))
-            $holderAddress->setComplement($this->order->get_meta('_billing_complement'));
+        if($address->getComplement())
+            $holderAddress->setComplement($address->getComplement());
         $holder->setAddress($holderAddress);
         $boleto->setHolder($holder);
         $paymentMethod->setType('BOLETO');
