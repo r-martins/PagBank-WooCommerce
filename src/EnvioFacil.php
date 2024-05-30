@@ -16,66 +16,72 @@ use WC_Shipping_Method;
  */
 class EnvioFacil extends WC_Shipping_Method
 {
-	public $countries = ['BR'];
+    public $countries = ['BR'];
 
-	/**
-	 * Constructor.
-	 *
-	 * @param int $instance_id Instance ID.
-	 *
-	 * @noinspection PhpUnusedParameterInspection*/
-	public function __construct( $instance_id = 0 ) {
-		$this->id                 = 'rm_enviofacil';
-		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect' );  // Title shown in admin
-		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect' ); // Description shown in admin
+    /**
+     * Constructor.
+     *
+     * @param int $instance_id Instance ID.
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    public function __construct($instance_id = 0)
+    {
+        $this->id = 'rm_enviofacil';
+        $this->method_title = __('PagBank Envio Fácil', 'pagbank-connect');  // Title shown in admin
+        $this->method_description = __(
+            'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank',
+            'pagbank-connect'
+        ); // Description shown in admin
 
-		$this->enabled            = $this->get_option('enabled');
-		$this->title              = "PagBank Envio Fácil";
+        $this->enabled = $this->get_option('enabled');
+        $this->title = "PagBank Envio Fácil";
 //		$this->supports           = [
 //			'shipping-zones',
 //			'instance-settings',
 //		];
 
-		$this->init();
-		/** @noinspection PhpUnusedLocalVariableInspection */
-		parent::__construct( $instance_id = 0 );
-	}
+        $this->init();
+        /** @noinspection PhpUnusedLocalVariableInspection */
+        parent::__construct($instance_id = 0);
+    }
 
-	public function init() {
-		// Load the settings API
-		$this->init_form_fields(); // This is part of the settings API. Override the method to add your own settings
-		$this->init_settings(); // This is part of the settings API. Loads settings you previously init.
+    public function init()
+    {
+        // Load the settings API
+        $this->init_form_fields(); // This is part of the settings API. Override the method to add your own settings
+        $this->init_settings(); // This is part of the settings API. Loads settings you previously init.
 
-		// Save settings in admin if you have any defined
-		add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
-	}
+        // Save settings in admin if you have any defined
+        add_action('woocommerce_update_options_shipping_'.$this->id, array($this, 'process_admin_options'));
+    }
 
-	/**
-	 * Is this method available?
-	 *
-	 * @param array $package Package.
-	 * @return bool
-	 */
-	public function is_available($package): bool
-	{
-		if ( ! isset($package['destination']['postcode']))
-		{
-			return false;
-		}
+    /**
+     * Is this method available?
+     *
+     * @param array $package Package.
+     *
+     * @return bool
+     */
+    public function is_available($package): bool
+    {
+        if (!isset($package['destination']['postcode'])) {
+            return false;
+        }
 
-		$connectKey = substr(Params::getConfig('connect_key'), 0, 7);
-		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
-			return false;
-		}
+        $connectKey = substr(Params::getConfig('connect_key'), 0, 7);
+        if (!in_array($connectKey, ['CONPS14', 'CONPS30'])) {
+            return false;
+        }
 
-		return parent::is_available($package);
-	}
+        return parent::is_available($package);
+    }
 
-	/**
-	 * Called to calculate shipping rates for this method. Rates can be added using the add_rate() method.
-	 *
-	 * @param array $package Package array.
-	 */
+    /**
+     * Called to calculate shipping rates for this method. Rates can be added using the add_rate() method.
+     *
+     * @param array $package Package array.
+     */
     public function calculate_shipping($package = array()): array
     {
         $destinationPostcode = $package['destination']['postcode'];
@@ -96,21 +102,21 @@ class EnvioFacil extends WC_Shipping_Method
 
         //body
         $params = [
-            'sender' => $senderPostcode,
+            'sender'   => $senderPostcode,
             'receiver' => $destinationPostcode,
-            'length' => $dimensions['length'],
-            'height' => $dimensions['height'],
-            'width' => $dimensions['width'],
-            'weight' => $dimensions['weight'],
-            'value' => max($productValue, 0.1)
+            'length'   => $dimensions['length'],
+            'height'   => $dimensions['height'],
+            'width'    => $dimensions['width'],
+            'weight'   => $dimensions['weight'],
+            'value'    => max($productValue, 0.1)
         ];
-        $url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
+        $url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?'.http_build_query($params);
         $ret = wp_remote_get($url, [
-            'headers' => [
+            'headers'     => [
                 'Authorization' => 'Bearer '.Params::getConfig('connect_key'),
             ],
-            'timeout' => 10,
-            'sslverify' => false,
+            'timeout'     => 10,
+            'sslverify'   => false,
             'httpversion' => '1.1'
         ]);
 
@@ -135,15 +141,15 @@ class EnvioFacil extends WC_Shipping_Method
 
             $addDays = $this->get_option('add_days', 0);
             $provider['estimateDays'] += $addDays;
-            
+
             $adjustment = $this->get_option('adjustment_fee', 0);
             $provider['contractValue'] = Functions::applyPriceAdjustment($provider['contractValue'], $adjustment);
             $rate = array(
                 'id'       => 'ef-'.$provider['provider'],
                 'label'    => $provider['provider'].' - '.$provider['providerMethod'].sprintf(
-                    __(' - %d dias úteis', 'pagbank-connect'),
-                    $provider['estimateDays']
-                ),
+                        __(' - %d dias úteis', 'pagbank-connect'),
+                        $provider['estimateDays']
+                    ),
                 'cost'     => $provider['contractValue'],
                 'calc_tax' => 'per_order',
             );
@@ -154,90 +160,96 @@ class EnvioFacil extends WC_Shipping_Method
 
             $this->add_rate($rate);
         }
+
         return [];
-	}
+    }
 
-	/**
-	 * Adds the method to the list of available payment methods
-	 *
-	 * @param $methods
-	 *
-	 * @return array
-	 */
-	public static function addMethod($methods): array
-	{
-		$methods['rm_enviofacil'] = 'RM_PagBank\EnvioFacil';
-		return $methods;
-	}
+    /**
+     * Adds the method to the list of available payment methods
+     *
+     * @param $methods
+     *
+     * @return array
+     */
+    public static function addMethod($methods): array
+    {
+        $methods['rm_enviofacil'] = 'RM_PagBank\EnvioFacil';
 
-	/**
-	 * Get a sum of the dimensions and weight of the products in the package
-	 * @param $package
-	 *
-	 * @return int[]
-	 */
-	public function getDimensionsAndWeight($package): array
-	{
-		$return = [
-			'length' => 0,
-			'height' => 0,
-			'width' => 0,
-			'weight' => 0,
-		];
+        return $methods;
+    }
 
-		foreach ($package['contents'] as $content)
-		{
-			/** @var WC_Product $product */
-			$product = $content['data'];
+    /**
+     * Get a sum of the dimensions and weight of the products in the package
+     *
+     * @param $package
+     *
+     * @return int[]
+     */
+    public function getDimensionsAndWeight($package): array
+    {
+        $return = [
+            'length' => 0,
+            'height' => 0,
+            'width'  => 0,
+            'weight' => 0,
+        ];
 
-			$dimensions = $product->get_dimensions(false);
-			//convert each dimension to float
-			$dimensions = array_map('floatval', $dimensions);
+        foreach ($package['contents'] as $content) {
+            /** @var WC_Product $product */
+            $product = $content['data'];
 
-			$weight = floatval($product->get_weight());
+            $dimensions = $product->get_dimensions(false);
+            //convert each dimension to float
+            $dimensions = array_map('floatval', $dimensions);
+
+            $weight = floatval($product->get_weight());
             $weight = Functions::convertToKg($weight);
-			 $return['length'] += $dimensions['length'] * $content['quantity'];
-			 $return['height'] += $dimensions['height'] * $content['quantity'];
-			 $return['width'] += $dimensions['width'] * $content['quantity'];
-			 $return['weight'] += $weight * $content['quantity'];
-		}
+            $return['length'] += $dimensions['length'] * $content['quantity'];
+            $return['height'] += $dimensions['height'] * $content['quantity'];
+            $return['width'] += $dimensions['width'] * $content['quantity'];
+            $return['weight'] += $weight * $content['quantity'];
+        }
 
-		return $return;
+        return $return;
 
-	}
+    }
 
-	/**
-	 * Validates the dimensions and weight of the package and logs errors if any
-	 * @param $dimensions
-	 *
-	 * @return bool
-	 */
-	public function validateDimensions($dimensions): bool
-	{
-		if(($dimensions['length'] < 15 || $dimensions['length'] > 100)){
-			Functions::log('Comprimento inválido: ' . $dimensions['length'] . '. Deve ser entre 15 e 100.', 'debug');
-			return false;
-		}
-		if(($dimensions['height'] < 1 || $dimensions['height'] > 100)){
-			Functions::log('Altura inválida: ' . $dimensions['height'] . '. Deve ser entre 1 e 100.', 'debug');
-			return false;
-		}
-		if(($dimensions['width'] < 10 || $dimensions['width'] > 100)){
-			Functions::log('Largura inválida: ' . $dimensions['width'] . '. Deve ser entre 10 e 100.', 'debug');
-			return false;
-		}
+    /**
+     * Validates the dimensions and weight of the package and logs errors if any
+     *
+     * @param $dimensions
+     *
+     * @return bool
+     */
+    public function validateDimensions($dimensions): bool
+    {
+        if (($dimensions['length'] < 15 || $dimensions['length'] > 100)) {
+            Functions::log('Comprimento inválido: '.$dimensions['length'].'. Deve ser entre 15 e 100.', 'debug');
 
-		if ($dimensions['weight'] > 10 || $dimensions['weight'] < 0.3)
-		{
+            return false;
+        }
+        if (($dimensions['height'] < 1 || $dimensions['height'] > 100)) {
+            Functions::log('Altura inválida: '.$dimensions['height'].'. Deve ser entre 1 e 100.', 'debug');
+
+            return false;
+        }
+        if (($dimensions['width'] < 10 || $dimensions['width'] > 100)) {
+            Functions::log('Largura inválida: '.$dimensions['width'].'. Deve ser entre 10 e 100.', 'debug');
+
+            return false;
+        }
+
+        if ($dimensions['weight'] > 10 || $dimensions['weight'] < 0.3) {
             Functions::log(
                 'Peso inválido: '.$dimensions['weight'].'. Deve ser menor que 10kg e maior que 0.3.',
                 'debug'
             );
-			return false;
-		}
 
-		return true;
-	}
+            return false;
+        }
+
+        return true;
+    }
 
     public function init_form_fields()
     {
@@ -259,52 +271,63 @@ class EnvioFacil extends WC_Shipping_Method
                 'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
                 'default'     => $this->getBasePostcode(),
             ],
-            'adjustment_fee'    => [
+            'adjustment_fee'  => [
                 'title'       => __('Ajuste de preço', 'pagbank-connect'),
                 'type'        => 'text',
                 'description' => __(
-                    'Acrescente ou remova um valor fixo ou percentual do frete. <br/>' .
-                    'Use o sinal de menos para descontar. <br/>Adicione o símbolo % para um valor percentual.',
+                    'Acrescente ou remova um valor fixo ou percentual do frete. <br/>'
+                    .'Use o sinal de menos para descontar. <br/>Adicione o símbolo % para um valor percentual.',
                     'pagbank-connect'
                 ),
                 'placeholder' => __('% ou fixo, positivo ou negativo', 'pagbank-connect'),
                 'desc_tip'    => true,
             ],
-            'add_days' => [
+            'add_days'        => [
                 'title'       => __('Adicionar', 'pagbank-connect'),
                 'type'        => 'number',
                 'description' => __('dias à estimativa do frete.', 'pagbank-connect'),
                 'desc_tip'    => false,
             ],
+            'advanced_boxing' => [
+                'title'       => __('Usar cotação avançada', 'pagbank-connect'),
+                'label'       => __('Habilitar', 'pagbank-connect'),
+                'type'        => 'checkbox',
+                'description' => __(
+                    'Você cadastrará as embalagens e o sistema irá organizar os itens de forma inteligente e calcular o frete em mais de uma caixa quando necessário. Recurso em fase de teste.',
+                    'pagbank-connect'
+                ),
+                'desc_tip'    => true,
+                'default'     => 'no'
+            ],
         ];
 
     }
 
-	/**
-	 * Get base postcode.
-	 *
-	 * @since  3.5.1
-	 * @return string
-	 */
-	protected function getBasePostcode(): string
-	{
-		// WooCommerce 3.1.1+.
-		if ( method_exists( WC()->countries, 'get_base_postcode' ) ) {
-			return WC()->countries->get_base_postcode();
-		}
+    /**
+     * Get base postcode.
+     *
+     * @return string
+     * @since  3.5.1
+     */
+    protected function getBasePostcode(): string
+    {
+        // WooCommerce 3.1.1+.
+        if (method_exists(WC()->countries, 'get_base_postcode')) {
+            return WC()->countries->get_base_postcode();
+        }
 
-		return '';
-	}
+        return '';
+    }
 
-	/**
-	 * Output the shipping settings screen.
-	 */
-	public function admin_options()
-	{
-		if ( ! $this->instance_id ) {
-			echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
-		}
-		echo wp_kses_post( wpautop( $this->get_method_description() ) );
+    /**
+     * Output the shipping settings screen.
+     */
+    public function admin_options()
+    {
+        if (!$this->instance_id) {
+            echo '<h2>'.esc_html($this->get_method_title()).'</h2>';
+        }
+        echo wp_kses_post(wpautop($this->get_method_description()));
         echo wp_kses(
             __(
                 'Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas '
@@ -321,56 +344,146 @@ class EnvioFacil extends WC_Shipping_Method
                 )
             ).'</p>';
         echo '<p><a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-'
-            .'Envio-F%C3%A1cil-com-WooCommerce" target="_blank">'
-            .esc_html(__('Ver documentação ↗', 'pagbank-connect')).'</a>'.'</p>';
+            .'Envio-F%C3%A1cil-com-WooCommerce" target="_blank">'.esc_html(__('Ver documentação ↗', 'pagbank-connect'))
+            .'</a>'.'</p>';
         echo $this->get_admin_options_html(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
     }
 
-	/**
-	 * Validates if the method can be enabled with the configured connect key
-	 *
-	 * @param $value string
-	 *
-	 * @return string
-	 * @noinspection PhpUnused
-	 * @noinspection PhpUnusedParameterInspection
-	 */
-    public function validate_enabled_field(string $value) : string
+    /**
+     * Validates if the method can be enabled with the configured connect key
+     *
+     * @param $value string
+     *
+     * @return string
+     * @noinspection PhpUnused
+     * @noinspection PhpUnusedParameterInspection
+     */
+    public function validate_enabled_field(string $value): string
     {
-		// We can't rely on the passed $value here, because WordPress always sends 'enabled' as value
-        $value = htmlspecialchars($_POST['woocommerce_'] . $this->id . '_enabled', ENT_QUOTES, 'UTF-8');
-        
-		$value = $value == '1' ? 'yes' : 'no';
+        // We can't rely on the passed $value here, because WordPress always sends 'enabled' as value
+        $value = isset($_POST['woocommerce_'.$this->id.'_enabled']) ? htmlspecialchars(
+            $_POST['woocommerce_'.$this->id.'_enabled'],
+            ENT_QUOTES,
+            'UTF-8'
+        ) : 'no';
 
-		$connectKey = Params::getConfig('connect_key');
-		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
-			WC_Admin_Settings::add_error(
-				__(
-					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
-					.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
-					'pagbank-connect'
-				)
-			);
-			$value = 'no';
-		}
+        $value = $value == '1' ? 'yes' : 'no';
 
-		return $value;
-	}
+        $connectKey = Params::getConfig('connect_key');
+        if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
+            WC_Admin_Settings::add_error(
+                __(
+                    'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
+                    .'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
+                    'pagbank-connect'
+                )
+            );
+            $value = 'no';
+        }
 
-    public function validate_adjustment_fee_field($key, $value) {
+        return $value;
+    }
+
+    public function validate_adjustment_fee_field($key, $value)
+    {
         return Functions::validateDiscountValue($value, true);
     }
-    
-    public function validate_add_days_field($key, $value) {
+
+    public function validate_add_days_field($key, $value)
+    {
         if ($value === '') {
             return '';
         }
+
         return absint($value);
     }
 
-	public function init_settings()
-	{
-		$this->init_form_fields();
-		parent::init_settings();
-	}
+    public function init_settings()
+    {
+        $this->init_form_fields();
+        parent::init_settings();
+    }
+
+    public function registerPagBankBoxesPage()
+    {
+        add_submenu_page(
+            'rm-pagbank', // Parent slug
+            'Gerenciar Embalagens', // Page title
+            'Gerenciar Embalagens', // Menu title
+            'manage_options', // Capability
+            'pagbank-boxes', // Menu slug
+            [$this, 'renderPagBankBoxesPage'] // Callback function
+        );
+    }
+
+    public static function renderPagBankBoxesPage()
+    {
+
+        global $wpdb;
+
+        // Get the boxes from the database
+        $boxes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}pagbank_ef_boxes");
+
+        // Display the boxes in a table
+        echo '<table>';
+        echo '<tr><th>ID</th><th>Reference</th><th>Width</th><th>Height</th><th>Depth</th><th>Active</th><th>Actions</th></tr>';
+        foreach ($boxes as $box) {
+            echo '<tr>';
+            echo '<td>'.$box->box_id.'</td>';
+            echo '<td>'.$box->reference.'</td>';
+            echo '<td>'.$box->outer_width.'</td>';
+            echo '<td>'.$box->outer_depth.'</td>';
+            echo '<td>'.$box->outer_depth.'</td>';
+            echo '<td>'.($box->is_available ? 'Yes' : 'No').'</td>';
+            echo '<td><button class="edit-box" data-id="'.$box->box_id
+                .'">Edit</button> <button class="delete-box" data-id="'.$box->box_id.'">Delete</button></td>';
+            echo '</tr>';
+        }
+        echo '</table>';
+
+        // Add the template for the modal
+        echo '<script type="text/template" id="tmpl-box-form-modal">
+        <div class="wc-backbone-modal">
+            <div class="wc-backbone-modal-content">
+                <section class="wc-backbone-modal-main" role="main">
+                    <header class="wc-backbone-modal-header">
+                        <h1>' . __('Add/Edit Box', 'pagbank-connect') . '</h1>
+                        <button class="modal-close modal-close-link dashicons dashicons-no-alt">
+                            <span class="screen-reader-text">Close modal panel</span>
+                        </button>
+                    </header>
+                    <article>
+                        <form id="box-form">
+                            <!-- Add the form fields here -->
+                            <label for="box-id">Box ID:</label>
+                            <input type="text" id="box-id" name="box-id">
+                            <label for="box-reference">Reference:</label>
+                            <input type="text" id="box-reference" name="box-reference">
+                            <label for="box-width">Width:</label>
+                            <input type="text" id="box-width" name="box-width">
+                            <label for="box-height">Height:</label>
+                            <input type="text" id="box-height" name="box-height">
+                            <label for="box-depth">Depth:</label>
+                            <input type="text" id="box-depth" name="box-depth">
+                            <label for="box-active">Active:</label>
+                            <input type="checkbox" id="box-active" name="box-active">
+                        </form>
+                    </article>
+                    <footer>
+                        <div class="inner">
+                            <button id="btn-ok" class="button button-primary button-large">' . __('Save', 'pagbank-connect') . '</button>
+                        </div>
+                    </footer>
+                </section>
+            </div>
+        </div>
+        <div class="wc-backbone-modal-backdrop modal-close"></div>
+    </script>';
+
+
+        // Add the "Add" button
+        echo '<button id="add-box">Add Box</button>';
+        
+    }
+   
 }

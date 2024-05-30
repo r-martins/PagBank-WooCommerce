@@ -587,6 +587,34 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
         
+        if ($hook == 'pagbank_page_rm-pagbank-ef-boxes') {
+            wp_enqueue_script('wc-backbone-modal');
+            wp_add_inline_script('wc-backbone-modal', '
+                jQuery(function($) {
+                    // Handle the click event of the "Add" button
+                    $("#add-box").on("click", function(e) {
+                        e.preventDefault();
+        
+                        // Initialize the modal
+                        new $.WCBackboneModal({
+                            template: "wc-backbone-modal"
+                        });
+        
+                        // Handle the click event of the "Save" button in the modal
+                        $("#btn-ok").on("click", function(e) {
+                            e.preventDefault();
+        
+                            // Submit the form
+                            $("#box-form").submit();
+        
+                            // Close the modal
+                            $(".modal-close").trigger("click");
+                        });
+                    });
+                });
+            ');
+        }
+        
     }
 
 	/**

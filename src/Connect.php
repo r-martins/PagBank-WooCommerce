@@ -251,10 +251,30 @@ class Connect
                     PRIMARY KEY  (id)
                 )
                     comment 'Recurring profiles information for PagBank Subscribers';";
+
+
+        $efBoxesTable = $wpdb->prefix . 'pagbank_ef_boxes';
+        $sql .= "CREATE TABLE $efBoxesTable
+                (
+                    box_id       int auto_increment,
+                    reference    varchar(30)              not null,
+                    is_available tinyint     default 1    not null,
+                    outer_width  int                      not null,
+                    outer_depth  int                      not null,
+                    outer_length int                      not null,
+                    inner_length int                      not null,
+                    inner_width  int                      not null,
+                    inner_depth  int                      not null,
+                    max_weight   int                      not null,
+                    empty_weight int                      not null,
+                    cost         float(4, 2) default 0.00 null,
+                    PRIMARY KEY (box_id)
+                )
+                    comment 'Boxes related to Envio Fácil Shipping';";
         
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
-        add_option('pagbank_db_version', '4.0');
+        add_option('pagbank_db_version', '4.12');
     }
     
     public static function uninstall()

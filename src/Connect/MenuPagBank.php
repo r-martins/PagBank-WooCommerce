@@ -4,6 +4,7 @@ namespace RM_PagBank\Connect;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\Details\OrdersList;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionDetails;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionList;
+use RM_PagBank\EnvioFacil;
 
 /**
  * Adds the PagBank menu and some of its submenus.
@@ -62,6 +63,15 @@ SVG;
             'manage_woocommerce',
             'rm-pagbank-subscriptions',
             [MenuPagBank::class, 'renderPagbankSubscriptionsListPage']
+        );
+        
+        add_submenu_page(
+            'rm-pagbank', // Parent slug
+            __('Gerenciar Embalagens', 'pagbank-connect'), // Page title
+            __('Gerenciar Embalagens', 'pagbank-connect'), // Menu title
+            'manage_woocommerce', // Capability
+            'rm-pagbank-ef-boxes', // Menu slug
+            [EnvioFacil::class, 'renderPagBankBoxesPage'] // Callback function
         );
 
         add_submenu_page(
