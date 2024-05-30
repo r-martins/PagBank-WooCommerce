@@ -76,6 +76,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
+        add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 20, 4);
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
@@ -768,6 +769,27 @@ class Gateway extends WC_Payment_Gateway_CC
         if ($order->get_meta('_pagbank_recurring_initial')) {
             $recurring = new Recurring();
             $recurring->getThankyouInstructions($order);
+        }
+    }
+
+    public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email)
+    {
+        if($email->id  === 'customer_processing_order' && !$sent_to_admin) {
+            switch ($order->get_meta('pagbank_payment_method')) {
+                case 'boleto':
+                    $method = new Boleto($order);
+                    break;
+                case 'pix':
+                    $method = new Payments\Pix($order);
+                    break;
+                default:
+                    $method = null;
+                    break;
+            }
+
+            if (!empty($method)) {
+                $method->addInstructionsToNewOrderEmail($order->get_id());
+            }
         }
     }
 
