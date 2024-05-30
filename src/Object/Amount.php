@@ -19,6 +19,7 @@ class Amount implements JsonSerializable
     private Summary $summary;
 	private Fees $fees;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

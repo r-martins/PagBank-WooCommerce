@@ -41,6 +41,7 @@ class AuthenticationMethod implements JsonSerializable
     /*ID da transação gerada pelo servidor de diretório durante uma autenticação - Recomendado para a bandeira MASTERCARD. ⚠️ Condicional para 3DS. ⚠️*/
     protected string $dstrans_id;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

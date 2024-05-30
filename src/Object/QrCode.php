@@ -17,6 +17,7 @@ class QrCode implements JsonSerializable
     private Amount $amount;
     private string $expiration_date;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

@@ -17,6 +17,7 @@ class Buyer implements JsonSerializable
     private Interest $interest;
 
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

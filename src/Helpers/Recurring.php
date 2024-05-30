@@ -68,16 +68,24 @@ class Recurring
      */
     public function isCartRecurring(WC_Cart $cart = null): bool
     {
-        if (!$cart) 
-            $cart = WC()->cart;
-        
-        if (!$cart) 
+        //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
+        if (!did_action('woocommerce_load_cart_from_session')) {
             return false;
+        }
+        
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+        
+        if (!$cart) {
+            return false;
+        }
         
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
-            if ($product->get_meta('_recurring_enabled') == 'yes') 
+            if ($product->get_meta('_recurring_enabled') == 'yes') {
                 return true;
+            }
         }
         
         return false;

@@ -18,6 +18,7 @@ class Summary implements JsonSerializable
     private int $paid;
     private int $refunded;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

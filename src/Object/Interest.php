@@ -18,6 +18,7 @@ class Interest implements JsonSerializable
     private int $installments;
 
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

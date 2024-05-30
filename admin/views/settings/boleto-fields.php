@@ -1,7 +1,6 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-use RM_PagBank\Connect;
 
 return array(
 	'boleto_enabled'      => [

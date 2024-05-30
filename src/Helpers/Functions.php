@@ -283,4 +283,54 @@ class Functions
         // Check if the content contains the `woocommerce_checkout` block.
         return strpos($checkout_page_content, '<!-- wp:woocommerce/checkout ') !== false;
     }
+
+    /**
+     * Check if the current call was made using by do_shortcode function
+     * @return bool
+     */
+    public static function isCalledByDoShortcode(): bool
+    {
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+        $calledByDoShortcode = false;
+
+        foreach ($backtrace as $trace) {
+            if (isset($trace['function']) && $trace['function'] === 'do_shortcode_tag') {
+                $calledByDoShortcode = true;
+                break;
+            }
+        }
+        
+        return $calledByDoShortcode;
+    }
+
+    /**
+     * Validates if the generated QrCode is valid (BETA)
+     * @param $pixCode
+     *
+     * @return bool
+     */
+    public static function isValidPixCode($pixCode): bool
+    {
+        if (strpos($pixCode, 'br.gov.bcb.pix') !== false && strpos($pixCode, 'pagseguro.com') !== false) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Adds a meta query filter to the main query
+     * @return void
+     */
+    public static function addMetaQueryFilter(): void
+    {
+        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
+            if (isset($query_vars['meta_query'])) {
+                $meta_query = $wp_query_args['meta_query'] ?? [];
+                $wp_query_args['meta_query'] = array_merge($meta_query, $query_vars['meta_query']);
+            }
+
+            return $wp_query_args;
+        }, 10, 2);
+    }
 }

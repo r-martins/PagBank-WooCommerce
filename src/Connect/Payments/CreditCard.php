@@ -306,11 +306,12 @@ class CreditCard extends Common
         delete_transient('rm_pagbank_product_installment_info_' . $product->get_id());
 
         $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
+        $ccShortcodeInUse = Params::getConfig('cc_installment_shortcode_enabled');
 
-        if ($ccInstallmentProductPage === 'yes') {
+        if ($ccInstallmentProductPage === 'yes' || $ccShortcodeInUse === 'yes') {
             $default_installments = Params::getInstallments($product->get_price(), '555566');
 
-            if ($default_installments) {
+            if ($default_installments && !isset($default_installments['error'])) {
                 $installments = [];
 
                 foreach ($default_installments as $installment) {
@@ -351,7 +352,11 @@ class CreditCard extends Common
 
         $ccEnabledInstallments = Params::getConfig('cc_installment_product_page');
 
-        if ($ccEnabledInstallments === 'yes') {
+        $calledByDoShortcode = Functions::isCalledByDoShortcode();
+        $ccShortcodeInUse = Params::getConfig('cc_installment_shortcode_enabled');
+        
+        if (($ccEnabledInstallments === 'yes' && !$calledByDoShortcode)
+            || ($calledByDoShortcode && $ccShortcodeInUse === 'yes')) {
             $product_id = $product->get_id();
 
             $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);

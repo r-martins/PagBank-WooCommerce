@@ -19,6 +19,7 @@ class Customer implements JsonSerializable
     private string $tax_id;
     private array $phone;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

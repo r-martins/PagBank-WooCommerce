@@ -33,6 +33,7 @@ class TokenData implements JsonSerializable
 	//Assurance level of the tokenized card.
     protected int $assurance_level;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

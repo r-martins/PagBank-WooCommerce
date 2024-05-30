@@ -13,6 +13,7 @@ use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
+use WC_Order;
 
 /**
  * Class Connect
@@ -44,7 +45,8 @@ class Connect
         add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
         add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
         add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
-
+        add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
+        add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         // Load plugin files
         self::includes();
 
@@ -74,6 +76,8 @@ class Connect
             }
             //endregion
         }
+
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [Gateway::class, 'dismissPixOrderKeysNotice']);
     }
 
     /**
@@ -103,13 +107,6 @@ class Connect
     {
         $section = sanitize_text_field($_GET['section'] ?? '');
         $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
-
-        // if cart is recurring only show PagBank as payment method
-        $recHelper = new Recurring();
-        $isCartRecurring = $recHelper->isCartRecurring();
-        if ($isCartRecurring) {
-            return [$isStandalone ? new StandaloneCc() : new Gateway()];
-        }
         
         if ($isStandalone
             && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
@@ -221,7 +218,7 @@ class Connect
         //get order
         if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST['ps_connect_method'])) //phpcs:ignore WordPress.Security.NonceVerification
         {
-            $method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
+            $method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
             $method = Functions::getFriendlyPaymentMethodName($method);
             $title = Params::getConfig('title') . ' - ' . $method;
         }
@@ -329,13 +326,7 @@ class Connect
         
         $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
 
-        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
-            if (isset($query_vars['meta_query'])) {
-                $meta_query = $wp_query_args['meta_query'] ?? [];
-                $wp_query_args['meta_query'] = array_merge($meta_query, $query_vars['meta_query']);
-            }
-            return $wp_query_args;
-        }, 10, 2);
+        Functions::addMetaQueryFilter();
         
         $expiredOrders = wc_get_orders([
             'limit' => -1,
@@ -382,6 +373,103 @@ class Connect
                     wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-boleto'));
                     break;
             }
+        }
+    }
+    
+    public static function removeOtherPaymentMethodsWhenRecurring()
+    {
+        // Check if WooCommerce is active
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
+        
+        // if cart is recurring only show PagBank as payment method
+        $recHelper = new Recurring();
+        $isCartRecurring = $recHelper->isCartRecurring();
+        if ($isCartRecurring) {
+            add_filter('woocommerce_available_payment_gateways', function ($gateways) {
+                $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
+                if ($isStandalone) {
+                    $cc = new StandaloneCc();
+                    $cc->id = Connect::DOMAIN . '-cc';
+                    return [$cc->id => $cc];
+                }
+                return [Connect::DOMAIN => new Gateway()];
+            });
+        }
+    }
+
+    /**
+     * Check if the last pix order has a valid pix key
+     * @return void
+     */
+    public static function checkPixOrderKeys()
+    {
+        $userId = get_current_user_id();
+        $isPixEnabled = Params::getConfig('pix_enabled') == 'yes';
+
+        // Check if the notice has been dismissed for this user
+        if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true)) {
+            return;
+        }
+
+        $validationFailed = true;
+
+        //enable meta query filter
+        Functions::addMetaQueryFilter();
+        
+        //get the pix key from the last pix order
+        $lastPixOrder = wc_get_orders([
+            'limit' => 1,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'meta_query' => [
+                'relation' => 'AND',
+                [
+                    'key' => 'pagbank_payment_method',
+                    'value' => 'pix',
+                ],
+                [
+                    'key' => 'pagbank_is_sandbox',
+                    'value' => '0',
+                ]
+            ]
+        ]);
+
+        if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
+            return;
+        }
+        
+        $pixKey = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode_text');
+        $validationFailed = Functions::isValidPixCode($pixKey) === false;
+
+        if ($validationFailed) {
+            $qrCodeImg = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode');
+            $helpUrl = 'https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido';
+            $openTicket = 'https://bit.ly/ticketnovo';
+            $orderLink = admin_url('post.php?post=' . $lastPixOrder[0]->get_id() . '&action=edit');
+            $orderId = $lastPixOrder[0]->get_id();
+            ?>
+            <div class="notice notice-error is-dismissible pagbank-pix-notice">
+                <p><?php echo sprintf(
+                        __(
+                            'O último código <a href="%s">código PIX</a> gerado no pedido <a href="%s">%s</a> parece inválido. Isso ocorre porque você provavelmente não possui chaves PIX aleatórias cadastradas no PagBank. <a href="%s">Clique aqui</a> para saber mais.',
+                            'pagbank-connect'
+                        ),
+                        $qrCodeImg,
+                        $orderLink,
+                        $orderId,
+                        $helpUrl
+                    ); ?></p>
+                <p><?php echo sprintf(
+                        __(
+                            'Obs: esta validação de chaves está em fase de testes. Se você acha que a chave gerada está correta, <a href="%s">clique aqui</a> e nos mande o conteúdo de <code>pagbank_pix_qrcode_text</code> do pedido para analisarmos.',
+                            'pagbank-connect'
+                        ),
+                        $openTicket
+                    ); ?></p>
+            </div>
+            <?php
         }
     }
 

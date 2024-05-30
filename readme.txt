@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.10.0
+Stable tag: 4.11.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -164,6 +164,28 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.11.2 =
+* Correção: em alguns cenários, o campo de CPF, número do endereço e bairro não eram enviados corretamente ocasionando falha no fechamento do pedido (especialmente em Boletos).
+
+= 4.11.1 = 
+* Correção: nosso validador de chaves pix adicionado na versão anterior apontava para pedidos não-pix
+* Correção: a mensagem de validação do pix não era ignorada em alguns cenários após dispensá-la
+
+= 4.11.0 =
+* Melhoria: agora o plugin exibe uma mensagem de erro no admin caso o código PIX esteja sendo gerado incorretamente por conta de algum problema em sua conta PagBank (geralmente porque você não cadastrou a chave aleatória).
+* Correção: o valor dos produtos era informado de forma incorreta ao PagBank quando múltiplos do mesmo item estavam presentes no pedido (embora o valor cobrado estivesse correto).
+
+= 4.10.2 =
+* Correção em erro no cálculo de parcelas. Em alguns cenários, dependendo das regras de parcelamento, quando o total de parcelas sem juros era = 1, poderia ocasionar erro na pagina de produto (se as parcelas estivessem sendo exibidas la) e no dropdown de parcelamento do checkout.
+* Correções diversas em warnings e notices em versões mais novas do PHP 8.1 e 8.2 que poderiam aparecer no admin, e em algumas etapas do pedido quando modo debug estava ativo. 
+
+= 4.10.1 =
+* Correção de erro "get_cart was called incorrectly" era exibido quando usado em conjunto com alguns outros plugins (como Mercado Pago), em alguns casos quebrando o carrinho.
+* Alteramos a forma como o uso de shortcode de parcelamento é usado. Agora você deve habilitar ele nas configurações. Isso evita que ele seja adicionado em duplicidade.
+* Corrigido falha na compra de produto recorrente quando meios de pagamento eram configurados para ser exibidos de forma separada. A mensagem Método de pagamento inválido era exibida.
+* Melhoramos a descrição de alguns dos campos de configuração de cartão de crédito, a fim de deixar mais claro o que cada um faz e com mais links para documentação.
+
+
 = 4.10.0 =
 * Emails: agora o administrador e cliente só receberão e-mails notificando que um pedido foi criado se o mesmo tiver sido pago.
 * Correção/Mudança: agora pessoas com permissão de gerente de loja e administradores poderão ter acesso ao menu PagBank. Antes somente administradores tinham acesso.

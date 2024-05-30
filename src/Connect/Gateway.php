@@ -82,6 +82,15 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
+        ;
+        
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', function() {
+            // Get the current user ID
+            $userId = get_current_user_id();
+
+            // Set the user meta value
+            update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
+        });
 	}
 
     /**
@@ -531,12 +540,28 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public function addAdminScripts($hook){
+        
         if (!is_admin()) {
             return;
         }
 
+        # region Add general script to handle the pix notice dismissal (and maybe other features in the future)
+        wp_register_script(
+            'pagseguro-connect-admin-pix-notice',
+            plugins_url('public/js/admin/ps-connect-admin-general.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['jquery']
+        );
+        $scriptData = array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'action' => 'pagbank_dismiss_pix_order_keys_notice'
+        );
+        wp_localize_script('pagseguro-connect-admin-pix-notice', 'script_data', $scriptData);
+        wp_enqueue_script('pagseguro-connect-admin-pix-notice');
+        # endregion
+
         global $current_section; //only when ?section=rm-pagbank (plugin config page)
-        if (strpos($current_section, Connect::DOMAIN) !== false) {
+        
+        if ($current_section && strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
@@ -578,14 +603,19 @@ class Gateway extends WC_Payment_Gateway_CC
         $order = wc_get_order( $order_id );
 
         //sanitize $_POST['ps_connect_method']
-        $payment_method = filter_input(INPUT_POST, 'ps_connect_method', FILTER_SANITIZE_STRING);
-        
-        if (Params::getConfig('standalone', 'yes') == 'yes') {
-            $payment_method = filter_input(INPUT_POST, 'payment_method', FILTER_SANITIZE_STRING);
-            $payment_method = str_replace('rm-pagbank-', '', $payment_method);
-        }
+        $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
 
         $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        
+        if (Params::getConfig('standalone', 'yes') == 'yes') {
+            $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
+            
+            $payment_method = str_replace('rm-pagbank-', '', $payment_method);
+            if ($recurringHelper->isCartRecurring()) {
+                $payment_method = 'cc'; //@TODO change when supporting other methods for recurring orders
+            }
+        }
+
         if ($recurringHelper->isCartRecurring()) {
             $order->add_meta_data('_pagbank_recurring_initial', true);
         }
@@ -629,23 +659,27 @@ class Gateway extends WC_Payment_Gateway_CC
 				);
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-encrypted', FILTER_SANITIZE_STRING),
+                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),                    
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_holder_name',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-holder-name', FILTER_SANITIZE_STRING),
+                    htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_3ds_id',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-3d', FILTER_SANITIZE_STRING) ?? false,
+                    isset($_POST['rm-pagbank-card-3d']) 
+                        ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8') 
+                        : false,
                 );
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
             default:
-                wc_add_wp_error_notices(new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect')));
+                wc_add_wp_error_notices(
+                    new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect'))
+                );
                 return array(
                     'result' => 'fail',
                     'redirect' => '',
@@ -751,7 +785,7 @@ class Gateway extends WC_Payment_Gateway_CC
     public static function notification()
     {
         $body = file_get_contents('php://input');
-        $hash = filter_input(INPUT_GET, 'hash', FILTER_SANITIZE_STRING);
+        $hash = htmlspecialchars($_GET['hash'], ENT_QUOTES, 'UTF-8');
 
         Functions::log('Notification received: ' . $body, 'debug', ['hash' => $hash]);
 
@@ -767,7 +801,7 @@ class Gateway extends WC_Payment_Gateway_CC
             wp_die('ID ou Reference não informados', 400);
 
         // Sanitize $reference and $id
-        $reference = filter_var($reference, FILTER_SANITIZE_STRING);
+        $reference = htmlspecialchars($reference, ENT_QUOTES, 'UTF-8');
 
         // Validate hash
         $order = wc_get_order($reference);
@@ -788,6 +822,14 @@ class Gateway extends WC_Payment_Gateway_CC
         }
 
         wp_die('OK', 200);
+    }
+
+    public static function dismissPixOrderKeysNotice() {
+        // Get the current user ID
+        $userId = get_current_user_id();
+
+        // Set the user meta value
+        update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
     }
 
 	/**
@@ -824,7 +866,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
         return $gateways;
     }
-
+    
     public function field_name( $name ) {
         return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }

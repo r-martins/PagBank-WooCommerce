@@ -600,7 +600,8 @@ class Recurring
     public function addManageSubscriptionEditAction(): void
     {
         $subscriptionId = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
-        $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_STRING);
+        $action = htmlspecialchars($_GET['action'], ENT_QUOTES, 'UTF-8');
+        
         $referrer = wp_get_referer() ? wp_get_referer() : home_url();
         if (empty($subscriptionId) || empty($action)) {
             wc_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');

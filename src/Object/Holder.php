@@ -19,6 +19,7 @@ class Holder implements JsonSerializable
     private string $email;
     private Address $address;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

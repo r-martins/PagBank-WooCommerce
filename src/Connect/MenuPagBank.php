@@ -65,7 +65,7 @@ SVG;
         );
 
         add_submenu_page(
-            null, /// null so it doesn't appear in the menu
+            'rm-pagbank-hidden', // parent_slug doesn't exist, so it doesn't appear in the menu
             'Visualizar Assinatura', // Page title
             'Visualizar Assinatura', // Submenu title
             'manage_woocommerce', // Required capability to view the submenu

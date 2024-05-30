@@ -14,6 +14,7 @@ use RM_PagBank\Object\Phone;
 use WC_Customer;
 use WC_Order;
 use WC_Order_Item_Product;
+use WC_Product;
 
 /**
  * Common methods shared between payment methods
@@ -61,7 +62,6 @@ class Common
                 unset($return['shipping']);
             }
         }
-
         $return['notification_urls'] = $this->getNotificationUrls();
 
         return $return;
@@ -115,11 +115,13 @@ class Common
         
         /** @var WC_Order_Item_Product $item */
         foreach ($this->order->get_items() as $item) {
+            /** @var WC_Product $product */
+            $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
             $itemObj->setName($item['name']);
             $itemObj->setQuantity($item['quantity']);
-            $itemObj->setUnitAmount(Params::convertToCents($item['line_subtotal']));
+            $itemObj->setUnitAmount(Params::convertToCents($product->get_price('edit')));
             
             if ($item['line_subtotal'] == 0) {
                 continue;
@@ -177,6 +179,50 @@ class Common
         $address->setCity($this->order->get_shipping_city('edit'));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
+        return $address;
+    }
+
+    /**
+     * Populates the address object with data from the order
+     * @return Address
+     */
+    public function getBillingAddress(): Address
+    {
+        $address = new Address();
+        $address->setStreet($this->order->get_billing_address_1('edit'));
+        $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
+        $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
+        $billingComplement = Functions::getParamFromOrderMetaOrPost(
+            $this->order,
+            '_billing_complement',
+            'billing_complement'
+        );
+        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
+            $this->order,
+            '_billing_neighborhood',
+            'billing_neighborhood'
+        );
+        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost(
+            $this->order,
+            '_billing_neighborhood',
+            'billing_neighborhood'
+        );
+
+        $address->setNumber($billingNumber);
+        if (!empty($shippingNumber)) {
+            $address->setNumber($shippingNumber);
+        }
+
+        $address->setComplement($billingComplement);
+        
+        $address->setLocality($billingNeighborhood);
+        if (!empty($shippingNeighborhood)) {
+            $address->setLocality($shippingNeighborhood);
+        }
+
+        $address->setCity($this->order->get_billing_city('edit'));
+        $address->setRegionCode($this->order->get_billing_state('edit'));
+        $address->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode('edit')));
         return $address;
     }
 

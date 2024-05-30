@@ -25,6 +25,7 @@ class Card implements JsonSerializable
     protected TokenData $token_data;
     protected AuthenticationMethod $authentication_method;
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);
