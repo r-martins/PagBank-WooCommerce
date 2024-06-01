@@ -338,8 +338,11 @@ class EnvioFacil extends WC_Shipping_Method
     public function validate_enabled_field(string $value) : string
     {
 		// We can't rely on the passed $value here, because WordPress always sends 'enabled' as value
-        $value = htmlspecialchars($_POST['woocommerce_'] . $this->id . '_enabled', ENT_QUOTES, 'UTF-8');
-        
+        $value = isset($_POST['woocommerce_'.$this->id.'_enabled']) ? htmlspecialchars(
+            $_POST['woocommerce_'.$this->id.'_enabled'],
+            ENT_QUOTES,
+            'UTF-8'
+        ) : '0';
 		$value = $value == '1' ? 'yes' : 'no';
 
 		$connectKey = Params::getConfig('connect_key');
