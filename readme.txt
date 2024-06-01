@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.11.2
+Stable tag: 4.11.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -164,6 +164,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.11.3 =
+* Correção em falha que impedia o EnvioFacil de ser habilitado
+
 = 4.11.2 =
 * Correção: em alguns cenários, o campo de CPF, número do endereço e bairro não eram enviados corretamente ocasionando falha no fechamento do pedido (especialmente em Boletos).
 
