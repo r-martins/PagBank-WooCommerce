@@ -16,7 +16,7 @@ use WC_Shipping_Method;
  */
 class EnvioFacil extends WC_Shipping_Method
 {
-    public $countries = ['BR'];
+	public $countries = ['BR'];
 
     /**
      * Constructor.
