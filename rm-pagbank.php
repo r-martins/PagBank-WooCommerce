@@ -52,8 +52,8 @@ add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 
 //recurring and styles
-add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99, 1);
-add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99, 1);
+add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99999, 1);
+add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99999, 1);
 
 //not needed so far...
 register_activation_hook(__FILE__, [Connect::class, 'activate']);
