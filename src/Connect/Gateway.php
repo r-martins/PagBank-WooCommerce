@@ -76,13 +76,13 @@ class Gateway extends WC_Payment_Gateway_CC
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
-        add_action('wp_enqueue_styles', [$this, 'addStyles']);
+//        add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
-        ;
+        
         
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', function() {
             // Get the current user ID
@@ -588,15 +588,21 @@ class Gateway extends WC_Payment_Gateway_CC
         }
         
         if ($hook == 'pagbank_page_rm-pagbank-ef-boxes') {
-            wp_enqueue_script('wc-backbone-modal');
-            wp_add_inline_script('wc-backbone-modal', '
+            wp_enqueue_script(
+                'pagseguro-connect-admin',
+                plugins_url('public/js/admin/ef-boxes.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery', 'wc-backbone-modal'],
+                WC_PAGSEGURO_CONNECT_VERSION,
+                true
+            );
+            /*wp_add_inline_script('wc-backbone-modal', '
                 jQuery(function($) {
                     // Handle the click event of the "Add" button
                     $("#add-box").on("click", function(e) {
                         e.preventDefault();
         
                         // Initialize the modal
-                        new $.WCBackboneModal({
+                        new jQuery.WCBackboneModal({
                             template: "wc-backbone-modal"
                         });
         
@@ -612,7 +618,7 @@ class Gateway extends WC_Payment_Gateway_CC
                         });
                     });
                 });
-            ');
+            ');*/
         }
         
     }

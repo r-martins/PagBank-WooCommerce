@@ -418,72 +418,7 @@ class EnvioFacil extends WC_Shipping_Method
 
     public static function renderPagBankBoxesPage()
     {
-
-        global $wpdb;
-
-        // Get the boxes from the database
-        $boxes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}pagbank_ef_boxes");
-
-        // Display the boxes in a table
-        echo '<table>';
-        echo '<tr><th>ID</th><th>Reference</th><th>Width</th><th>Height</th><th>Depth</th><th>Active</th><th>Actions</th></tr>';
-        foreach ($boxes as $box) {
-            echo '<tr>';
-            echo '<td>'.$box->box_id.'</td>';
-            echo '<td>'.$box->reference.'</td>';
-            echo '<td>'.$box->outer_width.'</td>';
-            echo '<td>'.$box->outer_depth.'</td>';
-            echo '<td>'.$box->outer_depth.'</td>';
-            echo '<td>'.($box->is_available ? 'Yes' : 'No').'</td>';
-            echo '<td><button class="edit-box" data-id="'.$box->box_id
-                .'">Edit</button> <button class="delete-box" data-id="'.$box->box_id.'">Delete</button></td>';
-            echo '</tr>';
-        }
-        echo '</table>';
-
-        // Add the template for the modal
-        echo '<script type="text/template" id="tmpl-box-form-modal">
-        <div class="wc-backbone-modal">
-            <div class="wc-backbone-modal-content">
-                <section class="wc-backbone-modal-main" role="main">
-                    <header class="wc-backbone-modal-header">
-                        <h1>' . __('Add/Edit Box', 'pagbank-connect') . '</h1>
-                        <button class="modal-close modal-close-link dashicons dashicons-no-alt">
-                            <span class="screen-reader-text">Close modal panel</span>
-                        </button>
-                    </header>
-                    <article>
-                        <form id="box-form">
-                            <!-- Add the form fields here -->
-                            <label for="box-id">Box ID:</label>
-                            <input type="text" id="box-id" name="box-id">
-                            <label for="box-reference">Reference:</label>
-                            <input type="text" id="box-reference" name="box-reference">
-                            <label for="box-width">Width:</label>
-                            <input type="text" id="box-width" name="box-width">
-                            <label for="box-height">Height:</label>
-                            <input type="text" id="box-height" name="box-height">
-                            <label for="box-depth">Depth:</label>
-                            <input type="text" id="box-depth" name="box-depth">
-                            <label for="box-active">Active:</label>
-                            <input type="checkbox" id="box-active" name="box-active">
-                        </form>
-                    </article>
-                    <footer>
-                        <div class="inner">
-                            <button id="btn-ok" class="button button-primary button-large">' . __('Save', 'pagbank-connect') . '</button>
-                        </div>
-                    </footer>
-                </section>
-            </div>
-        </div>
-        <div class="wc-backbone-modal-backdrop modal-close"></div>
-    </script>';
-
-
-        // Add the "Add" button
-        echo '<button id="add-box">Add Box</button>';
-        
+        //load ef-boxes template
+        load_template(WC_PAGSEGURO_CONNECT_TEMPLATES_DIR.'admin/ef-boxes.php', true);
     }
-   
 }
