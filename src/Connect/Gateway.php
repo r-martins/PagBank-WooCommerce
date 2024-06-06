@@ -515,6 +515,9 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public function addAdminStyles($hook){
+        $screen = get_current_screen();
+        $screen = $screen ? $screen->id : '';
+        
         //admin pages
         if (!is_admin()) {
             return;
@@ -524,7 +527,11 @@ class Gateway extends WC_Payment_Gateway_CC
             'pagseguro-connect-admin-css',
             plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
         );
-
+        
+        if($screen === 'pagbank_page_rm-pagbank-ef-boxes') {
+            wp_enqueue_style( 'woocommerce_admin_styles' );
+        }
+        
         if ($hook == 'plugins.php') {
             wp_enqueue_style(
                 'pagseguro-connect-deactivate',

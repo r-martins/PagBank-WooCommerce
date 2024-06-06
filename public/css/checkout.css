@@ -9,9 +9,6 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     filter: brightness(0.99); /* darkens the selected payment method */
 	border: 1px solid #ccc;
 }
-li.payment_method_rm-pagbank label{
-    /*display: flex;*/
-}
 
 li.payment_method_rm-pagbank label img{
     max-width: calc(50px + 6vw);
