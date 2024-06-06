@@ -130,7 +130,7 @@ class Common
             $items[] = $itemObj;
         }
         
-        return $items;
+        return apply_filters('pagbank_connect_items_data', $items);
     }
 
 	/**
@@ -179,7 +179,7 @@ class Common
         $address->setCity($this->order->get_shipping_city('edit'));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
-        return $address;
+        return apply_filters('pagbank_connect_shipping_address', $address, $this->order);
     }
 
     /**
@@ -223,7 +223,8 @@ class Common
         $address->setCity($this->order->get_billing_city('edit'));
         $address->setRegionCode($this->order->get_billing_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode('edit')));
-        return $address;
+        
+        return apply_filters('pagbank_connect_billing_address', $address, $this->order);
     }
 
 	/**
@@ -280,5 +281,6 @@ class Common
 
 		$order->update_status('pending', 'PagBank: Pagamento Pendente');
 
+        do_action('pagbank_connect_after_proccess_response', $order, $response);
 	}
 }
