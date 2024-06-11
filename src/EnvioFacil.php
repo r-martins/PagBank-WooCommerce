@@ -421,4 +421,87 @@ class EnvioFacil extends WC_Shipping_Method
         //load ef-boxes template
         load_template(WC_PAGSEGURO_CONNECT_TEMPLATES_DIR.'admin/ef-boxes.php', true);
     }
+
+    public static function addOrEditBox($request) {
+        if ($error = self::canAddOrEditBox() !== true) {
+            return $error;
+        }
+        $data = wp_parse_args($_POST['formData']);
+        $boxId = isset($data['box-id']) ? intval($data['box-id']) : 0;
+        $reference = isset($data['box-reference']) ? sanitize_text_field($data['box-reference']) : '';
+        $outerWidth = isset($data['box-width']) ? floatval($data['box-width']) : 0;
+        $outerLength = isset($data['box-length']) ? floatval($data['box-length']) : 0;
+        $outerDepth = isset($data['box-height']) ? floatval($data['box-height']) : 0;
+        $maxWeight = isset($data['box-max_weight']) ? floatval($data['box-max_weight']) : 0;
+        $isAvailable = isset($data['box-active']) ? 1 : 0;
+        
+        //calculate inner dimensions based on outer dimensions
+        $thickness = isset($data['box-thickness']) ? floatval($data['box-thickness']) : 2;
+        $innerWidth = $outerWidth - $thickness;
+        $innerLength = $outerLength - $thickness;
+        $innerDepth = $outerDepth - $thickness;
+        
+        global $wpdb;
+        $table = $wpdb->prefix.'pagbank_ef_boxes';
+        
+        if ($boxId) {
+            $wpdb->update(
+                $table,
+                [
+                    'reference'   => $reference,
+                    'outer_width' => $outerWidth,
+                    'outer_length' => $outerLength,
+                    'outer_depth' => $outerDepth,
+                    'inner_width' => $innerWidth,
+                    'inner_length' => $innerLength,
+                    'inner_depth' => $innerDepth,
+                    'max_weight' => $maxWeight,
+                    'is_available' => $isAvailable,
+                ],
+                ['box_id' => $boxId]
+            );
+        } else {
+            $wpdb->insert(
+                $table,
+                [
+                    'reference'   => $reference,
+                    'outer_width' => $outerWidth,
+                    'outer_length' => $outerLength,
+                    'outer_depth' => $outerDepth,
+                    'inner_width' => $innerWidth,
+                    'inner_length' => $innerLength,
+                    'inner_depth' => $innerDepth,
+                    'max_weight' => $maxWeight,
+                    'is_available' => $isAvailable,
+                ]
+            );
+        }
+        
+        
+        wp_send_json_success('Success');
+    }
+
+    public static function canAddOrEditBox() {
+        // Check if the user is logged in
+        if (!is_user_logged_in()) {
+            return new \WP_Error('rest_not_logged_in', __('Você não está logado(a).', 'pagbank-connect'), array('status' => 401));
+        }
+
+        // Check if the user is an admin
+        if (!current_user_can('manage_options')) {
+            return new \WP_Error('rest_not_admin', __('Você não é administrador.', 'pagbank-connect'), array('status' => 403));
+        }
+
+        // Check the CSRF token
+        $nonce = htmlentities($_POST['_wpnonce']);
+        if (!wp_verify_nonce($nonce, 'wp_rest')) {
+            return new \WP_Error(
+                'rest_invalid_nonce',
+                __('Chave de formulário inválida. Recarregue a página e tente novamente.', 'pagbank-connect'),
+                array('status' => 403)
+            );
+        }
+
+        return true;
+    }
 }

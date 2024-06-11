@@ -44,6 +44,8 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 add_action('init', [Connect::class, 'init']);
 add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoints']);
 add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
+add_action('wp_ajax_pagbankConnectAddOrEditBox', array(EnvioFacil::class, 'addOrEditBox'));
+add_action('wp_ajax_nopriv_pagbankConnectAddOrEditBox', array(EnvioFacil::class, 'addOrEditBox'));
 
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));

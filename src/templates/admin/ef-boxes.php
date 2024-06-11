@@ -62,17 +62,17 @@ foreach ($boxes as $box) {
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Width</span></legend>
                                 <label for="box-width"><?php _e('Largura', 'pagbank-connect')?>:</label>
-                                <input type="tel" min="10" max="100" id="box-width" name="box-width" placeholder="cm" required title="<?php _e('Mínimo 10 / Máximo 100', 'pagbank-connect')?>">
+                                <input type="number" min="10" max="100" id="box-width" name="box-width" placeholder="cm" required title="<?php _e('Mínimo 10 / Máximo 100', 'pagbank-connect')?>">
                             </fieldset>
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Height</span></legend>
                                 <label for="box-height"><?php _e('Altura/Profundidade', 'pagbank-connect')?>:</label>
-                                <input type="tel" min="1" max="100" id="box-height" name="box-height" placeholder="cm" required title="<?php _e('Mínimo 1 / Máximo 100', 'pagbank-connect')?>">
+                                <input type="number" min="1" max="100" id="box-height" name="box-height" placeholder="cm" required title="<?php _e('Mínimo 1 / Máximo 100', 'pagbank-connect')?>">
                             </fieldset>
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Length</span></legend>
                                 <label for="box-length"><?php _e('Comprimento', 'pagbank-connect')?>:</label>
-                                <input type="tel" min="15" max="100" id="box-length" name="box-length" placeholder="cm" required title="<?php _e('Mínimo 15 / Máximo 100', 'pagbank-connect')?>">
+                                <input type="number" min="15" max="100" id="box-length" name="box-length" placeholder="cm" required title="<?php _e('Mínimo 15 / Máximo 100', 'pagbank-connect')?>">
                             </fieldset>
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Espessura</span></legend>
@@ -82,12 +82,12 @@ foreach ($boxes as $box) {
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Empty Weight</span></legend>
                                 <label for="box-empty_weight"><?php _e('Peso da embalagem', 'pagbank-connect')?>:</label>
-                                <input type="tel" id="box-empty_weight" name="box-empty_weight" placeholder="g" required title="<?php _e('Peso da embalagem vazia em gramas.', 'pagbank-connect')?>">
+                                <input type="number" id="box-empty_weight" name="box-empty_weight" placeholder="g" required title="<?php _e('Peso da embalagem vazia em gramas.', 'pagbank-connect')?>">
                             </fieldset>
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Max Weight</span></legend>
                                 <label for="box-max_weight"><?php _e('Peso máximo', 'pagbank-connect')?>:</label>
-                                <input type="tel" id="box-max_weight" name="box-max_weight" placeholder="g" required title="<?php _e('Peso máximo suportado pela embalagem, em gramas.', 'pagbank-connect')?>">
+                                <input type="number" id="box-max_weight" name="box-max_weight" placeholder="g" required title="<?php _e('Peso máximo suportado pela embalagem, em gramas.', 'pagbank-connect')?>">
                             </fieldset>
                             <fieldset>
                                 <legend class="screen-reader-text"><span>Active</span></legend>
@@ -99,6 +99,7 @@ foreach ($boxes as $box) {
                 </article>
                 <footer>
                     <div class="inner">
+                        <span class="modal-error"></span>
                         <button id="btn-ok" class="button button-primary button-large"><?php echo __('Save', 'pagbank-connect') ?></button>
                     </div>
                 </footer>
