@@ -571,6 +571,14 @@ class Recurring
                 unset($actions['update']);
                 break;
         }
+
+        if (Params::getConfig('customer_can_cancel') === 'no') {
+            unset($actions['cancel']);
+        }
+
+        if (Params::getConfig('customer_can_pause') === 'no') {
+            unset($actions['pause']);
+        }
         
         return $actions;
     }
