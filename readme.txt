@@ -1,11 +1,11 @@
-=== PagSeguro / PagBank Connect ===
+=== PagSeguro / PagBank Connect para WooCommerce ===
 Contributors: martins56
 Tags: pagseguro, pagbank, pix, cartão de crédito, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.11.5
+Stable tag: 4.11.6
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -165,6 +165,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.11.6 =
+* Melhoria: agora quando você marca para exibir meios de pagamento separadamente, a opção de selecionar como o titulo sera exibido é omitida, evitando confusão (já que esta opção não terá efeito algum)
+* Corrige erro no tamanho dos ícones quando meios de pagamento eram exibidos individualmente, em alguns checkouts como Porto
+* Mudamos a forma como obtemos o preço do produto na finalização de compra, a fim de corrigir erros de compatibilidade com alguns plugins e tornar o processo mais enxuto e rápido
+
 = 4.11.5 =
 * Pequena melhoria: adicionamos alguns hooks com filters e actions para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis). 
 
