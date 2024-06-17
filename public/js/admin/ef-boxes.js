@@ -23,14 +23,59 @@ jQuery(function($) {
         });
 
         // Handle the click event of the "Save" button in the modal
-        $("#btn-ok").on("click", function(e) {
+        $("#btn-ok").on("click keydown", function(e) {
             e.preventDefault();
+            e.stopPropagation();
 
-            // Submit the form
-            $("#box-form").submit();
+            // Get the form element
+            var form = document.getElementById('box-form');
 
-            // Close the modal
-            $(".modal-close").trigger("click");
+            // Check if the form is valid
+            if (!form.reportValidity()) {
+                // If the form is not valid, stop here
+                return;
+            }
+            
+            //disables the button to avoid repeated clicks
+            $(this).prop('disabled', true);
+
+            // Gather the form data
+            var formData = $("#box-form").serialize();
+
+            // Send the form data using an AJAX request
+            $.ajax({
+                type: "POST",
+                url: "/wp-admin/admin-ajax.php", // Replace with your server script URL
+                data: {
+                    action: "pagbankConnectAddOrEditBox",
+                    _wpnonce: wpApiSettings.nonce,
+                    formData: formData
+                },
+                success: function (response) {
+                    // Check if the server responded with an error
+                    if (response.error) {
+                        // Display the error in the modal
+                        $(".modal-error").text(response.error).show();
+                    } else {
+                        // Close the modal
+                        $(".modal-close").trigger("click");
+
+                        // Refresh the page
+                        location.reload();
+                    }
+                },
+                error: function () {
+                    var errorMessage = "Um erro ocorreu ao processar a requisição. Tente novamente.";
+                    if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                        errorMessage = jqXHR.responseJSON.message;
+                    }
+                    $(".modal-error").text(errorMessage).show();
+                },
+                complete: function () {
+                    //enables the button
+                    $(this).prop('disabled', false);
+                }
+            });
         });
     });
 
