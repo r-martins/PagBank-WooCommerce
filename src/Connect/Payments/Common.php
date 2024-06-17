@@ -2,8 +2,6 @@
 
 namespace RM_PagBank\Connect\Payments;
 
-use Automattic\WooCommerce\Utilities\OrderUtil;
-use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -14,7 +12,6 @@ use RM_PagBank\Object\Phone;
 use WC_Customer;
 use WC_Order;
 use WC_Order_Item_Product;
-use WC_Product;
 
 /**
  * Common methods shared between payment methods
@@ -115,13 +112,13 @@ class Common
         
         /** @var WC_Order_Item_Product $item */
         foreach ($this->order->get_items() as $item) {
-            /** @var WC_Product $product */
-            $product = $item->get_product();
+            $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
             $itemObj->setName($item['name']);
             $itemObj->setQuantity($item['quantity']);
-            $itemObj->setUnitAmount(Params::convertToCents($product->get_price('edit')));
+            $unitAmount = number_format($item->get_subtotal('edit') / $item['quantity'], 2, '', '');
+            $itemObj->setUnitAmount($unitAmount);
             
             if ($item['line_subtotal'] == 0) {
                 continue;
