@@ -113,6 +113,16 @@ class Gateway extends WC_Payment_Gateway_CC
         $order->add_meta_data('pagbank_payment_response', $payment_response, true);
         $order->add_meta_data('pagbank_status', $status, true);
 
+        if (isset($charge['payment_response']['reference'])) {
+            $order->add_meta_data('pagbank_nsu', $charge['payment_response']['reference']);
+        }
+
+        if (isset($charge['payment_response']['raw_data']['authorization_code'])) {
+            $order->add_meta_data('pagbank_authorization_code', $charge['payment_response']['raw_data']['authorization_code']);
+        }
+
+        $order->save_meta_data();
+
         do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
 
 		// Add some additional information about the payment
