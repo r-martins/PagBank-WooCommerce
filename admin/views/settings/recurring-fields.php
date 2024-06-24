@@ -46,14 +46,14 @@ return array(
             'daily' => __( 'Diariamente', 'pagbank-connect' ),
         ],
     ],
-    'customer_can_cancel'   => [
+    'recurring_customer_can_cancel'   => [
         'title'       => __( 'Permitir que o cliente cancele a assinatura?', 'pagbank-connect'),
         'label'       => __( 'Permitir', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
         'default'     => 'yes'
     ],
-    'customer_can_pause'    => [
+    'recurring_customer_can_pause'    => [
         'title'       => __( 'Permitir que o cliente pause a assinatura?', 'pagbank-connect'),
         'label'       => __( 'Permitir', 'pagbank-connect' ),
         'type'        => 'checkbox',

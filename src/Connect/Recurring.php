@@ -572,11 +572,11 @@ class Recurring
                 break;
         }
 
-        if (Params::getConfig('customer_can_cancel') === 'no') {
+        if (Params::getConfig('recurring_customer_can_cancel') === 'no') {
             unset($actions['cancel']);
         }
 
-        if (Params::getConfig('customer_can_pause') === 'no') {
+        if (Params::getConfig('recurring_customer_can_pause') === 'no') {
             unset($actions['pause']);
         }
         
