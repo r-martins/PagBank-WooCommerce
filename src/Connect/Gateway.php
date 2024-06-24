@@ -818,6 +818,10 @@ class Gateway extends WC_Payment_Gateway_CC
         if (!$order)
             wp_die('Pedido não encontrado', 404);
 
+        $order_pagbank_id = $order->get_meta('pagbank_order_id');
+        if ($order_pagbank_id != $id)
+            wp_die('ID do pedido não corresponde', 400);
+
         if ($hash != Api::getOrderHash($order))
             wp_die('Hash inválido', 403);
 
