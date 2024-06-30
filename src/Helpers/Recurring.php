@@ -92,6 +92,37 @@ class Recurring
     }
 
     /**
+     * Checks if the $cart or the current cart contains trial recurring products and returns the trial length
+     * @param WC_Cart|null $cart
+     *
+     * @return bool|int
+     */
+    public function getCartRecurringTrial(WC_Cart $cart = null)
+    {
+        //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
+        if (!did_action('woocommerce_load_cart_from_session')) {
+            return false;
+        }
+
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+
+        if (!$cart) {
+            return false;
+        }
+
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem['data'];
+            if ($product->get_meta('_recurring_trial_length') > 0) {
+                return (int) $product->get_meta('_recurring_trial_length');
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Calculates the DateTime for the next billing date
      *
      * @param string $frequency Accepted values are: 'daily', 'weekly', 'monthly', 'yearly'
@@ -100,9 +131,15 @@ class Recurring
      * @return DateTime The next billing date GMT timezone
      * @throws Exception
      */
-    public function calculateNextBillingDate(string $frequency, int $cycle): DateTime
+    public function calculateNextBillingDate(string $frequency, int $cycle, $trialLenght = null): DateTime
     {
         $date = new DateTime('now', new DateTimeZone('GMT'));
+
+        if ($trialLenght){
+            $interval = new DateInterval('P' . $trialLenght . 'D');
+            return $date->add($interval);
+        }
+
         switch ($frequency){
             case 'daily':
                 $frequency = 'D';

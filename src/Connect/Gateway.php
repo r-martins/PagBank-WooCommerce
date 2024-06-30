@@ -6,6 +6,7 @@ use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Payments\CreditCardTrial;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -629,7 +630,7 @@ class Gateway extends WC_Payment_Gateway_CC
         if ($recurringHelper->isCartRecurring()) {
             $order->add_meta_data('_pagbank_recurring_initial', true);
         }
-        
+
         // region Add note if customer changed payment method
         if ($order->get_meta('pagbank_payment_method')) {
             $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;
@@ -641,6 +642,12 @@ class Gateway extends WC_Payment_Gateway_CC
             }
         }
         // endregion
+
+        $recurringTrialPeriod = $recurringHelper->getCartRecurringTrial();
+        if ($recurringTrialPeriod) {
+            $order->add_meta_data('_pagbank_recurring_trial_length', $recurringTrialPeriod);
+            $payment_method = $payment_method . '_trial';
+        }
 
         switch ($payment_method) {
             case 'boleto':
@@ -686,6 +693,15 @@ class Gateway extends WC_Payment_Gateway_CC
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
+            case 'cc_trial':
+                $order->add_meta_data(
+                    '_pagbank_card_encrypted',
+                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
+                    true
+                );
+                $method = new CreditCardTrial($order);
+                $params = $method->prepare();
+                break;
             default:
                 wc_add_wp_error_notices(
                     new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect'))
@@ -703,7 +719,11 @@ class Gateway extends WC_Payment_Gateway_CC
 
         try {
             $api = new Api();
-            $resp = $api->post('ws/orders', $params);
+            if ($payment_method == 'cc_trial') {
+                $resp = $api->post('ws/tokens/cards', $params);
+            } else {
+                $resp = $api->post('ws/orders', $params);
+            }
 
             if (isset($resp['error_messages'])) {
                 throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);

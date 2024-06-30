@@ -59,3 +59,6 @@ add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99999
 register_activation_hook(__FILE__, [Connect::class, 'activate']);
 register_deactivation_hook(__FILE__, [Connect::class, 'deactivate']);
 register_uninstall_hook(__FILE__, [Connect::class, 'uninstall']);
+
+// Upgrading scripts
+add_action('plugins_loaded', [Connect::class, 'upgrade']);
