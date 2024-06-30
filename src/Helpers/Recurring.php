@@ -92,6 +92,37 @@ class Recurring
     }
 
     /**
+     * Checks if the $cart or the current cart contains trial recurring products and returns the trial length
+     * @param WC_Cart|null $cart
+     *
+     * @return bool|int
+     */
+    public function getCartRecurringTrial(WC_Cart $cart = null)
+    {
+        //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
+        if (!did_action('woocommerce_load_cart_from_session')) {
+            return false;
+        }
+
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+
+        if (!$cart) {
+            return false;
+        }
+
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem['data'];
+            if ($product->get_meta('_recurring_trial_length') > 0 && $product->get_meta('_recurring_enabled') == 'yes') {
+                return (int) $product->get_meta('_recurring_trial_length');
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Calculates the DateTime for the next billing date
      *
      * @param string $frequency Accepted values are: 'daily', 'weekly', 'monthly', 'yearly'
@@ -100,9 +131,15 @@ class Recurring
      * @return DateTime The next billing date GMT timezone
      * @throws Exception
      */
-    public function calculateNextBillingDate(string $frequency, int $cycle): DateTime
+    public function calculateNextBillingDate(string $frequency, int $cycle, $trialLenght = null): DateTime
     {
         $date = new DateTime('now', new DateTimeZone('GMT'));
+
+        if ($trialLenght){
+            $interval = new DateInterval('P' . $trialLenght . 'D');
+            return $date->add($interval);
+        }
+
         switch ($frequency){
             case 'daily':
                 $frequency = 'D';
@@ -231,7 +268,19 @@ class Recurring
                 break;       
             }
         }
-        $msg = sprintf($msg, wc_price($total), $frequency);
+
+        $hasTrial = $this->getCartRecurringTrial($cart);
+        if ($hasTrial){
+            foreach ($cart->get_cart() as $cartItem) {
+                $product = $cartItem['data'];
+                $total += $product->get_data()['price'];
+            }
+            $msg = __('O valor de %s será cobrado %s após o período de teste de %d dias.', 'pagbank-connect');
+            $msg = sprintf($msg, wc_price($total), $frequency, $hasTrial);
+        } else {
+            $msg = sprintf($msg, wc_price($total), $frequency);
+        }
+
         $initialFee = $product->get_meta('_initial_fee');
         if ($initialFee > 0){
             $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', 'pagbank-connect'), wc_price($initialFee)) . '</p>';;
@@ -266,5 +315,17 @@ class Recurring
         if ( ! $subscription) return '#';
         return admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $subscription->id);
 
+    }
+
+    public function getRecurringAmountFromOrderItems(WC_Order $order): float
+    {
+        $total = 0;
+        foreach ($order->get_items() as $item){
+            $product = $item->get_product();
+            if ($product->get_meta('_recurring_enabled') == 'yes'){
+                $total += $product->get_price();
+            }
+        }
+        return $total;
     }
 }

@@ -112,15 +112,21 @@ class Common
         
         /** @var WC_Order_Item_Product $item */
         foreach ($this->order->get_items() as $item) {
-            $item->get_product();
+            $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
             $itemObj->setName($item['name']);
             $itemObj->setQuantity($item['quantity']);
-            $unitAmount = number_format($item->get_subtotal('edit') / $item['quantity'], 2, '', '');
+
+            $amount = $item->get_subtotal('edit') / $item['quantity'];
+            if ($product->get_meta('_recurring_enabled') == 'yes' && $product->get_meta('_recurring_trial_length') > 0) {
+                $amount = $product->get_price();
+            }
+
+            $unitAmount = number_format($amount, 2, '', '');
             $itemObj->setUnitAmount($unitAmount);
             
-            if ($item['line_subtotal'] == 0) {
+            if ($item['line_subtotal'] == 0 && $amount == 0) {
                 continue;
             }
             
