@@ -409,7 +409,7 @@ class Recurring
                 'dashboard' => $dash
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }    
-    
+
     public function addSubscriptionManagementTitle($title, $postid)
     {
         if ($title == 'My account'){
@@ -552,6 +552,7 @@ class Recurring
                 unset($actions['pause']);
                 unset($actions['unpause']);
                 unset($actions['activate']);
+                unset($actions['edit']);
                 break;
             case 'SUSPENDED':
                 unset($actions['cancel']);
@@ -570,6 +571,10 @@ class Recurring
                 unset($actions['activate']);
                 unset($actions['update']);
                 break;
+        }
+
+        if (!is_admin()) {
+            unset($actions['edit']);
         }
         
         return $actions;
@@ -754,8 +759,9 @@ class Recurring
      *
      * @param stdClass $subscription
      *
-     * @return bool
-     * @noinspection PhpUnused*/
+     * @return void
+     * @noinspection PhpUnused
+     */
     public function pauseSubscriptionAction(\stdClass $subscription): void
     {
         global $wpdb;
@@ -827,6 +833,29 @@ class Recurring
         }
         
         wc_add_notice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), 'error');
+    }
+
+    /**
+     * Edit the specified subscription
+     *
+     * @param stdClass $subscription
+     *
+     * @return void
+     * @noinspection PhpUnused*/
+    public function editSubscriptionAction(\stdClass $subscription): void
+    {
+        $recurringAmount = sanitize_text_field($_POST['recurring_amount']);
+        $recurringAmount = preg_replace('/[^0-9,.]/', '', $recurringAmount);
+        $recurringAmount = str_replace(",",".",$recurringAmount);
+        $update = $this->updateSubscription($subscription, [
+            'recurring_amount' => floatval(number_format($recurringAmount,2,'.','')),
+        ]);
+
+        if ($update){
+            wc_add_notice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'));
+            return;
+        }
+        wc_add_notice(__('Não foi possível atualizar a assinatura.', 'pagbank-connect'), 'error');
     }
     // endregion
 
