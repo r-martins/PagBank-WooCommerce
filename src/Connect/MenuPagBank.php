@@ -3,6 +3,7 @@ namespace RM_PagBank\Connect;
 
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\Details\OrdersList;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionDetails;
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionEdit;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionList;
 
 /**
@@ -71,6 +72,15 @@ SVG;
             'manage_woocommerce', // Required capability to view the submenu
             'rm-pagbank-subscriptions-view', // Submenu page slug
             [MenuPagBank::class, 'renderPagbankSubscriptionViewPage'] // Function that renders the submenu page
+        );
+
+        add_submenu_page(
+            'rm-pagbank-hidden', // parent_slug doesn't exist, so it doesn't appear in the menu
+            'Editar Assinatura', // Page title
+            'Editar Assinatura', // Submenu title
+            'manage_woocommerce', // Required capability to view the submenu
+            'rm-pagbank-subscriptions-edit', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankSubscriptionEditPage'] // Function that renders the submenu page
         );
     }
     
@@ -159,6 +169,40 @@ SVG;
         $ordersListTable = new OrdersList($subscription);
         $ordersListTable->prepare_items();
         $ordersListTable->display();
+        echo '</div>';
+    }
+
+    public static function renderPagbankSubscriptionEditPage(){
+        // Check if the subscription ID was passed
+        if (!isset($_GET['id'])) { //phpcs:ignore WordPress.Security.NonceVerification
+            echo '<h1>' . esc_html( __('ID da assinatura não fornecido', 'pagbank-connect') ) . '</h1>';
+            return;
+        }
+
+        // Get the subscription ID
+        $subscriptionId = intval($_GET['id']);
+
+        // Get the subscription from the database
+        global $wpdb;
+        $subscription = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d", $subscriptionId));
+
+        // Check if the subscription exists
+        if (!$subscription) {
+            echo '<h1>' . esc_html( __('Assinatura não encontrada', 'pagbank-connect') ). '</h1>';
+            return;
+        }
+
+        // Render the subscription view page
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html( __('Editar Assinatura', 'pagbank-connect') ). '</h1>';
+
+        echo '<a href="?page=rm-pagbank-subscriptions" class="button">' . esc_html( __('Voltar para a listagem de assinaturas', 'rm-pagbank') ) . '</a>';
+
+        echo '<h2>' . esc_html( __('Detalhes da Assinatura', 'pagbank-connect') ) . '</h2>';
+        $subscriptionDetailsListTable = new SubscriptionEdit($subscription);
+        $subscriptionDetailsListTable->prepare_items();
+        $subscriptionDetailsListTable->display();
+
         echo '</div>';
     }
     

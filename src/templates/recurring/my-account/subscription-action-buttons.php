@@ -45,6 +45,11 @@ $actions = apply_filters('rm_pagbank_account_recurring_actions', [
         'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id,
         'class' => 'subscription-button suspend',
     ],
+    'edit' => [
+        'name' => __('Editar Assinatura', 'pagbank-connect'),
+        'url' => admin_url('admin.php?page=rm-pagbank-subscriptions-edit&action=edit&id=' . $subscription->id),
+        'class' => 'subscription-button edit',
+    ],
     // Coming soon
     /*'update' => [
         'name' => __('Atualizar Cartão', 'pagbank-connect'),

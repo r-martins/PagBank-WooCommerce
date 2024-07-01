@@ -17,7 +17,7 @@ if ( ! class_exists ( 'WP_List_Table' ) ) {
  */
 class SubscriptionDetails extends WP_List_Table
 {
-    private $subscription;
+    protected $subscription;
 
     public function display() {
         $singular = $this->_args['singular'];
