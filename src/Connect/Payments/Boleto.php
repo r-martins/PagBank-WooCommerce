@@ -114,4 +114,21 @@ class Boleto extends Common
         require_once dirname(__FILE__) . '/../../templates/boleto-instructions.php';
     }
 
+    /**
+	 * Set some variables and requires the template with boleto instructions for the success page
+	 * @param $order_id
+	 *
+	 * @return void
+	 * @noinspection SpellCheckingInspection
+	 */
+	public function addInstructionsToNewOrderEmail($order_id){
+        $order = new WC_Order($order_id);
+        $boleto_barcode = $order->get_meta('pagbank_boleto_barcode');
+        $boleto_barcode_formatted = $order->get_meta('pagbank_boleto_barcode_formatted');
+        $boleto_due_date = $order->get_meta('pagbank_boleto_due_date');
+        $boleto_pdf = $order->get_meta('pagbank_boleto_pdf');
+        $boleto_png = $order->get_meta('pagbank_boleto_png');
+        require_once dirname(__FILE__) . '/../../templates/emails/boleto-instructions.php';
+    }
+
 }
