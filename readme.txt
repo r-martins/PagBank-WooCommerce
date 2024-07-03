@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 4.11.7
+Stable tag: 4.12.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -165,6 +165,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.12.0 =
+* Agora é possível remover os botões de Cancelar ou Pausar assinatura na área do cliente
+* Agora o administrador pode alterar o valor de uma assinatura no admin
+
 = 4.11.7 =
 * Melhoria: adicionado NSU e Authorization code aos meta dados do pedido, para facilitar conciliação
 * Melhoria: agora validamos o order_id do pedido quando uma notificação é recebida, evitando que pedidos com mesmo ID sejam atualizados erroneamente e em alguns casos alterando pedidos pagos para cancelados.
