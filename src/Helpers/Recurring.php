@@ -363,14 +363,17 @@ class Recurring
             return false;
         }
 
+        $initialOrder = wc_get_order($subscription->initial_order_id);
         $orders = wc_get_orders([
             'parent' => $subscription->initial_order_id,
         ]);
 
         $ordersNumber = count($orders);
 
-        // the first order is the initial order, so we need to discount it from the count
-        $discountCycles = $discountCycles - 1;
+        // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
+        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+            $ordersNumber = $ordersNumber + 1;
+        }
 
         if ($ordersNumber < $discountCycles){
             return true;
