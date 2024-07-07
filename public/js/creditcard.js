@@ -276,8 +276,21 @@ jQuery(document).ready(function ($) {
         });
         let cartTotal;
         let selectedInstallments = jQuery('#rm-pagbank-card-installments').val();
-        cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount
+        if (selectedInstallments === "") {
+            selectedInstallments = 1;
+        }
+
+        if (typeof window.ps_cc_installments === 'undefined') {
+            cartTotal = jQuery('.order-total bdi, .product-total bdi').last().html();
+            cartTotal = cartTotal.replace(/[^0-9,]/g, '');
+        } else {
+            cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount
+        }
+
         cartTotal = parseInt(parseFloat(cartTotal.toString()).toFixed(2) * 100);
+        if (cartTotal < 100) {
+            cartTotal = 100;
+        }
 
         let expiryVal = jQuery('#rm-pagbank-card-expiry').val();
 
@@ -285,7 +298,7 @@ jQuery(document).ready(function ($) {
             data: {
                 paymentMethod: {
                     type: 'CREDIT_CARD',
-                    installments: jQuery('#rm-pagbank-card-installments').val()*1,
+                    installments: selectedInstallments*1,
                     card: {
                         number: window.ps_cc_number || jQuery('#rm-pagbank-card-number').val().replace(/\s/g, ''),
                         expMonth: jQuery('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
@@ -494,6 +507,8 @@ jQuery(document).ready(function ($) {
         //convert to cents
         let orderTotal = parseFloat(total).toFixed(2) * 100;
         if (orderTotal < 100) {
+            let select = jQuery('#rm-pagbank-card-installments');
+            select.parent().hide();
             return;
         }
         // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');

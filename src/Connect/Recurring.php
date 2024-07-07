@@ -70,6 +70,7 @@ class Recurring
         
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
         add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
+        add_filter('woocommerce_cart_needs_payment', [$this, 'enablePaymentInTrialOrder'], 10, 2);
     }
     
     public function addInitialFeeToCart($cart)
@@ -992,5 +993,16 @@ class Recurring
     {
         require_once dirname(__FILE__) . '/../templates/recurring-instructions.php';
     }
-    
+
+    public function enablePaymentInTrialOrder($needs_payment, $cart)
+    {
+        // Check if the cart has a trial
+        $recurringHelper = new RecurringHelper();
+        $hasTrial = $recurringHelper->getCartRecurringTrial();
+        if ($cart->total == 0 && $hasTrial) {
+            $needs_payment = true;
+        }
+
+        return $needs_payment;
+    }
 }
