@@ -69,7 +69,7 @@ class Recurring
         //endregion
         
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
-        add_action('woocommerce_before_calculate_totals', [$this, 'maybeAddTrialPriceToProduct'], 10, 1);
+        add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
     }
     
     public function addInitialFeeToCart($cart)
@@ -98,7 +98,7 @@ class Recurring
         }
     }
 
-    function maybeAddTrialPriceToProduct($cart)
+    function handleRecurringProductPrice($cart)
     {
         if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
             return;
@@ -111,13 +111,23 @@ class Recurring
         foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
             $product = $cart_item['data'];
 
-            if ($product->get_meta('_recurring_trial_length') && $product->get_meta('_recurring_enabled') == 'yes') {
+            if ($product->get_meta('_recurring_enabled') != 'yes') {
+                continue;
+            }
+
+            if ($product->get_meta('_recurring_trial_length')) {
                 $trial_price = 0;
                 $product->set_price( $trial_price );
+                continue;
+            }
+
+            if ($product->get_meta('_recurring_discount_amount') && $product->get_meta('_recurring_discount_cycles')) {
+                $discount = $product->get_meta('_recurring_discount_amount');
+                $price = $product->get_price();
+                $product->set_price( $price - $discount );
             }
         }
     }
-    
     
     public function addProductRecurringTab($productTabs)
     {
@@ -183,23 +193,30 @@ class Recurring
                 <?php
                 woocommerce_wp_text_input([
                     'id' => '_recurring_trial_length',
-                    'label' => __('Período de testes', 'pagbank-connect'),
+                    'label' => __('Período de testes (dias)', 'pagbank-connect'),
                     'description' => __('Definir um período para o cliente testar a assinatura. Valor em dias.', 'pagbank-connect'),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_trial_length', true),
                 ]);
-//                woocommerce_wp_text_input([
-//                    'id' => '_recurring_discount_amount',
-//                    'label' => __('Desconto', 'pagbank-connect'),
-//                    'desc_tip' => true,
-//                    'value' => get_post_meta($post->ID, '_recurring_discount_amount', true),
-//                ]);
-//                woocommerce_wp_text_input([
-//                    'id' => '_recurring_discount_cycles',
-//                    'label' => __('Número de ciclos com desconto', 'pagbank-connect'),
-//                    'desc_tip' => true,
-//                    'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
-//                ]);
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_discount_amount',
+                    'label' => __('Desconto', 'pagbank-connect'),
+                    'description' => __('Valor de desconto a ser aplicado nos pedidos inicial e recorrentes durante o número de ciclos determinado.', 'pagbank-connect'),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_recurring_discount_amount', true),
+                ]);
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_discount_cycles',
+                    'label' => __('Número de ciclos de pagamento com desconto', 'pagbank-connect'),
+                    'description' => __('Ex: Se Desconto fosse 5 e ciclo fosse 2, aplicaria o desconto no pedido inicial e na primeira cobrança.', 'pagbank-connect'),
+                    'desc_tip' => true,
+                    'type' => 'number',
+                    'custom_attributes' => [
+                        'min' => 1,
+                        'step' => 1,
+                    ],
+                    'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
+                ]);
                 ?>
             <p><?php echo esc_html(
                     __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect') 
@@ -229,6 +246,14 @@ class Recurring
 
             $trialLength = isset($_POST['_recurring_trial_length']) ? sanitize_text_field($_POST['_recurring_trial_length']) : 0;
             update_post_meta($postId, '_recurring_trial_length', $trialLength);
+
+            $discountAmount = sanitize_text_field($_POST['_recurring_discount_amount'] ?? 0);
+            $discountAmount = floatval(str_replace(',', '.', $discountAmount));
+            $discountAmount = floatval(number_format(max(0, $discountAmount), 2, '.', ''));
+            update_post_meta($postId, '_recurring_discount_amount', $discountAmount);
+
+            $cycle = isset($_POST['_recurring_discount_cycles']) ? sanitize_text_field($_POST['_recurring_discount_cycles']) : 0;
+            update_post_meta($postId, '_recurring_discount_cycles', $cycle);
         }
     }
     
@@ -283,6 +308,8 @@ class Recurring
         $cycle = (int)$order->get_meta('_recurring_cycle');
         $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
         $initialFee = (float)$order->get_meta('_recurring_initial_fee');
+        $discount = (float)$order->get_meta('_recurring_discount_amount');
+        $discountCycles = (int)$order->get_meta('_recurring_discount_cycles');
 
         $trialLength = (int) $order->get_meta('_pagbank_recurring_trial_length');
         if ($trialLength) {
@@ -290,7 +317,7 @@ class Recurring
         }
 
         $recurringAmount = $order->get_total() - $initialFee;
-        if ($trialLength) {
+        if ($trialLength || $discountCycles) {
             $recurringAmount = $recHelper->getRecurringAmountFromOrderItems($order);
         }
 
@@ -301,8 +328,8 @@ class Recurring
             'recurring_amount'          => $recurringAmount,
             'recurring_initial_fee'     => $initialFee,
             'recurring_trial_period'    => $trialLength,
-            'recurring_discount_amount' => null,
-            'recurring_discount_cycles' => null,
+            'recurring_discount_amount' => $discount,
+            'recurring_discount_cycles' => $discountCycles,
             'status'                    => $statusFromOrder,
             'recurring_type'            => $frequency,
             'recurring_cycle'           => $cycle,
@@ -356,6 +383,8 @@ class Recurring
                 $order->update_meta_data('_recurring_frequency', $originalItem->get_meta('_frequency'));
                 $order->update_meta_data('_recurring_cycle', $originalItem->get_meta('_frequency_cycle'));
                 $order->update_meta_data('_recurring_initial_fee', $originalItem->get_meta('_initial_fee'));
+                $order->update_meta_data('_recurring_discount_amount', $originalItem->get_meta('_recurring_discount_amount'));
+                $order->update_meta_data('_recurring_discount_cycles', $originalItem->get_meta('_recurring_discount_cycles'));
                 $order->save();
             }
         }

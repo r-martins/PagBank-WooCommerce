@@ -271,12 +271,38 @@ class Recurring
 
         $hasTrial = $this->getCartRecurringTrial($cart);
         if ($hasTrial){
+            $total = 0;
             foreach ($cart->get_cart() as $cartItem) {
                 $product = $cartItem['data'];
                 $total += $product->get_data()['price'];
             }
-            $msg = __('O valor de %s será cobrado %s após o período de teste de %d dias.', 'pagbank-connect');
+            $msg = __('O valor de %s será cobrado %s após o período de testes de %d dias.', 'pagbank-connect');
             $msg = sprintf($msg, wc_price($total), $frequency, $hasTrial);
+        }
+
+        if ($product->get_meta('_recurring_discount_amount') > 0
+            && $product->get_meta('_recurring_discount_cycles') > 0) {
+            $total = 0;
+            foreach ($cart->get_cart() as $cartItem) {
+                $product = $cartItem['data'];
+                $total += $product->get_data()['price'];
+            }
+
+            $msg = sprintf($msg, wc_price($total), $frequency);
+            $total -= (float)$product->get_meta('_recurring_discount_amount');
+            $msg .= ' ';
+            if ($product->get_meta('_recurring_discount_cycles') == 1) {
+                $msg .= sprintf(
+                    __('A próxima cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                    wc_price($total)
+                );
+            } else {
+                $msg .= sprintf(
+                    __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
+                    $product->get_meta('_recurring_discount_cycles'),
+                    wc_price($total)
+                );
+            }
         } else {
             $msg = sprintf($msg, wc_price($total), $frequency);
         }
@@ -327,5 +353,29 @@ class Recurring
             }
         }
         return $total;
+    }
+
+    public function hasSubscriptionDiscountRemaining($subscription): bool
+    {
+        $discount = (float)$subscription->recurring_discount_amount;
+        $discountCycles = (int)$subscription->recurring_discount_cycles;
+        if (!$discount || !$discountCycles) {
+            return false;
+        }
+
+        $orders = wc_get_orders([
+            'parent' => $subscription->initial_order_id,
+        ]);
+
+        $ordersNumber = count($orders);
+
+        // the first order is the initial order, so we need to discount it from the count
+        $discountCycles = $discountCycles - 1;
+
+        if ($ordersNumber < $discountCycles){
+            return true;
+        }
+
+        return false;
     }
 }
