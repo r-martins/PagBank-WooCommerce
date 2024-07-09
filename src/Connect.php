@@ -47,6 +47,8 @@ class Connect
         add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
+        add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        
         // Load plugin files
         self::includes();
 
@@ -471,6 +473,38 @@ class Connect
             </div>
             <?php
         }
+    }
+
+    /**
+     * Add order metadata to the API response with PagBank related information
+     * @param $response
+     * @param $order
+     * @param $request
+     *
+     * @return mixed
+     */
+    public static function addOrderMetaToApiResponse( $response, $order, $request ) {
+        // Check if there's a request for the meta
+        if ( empty( $request['include_meta'] ) || 'true' !== $request['include_meta'] ) {
+            return $response;
+        }
+
+        // Get all metadata for the order
+        $meta_data = $order->get_meta_data();
+        $meta_array = array();
+
+        foreach ( $meta_data as $meta ) {
+            if (strpos($meta->key, 'pagbank') === false) {
+                continue;
+            }
+            // Each item in meta_data is an instance of the WC_Meta_Data class
+            $meta_array[ $meta->key ] = $meta->value;
+        }
+
+        // Add the meta data array to the response
+        $response->data['meta_data'] = array_merge_recursive($response->data['meta_data'], $meta_array);
+
+        return $response;
     }
 
     private static function addPagBankMenu()
