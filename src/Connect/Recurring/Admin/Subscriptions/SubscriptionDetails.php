@@ -99,7 +99,7 @@ class SubscriptionDetails extends WP_List_Table
             $this->items[] = ['name' => 'Período de testes (dias)', 'value' => $this->subscription->recurring_trial_period];
         }
 
-        if ($this->subscription->recurring_discount_cycles) {
+        if ((int)$this->subscription->recurring_discount_cycles && (float)$this->subscription->recurring_discount_amount) {
             $this->items[] = ['name' => 'Desconto', 'value' => $this->subscription->recurring_discount_amount];
             $this->items[] = ['name' => 'Ciclos com desconto', 'value' => $this->subscription->recurring_discount_cycles];
         }

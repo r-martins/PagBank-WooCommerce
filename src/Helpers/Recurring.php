@@ -236,7 +236,7 @@ class Recurring
     public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
     {
         if (!$cart) $cart = WC()->cart;
-        $msg = __('O valor de %s será cobrado %s.', 'pagbank-connect');
+        $msgDefault = __('O valor de %s será cobrado %s.', 'pagbank-connect');
         $total = $cart->get_total('edit');
         $frequency = __('mensalmente', 'pagbank-connect');
         $initialFee = 0;
@@ -269,42 +269,62 @@ class Recurring
             }
         }
 
+        $msg = sprintf($msgDefault, wc_price($total), $frequency);
+
         $hasTrial = $this->getCartRecurringTrial($cart);
-        if ($hasTrial){
+        $hasDiscount = $this->hasDiscount($product);
+        if ($hasTrial || $hasDiscount) {
             $total = 0;
             foreach ($cart->get_cart() as $cartItem) {
                 $product = $cartItem['data'];
                 $total += $product->get_data()['price'];
             }
-            $msg = __('O valor de %s será cobrado %s após o período de testes de %d dias.', 'pagbank-connect');
-            $msg = sprintf($msg, wc_price($total), $frequency, $hasTrial);
+            $msg = sprintf($msgDefault, wc_price($total), $frequency);
         }
 
-        if ($product->get_meta('_recurring_discount_amount') > 0
-            && $product->get_meta('_recurring_discount_cycles') > 0) {
-            $total = 0;
-            foreach ($cart->get_cart() as $cartItem) {
-                $product = $cartItem['data'];
-                $total += $product->get_data()['price'];
-            }
+        if ($hasTrial){
+            $msgTrial = __('O valor de %s será cobrado %s após o período de testes de %d dias.', 'pagbank-connect');
+            $msg = sprintf($msgTrial, wc_price($total), $frequency, $hasTrial);
+        }
 
-            $msg = sprintf($msg, wc_price($total), $frequency);
+        if ($hasDiscount) {
             $total -= (float)$product->get_meta('_recurring_discount_amount');
+        }
+
+        if ($hasTrial && $hasDiscount){
             $msg .= ' ';
-            if ($product->get_meta('_recurring_discount_cycles') == 1) {
-                $msg .= sprintf(
-                    __('A próxima cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
-                    wc_price($total)
-                );
-            } else {
-                $msg .= sprintf(
+            $msgDiscount = sprintf(
+                __('A próxima cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                wc_price($total)
+            );
+
+            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+                $msgDiscount = sprintf(
                     __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
                     $product->get_meta('_recurring_discount_cycles'),
                     wc_price($total)
                 );
             }
-        } else {
-            $msg = sprintf($msg, wc_price($total), $frequency);
+
+            $msg .= $msgDiscount;
+        }
+
+        if (!$hasTrial && $hasDiscount) {
+            $msg .= ' ';
+            $msgDiscount = sprintf(
+                __('A primeira cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                wc_price($total)
+            );
+
+            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+                $msgDiscount = sprintf(
+                    __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
+                    $product->get_meta('_recurring_discount_cycles'),
+                    wc_price($total)
+                );
+            }
+
+            $msg .= $msgDiscount;
         }
 
         $initialFee = $product->get_meta('_initial_fee');
@@ -380,5 +400,11 @@ class Recurring
         }
 
         return false;
+    }
+
+    public function hasDiscount($product): bool
+    {
+        return (float)$product->get_meta('_recurring_discount_amount') > 0
+        && (int)$product->get_meta('_recurring_discount_cycles') > 0;
     }
 }

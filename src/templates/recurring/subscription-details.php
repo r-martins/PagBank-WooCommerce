@@ -56,7 +56,7 @@ wc_print_notices();
                     <td><?php echo $subscription->recurring_trial_period;?></td>
                 </tr>
             <?php endif;?>
-            <?php if ($subscription->recurring_discount_cycles): ?>
+            <?php if ((int)$subscription->recurring_discount_cycles && (float)$subscription->recurring_discount_amount): ?>
                 <tr>
                     <th scope="row"><?php _e('Desconto', 'pagbank-connect')?></th>
                     <td>

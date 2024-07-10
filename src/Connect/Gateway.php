@@ -720,13 +720,11 @@ class Gateway extends WC_Payment_Gateway_CC
         //force payment method, to avoid problems with standalone methods
         $order->set_payment_method(Connect::DOMAIN);
 
+        $endpoint = $payment_method == 'cc_trial' ? 'ws/tokens/cards' : 'ws/orders';
+
         try {
             $api = new Api();
-            if ($payment_method == 'cc_trial') {
-                $resp = $api->post('ws/tokens/cards', $params);
-            } else {
-                $resp = $api->post('ws/orders', $params);
-            }
+            $resp = $api->post($endpoint, $params);
 
             if (isset($resp['error_messages'])) {
                 throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);

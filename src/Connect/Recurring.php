@@ -109,6 +109,7 @@ class Recurring
             return;
         }
 
+        $recurringHelper = new RecurringHelper();
         foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
             $product = $cart_item['data'];
 
@@ -122,7 +123,7 @@ class Recurring
                 continue;
             }
 
-            if ($product->get_meta('_recurring_discount_amount') && $product->get_meta('_recurring_discount_cycles')) {
+            if ($recurringHelper->hasDiscount($product)) {
                 $discount = $product->get_meta('_recurring_discount_amount');
                 $price = $product->get_price();
                 $product->set_price( $price - $discount );
@@ -199,9 +200,13 @@ class Recurring
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_trial_length', true),
                 ]);
+                ?>
+            </div>
+            <div class="options_group">
+                <?php
                 woocommerce_wp_text_input([
                     'id' => '_recurring_discount_amount',
-                    'label' => __('Desconto', 'pagbank-connect'),
+                    'label' => __('Desconto (R$)', 'pagbank-connect'),
                     'description' => __('Valor de desconto a ser aplicado nos pedidos inicial e recorrentes durante o número de ciclos determinado.', 'pagbank-connect'),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_discount_amount', true),
@@ -219,9 +224,11 @@ class Recurring
                     'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
                 ]);
                 ?>
-            <p><?php echo esc_html(
-                    __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect') 
-                );?></p>
+            </div>
+            <div class="options_group">
+                <p><?php echo esc_html(
+                        __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect')
+                    );?></p>
             </div>
         </div>
         <?php
