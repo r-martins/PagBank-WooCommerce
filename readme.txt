@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro, pagbank, pix, cartão de crédito, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 6.5
+Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.12.0
+Stable tag: 4.13.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -165,6 +165,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.13.0 =
+* Agora é possível definir período de teste e opções de descontos para assinaturas.
+* APIs: obtenha informações detalhadas dos pagamentos feitos com pagbank nos metadados do pedido via API Rest do próprio WordPress/Woo
+
 = 4.12.0 =
 * Agora é possível remover os botões de Cancelar ou Pausar assinatura na área do cliente
 * Agora o administrador pode alterar o valor de uma assinatura no admin
