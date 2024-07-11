@@ -258,6 +258,25 @@ class Connect
         dbDelta($sql);
         add_option('pagbank_db_version', '4.0');
     }
+
+    public static function upgrade()
+    {
+        global $wpdb;
+        $recurringTable = $wpdb->prefix . 'pagbank_recurring';
+        $stored_version = get_option('pagbank_db_version');
+
+        if (version_compare($stored_version, '4.12', '<')) {
+            $sql = "ALTER TABLE $recurringTable
+                    ADD COLUMN recurring_initial_fee float(8, 2) null comment 'Initial fee to be charged on the first payment' AFTER recurring_amount,
+                    ADD COLUMN recurring_trial_period int null comment 'Number of days to wait before charging the first fee' AFTER recurring_initial_fee,
+                    ADD COLUMN recurring_discount_amount float(8, 2) null comment 'Discount amount to be applied to the recurring amount' AFTER recurring_trial_period,
+                    ADD COLUMN recurring_discount_cycles int null comment 'Number of cycles to apply the discount' AFTER recurring_discount_amount;
+                    ";
+
+            $wpdb->query($sql);
+            update_option('pagbank_db_version', '4.12');
+        }
+    }
     
     public static function uninstall()
     {

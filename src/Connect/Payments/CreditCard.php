@@ -46,7 +46,10 @@ class CreditCard extends Common
         $return = $this->getDefaultParameters();
         $charge = new Charge();
         $amount = new Amount();
-        $amount->setValue(Params::convertToCents($this->order->get_total()));
+
+        $orderTotal = $this->order->get_total();
+
+        $amount->setValue(Params::convertToCents($orderTotal));
         $charge->setAmount($amount);
 
         $paymentMethod = new PaymentMethod();

@@ -69,6 +69,8 @@ class Recurring
         //endregion
         
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
+        add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
+        add_filter('woocommerce_cart_needs_payment', [$this, 'enablePaymentInTrialOrder'], 10, 2);
     }
     
     public function addInitialFeeToCart($cart)
@@ -96,7 +98,38 @@ class Recurring
             $cart->add_fee(__('Taxa Inicial', 'pagbank-connect'), $extra_fee);
         }
     }
-    
+
+    function handleRecurringProductPrice($cart)
+    {
+        if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+            return;
+        }
+
+        if ( did_action( 'woocommerce_before_calculate_totals' ) >= 2 ) {
+            return;
+        }
+
+        $recurringHelper = new RecurringHelper();
+        foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+            $product = $cart_item['data'];
+
+            if ($product->get_meta('_recurring_enabled') != 'yes') {
+                continue;
+            }
+
+            if ($product->get_meta('_recurring_trial_length')) {
+                $trial_price = 0;
+                $product->set_price( $trial_price );
+                continue;
+            }
+
+            if ($recurringHelper->hasDiscount($product)) {
+                $discount = $product->get_meta('_recurring_discount_amount');
+                $price = $product->get_price();
+                $product->set_price( $price - $discount );
+            }
+        }
+    }
     
     public function addProductRecurringTab($productTabs)
     {
@@ -115,6 +148,7 @@ class Recurring
         ?>
         <!-- id below must match target registered in above add_my_custom_product_data_tab function -->
         <div id="recurring_pagbank" class="panel woocommerce_options_panel">
+            <div class="options_group">
             <?php
             woocommerce_wp_checkbox( array(
                 'id'            => '_recurring_enabled',
@@ -156,9 +190,46 @@ class Recurring
                 'value' => get_post_meta($post->ID, '_initial_fee', true),
             ]);
             ?>
-            <p><?php echo esc_html( 
-                    __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect') 
-                );?></p>
+            </div>
+            <div class="options_group">
+                <?php
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_trial_length',
+                    'label' => __('Período de testes (dias)', 'pagbank-connect'),
+                    'description' => __('Definir um período para o cliente testar a assinatura. Valor em dias.', 'pagbank-connect'),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_recurring_trial_length', true),
+                ]);
+                ?>
+            </div>
+            <div class="options_group">
+                <?php
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_discount_amount',
+                    'label' => __('Desconto (R$)', 'pagbank-connect'),
+                    'description' => __('Valor de desconto a ser aplicado nos pedidos inicial e recorrentes durante o número de ciclos determinado.', 'pagbank-connect'),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_recurring_discount_amount', true),
+                ]);
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_discount_cycles',
+                    'label' => __('Número de ciclos de pagamento com desconto', 'pagbank-connect'),
+                    'description' => __('Ex: Se Desconto fosse 5 e ciclo fosse 2, aplicaria o desconto no pedido inicial e na primeira cobrança.', 'pagbank-connect'),
+                    'desc_tip' => true,
+                    'type' => 'number',
+                    'custom_attributes' => [
+                        'min' => 1,
+                        'step' => 1,
+                    ],
+                    'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
+                ]);
+                ?>
+            </div>
+            <div class="options_group">
+                <p><?php echo esc_html(
+                        __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect')
+                    );?></p>
+            </div>
         </div>
         <?php
     }
@@ -180,6 +251,17 @@ class Recurring
             $initial = floatval(number_format(max(0, $initial), 2, '.', ''));
             update_post_meta($postId, '_frequency_cycle', $cycle);
             update_post_meta($postId, '_initial_fee', $initial);
+
+            $trialLength = isset($_POST['_recurring_trial_length']) ? sanitize_text_field($_POST['_recurring_trial_length']) : 0;
+            update_post_meta($postId, '_recurring_trial_length', $trialLength);
+
+            $discountAmount = sanitize_text_field($_POST['_recurring_discount_amount'] ?? 0);
+            $discountAmount = floatval(str_replace(',', '.', $discountAmount));
+            $discountAmount = floatval(number_format(max(0, $discountAmount), 2, '.', ''));
+            update_post_meta($postId, '_recurring_discount_amount', $discountAmount);
+
+            $cycle = isset($_POST['_recurring_discount_cycles']) ? sanitize_text_field($_POST['_recurring_discount_cycles']) : 0;
+            update_post_meta($postId, '_recurring_discount_cycles', $cycle);
         }
     }
     
@@ -234,20 +316,36 @@ class Recurring
         $cycle = (int)$order->get_meta('_recurring_cycle');
         $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
         $initialFee = (float)$order->get_meta('_recurring_initial_fee');
+        $discount = (float)$order->get_meta('_recurring_discount_amount');
+        $discountCycles = (int)$order->get_meta('_recurring_discount_cycles');
+
+        $trialLength = (int) $order->get_meta('_pagbank_recurring_trial_length');
+        if ($trialLength) {
+            $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle, $trialLength);
+        }
+
+        $recurringAmount = $order->get_total() - $initialFee;
+        if ($trialLength || $discountCycles) {
+            $recurringAmount = $recHelper->getRecurringAmountFromOrderItems($order);
+        }
 
         $paymentInfo = $this->getPaymentInfo($order);
         $statusFromOrder = $recHelper->getStatusFromOrder($order);
         $success = $wpdb->insert($wpdb->prefix.'pagbank_recurring', [
-            'initial_order_id' => $order->get_id(),
-            'recurring_amount' => $order->get_total() - $initialFee,
-            'status'           => $statusFromOrder,
-            'recurring_type'   => $frequency,
-            'recurring_cycle'  => $cycle,
-            'created_at'       => gmdate('Y-m-d H:i:s'),
-            'updated_at'       => gmdate('Y-m-d H:i:s'),
-            'next_bill_at'     => $nextBill->format('Y-m-d H:i:s'),
-            'payment_info'     => json_encode($paymentInfo),
-        ], ['%d', '%f', '%s', '%s', '%d', '%s', '%s', '%s', '%s']);
+            'initial_order_id'          => $order->get_id(),
+            'recurring_amount'          => $recurringAmount,
+            'recurring_initial_fee'     => $initialFee,
+            'recurring_trial_period'    => $trialLength,
+            'recurring_discount_amount' => $discount,
+            'recurring_discount_cycles' => $discountCycles,
+            'status'                    => $statusFromOrder,
+            'recurring_type'            => $frequency,
+            'recurring_cycle'           => $cycle,
+            'created_at'                => gmdate('Y-m-d H:i:s'),
+            'updated_at'                => gmdate('Y-m-d H:i:s'),
+            'next_bill_at'              => $nextBill->format('Y-m-d H:i:s'),
+            'payment_info'              => json_encode($paymentInfo),
+        ], ['%d', '%f', '%f', '%d', '%f', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s']);
         
         if ($success !== false && $statusFromOrder == 'ACTIVE') {
             $subId = $wpdb->insert_id;
@@ -293,6 +391,8 @@ class Recurring
                 $order->update_meta_data('_recurring_frequency', $originalItem->get_meta('_frequency'));
                 $order->update_meta_data('_recurring_cycle', $originalItem->get_meta('_frequency_cycle'));
                 $order->update_meta_data('_recurring_initial_fee', $originalItem->get_meta('_initial_fee'));
+                $order->update_meta_data('_recurring_discount_amount', $originalItem->get_meta('_recurring_discount_amount'));
+                $order->update_meta_data('_recurring_discount_cycles', $originalItem->get_meta('_recurring_discount_cycles'));
                 $order->save();
             }
         }
@@ -328,6 +428,25 @@ class Recurring
                     $chargeInfo['card']['exp_year'],
                 'brand' => $chargeInfo['card']['brand'],
                 'id' => $chargeInfo['card']['id']
+            ];
+        }
+
+        if ($paymentMethod == 'credit_card_trial') {
+            $paymentInfo['method'] = 'credit_card';
+            $cardInfo = $order->get_meta('pagbank_order_recurring_card');
+            if ( ! isset($cardInfo['id'])){
+                Functions::log('Não foi possível carregar as informações do pagamento inicial para gerar os '
+                    .'detalhes da recorrência.', 'critical', ['order id' => $order->get_id()] );
+                return [];
+            }
+
+            $paymentInfo['card'] = [
+                'holder_name' => $cardInfo['holder']['name'],
+                'number' => $cardInfo['first_digits'] . '******' . $cardInfo['last_digits'],
+                'expiration_date' => $cardInfo['exp_month'] . '/' .
+                    $cardInfo['exp_year'],
+                'brand' => $cardInfo['brand'],
+                'id' => $cardInfo['id']
             ];
         }
         
@@ -918,5 +1037,16 @@ class Recurring
     {
         require_once dirname(__FILE__) . '/../templates/recurring-instructions.php';
     }
-    
+
+    public function enablePaymentInTrialOrder($needs_payment, $cart)
+    {
+        // Check if the cart has a trial
+        $recurringHelper = new RecurringHelper();
+        $hasTrial = $recurringHelper->getCartRecurringTrial();
+        if ($cart->total == 0 && $hasTrial) {
+            $needs_payment = true;
+        }
+
+        return $needs_payment;
+    }
 }

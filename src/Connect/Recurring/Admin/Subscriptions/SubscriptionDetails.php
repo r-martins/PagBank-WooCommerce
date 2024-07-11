@@ -92,11 +92,21 @@ class SubscriptionDetails extends WP_List_Table
             ['name' => 'ID', 'value' => $this->subscription->id],
             ['name' => 'Pedido Inicial', 'value' => $this->subscription->initial_order_id],
             ['name' => 'Valor Recorrente', 'value' => $this->subscription->recurring_amount],
-            ['name' => 'Status', 'value' => $status],
-            ['name' => 'Tipo Recorrente', 'value' => $type],
-            ['name' => 'Criado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->created_at))],
-            ['name' => 'Atualizado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->updated_at))],
-            ['name' => 'Próxima Cobrança', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->next_bill_at))],
+            ['name' => 'Status', 'value' => $status]
         ];
+
+        if ($this->subscription->recurring_trial_period) {
+            $this->items[] = ['name' => 'Período de testes (dias)', 'value' => $this->subscription->recurring_trial_period];
+        }
+
+        if ((int)$this->subscription->recurring_discount_cycles && (float)$this->subscription->recurring_discount_amount) {
+            $this->items[] = ['name' => 'Desconto', 'value' => $this->subscription->recurring_discount_amount];
+            $this->items[] = ['name' => 'Ciclos com desconto', 'value' => $this->subscription->recurring_discount_cycles];
+        }
+
+        $this->items[] = ['name' => 'Tipo Recorrente', 'value' => $type];
+        $this->items[] = ['name' => 'Criado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->created_at))];
+        $this->items[] = ['name' => 'Atualizado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->updated_at))];
+        $this->items[] = ['name' => 'Próxima Cobrança', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->next_bill_at))];
     }
 }

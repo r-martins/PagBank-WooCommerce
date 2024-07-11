@@ -92,6 +92,37 @@ class Recurring
     }
 
     /**
+     * Checks if the $cart or the current cart contains trial recurring products and returns the trial length
+     * @param WC_Cart|null $cart
+     *
+     * @return bool|int
+     */
+    public function getCartRecurringTrial(WC_Cart $cart = null)
+    {
+        //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
+        if (!did_action('woocommerce_load_cart_from_session')) {
+            return false;
+        }
+
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+
+        if (!$cart) {
+            return false;
+        }
+
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem['data'];
+            if ($product->get_meta('_recurring_trial_length') > 0 && $product->get_meta('_recurring_enabled') == 'yes') {
+                return (int) $product->get_meta('_recurring_trial_length');
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Calculates the DateTime for the next billing date
      *
      * @param string $frequency Accepted values are: 'daily', 'weekly', 'monthly', 'yearly'
@@ -100,9 +131,15 @@ class Recurring
      * @return DateTime The next billing date GMT timezone
      * @throws Exception
      */
-    public function calculateNextBillingDate(string $frequency, int $cycle): DateTime
+    public function calculateNextBillingDate(string $frequency, int $cycle, $trialLenght = null): DateTime
     {
         $date = new DateTime('now', new DateTimeZone('GMT'));
+
+        if ($trialLenght){
+            $interval = new DateInterval('P' . $trialLenght . 'D');
+            return $date->add($interval);
+        }
+
         switch ($frequency){
             case 'daily':
                 $frequency = 'D';
@@ -199,7 +236,7 @@ class Recurring
     public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
     {
         if (!$cart) $cart = WC()->cart;
-        $msg = __('O valor de %s será cobrado %s.', 'pagbank-connect');
+        $msgDefault = __('O valor de %s será cobrado %s.', 'pagbank-connect');
         $total = $cart->get_total('edit');
         $frequency = __('mensalmente', 'pagbank-connect');
         $initialFee = 0;
@@ -231,7 +268,65 @@ class Recurring
                 break;       
             }
         }
-        $msg = sprintf($msg, wc_price($total), $frequency);
+
+        $msg = sprintf($msgDefault, wc_price($total), $frequency);
+
+        $hasTrial = $this->getCartRecurringTrial($cart);
+        $hasDiscount = $this->hasDiscount($product);
+        if ($hasTrial || $hasDiscount) {
+            $total = 0;
+            foreach ($cart->get_cart() as $cartItem) {
+                $product = $cartItem['data'];
+                $total += $product->get_data()['price'];
+            }
+            $msg = sprintf($msgDefault, wc_price($total), $frequency);
+        }
+
+        if ($hasTrial){
+            $msgTrial = __('O valor de %s será cobrado %s após o período de testes de %d dias.', 'pagbank-connect');
+            $msg = sprintf($msgTrial, wc_price($total), $frequency, $hasTrial);
+        }
+
+        if ($hasDiscount) {
+            $total -= (float)$product->get_meta('_recurring_discount_amount');
+        }
+
+        if ($hasTrial && $hasDiscount){
+            $msg .= ' ';
+            $msgDiscount = sprintf(
+                __('A próxima cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                wc_price($total)
+            );
+
+            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+                $msgDiscount = sprintf(
+                    __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
+                    $product->get_meta('_recurring_discount_cycles'),
+                    wc_price($total)
+                );
+            }
+
+            $msg .= $msgDiscount;
+        }
+
+        if (!$hasTrial && $hasDiscount) {
+            $msg .= ' ';
+            $msgDiscount = sprintf(
+                __('A primeira cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                wc_price($total)
+            );
+
+            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+                $msgDiscount = sprintf(
+                    __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
+                    $product->get_meta('_recurring_discount_cycles'),
+                    wc_price($total)
+                );
+            }
+
+            $msg .= $msgDiscount;
+        }
+
         $initialFee = $product->get_meta('_initial_fee');
         if ($initialFee > 0){
             $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', 'pagbank-connect'), wc_price($initialFee)) . '</p>';;
@@ -266,5 +361,50 @@ class Recurring
         if ( ! $subscription) return '#';
         return admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $subscription->id);
 
+    }
+
+    public function getRecurringAmountFromOrderItems(WC_Order $order): float
+    {
+        $total = 0;
+        foreach ($order->get_items() as $item){
+            $product = $item->get_product();
+            if ($product->get_meta('_recurring_enabled') == 'yes'){
+                $total += $product->get_price();
+            }
+        }
+        return $total;
+    }
+
+    public function hasSubscriptionDiscountRemaining($subscription): bool
+    {
+        $discount = (float)$subscription->recurring_discount_amount;
+        $discountCycles = (int)$subscription->recurring_discount_cycles;
+        if (!$discount || !$discountCycles) {
+            return false;
+        }
+
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        $orders = wc_get_orders([
+            'parent' => $subscription->initial_order_id,
+        ]);
+
+        $ordersNumber = count($orders);
+
+        // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
+        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+            $ordersNumber = $ordersNumber + 1;
+        }
+
+        if ($ordersNumber < $discountCycles){
+            return true;
+        }
+
+        return false;
+    }
+
+    public function hasDiscount($product): bool
+    {
+        return (float)$product->get_meta('_recurring_discount_amount') > 0
+        && (int)$product->get_meta('_recurring_discount_cycles') > 0;
     }
 }

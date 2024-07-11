@@ -41,6 +41,15 @@ class RecurringOrder
     {
         $subscription = $this->subscription;
         $initialOrder = wc_get_order($subscription->initial_order_id);
+
+        // calculate total before new order creation
+        $recHelper = new Recurring();
+        $total = $subscription->recurring_amount;
+        $hasDiscount = $recHelper->hasSubscriptionDiscountRemaining($subscription);
+        if ($hasDiscount) {
+            $total = $total - $subscription->recurring_discount_amount;
+        }
+
         $order = wc_create_order([
             'customer_id' => $initialOrder->get_customer_id('edit'),
             'parent'    => $initialOrder->get_id(),
@@ -61,15 +70,15 @@ class RecurringOrder
         $order->set_address($initialOrder->get_address('shipping'), 'shipping');
         $order->set_payment_method_title($initialOrder->get_payment_method_title('edit'));
         $order->set_payment_method($initialOrder->get_payment_method('edit'));
-        $order->set_total($subscription->recurring_amount);
-        
+
+        $order->set_total($total);
+
         $shipping = new WC_Order_Item_Shipping();
         $shipping->set_method_title($initialOrder->get_shipping_method());
         
         $order->add_item($shipping);
         $order->set_shipping_total($initialOrder->get_shipping_total('edit'));
 
-        $recHelper = new Recurring();
         $order->add_order_note(
             sprintf(
                 __('Este é um pedido recorrente. Perfil recorrente #%s. Pedido inicial: #%s. Frequência: %s. '
@@ -108,8 +117,7 @@ class RecurringOrder
             throw new Exception('Erro ao decodificar informações de pagamento para subscription ' . esc_attr($subscription->id));
         }
         
-        $payment_method = $paymentInfo->method; 
-
+        $payment_method = $paymentInfo->method;
 
         switch ($payment_method) {
             case 'boleto':

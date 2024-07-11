@@ -6,6 +6,7 @@ use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Payments\CreditCardTrial;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -82,7 +83,6 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
-        ;
         
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', function() {
             // Get the current user ID
@@ -616,20 +616,21 @@ class Gateway extends WC_Payment_Gateway_CC
         $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
 
         $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $isCartRecurring = $recurringHelper->isCartRecurring();
         
         if (Params::getConfig('standalone', 'yes') == 'yes') {
             $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
             
             $payment_method = str_replace('rm-pagbank-', '', $payment_method);
-            if ($recurringHelper->isCartRecurring()) {
+            if ($isCartRecurring) {
                 $payment_method = 'cc'; //@TODO change when supporting other methods for recurring orders
             }
         }
 
-        if ($recurringHelper->isCartRecurring()) {
+        if ($isCartRecurring) {
             $order->add_meta_data('_pagbank_recurring_initial', true);
         }
-        
+
         // region Add note if customer changed payment method
         if ($order->get_meta('pagbank_payment_method')) {
             $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;
@@ -641,6 +642,15 @@ class Gateway extends WC_Payment_Gateway_CC
             }
         }
         // endregion
+
+        $recurringTrialPeriod = $recurringHelper->getCartRecurringTrial();
+        if ($recurringTrialPeriod) {
+            $order->add_meta_data('_pagbank_recurring_trial_length', $recurringTrialPeriod);
+        }
+
+        if ($recurringTrialPeriod && $order->get_total() == 0) {
+            $payment_method = $payment_method . '_trial';
+        }
 
         switch ($payment_method) {
             case 'boleto':
@@ -686,6 +696,15 @@ class Gateway extends WC_Payment_Gateway_CC
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
+            case 'cc_trial':
+                $order->add_meta_data(
+                    '_pagbank_card_encrypted',
+                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
+                    true
+                );
+                $method = new CreditCardTrial($order);
+                $params = $method->prepare();
+                break;
             default:
                 wc_add_wp_error_notices(
                     new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect'))
@@ -701,9 +720,11 @@ class Gateway extends WC_Payment_Gateway_CC
         //force payment method, to avoid problems with standalone methods
         $order->set_payment_method(Connect::DOMAIN);
 
+        $endpoint = $payment_method == 'cc_trial' ? 'ws/tokens/cards' : 'ws/orders';
+
         try {
             $api = new Api();
-            $resp = $api->post('ws/orders', $params);
+            $resp = $api->post($endpoint, $params);
 
             if (isset($resp['error_messages'])) {
                 throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);

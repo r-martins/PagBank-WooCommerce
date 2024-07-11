@@ -50,6 +50,24 @@ wc_print_notices();
                 <th scope="row"><?php _e('Valor da assinatura', 'pagbank-connect')?></th>
                 <td><?php echo wc_price( $subscription->recurring_amount );?></td>
             </tr>
+            <?php if ($subscription->recurring_trial_period): ?>
+                <tr>
+                    <th scope="row"><?php _e('Período de testes (dias)', 'pagbank-connect')?></th>
+                    <td><?php echo $subscription->recurring_trial_period;?></td>
+                </tr>
+            <?php endif;?>
+            <?php if ((int)$subscription->recurring_discount_cycles && (float)$subscription->recurring_discount_amount): ?>
+                <tr>
+                    <th scope="row"><?php _e('Desconto', 'pagbank-connect')?></th>
+                    <td>
+                        <?php
+                        $msg = __('%s por %s ciclos de cobrança.', 'pagbank-connect');
+                        $msg = sprintf($msg, wc_price($subscription->recurring_discount_amount), $subscription->recurring_discount_cycles);
+                        ?>
+                        <?php echo $msg;?>
+                    </td>
+                </tr>
+            <?php endif;?>
             <tr>
                 <th scope="row"><?php _e('Status', 'pagbank-connect')?></th>
                 <td><?php echo Recurring::getFriendlyStatus($subscription->status);?></td>
