@@ -207,7 +207,7 @@ jQuery(document).ready(function ($) {
 
     //region 3ds authentication
     let isSubmitting = false;
-    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review';
+    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review, form#order_update';
     if (!jQuery(checkoutFormIdentifiers).length) {
         console.debug('PagBank: checkout form not found');
         return true;
@@ -215,7 +215,7 @@ jQuery(document).ready(function ($) {
     let originalSubmitHandler = () => {};
     // get the original submit handler for checkout or order-pay page
     if (jQuery._data(jQuery(checkoutFormIdentifiers)[0], "events") !== undefined) {
-        let formCheckout = jQuery('form.woocommerce-checkout, form#order_review')[0];
+        let formCheckout = jQuery('form.woocommerce-checkout, form#order_review, form#order_update')[0];
         let formEvents = jQuery._data(formCheckout, "events");
         
         if (formEvents && formEvents.submit) {
@@ -244,6 +244,14 @@ jQuery(document).ready(function ($) {
 
         if (encryptCard() === false) {
             return false;
+        }
+
+        //if change payment method page, continue
+        if (pagseguro_connect_change_card_page) {
+            isSubmitting = true;
+            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            jQuery(checkoutFormIdentifiers).trigger('submit');
+            return true;
         }
 
         //if 3ds is not enabled, continue
@@ -276,7 +284,7 @@ jQuery(document).ready(function ($) {
         });
         let cartTotal;
         let selectedInstallments = jQuery('#rm-pagbank-card-installments').val();
-        if (selectedInstallments === "") {
+        if (selectedInstallments === "" || selectedInstallments === undefined) {
             selectedInstallments = 1;
         }
 
@@ -476,7 +484,7 @@ jQuery(document).ready(function ($) {
         }
         let cardNumber = jQuery(e.target).val();
         let ccBin = cardNumber.replace(/\s/g, '').substring(0, 6);
-        if (ccBin !== window.ps_cc_bin && ccBin.length === 6) {
+        if (ccBin !== window.ps_cc_bin && ccBin.length === 6 && !pagseguro_connect_change_card_page) {
             window.ps_cc_bin = ccBin;
             jQuery(document.body).trigger('update_installments');
         }

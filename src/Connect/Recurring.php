@@ -3,6 +3,8 @@ namespace RM_PagBank\Connect;
 
 use Exception;
 use RM_PagBank\Connect;
+use RM_PagBank\Connect\Payments\CreditCardToken;
+use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
@@ -58,8 +60,10 @@ class Recurring
         add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
         add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', [$this, 'addManageSubscriptionContent']);
         add_action('woocommerce_account_rm-pagbank-subscriptions-view_endpoint', [$this, 'addManageSubscriptionViewContent']);
+        add_action('woocommerce_account_rm-pagbank-subscriptions-update_endpoint', [$this, 'addManageSubscriptionUpdateContent']);
         add_action('woocommerce_api_rm-pagbank-subscription-edit', [$this, 'addManageSubscriptionEditAction']);
         add_action('rm_pagbank_view_subscription', [$this, 'subscriptionDetailsTable'], 10, 1);
+        add_action('rm_pagbank_update_subscription_change_credit_card', [$this, 'subscriptionUpdateCreditCard'], 10, 1);
         add_action('rm_pagbank_recurring_details_subscription_table_payment_info', [$this, 'getPaymentInfoRows'], 10, 1);
         add_action('rm_pagbank_view_subscription_actions', [$this, 'getSubscriptionActionButtons'], 10, 1);
         add_action('rm_pagbank_view_subscription_order_list', [$this, 'getSubscriptionOrderList'], 10, 1);
@@ -431,7 +435,7 @@ class Recurring
             ];
         }
 
-        if ($paymentMethod == 'credit_card_trial') {
+        if ($paymentMethod == 'credit_card_token') {
             $paymentInfo['method'] = 'credit_card';
             $cardInfo = $order->get_meta('pagbank_order_recurring_card');
             if ( ! isset($cardInfo['id'])){
@@ -481,6 +485,7 @@ class Recurring
     {
         add_rewrite_endpoint('rm-pagbank-subscriptions', EP_PAGES);
         add_rewrite_endpoint('rm-pagbank-subscriptions-view', EP_PAGES);
+        add_rewrite_endpoint('rm-pagbank-subscriptions-update', EP_PAGES);
         add_rewrite_endpoint('rm-pagbank-subscriptions-edit', EP_ROOT | EP_PAGES);
     }
     
@@ -527,7 +532,41 @@ class Recurring
                 'initialOrder' => $order,
                 'dashboard' => $dash
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
-    }    
+    }
+
+    public function addManageSubscriptionUpdateContent($subscriptionId)
+    {
+        $subscriptionId = intval($subscriptionId);
+        $subscription = $this->getSubscription($subscriptionId);
+        if (is_null($subscription)) {
+            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+            return;
+        }
+
+        if (isset($_GET['action'])) {
+            do_action('rm_pagbank_manage_subscription_action', wp_slash($_GET['action']));
+            $subscription = $this->getSubscription($subscriptionId);
+        }
+
+        $order = wc_get_order($subscription->initial_order_id);
+        if ($order->get_customer_id('edit') !== get_current_user_id()) {
+            wc_get_template(
+                'recurring/my-account/subscription-not-found.php',
+                [],
+                Connect::DOMAIN,
+                WC_PAGSEGURO_CONNECT_TEMPLATES_DIR
+            );
+            return;
+        }
+
+        $dash = new Connect\Recurring\RecurringDashboard();
+
+        wc_get_template('recurring/my-account/update-subscription.php', [
+            'subscription' => $subscription,
+            'initialOrder' => $order,
+            'dashboard' => $dash
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+    }
 
     public function addSubscriptionManagementTitle($title, $postid)
     {
@@ -564,6 +603,7 @@ class Recurring
         $pbEndpoints = [
             'my-account/rm-pagbank-subscriptions',
             'my-account/rm-pagbank-subscriptions-view',
+            'my-account/rm-pagbank-subscriptions-update',
             'my-account/rm-pagbank-subscriptions-edit',
         ];
         foreach ($pbEndpoints as $endpoint) {
@@ -583,6 +623,10 @@ class Recurring
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions-view') !== false:
                 $id = esc_html($wp->query_vars['rm-pagbank-subscriptions-view']);
                 $title = sprintf(__('Assinatura #%d', 'pagbank-connect'), $id);
+                break;
+            case stripos($endpoint, 'my-account/rm-pagbank-subscriptions-update') !== false:
+                $id = esc_html($wp->query_vars['rm-pagbank-subscriptions-update']);
+                $title = sprintf(__('Atualizar Assinatura #%d', 'pagbank-connect'), $id);
                 break;
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions') !== false:
                 $title = __('Minhas Assinaturas', 'pagbank-connect');
@@ -617,6 +661,13 @@ class Recurring
     public function subscriptionDetailsTable($subscription)
     {
         wc_get_template('recurring/subscription-details.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
+    }
+
+    public function subscriptionUpdateCreditCard($subscription)
+    {
+        wc_get_template('recurring/my-account/form-change-credit-card.php', [
             'subscription' => $subscription,
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
     }
@@ -702,6 +753,10 @@ class Recurring
         
         if (!is_admin()) {
             unset($actions['edit']);
+        }
+
+        if (is_admin()) {
+            unset($actions['update']);
         }
         
         return $actions;
@@ -983,6 +1038,37 @@ class Recurring
             return;
         }
         wc_add_notice(__('Não foi possível atualizar a assinatura.', 'pagbank-connect'), 'error');
+    }
+
+    public function changePaymentMethodSubscriptionAction(\stdClass $subscription): void
+    {
+        $order = wc_get_order($subscription->initial_order_id);
+        $order->add_meta_data(
+            '_pagbank_card_encrypted',
+            htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
+            true
+        );
+        $method = new CreditCardToken($order);
+        $params = $method->prepare();
+        $api = new Api();
+        try {
+            $resp = $api->post('ws/tokens/cards', $params);
+            $method->process_response($order, $resp);
+        } catch (Exception $e) {
+            wc_add_notice(__('Não foi possível salvar o cartão. Tente novamente.', 'pagbank-connect'), 'error');
+            return;
+        }
+        $order->update_meta_data('pagbank_payment_method', $method->code);
+        $paymentInfo = $this->getPaymentInfo($order);
+        $update = $this->updateSubscription($subscription, [
+            'payment_info' => json_encode($paymentInfo),
+        ]);
+
+        if ($update){
+            wc_add_notice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'));
+            return;
+        }
+        wc_add_notice(__('Não foi possível alterar o método de pagamento.', 'pagbank-connect'), 'error');
     }
     // endregion
 
