@@ -692,11 +692,11 @@ class Recurring
                 break;
         }
 
-        if (Params::getConfig('recurring_customer_can_cancel') === 'no') {
+        if (!is_admin() && Params::getConfig('recurring_customer_can_cancel') === 'no') {
             unset($actions['cancel']);
         }
 
-        if (Params::getConfig('recurring_customer_can_pause') === 'no') {
+        if (!is_admin() && Params::getConfig('recurring_customer_can_pause') === 'no') {
             unset($actions['pause']);
         }
         
