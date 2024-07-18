@@ -486,7 +486,7 @@ class Gateway extends WC_Payment_Gateway_CC
                     'var pagseguro_connect_public_key = \''.$this->get_option('public_key').'\';',
                     'before'
                 );
-                if ( $this->get_option('cc_3ds') === 'yes') {
+                if ( $this->get_option('cc_3ds') === 'yes' && !$wp->query_vars['rm-pagbank-subscriptions-update']) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',

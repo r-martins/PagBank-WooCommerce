@@ -246,14 +246,6 @@ jQuery(document).ready(function ($) {
             return false;
         }
 
-        //if change payment method page, continue
-        if (pagseguro_connect_change_card_page) {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
-        }
-
         //if 3ds is not enabled, continue
         if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
             isSubmitting = true;
