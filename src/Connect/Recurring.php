@@ -1053,6 +1053,9 @@ class Recurring
         $api = new Api();
         try {
             $resp = $api->post('ws/tokens/cards', $params);
+            if (isset($resp['error_messages'])) {
+                throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
+            }
             $method->process_response($order, $resp);
         } catch (Exception $e) {
             wc_add_notice(__('Não foi possível salvar o cartão. Tente novamente.', 'pagbank-connect'), 'error');
