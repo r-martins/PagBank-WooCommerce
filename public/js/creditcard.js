@@ -262,6 +262,29 @@ jQuery(document).ready(function ($) {
             return true;
         }
 
+        let selectedInstallments = jQuery('#rm-pagbank-card-installments').val();
+        if (selectedInstallments === "" || selectedInstallments === undefined) {
+            selectedInstallments = 1;
+        }
+
+        let cartTotal;
+        if (typeof window.ps_cc_installments === 'undefined') {
+            cartTotal = jQuery('.order-total bdi, .product-total bdi').last().html();
+            cartTotal = cartTotal.replace(/[^0-9,]/g, '');
+        } else {
+            cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount
+        }
+
+        cartTotal = parseInt(parseFloat(cartTotal.toString()).toFixed(2) * 100);
+
+        //if cart total is less than 100, don't continue with 3ds
+        if (cartTotal < 100) {
+            isSubmitting = true;
+            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            jQuery(checkoutFormIdentifiers).trigger('submit');
+            return true;
+        }
+
         //region 3ds authentication method
         PagSeguro.setUp({
             session: pagseguro_connect_3d_session,
@@ -274,23 +297,6 @@ jQuery(document).ready(function ($) {
         jQuery.each(checkoutFormData, function (i, field) {
             checkoutFormDataObj[field.name] = field.value;
         });
-        let cartTotal;
-        let selectedInstallments = jQuery('#rm-pagbank-card-installments').val();
-        if (selectedInstallments === "" || selectedInstallments === undefined) {
-            selectedInstallments = 1;
-        }
-
-        if (typeof window.ps_cc_installments === 'undefined') {
-            cartTotal = jQuery('.order-total bdi, .product-total bdi').last().html();
-            cartTotal = cartTotal.replace(/[^0-9,]/g, '');
-        } else {
-            cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount
-        }
-
-        cartTotal = parseInt(parseFloat(cartTotal.toString()).toFixed(2) * 100);
-        if (cartTotal < 100) {
-            cartTotal = 100;
-        }
 
         let expiryVal = jQuery('#rm-pagbank-card-expiry').val();
 
