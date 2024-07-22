@@ -11,6 +11,7 @@ if ( ! isset($subscription->id) || ! $subscription->id ) {
     return;
 }
 $payment = json_decode($subscription->payment_info);
+$fields = array();
 
 wp_enqueue_script( 'wc-credit-card-form' );
 
