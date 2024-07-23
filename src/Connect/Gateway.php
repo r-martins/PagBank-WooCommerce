@@ -343,6 +343,11 @@ class Gateway extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
+        if ($this->paymentUnavailable()) {
+            include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/unavailable.php';
+            return;
+        }
+
         if (Params::getConfig('standalone', 'yes') == 'no') {
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
             return;
@@ -811,6 +816,17 @@ class Gateway extends WC_Payment_Gateway_CC
         $total = Api::getOrderTotal();
         
         return Params::getInstallments($total, '555566');
+    }
+
+    /**
+     * Show message about minimum order value in the payment form
+     * @return bool
+     */
+    public function paymentUnavailable(): bool
+    {
+        $total = Api::getOrderTotal();
+        $total = Params::convertToCents($total);
+        return $total < 100;
     }
 
     public static function notification()
