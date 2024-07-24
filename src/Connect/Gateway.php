@@ -10,6 +10,7 @@ use RM_PagBank\Connect\Payments\CreditCardTrial;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use WC_Admin_Settings;
 use WC_Data_Exception;
 use WC_Order;
@@ -343,6 +344,11 @@ class Gateway extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
+        if ($this->paymentUnavailable()) {
+            include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/unavailable.php';
+            return;
+        }
+
         if (Params::getConfig('standalone', 'yes') == 'no') {
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
             return;
@@ -813,6 +819,27 @@ class Gateway extends WC_Payment_Gateway_CC
         return Params::getInstallments($total, '555566');
     }
 
+    /**
+     * Payment is unavailable if the total is less than R$1.00
+     * @return bool
+     */
+    public function paymentUnavailable(): bool
+    {
+        $total = Api::getOrderTotal();
+        $total = Params::convertToCents($total);
+        $isTotalLessThanOneReal = $total < 100;
+        if (!$isTotalLessThanOneReal) {
+            return false;
+        }
+
+        $recHelper = new RecurringHelper();
+        if ($recHelper->isCartRecurring()) {
+            return false;
+        }
+
+        return true;
+    }
+
     public static function notification()
     {
         $body = file_get_contents('php://input');
@@ -887,16 +914,17 @@ class Gateway extends WC_Payment_Gateway_CC
      */
     public function disableIfOrderLessThanOneReal($gateways)
     {
-        if ( is_admin() ){
+        $hideIfUnavailable = $this->get_option('hide_id_unavailable');
+        if (!wc_string_to_bool($hideIfUnavailable) || is_admin()) {
             return $gateways;
         }
-        
-        // Get the current cart total
-        $total = Api::getOrderTotal();
 
-        // Check if the total is less than 1.00
-        if ($total < 1) {
-            unset($gateways[Connect::DOMAIN]);
+        if ($this->paymentUnavailable()) {
+            foreach ($gateways as $key => $gateway) {
+                if (strpos($key, Connect::DOMAIN) !== false) {
+                    unset($gateways[$key]);
+                }
+            }
         }
 
         return $gateways;
