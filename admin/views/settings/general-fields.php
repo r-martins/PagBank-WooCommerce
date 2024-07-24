@@ -47,7 +47,7 @@ return array(
         'desc_tip' => true,
         'description' => esc_html(
             __(
-                'PagBank indisponível para pedidos inferiores a R$1,00',
+                'PagBank não aceita pedidos inferiores a R$1,00',
                 'pagbank-connect'
             )),
         'default' => 'no',
