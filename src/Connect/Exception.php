@@ -38,8 +38,13 @@ class Exception extends \Exception
         foreach ($error_messages as $error) {
             $original_error_messages[] = ($error['code'] ?? '').' - '.($error['description'] ?? '' ).' ('.($error['parameter_name'] ?? '')
                 .')';
-            $msg = isset($error['code']) ? $error['code'] . ' - ' : '';
-            $msg .= $this->errors[$error['code']] ?? 'Erro desconhecido';
+
+            $msg = 'Erro desconhecido';
+            if (isset($error['code'])){
+                $msg = $error['code'] . ' - ';
+                $msg .= $this->errors[$error['code']];
+            }
+
             $friendlyParamName = $this->getFriendlyParameterName($error['parameter_name'] ?? '');
             $msg .= isset($error['parameter_name']) ? ' (' . $friendlyParamName . ')' : '';
             $message[] = $msg;

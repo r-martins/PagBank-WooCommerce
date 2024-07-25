@@ -376,6 +376,7 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public static function addStyles($styles){
+        global $wp;
 //        wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
 //        wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
 //        
@@ -389,7 +390,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 'has_rtl' => false,
             ];
         }
-        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
+        if ( (is_checkout() && Params::getConfig('enabled') == 'yes') || $wp->query_vars['rm-pagbank-subscriptions-update'] ) {
             $styles['pagseguro-connect-checkout'] = [
                 'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 'deps'    => [],

@@ -34,7 +34,9 @@ defined( 'ABSPATH' ) || exit;
     </tbody>
 </table>
 <br>
-<?php do_action( 'rm_pagbank_update_subscription_change_credit_card', $subscription ); ?>
+<div id="payment">
+    <?php do_action( 'rm_pagbank_update_subscription_change_credit_card', $subscription ); ?>
+</div>
 
 
 

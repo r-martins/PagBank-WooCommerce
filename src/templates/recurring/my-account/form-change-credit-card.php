@@ -3,8 +3,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var stdClass $subscription */
 
 use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Params;
 
 defined( 'ABSPATH' ) || exit;
+
+wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
+wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
+wp_add_inline_style(
+    'pagbank-connect-inline-css',
+    apply_filters(
+        'pagbank-connect-inline-css',
+        '.ps-button svg, .ps-payment-icon svg{ fill: ' . Params::getConfig('icons_color', 'gray') . '};'
+    )
+);
+
 do_action('rm_pagbank_before_account_recurring_view_subscription_payment_rows', $subscription);
 
 if ( ! isset($subscription->id) || ! $subscription->id ) {
@@ -19,8 +31,8 @@ $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
 $gateway = array_key_exists('rm-pagbank-cc',$available_gateways) ? $available_gateways['rm-pagbank-cc'] : null;
 ?>
 <?php if ( $payment->method == 'credit_card' && $gateway) :?>
-<form id="order_update" action="<?php echo WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=changePaymentMethod&id=' . $subscription->id ?>" method="post">
-    <div class="wc_payment_method payment_method_<?php echo esc_attr( $gateway->id ); ?>">
+<form id="order_update" class="wc-credit-card-form payment_methods" action="<?php echo WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=changePaymentMethod&id=' . $subscription->id ?>" method="post">
+    <div class="payment_box wc_payment_method payment_method_<?php echo esc_attr( $gateway->id ); ?>">
         <?php
         $default_fields = [
             'card-holer-name' => '<p class="form-row form-row-wide">

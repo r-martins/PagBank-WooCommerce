@@ -1058,7 +1058,8 @@ class Recurring
             }
             $method->process_response($order, $resp);
         } catch (Exception $e) {
-            wc_add_notice(__('Não foi possível salvar o cartão. Tente novamente.', 'pagbank-connect'), 'error');
+            $message = sprintf(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'), $e->getMessage());
+            wc_add_notice($message, 'error');
             return;
         }
         $order->update_meta_data('pagbank_payment_method', $method->code);
@@ -1071,7 +1072,8 @@ class Recurring
             wc_add_notice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'));
             return;
         }
-        wc_add_notice(__('Não foi possível alterar o método de pagamento.', 'pagbank-connect'), 'error');
+
+        wc_add_notice(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'), 'error');
     }
     // endregion
 
