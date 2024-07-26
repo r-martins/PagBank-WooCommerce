@@ -10,6 +10,7 @@ use RM_PagBank\Connect\Payments\CreditCardToken;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use WC_Admin_Settings;
 use WC_Data_Exception;
 use WC_Order;
@@ -190,7 +191,7 @@ class Gateway extends WC_Payment_Gateway_CC
         //region Update subscription status accordingly
         if ($order->get_meta('_pagbank_is_recurring')) {
             $recurring = new Recurring();
-            $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+            $recurringHelper = new RecurringHelper();
             $shouldBeStatus = $recurringHelper->getStatusFromOrder($order);
             $subscription = $recurring->getSubscriptionFromOrder($order->get_parent_id('edit'));
             $parentOrder = wc_get_order($order->get_parent_id('edit'));
@@ -376,7 +377,6 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
 	public static function addStyles($styles){
-        global $wp;
 //        wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
 //        wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
 //        
@@ -390,7 +390,9 @@ class Gateway extends WC_Payment_Gateway_CC
                 'has_rtl' => false,
             ];
         }
-        if ( (is_checkout() && Params::getConfig('enabled') == 'yes') || $wp->query_vars['rm-pagbank-subscriptions-update'] ) {
+
+        $recHelper = new RecurringHelper();
+        if ( (is_checkout() && Params::getConfig('enabled') == 'yes') || $recHelper->isSubscriptionUpdatePage() ) {
             $styles['pagseguro-connect-checkout'] = [
                 'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 'deps'    => [],
@@ -440,8 +442,6 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
     public function addScripts() {
-        global $wp;
-
         // If the method has already been called, return early
         if (self::$addedScripts) {
             return;
@@ -455,7 +455,8 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
 
-        if ( is_checkout() && !is_order_received_page() || $wp->query_vars['rm-pagbank-subscriptions-update']) {
+        $recHelper = new RecurringHelper();
+        if ( is_checkout() && !is_order_received_page() || $recHelper->isSubscriptionUpdatePage()) {
             wp_enqueue_script(
                 'pagseguro-connect-checkout',
                 plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
@@ -487,7 +488,7 @@ class Gateway extends WC_Payment_Gateway_CC
                     'var pagseguro_connect_public_key = \''.$this->get_option('public_key').'\';',
                     'before'
                 );
-                if ( $this->get_option('cc_3ds') === 'yes' && !$wp->query_vars['rm-pagbank-subscriptions-update']) {
+                if ( $this->get_option('cc_3ds') === 'yes' && !$recHelper->isSubscriptionUpdatePage()) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
@@ -521,13 +522,12 @@ class Gateway extends WC_Payment_Gateway_CC
             self::$addedScripts = true;
         }
 
-        if ($wp->query_vars['rm-pagbank-subscriptions-update']) {
-            wp_add_inline_script(
-                'pagseguro-connect-checkout',
-                "const pagseguro_connect_change_card_page = true;",
-                'before'
-            );
-        }
+        $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
+        wp_add_inline_script(
+            'pagseguro-connect-checkout',
+            "const pagseguro_connect_change_card_page = {$isUpdatePage};",
+            'before'
+        );
     }
 
 	/**
@@ -625,7 +625,7 @@ class Gateway extends WC_Payment_Gateway_CC
         //sanitize $_POST['ps_connect_method']
         $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
 
-        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $recurringHelper = new RecurringHelper();
         $isCartRecurring = $recurringHelper->isCartRecurring();
         
         if (Params::getConfig('standalone', 'yes') == 'yes') {
