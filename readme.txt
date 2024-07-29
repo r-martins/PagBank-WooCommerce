@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.13.0
+Stable tag: 4.14.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -165,6 +165,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.14.0 =
+* Melhoria: Mensagem amigável e opção de esconder os meios de pagamento para pedidos inferiores a R$1,00
+* Melhoria: truncamos alguns campos como nome do cliente e alguns campos de endereço a fim de evitar erros na finalização do pedido quando o valor informado é maior que o permitido pelo PagBank.
+* Correção de Uncaught Error: Call to a member function get_edit_order_url() on bool na listagem de assinaturas ativas do admin em alguns cenários
+* Correção: quando desabilitávamos a opção de pausar ou cancelar assinatura (para o usuário), as opções também deixavam de ser exibidas para o administrador em alguns cenários
+
 = 4.13.0 =
 * Agora é possível definir período de teste e opções de descontos para assinaturas.
 * APIs: obtenha informações detalhadas dos pagamentos feitos com pagbank nos metadados do pedido via API Rest do próprio WordPress/Woo
