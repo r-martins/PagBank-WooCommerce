@@ -59,8 +59,16 @@ class SubscriptionList extends WP_List_Table
 
     public function column_initial_order_id($item)
     {
+        if (!isset($item['initial_order_id'])) {
+            return '';
+        }
+        
         $order = wc_get_order($item['initial_order_id']);
-        return '<a href="' . $order->get_edit_order_url() . '">' . $item['initial_order_id'] . '</a>';
+        if (!$order || is_bool($order)) {
+            return htmlspecialchars($item['initial_order_id']);
+        }
+        
+        return '<a href="' . $order->get_edit_order_url() . '">' . htmlspecialchars($item['initial_order_id']) . '</a>';
     }
 
     public function column_view($item)
