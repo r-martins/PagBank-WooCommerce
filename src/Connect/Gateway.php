@@ -6,7 +6,7 @@ use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\CreditCard;
-use RM_PagBank\Connect\Payments\CreditCardTrial;
+use RM_PagBank\Connect\Payments\CreditCardToken;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -191,7 +191,7 @@ class Gateway extends WC_Payment_Gateway_CC
         //region Update subscription status accordingly
         if ($order->get_meta('_pagbank_is_recurring')) {
             $recurring = new Recurring();
-            $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+            $recurringHelper = new RecurringHelper();
             $shouldBeStatus = $recurringHelper->getStatusFromOrder($order);
             $subscription = $recurring->getSubscriptionFromOrder($order->get_parent_id('edit'));
             $parentOrder = wc_get_order($order->get_parent_id('edit'));
@@ -395,7 +395,9 @@ class Gateway extends WC_Payment_Gateway_CC
                 'has_rtl' => false,
             ];
         }
-        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
+
+        $recHelper = new RecurringHelper();
+        if ( (is_checkout() && Params::getConfig('enabled') == 'yes') || $recHelper->isSubscriptionUpdatePage() ) {
             $styles['pagseguro-connect-checkout'] = [
                 'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 'deps'    => [],
@@ -445,7 +447,6 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @return void
 	 */
     public function addScripts() {
-
         // If the method has already been called, return early
         if (self::$addedScripts) {
             return;
@@ -459,7 +460,8 @@ class Gateway extends WC_Payment_Gateway_CC
             );
         }
 
-        if ( is_checkout() && !is_order_received_page() ) {
+        $recHelper = new RecurringHelper();
+        if ( is_checkout() && !is_order_received_page() || $recHelper->isSubscriptionUpdatePage()) {
             wp_enqueue_script(
                 'pagseguro-connect-checkout',
                 plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
@@ -491,7 +493,7 @@ class Gateway extends WC_Payment_Gateway_CC
                     'var pagseguro_connect_public_key = \''.$this->get_option('public_key').'\';',
                     'before'
                 );
-                if ( $this->get_option('cc_3ds') === 'yes') {
+                if ( $this->get_option('cc_3ds') === 'yes' && !$recHelper->isSubscriptionUpdatePage()) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
@@ -524,6 +526,13 @@ class Gateway extends WC_Payment_Gateway_CC
             }
             self::$addedScripts = true;
         }
+
+        $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
+        wp_add_inline_script(
+            'pagseguro-connect-checkout',
+            "const pagseguro_connect_change_card_page = {$isUpdatePage};",
+            'before'
+        );
     }
 
 	/**
@@ -621,7 +630,7 @@ class Gateway extends WC_Payment_Gateway_CC
         //sanitize $_POST['ps_connect_method']
         $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
 
-        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $recurringHelper = new RecurringHelper();
         $isCartRecurring = $recurringHelper->isCartRecurring();
         
         if (Params::getConfig('standalone', 'yes') == 'yes') {
@@ -655,7 +664,7 @@ class Gateway extends WC_Payment_Gateway_CC
         }
 
         if ($recurringTrialPeriod && $order->get_total() == 0) {
-            $payment_method = $payment_method . '_trial';
+            $payment_method = $payment_method . '_token';
         }
 
         switch ($payment_method) {
@@ -702,13 +711,13 @@ class Gateway extends WC_Payment_Gateway_CC
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
-            case 'cc_trial':
+            case 'cc_token':
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
                     true
                 );
-                $method = new CreditCardTrial($order);
+                $method = new CreditCardToken($order);
                 $params = $method->prepare();
                 break;
             default:
@@ -726,7 +735,7 @@ class Gateway extends WC_Payment_Gateway_CC
         //force payment method, to avoid problems with standalone methods
         $order->set_payment_method(Connect::DOMAIN);
 
-        $endpoint = $payment_method == 'cc_trial' ? 'ws/tokens/cards' : 'ws/orders';
+        $endpoint = $payment_method == 'cc_token' ? 'ws/tokens/cards' : 'ws/orders';
 
         try {
             $api = new Api();

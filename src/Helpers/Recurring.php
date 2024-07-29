@@ -407,4 +407,11 @@ class Recurring
         return (float)$product->get_meta('_recurring_discount_amount') > 0
         && (int)$product->get_meta('_recurring_discount_cycles') > 0;
     }
+
+    public function isSubscriptionUpdatePage(): bool
+    {
+        global $wp;
+        $endpoint = $wp->request;
+        return stripos($endpoint, 'rm-pagbank-subscriptions-update') !== false;
+    }
 }

@@ -24,9 +24,9 @@ use WC_Order;
  * @copyright 2024 Magenteiro
  * @package   RM_PagBank\Connect\Payments
  */
-class CreditCardTrial extends Common
+class CreditCardToken extends Common
 {
-    public string $code = 'credit_card_trial';
+    public string $code = 'credit_card_token';
 
     /**
 	 * @param WC_Order $order
