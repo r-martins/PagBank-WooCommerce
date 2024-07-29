@@ -74,17 +74,20 @@ class Boleto extends Common
         $address = $this->getBillingAddress();
         $holderAddress = new Address();
         $holderAddress->setCountry('BRA');
-        $holderAddress->setCity($address->getCity());
+        $holderAddress->setCity(substr($address->getCity(), 0, 60));
         $holderAddress->setPostalCode($address->getPostalCode());
         $locality = $address->getLocality();
         
         $holderAddress->setLocality($locality);
-        $holderAddress->setStreet($address->getStreet());
-        $holderAddress->setNumber($address->getNumber());
+        $holderAddressStreet = $address->getStreet();
+        //remove non A-Z 0-9 characters
+        $holderAddressStreet = preg_replace('/[^A-Za-z0-9\ ]/', '', $holderAddressStreet);
+        $holderAddress->setStreet(substr($holderAddressStreet, 0, 100));
+        $holderAddress->setNumber(substr($address->getNumber(), 0, 20));
         $holderAddress->setRegionCode($address->getRegionCode());
 
         if($address->getComplement())
-            $holderAddress->setComplement($address->getComplement());
+            $holderAddress->setComplement(substr($address->getComplement(), 0, 40));
         $holder->setAddress($holderAddress);
         $boleto->setHolder($holder);
         $paymentMethod->setType('BOLETO');

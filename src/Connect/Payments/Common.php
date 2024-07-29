@@ -71,7 +71,10 @@ class Common
 	public function getCustomerData(): Customer
 	{
         $customer = new Customer();
-        $customer->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
+        //truncate
+        $firstName = substr($this->order->get_billing_first_name(), 0, 60);
+        $lastName = substr($this->order->get_billing_last_name(), 0, 59);
+        $customer->setName($firstName . ' ' . $lastName);
         $customer->setEmail($this->order->get_billing_email());
         
         //cpf or cnpj
@@ -143,7 +146,7 @@ class Common
 	public function getShippingAddress(): Address
 	{
         $address = new Address();
-        $address->setStreet($this->order->get_shipping_address_1('edit'));
+        $address->setStreet(substr($this->order->get_shipping_address_1('edit'), 0, 120));
         //Usually virtual orders don't have shipping address' attributes replicated. So we use billing address instead.
         $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
         $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_shipping_number', 'shipping_number');
@@ -152,7 +155,8 @@ class Common
             '_shipping_complement',
             'shipping_complement'
         );
-        $billingComplement = $this->order->get_billing_address_2('edit');
+        $shippingComplement = substr($shippingComplement, 0, 40);
+        $billingComplement = substr($this->order->get_billing_address_2('edit'), 0, 40);
         $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
             $this->order,
             '_billing_neighborhood',
@@ -163,6 +167,8 @@ class Common
             '_shipping_neighborhood',
             'shipping_neighborhood'
         );
+        $billingNeighborhood = substr($billingNeighborhood, 0, 60);
+        $shippingNeighborhood = substr($shippingNeighborhood, 0, 60);
         
         $address->setNumber($billingNumber);
         if (!empty($shippingNumber)) {
@@ -179,7 +185,7 @@ class Common
             $address->setLocality($shippingNeighborhood);
         }
         
-        $address->setCity($this->order->get_shipping_city('edit'));
+        $address->setCity(substr($this->order->get_shipping_city('edit'), 0, 60));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
         return apply_filters('pagbank_connect_shipping_address', $address, $this->order);
