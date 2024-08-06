@@ -84,6 +84,36 @@ class Params
     }
 
     /**
+     * @param $key
+     * @param string $default
+     *
+     * @return mixed|string
+     */
+    public static function getPixConfig($key, string $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-pix_settings');
+        if (isset($settings[$key])){
+            return $settings[$key];
+        }
+        return $default;
+    }
+
+    /**
+     * @param $key
+     * @param string $default
+     *
+     * @return mixed|string
+     */
+    public static function getBoletoConfig($key, string $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-boleto_settings');
+        if (isset($settings[$key])){
+            return $settings[$key];
+        }
+        return $default;
+    }
+
+    /**
      * Gets the max allowed installments or false if no limit
 	 *
      * @return false|int

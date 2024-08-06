@@ -6,14 +6,14 @@ if (!defined('ABSPATH')) {
 use RM_PagBank\Connect;
 
 return array(
-    'cc_enabled'                                 => [
+    'enabled'                                 => [
         'title'       => __('Habilitar', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'yes',
+        'default'     => 'no',
     ],
-    'cc_title'                                   => [
+    'title'                                   => [
         'title'       => __('Título Principal', 'pagbank-connect'),
         'type'        => 'safe_text',
         'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),

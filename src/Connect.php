@@ -44,7 +44,7 @@ class Connect
         add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
         add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
         add_action('wp_loaded', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged']);
-        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
+//        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
@@ -79,7 +79,7 @@ class Connect
             //endregion
         }
 
-        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [Gateway::class, 'dismissPixOrderKeysNotice']);
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
     }
 
     /**
@@ -113,15 +113,12 @@ class Connect
         if ($isStandalone
             && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
             $pix = new StandalonePix();
-            $pix->id = Connect::DOMAIN . '-pix';
             $gateways[] = $pix;
 
             $cc = new StandaloneCc();
-            $cc->id = Connect::DOMAIN . '-cc';
             $gateways[] = $cc;
 
             $boleto = new StandaloneBoleto();
-            $boleto->id = Connect::DOMAIN . '-boleto';
             $gateways[] = $boleto;
             
             return $gateways;
@@ -376,26 +373,26 @@ class Connect
         }
     }
     
-    public static function redirectStandaloneConfigPage()
-    {
-        global $pagenow;
-        if (isset($_GET['page']) && $_GET['page'] == 'wc-settings' && isset($_GET['tab']) && $_GET['tab'] == 'checkout'
-            && isset($_GET['section'])) {
-            switch ($_GET['section']) {
-                case 'rm-pagbank-cc':
-                    wp_redirect(
-                        admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-credit-card')
-                    );
-                    break;
-                case 'rm-pagbank-pix':
-                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-pix'));
-                    break;
-                case 'rm-pagbank-boleto':
-                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank#tab-boleto'));
-                    break;
-            }
-        }
-    }
+//    public static function redirectStandaloneConfigPage()
+//    {
+//        global $pagenow;
+//        if (isset($_GET['page']) && $_GET['page'] == 'wc-settings' && isset($_GET['tab']) && $_GET['tab'] == 'checkout'
+//            && isset($_GET['section'])) {
+//            switch ($_GET['section']) {
+//                case 'rm-pagbank-cc':
+//                    wp_redirect(
+//                        admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-cc')
+//                    );
+//                    break;
+//                case 'rm-pagbank-pix':
+//                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-pix'));
+//                    break;
+//                case 'rm-pagbank-boleto':
+//                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-boleto'));
+//                    break;
+//            }
+//        }
+//    }
     
     public static function removeOtherPaymentMethodsWhenRecurring()
     {

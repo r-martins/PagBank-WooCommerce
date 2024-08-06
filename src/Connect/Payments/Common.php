@@ -246,7 +246,7 @@ class Common
 		//Note that PagBank API currently supports only one URL
         return [
             get_site_url() . '/?wc-api=rm_ps_notif&hash=' . $hash
-            ];
+        ];
     }
 
 

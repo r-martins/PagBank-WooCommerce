@@ -4,14 +4,14 @@ if (!defined('ABSPATH')) {
 } // Exit if accessed directly
 
 return array(
-	'pix_enabled'            => [
+	'enabled'            => [
         'title'       => __( 'Habilitar', 'pagbank-connect'),
         'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'yes'
+        'default'     => 'no'
 	],
-	'pix_title'              => [
+	'title'              => [
         'title'       => __( 'Título Principal', 'pagbank-connect' ),
         'type'        => 'safe_text',
         'description' => __( 'Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect' ),
