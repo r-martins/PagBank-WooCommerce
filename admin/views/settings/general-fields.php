@@ -96,10 +96,10 @@ return array(
         'default'	=> 'gray',
         'class' => 'icon-color-picker'
     ],
-	'enabled'              => [
-        'title'   => __( 'Habilitar/Desabilitar', 'pagbank-connect' ),
-        'type'    => 'checkbox',
-        'label'   => __( 'Habilitar PagBank', 'pagbank-connect' ),
-        'default' => 'yes',
-	],
+//	'enabled'              => [
+//        'title'   => __( 'Habilitar/Desabilitar', 'pagbank-connect' ),
+//        'type'    => 'checkbox',
+//        'label'   => __( 'Habilitar PagBank', 'pagbank-connect' ),
+//        'default' => 'yes',
+//	],
 );

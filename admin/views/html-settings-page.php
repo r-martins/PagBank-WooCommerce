@@ -61,7 +61,8 @@ $isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
         <?php echo $this->get_admin_fields('pix'); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped?>
     </div>
     <div class="tab-content hidden" id="tab-boleto">
-        <?php echo $this->get_admin_fields('boleto'); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped?>
+        <?php $boleto = new \RM_PagBank\Connect\Standalone\Boleto(); ?>
+        <?php echo $boleto->get_admin_fields(); // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped?>
     </div>
 	<div class="tab-content hidden" id="tab-recurring">
         <h3>Aceite pagamentos recorrentes e crie um clube de assinaturas</h3>

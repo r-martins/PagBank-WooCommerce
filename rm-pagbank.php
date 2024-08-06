@@ -48,6 +48,12 @@ add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
 
+//add_filter( 'woocommerce_payment_gateways', 'add_your_gateway_class_boleto' );
+//function add_your_gateway_class_boleto( $methods ) {
+//    $methods[] = new \RM_PagBank\Connect\Standalone\Pix();
+//    return $methods;
+//}
+
 //envio facil
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 

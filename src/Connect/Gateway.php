@@ -53,18 +53,21 @@ class Gateway extends WC_Payment_Gateway_CC
 
 		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', 'pagbank-connect'));
 		$this->description = $this->get_option('description');
-		$this->init_settings();
+
+        // Load the settings
+        $this->init_form_fields();
+        $this->init_settings();
+    }
+
+    public function init_form_fields()
+    {
+        $fields = [];
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
+        $this->form_fields = array_merge(...$fields);
     }
 
     public function init_settings(){
-        $fields = [];
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/boleto-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/pix-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/cc-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
-        $this->form_fields = array_merge(...$fields);
-
 		parent::init_settings();
 
 		switch ($this->get_option('title_display')) {
@@ -84,14 +87,6 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
-        
-        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', function() {
-            // Get the current user ID
-            $userId = get_current_user_id();
-
-            // Set the user meta value
-            update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
-        });
 	}
 
     /**
@@ -218,15 +213,14 @@ class Gateway extends WC_Payment_Gateway_CC
         }
     }
     
-    public function admin_options() {
-        $this->id = Connect::DOMAIN;
-        $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-//        wp_enqueue_script( 'pagseguro-admin', plugins_url( 'public/js/admin/admin' . $suffix . '.js', plugin_dir_path( __FILE__ ) ), array( 'jquery' ), WC_PAGSEGURO_VERSION, true );
-
-        include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-settings-page.php';
+//    public function admin_options() {
+//        $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+//
+////        wp_enqueue_script( 'pagseguro-admin', plugins_url( 'public/js/admin/admin' . $suffix . '.js', plugin_dir_path( __FILE__ ) ), array( 'jquery' ), WC_PAGSEGURO_VERSION, true );
+//
+//        include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-settings-page.php';
 //        parent::admin_options();
-    }
+//    }
 
     /**
      * Returns a table with the fields for the admin settings page in the specified $section
@@ -245,6 +239,10 @@ class Gateway extends WC_Payment_Gateway_CC
             'woocommerce_settings_api_form_fields_'.$this->id,
             array_map(array($this, 'set_defaults'), $fields)
         );
+        if ($section == 'boleto') {
+            $boleto = new \RM_PagBank\Connect\Standalone\Boleto();
+            $formFields = $boleto->get_form_fields();
+        }
         return '<table class="form-table">'.$this->generate_settings_html($form_fields, false)
             .'</table>'; // WPCS: XSS ok.
     }

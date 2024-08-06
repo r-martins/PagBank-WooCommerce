@@ -6,20 +6,26 @@ if (!defined('ABSPATH')) {
 use RM_PagBank\Connect;
 
 return array(
-    'cc_enabled'                                 => [
+    'enabled'                                 => [
         'title'       => __('Habilitar', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => '',
         'default'     => 'yes',
     ],
-    'cc_title'                                   => [
+    'title'                                   => [
         'title'       => __('Título Principal', 'pagbank-connect'),
         'type'        => 'safe_text',
         'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),
         'default'     => __('Cartão de Crédito via PagBank', 'pagbank-connect'),
         'desc_tip'    => true,
     ],
+    'description' => array(
+        'title' => 'Description',
+        'type' => 'textarea',
+        'description' => 'This controls the description which the user sees during checkout.',
+        'default' => 'Pay using our custom payment gateway.',
+    ),
     'cc_installment_options'                     => [
         'title'       => __('Opções de Parcelamento', 'pagbank-connect'),
         'type'        => 'select',

@@ -4,14 +4,14 @@ if (!defined('ABSPATH')) {
 } // Exit if accessed directly
 
 return array(
-	'pix_enabled'            => [
+	'enabled'            => [
         'title'       => __( 'Habilitar', 'pagbank-connect'),
         'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
         'default'     => 'yes'
 	],
-	'pix_title'              => [
+	'title'              => [
         'title'       => __( 'Título Principal', 'pagbank-connect' ),
         'type'        => 'safe_text',
         'description' => __( 'Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect' ),
@@ -19,6 +19,12 @@ return array(
         'desc_tip'    => true,
         'class' => 'pix_attr'
 	],
+    'description' => array(
+        'title' => 'Description',
+        'type' => 'textarea',
+        'description' => 'This controls the description which the user sees during checkout.',
+        'default' => 'Pay using our custom payment gateway.',
+    ),
 	'pix_instructions'       => [
         'title'       => __( 'Instruções', 'pagbank-connect' ),
         'type'        => 'textarea',
