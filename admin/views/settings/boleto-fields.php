@@ -8,7 +8,7 @@ return array(
 		'label'       => __('Habilitar', 'pagbank-connect'),
 		'type'        => 'checkbox',
 		'description' => '',
-		'default'     => 'yes',
+		'default'     => 'no',
 	],
 	'title'        => [
 		'title'       => __('Title', 'pagbank-connect'),
@@ -17,12 +17,6 @@ return array(
 		'default'     => __('Boleto via PagBank', 'pagbank-connect'),
 		'desc_tip'    => true,
 	],
-    'description' => array(
-        'title' => 'Description',
-        'type' => 'textarea',
-        'description' => 'This controls the description which the user sees during checkout.',
-        'default' => 'Pay using our custom payment gateway.',
-    ),
 	'boleto_instructions' => [
 		'title'       => __('Instruções', 'pagbank-connect'),
 		'type'        => 'textarea',

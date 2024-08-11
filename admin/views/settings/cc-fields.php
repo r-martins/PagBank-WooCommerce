@@ -11,7 +11,7 @@ return array(
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'yes',
+        'default'     => 'no',
     ],
     'title'                                   => [
         'title'       => __('Título Principal', 'pagbank-connect'),
@@ -20,12 +20,6 @@ return array(
         'default'     => __('Cartão de Crédito via PagBank', 'pagbank-connect'),
         'desc_tip'    => true,
     ],
-    'description' => array(
-        'title' => 'Description',
-        'type' => 'textarea',
-        'description' => 'This controls the description which the user sees during checkout.',
-        'default' => 'Pay using our custom payment gateway.',
-    ),
     'cc_installment_options'                     => [
         'title'       => __('Opções de Parcelamento', 'pagbank-connect'),
         'type'        => 'select',

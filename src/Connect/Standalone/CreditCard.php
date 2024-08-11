@@ -20,6 +20,13 @@ use WP_Error;
 /** Standalone Credit Card */
 class CreditCard extends WC_Payment_Gateway_CC
 {
+    use \RM_PagBank\Traits\ProcessPayment;
+
+    /**
+     * @var true
+     */
+    private static $addedScripts = false;
+
     public function __construct()
     {
         $this->id = Connect::DOMAIN . '-cc';
@@ -50,6 +57,13 @@ class CreditCard extends WC_Payment_Gateway_CC
         // Load the settings
         $this->init_form_fields();
         $this->init_settings();
+
+        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+
+        add_action('wp_enqueue_styles', [$this, 'addStyles']);
+        add_action('wp_enqueue_scripts', [$this, 'addScripts']);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
     }
 
     public function init_form_fields()
@@ -57,170 +71,13 @@ class CreditCard extends WC_Payment_Gateway_CC
         $this->form_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/cc-fields.php';
     }
 
-    public function init_settings(){
-        parent::init_settings();
+    public function admin_options() {
+        $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-        switch ($this->get_option('title_display')) {
-            case 'text_only':
-                $this->icon = '';
-                break;
-            case 'logo_only':
-                $this->title = '';
-                break;
-        }
-
-        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
-        add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
-        add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
-        add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
+        include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-settings-page.php';
+//        parent::admin_options();
     }
 
-    /**
-     * Updates a transaction from the order's json information
-     *
-     * @param $order      WC_Order
-     * @param $order_data array
-     *
-     * @return void
-     * @throws Exception
-     */
-    public static function updateTransaction(WC_Order $order, array $order_data): void
-    {
-        $charge = $order_data['charges'][0] ?? [];
-        $status = $charge['status'] ?? '';
-        $payment_response = $charge['payment_response'] ?? null;
-        $charge_id = $charge['id'] ?? null;
-
-        $order->add_meta_data('pagbank_charge_id', $charge_id, true);
-        $order->add_meta_data('pagbank_payment_response', $payment_response, true);
-        $order->add_meta_data('pagbank_status', $status, true);
-
-        if (isset($charge['payment_response']['reference'])) {
-            $order->add_meta_data('pagbank_nsu', $charge['payment_response']['reference']);
-        }
-
-        if (isset($charge['payment_response']['raw_data']['authorization_code'])) {
-            $order->add_meta_data('pagbank_authorization_code', $charge['payment_response']['raw_data']['authorization_code']);
-        }
-
-        $order->save_meta_data();
-
-        do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
-
-        // Add some additional information about the payment
-        if (isset($charge['payment_response'])) {
-            $order->add_order_note(
-                'PagBank: Payment Response: '.sprintf(
-                    '%d: %s %s %s',
-                    $charge['payment_response']['code'] ?? 'N/A',
-                    $charge['payment_response']['message'] ?? 'N/A',
-                    isset($charge['payment_response']['reference'])
-                        ? ' - REF/NSU: '.$charge['payment_response']['reference']
-                        : '',
-                    ($status) ? "(Status: $status)" : ''
-                )
-            );
-        }
-
-        switch ($status) {
-            case 'AUTHORIZED': // Pre-Authorized but not captured yet
-                $order->add_order_note(
-                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id,
-                );
-                $order->update_status(
-                    'on-hold',
-                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id
-                );
-                break;
-            case 'PAID': // Paid and captured
-                //stocks are reduced at this point
-                $order->payment_complete($charge_id);
-                $order->add_order_note('PagBank: Pagamento aprovado e capturado. Charge ID: ' . $charge_id);
-                break;
-            case 'IN_ANALYSIS': // Paid with Credit Card, and PagBank is analyzing the risk of the transaction
-                $order->update_status('on-hold', 'PagBank: Pagamento em análise.');
-                break;
-            case 'DECLINED': // Declined by PagBank or by the card issuer
-                $order->update_status('failed', 'PagBank: Pagamento recusado.');
-                $order->add_order_note(
-                    'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id,
-                );
-                break;
-            case 'CANCELED':
-                $order->update_status('cancelled', 'PagBank: Pagamento cancelado.');
-                $order->add_order_note(
-                    'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id,
-                );
-                break;
-            default:
-                $order->delete_meta_data('pagbank_status');
-        }
-
-        if ($order->get_meta('_pagbank_recurring_initial')) {
-            $recurring = new Recurring();
-            try {
-                $recurring->processInitialResponse($order);
-            } catch (Exception $e) {
-                Functions::log(
-                    'Erro ao processar resposta inicial da assinatura: '.$e->getMessage(),
-                    'error',
-                    $e->getTrace()
-                );
-            }
-        }
-
-        //region Update subscription status accordingly
-        if ($order->get_meta('_pagbank_is_recurring')) {
-            $recurring = new Recurring();
-            $recurringHelper = new \RM_PagBank\Helpers\Recurring();
-            $shouldBeStatus = $recurringHelper->getStatusFromOrder($order);
-            $subscription = $recurring->getSubscriptionFromOrder($order->get_parent_id('edit'));
-            $parentOrder = wc_get_order($order->get_parent_id('edit'));
-            $frequency = $parentOrder->get_meta('_recurring_frequency');
-            $cycle = (int)$parentOrder->get_meta('_recurring_cycle');
-            if ( ! $subscription instanceof \stdClass) {
-                return;
-            }
-
-            if ($subscription->status != $shouldBeStatus) {
-                $recurring->updateSubscription($subscription, [
-                    'status' => $shouldBeStatus,
-                ]);
-            }
-
-            if ($shouldBeStatus == 'ACTIVE') {
-                $recurring->updateSubscription($subscription, [
-                    'next_bill_at' => $recurringHelper->calculateNextBillingDate(
-                        $frequency,
-                        $cycle
-                    )->format('Y-m-d H:i:s'),
-                ]);
-            }
-        }
-    }
-
-    /**
-     * Validates the eligibility of the key used in the recurring feature
-     * Note: attempting to modify this behavior will not make the plugin work in your favor
-     *
-     * @param $key
-     * @param $recurring_enabled
-     *
-     * @return string
-     * @noinspection PhpUnused
-     * @noinspection PhpUnusedParameterInspection
-     */
-    public function validate_recurring_enabled_field($key, $recurring_enabled): string
-    {
-        $connect_key = $this->get_option('connect_key');
-        if (substr($connect_key, 0, 9) == 'CONPSFLEX' && $recurring_enabled) {
-            WC_Admin_Settings::add_message(__('A recorrência foi desativada pois'
-                .' a Connect Key informada usa taxas personalizadas.', 'pagbank-connect'));
-            return 'no';
-        }
-
-        return $recurring_enabled ? 'yes' : 'no';
-    }
     /**
      * Validates the inputed connect key and save additional information like public key and sandbox mode
      *
@@ -263,31 +120,13 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     /**
-     * Validates PIX discount field
+     * Validate frontend fields
      *
-     * @param $key
-     * @param $value
-     *
-     * @noinspection PhpUnused
-     * @noinspection PhpUnusedParameterInspection
-     * @return float|int|string
+     * @return bool
      */
-    public function validate_pix_discount_field($key, $value){
-        return Functions::validateDiscountValue($value);
-    }
-
-    /**
-     * Validates Boleto discount field
-     *
-     * @param $key
-     * @param $value
-     *
-     * @noinspection PhpUnused
-     * @noinspection PhpUnusedParameterInspection
-     * @return float|int|string
-     */
-    public function validate_boleto_discount_field($key, $value){
-        return Functions::validateDiscountValue($value);
+    public function validate_fields():bool
+    {
+        return true; //@TODO validate_fields
     }
 
     /**
@@ -299,32 +138,133 @@ class CreditCard extends WC_Payment_Gateway_CC
             return;
         }
 
-        if (Params::getConfig('standalone', 'yes') == 'no') {
-            include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payment-form.php';
-            return;
-        }
-
-        switch (get_class($this)){
-            case 'RM_PagBank\Connect\Standalone\Pix':
-                include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/pix.php';
-                break;
-            case 'RM_PagBank\Connect\Standalone\CreditCard':
-                include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard.php';
-                break;
-            case 'RM_PagBank\Connect\Standalone\Boleto':
-                include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/boleto.php';
-                break;
-        }
+        include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard.php';
     }
 
     /**
-     * Validate frontend fields
+     * Process Payment.
      *
-     * @return bool
+     * @param int $order_id Order ID.
+     *
+     * @return array
+     * @throws WC_Data_Exception
      */
-    public function validate_fields():bool
+    public function process_payment($order_id): array
     {
-        return true; //@TODO validate_fields
+        global $woocommerce;
+        $order = wc_get_order( $order_id );
+
+        //sanitize $_POST['ps_connect_method']
+        $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
+
+        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $isCartRecurring = $recurringHelper->isCartRecurring();
+
+        if ($isCartRecurring) {
+            $order->add_meta_data('_pagbank_recurring_initial', true);
+        }
+
+        // region Add note if customer changed payment method
+        $this->handleCustomerChangeMethod($order, $payment_method);
+        // endregion
+
+        $recurringTrialPeriod = $recurringHelper->getCartRecurringTrial();
+        if ($recurringTrialPeriod) {
+            $order->add_meta_data('_pagbank_recurring_trial_length', $recurringTrialPeriod);
+        }
+
+        if ($recurringTrialPeriod && $order->get_total() == 0) {
+            $payment_method = $payment_method . '_trial';
+        }
+
+        $order->add_meta_data(
+            'pagbank_card_installments',
+            filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT),
+            true
+        );
+        $order->add_meta_data(
+            'pagbank_card_last4',
+            substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
+            true
+        );
+        $order->add_meta_data(
+            '_pagbank_card_first_digits',
+            substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), 0, 6),
+            true
+        );
+        $order->add_meta_data(
+            '_pagbank_card_encrypted',
+            htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
+            true
+        );
+        $order->add_meta_data(
+            '_pagbank_card_holder_name',
+            htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
+            true
+        );
+        $order->add_meta_data(
+            '_pagbank_card_3ds_id',
+            isset($_POST['rm-pagbank-card-3d'])
+                ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
+                : false,
+        );
+        $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
+        $params = $method->prepare();
+
+        $resp = $this->makeRequest($order, $params, $method);
+
+        $method->process_response($order, $resp);
+        self::updateTransaction($order, $resp);
+
+        $charge = $resp['charges'][0] ?? false;
+
+        // region Immediately decline if payment method is credit card and charge was declined
+        if ($payment_method == 'cc' && $charge !== false) {
+            if ($charge['status'] == 'DECLINED'){
+                $additional_error = '';
+                if(isset($charge['payment_response']))
+                    $additional_error .= $charge['payment_response']['message'] . ' ('
+                        . $charge['payment_response']['code'] . ')';
+
+                wc_add_wp_error_notices(new WP_Error('api_error', 'Pagamento Recusado. ' . $additional_error));
+                return [
+                    'result' => 'fail',
+                    'redirect' => '',
+                ];
+            }
+        }
+        // endregion
+
+        // some notes to customer (or keep them private if order is pending)
+        $shouldNotify = $order->get_status('edit') !== 'pending';
+        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
+
+        // sends the new order email
+        if ($shouldNotify) {
+            $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
+            $newOrderEmail->trigger($order->get_id());
+        }
+
+        $woocommerce->cart->empty_cart();
+        return array(
+            'result' => 'success',
+            'redirect' => $this->get_return_url($order),
+        );
+    }
+
+    /**
+     * Get the default installments for the credit card payment method using VISA as the default BIN
+     * @return array
+     */
+    public function getDefaultInstallments(): array
+    {
+        $total = Api::getOrderTotal();
+
+        return Params::getInstallments($total, '555566');
+    }
+
+    public function field_name( $name ) {
+        return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }
 
     /**
@@ -332,9 +272,6 @@ class CreditCard extends WC_Payment_Gateway_CC
      * @return void
      */
     public static function addStyles($styles){
-//        wp_register_style( 'pagbank-connect-inline-css', false ); // phpcs:ignore
-//        wp_enqueue_style( 'pagbank-connect-inline-css' ); // phpcs:ignore
-//
         //thank you page
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received'))) {
             $styles['pagseguro-connect-pix'] = [
@@ -355,38 +292,6 @@ class CreditCard extends WC_Payment_Gateway_CC
             ];
         }
 
-//        if ( is_checkout() && Params::getConfig('enabled') == 'yes' ) {
-//            $styles['pagseguro-connect-checkout'] = [
-//                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-//                'deps'    => [],
-//                'version' => WC_PAGSEGURO_CONNECT_VERSION,
-//                'media'   => 'all',
-//                'has_rtl' => false,
-//            ];
-//
-//
-//            wp_add_inline_style(
-//                'pagbank-connect-inline-css', apply_filters(
-//                    'pagbank-connect-inline-css',
-//                    '.ps-button svg{ fill: ' . Params::getConfig('icons_color', 'gray') . '};'
-//                )
-//            );
-//        }
-        return $styles;
-    }
-
-    public static function addStylesWoo($styles)
-    {
-        if ( Recurring::isRecurringEndpoint() )
-        {
-            $styles['rm-pagbank-recurring'] = [
-                'src'     => plugins_url('public/css/recurring.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                'deps'    => [],
-                'version' => WC_PAGSEGURO_CONNECT_VERSION,
-                'media'   => 'all',
-                'has_rtl' => false,
-            ];
-        }
         return $styles;
     }
 
@@ -553,334 +458,5 @@ class CreditCard extends WC_Payment_Gateway_CC
             );
         }
 
-    }
-
-    /**
-     * Process Payment.
-     *
-     * @param int $order_id Order ID.
-     *
-     * @return array
-     * @throws WC_Data_Exception
-     */
-    public function process_payment($order_id): array
-    {
-        global $woocommerce;
-        $order = wc_get_order( $order_id );
-
-        //sanitize $_POST['ps_connect_method']
-        $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
-
-        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
-        $isCartRecurring = $recurringHelper->isCartRecurring();
-
-        if (Params::getConfig('standalone', 'yes') == 'yes') {
-            $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
-
-            $payment_method = str_replace('rm-pagbank-', '', $payment_method);
-            if ($isCartRecurring) {
-                $payment_method = 'cc'; //@TODO change when supporting other methods for recurring orders
-            }
-        }
-
-        if ($isCartRecurring) {
-            $order->add_meta_data('_pagbank_recurring_initial', true);
-        }
-
-        // region Add note if customer changed payment method
-        if ($order->get_meta('pagbank_payment_method')) {
-            $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;
-            $old_method = $order->get_meta('pagbank_payment_method');
-            if (strcasecmp($current_method, $old_method) !== 0) {
-                $order->add_order_note(
-                    'PagBank: Cliente alterou o método de pagamento de ' . $old_method . ' para ' . $current_method
-                );
-            }
-        }
-        // endregion
-
-        $recurringTrialPeriod = $recurringHelper->getCartRecurringTrial();
-        if ($recurringTrialPeriod) {
-            $order->add_meta_data('_pagbank_recurring_trial_length', $recurringTrialPeriod);
-        }
-
-        if ($recurringTrialPeriod && $order->get_total() == 0) {
-            $payment_method = $payment_method . '_trial';
-        }
-
-        switch ($payment_method) {
-            case 'boleto':
-                $method = new Boleto($order);
-                $params = $method->prepare();
-                break;
-            case 'pix':
-                $method = new Payments\Pix($order);
-                $params = $method->prepare();
-                break;
-            case 'cc':
-                $order->add_meta_data(
-                    'pagbank_card_installments',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT),
-                    true
-                );
-                $order->add_meta_data(
-                    'pagbank_card_last4',
-                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_first_digits',
-                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), 0, 6),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_encrypted',
-                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_holder_name',
-                    htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_3ds_id',
-                    isset($_POST['rm-pagbank-card-3d'])
-                        ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
-                        : false,
-                );
-                $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
-                $params = $method->prepare();
-                break;
-            case 'cc_trial':
-                $order->add_meta_data(
-                    '_pagbank_card_encrypted',
-                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
-                    true
-                );
-                $method = new CreditCardTrial($order);
-                $params = $method->prepare();
-                break;
-            default:
-                wc_add_wp_error_notices(
-                    new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect'))
-                );
-                return array(
-                    'result' => 'fail',
-                    'redirect' => '',
-                );
-        }
-
-        $order->add_meta_data('pagbank_payment_method', $method->code, true);
-
-        //force payment method, to avoid problems with standalone methods
-        $order->set_payment_method(Connect::DOMAIN);
-
-        $endpoint = $payment_method == 'cc_trial' ? 'ws/tokens/cards' : 'ws/orders';
-
-        try {
-            $api = new Api();
-            $resp = $api->post($endpoint, $params);
-
-            if (isset($resp['error_messages'])) {
-                throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
-            }
-
-        } catch (Exception $e) {
-            wc_add_wp_error_notices(new WP_Error('api_error', $e->getMessage()));
-            return array(
-                'result' => 'fail',
-                'redirect' => '',
-            );
-        }
-        $method->process_response($order, $resp);
-        self::updateTransaction($order, $resp);
-
-        $charge = $resp['charges'][0] ?? false;
-
-        // region Immediately decline if payment method is credit card and charge was declined
-        if ($payment_method == 'cc' && $charge !== false) {
-            if ($charge['status'] == 'DECLINED'){
-                $additional_error = '';
-                if(isset($charge['payment_response']))
-                    $additional_error .= $charge['payment_response']['message'] . ' ('
-                        . $charge['payment_response']['code'] . ')';
-
-                wc_add_wp_error_notices(new WP_Error('api_error', 'Pagamento Recusado. ' . $additional_error));
-                return [
-                    'result' => 'fail',
-                    'redirect' => '',
-                ];
-            }
-        }
-        // endregion
-
-        // some notes to customer (or keep them private if order is pending)
-        $shouldNotify = $order->get_status('edit') !== 'pending';
-        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
-
-        // sends the new order email
-        if ($shouldNotify) {
-            $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
-            $newOrderEmail->trigger($order->get_id());
-        }
-
-        $woocommerce->cart->empty_cart();
-        return array(
-            'result' => 'success',
-            'redirect' => $this->get_return_url($order),
-        );
-    }
-
-    /**
-     * Add the instructions to the thankyou page for boleto and pix
-     * @param $order_id
-     *
-     * @return void
-     */
-    public function addThankyouInstructions($order_id)
-    {
-        $order = wc_get_order($order_id);
-        switch ($order->get_meta('pagbank_payment_method')) {
-            case 'boleto':
-                $method = new Boleto($order);
-                break;
-            case 'pix':
-                $method = new Payments\Pix($order);
-                break;
-        }
-        if (!empty($method)) {
-            $method->getThankyouInstructions($order_id);
-        }
-        if ($order->get_meta('_pagbank_recurring_initial')) {
-            $recurring = new Recurring();
-            $recurring->getThankyouInstructions($order);
-        }
-    }
-
-    /**
-     * Get the default installments for the credit card payment method using VISA as the default BIN
-     * @return array
-     */
-    public function getDefaultInstallments(): array
-    {
-        $total = Api::getOrderTotal();
-
-        return Params::getInstallments($total, '555566');
-    }
-
-    /**
-     * Payment is unavailable if the total is less than R$1.00
-     * @return bool
-     */
-    public function paymentUnavailable(): bool
-    {
-        $total = Api::getOrderTotal();
-        $total = Params::convertToCents($total);
-        $isTotalLessThanOneReal = $total < 100;
-        if (!$isTotalLessThanOneReal) {
-            return false;
-        }
-
-        $recHelper = new RecurringHelper();
-        if ($recHelper->isCartRecurring()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static function notification()
-    {
-        $body = file_get_contents('php://input');
-        $hash = htmlspecialchars($_GET['hash'], ENT_QUOTES, 'UTF-8');
-
-        Functions::log('Notification received: ' . $body, 'debug', ['hash' => $hash]);
-
-        // Decode body
-        $order_data = json_decode($body, true);
-        if ($order_data === null)
-            wp_die('Falha ao decodificar o Json', 400);
-
-        // Check presence of id and reference
-        $id = $order_data['id'] ?? null;
-        $reference = $order_data['reference_id'] ?? null;
-        if (!$id || !$reference)
-            wp_die('ID ou Reference não informados', 400);
-
-        // Sanitize $reference and $id
-        $reference = htmlspecialchars($reference, ENT_QUOTES, 'UTF-8');
-
-        // Validate hash
-        $order = wc_get_order($reference);
-        if (!$order)
-            wp_die('Pedido não encontrado', 404);
-
-        $order_pagbank_id = $order->get_meta('pagbank_order_id');
-        if ($order_pagbank_id != $id)
-            wp_die('ID do pedido não corresponde', 400);
-
-        if ($hash != Api::getOrderHash($order))
-            wp_die('Hash inválido', 403);
-
-        if (!isset($order_data['charges']))
-            wp_die('Charges não informado. Notificação ignorada.', 200);
-
-        try{
-            self::updateTransaction($order, $order_data);
-        }catch (Exception $e){
-            Functions::log('Error updating transaction: ' . $e->getMessage(), 'error', ['order_id' => $order->get_id()]);
-            wp_die('Erro ao atualizar transação', 500);
-        }
-
-        wp_die('OK', 200);
-    }
-
-    public static function dismissPixOrderKeysNotice() {
-        // Get the current user ID
-        $userId = get_current_user_id();
-
-        // Set the user meta value
-        update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
-    }
-
-    /**
-     * Adds order info to the admin order page by including the order info template
-     *
-     * @param $order
-     *
-     * @return void
-     * @noinspection PhpUnusedParameterInspection*/
-    public function addPaymentInfoAdmin($order)
-    {
-        include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
-    }
-
-    /**
-     * Disables PagBank if order < R$1.00
-     * @param $gateways
-     *
-     * @return mixed
-     */
-    public function disableIfOrderLessThanOneReal($gateways)
-    {
-        $hideIfUnavailable = $this->get_option('hide_id_unavailable');
-        if (!wc_string_to_bool($hideIfUnavailable) || is_admin()) {
-            return $gateways;
-        }
-
-        if ($this->paymentUnavailable()) {
-            foreach ($gateways as $key => $gateway) {
-                if (strpos($key, Connect::DOMAIN) !== false) {
-                    unset($gateways[$key]);
-                }
-            }
-        }
-
-        return $gateways;
-    }
-
-    public function field_name( $name ) {
-        return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }
 }

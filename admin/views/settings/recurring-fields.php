@@ -4,9 +4,15 @@ if (!defined('ABSPATH')) {
 }
 
 return array(
+    'regurring_general' => [
+        'title' => esc_html( __( 'Configurações de Recorrência', 'pagbank-connect' ) ),
+        'type'  => 'title',
+        'desc'  => '',
+        'id'    => 'wc_pagseguro_connect_regurring_general_options',
+    ],
 	'recurring_enabled'            => [
-        'title'       => __( 'Habilitar', 'pagbank-connect'),
-        'label'       => __( 'Habilitar', 'pagbank-connect' ),
+        'title'       => __( 'Habilitar Recorrência', 'pagbank-connect'),
+        'label'       => __( 'Habilitar Recorrência', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
         'default'     => 'no'

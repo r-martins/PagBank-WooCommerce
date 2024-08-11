@@ -58,7 +58,7 @@ class Connect
         // Payment method title used
         add_filter('woocommerce_gateway_title', [__CLASS__, 'getMethodTitle'], 10, 2);
         
-        //self::addPagBankMenu();
+        self::addPagBankMenu();
         
         if (Params::getConfig('recurring_enabled')) {
             $recurring = new Connect\Recurring();
@@ -79,7 +79,7 @@ class Connect
             //endregion
         }
 
-//        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
     }
 
     /**
@@ -525,8 +525,8 @@ class Connect
 
     private static function addPagBankMenu()
     {
-//        add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);
-//        add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
+        add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);
+        add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
         add_action('admin_enqueue_scripts', [MenuPagBank::class, 'adminPagesStyle']);
     }
 }

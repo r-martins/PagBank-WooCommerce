@@ -9,7 +9,7 @@ return array(
         'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'yes'
+        'default'     => 'no'
 	],
 	'title'              => [
         'title'       => __( 'Título Principal', 'pagbank-connect' ),
@@ -19,12 +19,6 @@ return array(
         'desc_tip'    => true,
         'class' => 'pix_attr'
 	],
-    'description' => array(
-        'title' => 'Description',
-        'type' => 'textarea',
-        'description' => 'This controls the description which the user sees during checkout.',
-        'default' => 'Pay using our custom payment gateway.',
-    ),
 	'pix_instructions'       => [
         'title'       => __( 'Instruções', 'pagbank-connect' ),
         'type'        => 'textarea',
