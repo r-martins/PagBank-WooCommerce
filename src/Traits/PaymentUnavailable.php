@@ -17,6 +17,10 @@ trait PaymentUnavailable
      */
     public function disableIfOrderLessThanOneReal($gateways)
     {
+        if (!is_checkout()) {
+            return $gateways;
+        }
+
         $hideIfUnavailable = Params::getConfig('hide_if_unavailable');
         if (!wc_string_to_bool($hideIfUnavailable) || is_admin()) {
             return $gateways;
