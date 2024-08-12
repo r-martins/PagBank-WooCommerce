@@ -40,7 +40,7 @@ return array(
 //        'default' => 'yes',
 //        'id'    => 'wc_pagseguro_connect_together_options',
 //    ],
-    'hide_id_unavailable' => [
+    'hide_if_unavailable' => [
         'title' => esc_html(__( 'Ocultar meios de pagamento', 'pagbank-connect')),
         'label' => esc_html(__('Ocultar meios de pagamento para pedidos com total menor que R$ 1,00', 'pagbank-connect')),
         'type'  => 'checkbox',

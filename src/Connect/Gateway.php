@@ -5,6 +5,7 @@ namespace RM_PagBank\Connect;
 use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
 use RM_PagBank\Traits\ThankyouInstructions;
@@ -19,6 +20,7 @@ use WC_Payment_Gateway_CC;
  */
 class Gateway extends WC_Payment_Gateway_CC
 {
+    use PaymentUnavailable;
     use ProcessPayment;
     use StaticResources;
     use ThankyouInstructions;
@@ -152,30 +154,6 @@ class Gateway extends WC_Payment_Gateway_CC
 	public function addPaymentInfoAdmin($order)
     {
         include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
-    }
-
-    /**
-     * Disables PagBank if order < R$1.00
-     * @param $gateways
-     *
-     * @return mixed
-     */
-    public function disableIfOrderLessThanOneReal($gateways)
-    {
-        $hideIfUnavailable = $this->get_option('hide_id_unavailable');
-        if (!wc_string_to_bool($hideIfUnavailable) || is_admin()) {
-            return $gateways;
-        }
-
-        if ($this->paymentUnavailable()) {
-            foreach ($gateways as $key => $gateway) {
-                if (strpos($key, Connect::DOMAIN) !== false) {
-                    unset($gateways[$key]);
-                }
-            }
-        }
-
-        return $gateways;
     }
 
     public static function addStylesWoo($styles)

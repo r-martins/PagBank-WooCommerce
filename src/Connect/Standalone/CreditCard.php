@@ -4,6 +4,7 @@ namespace RM_PagBank\Connect\Standalone;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
 use RM_PagBank\Traits\ThankyouInstructions;
@@ -17,6 +18,7 @@ use WP_Error;
 /** Standalone Credit Card */
 class CreditCard extends WC_Payment_Gateway_CC
 {
+    use PaymentUnavailable;
     use ProcessPayment;
     use StaticResources;
     use ThankyouInstructions;
@@ -53,6 +55,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         $this->init_settings();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+        add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);

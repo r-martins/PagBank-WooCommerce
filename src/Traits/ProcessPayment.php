@@ -4,15 +4,9 @@ namespace RM_PagBank\Traits;
 
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Exception;
-use RM_PagBank\Connect\Payments\Boleto;
-use RM_PagBank\Connect\Payments\CreditCard;
-use RM_PagBank\Connect\Payments\CreditCardTrial;
-use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
-use RM_PagBank\Helpers\Params;
-use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use WC_Data_Exception;
 use WC_Order;
 use WP_Error;
@@ -239,26 +233,5 @@ trait ProcessPayment
                 );
             }
         }
-    }
-
-    /**
-     * Payment is unavailable if the total is less than R$1.00
-     * @return bool
-     */
-    public function paymentUnavailable(): bool
-    {
-        $total = Api::getOrderTotal();
-        $total = Params::convertToCents($total);
-        $isTotalLessThanOneReal = $total < 100;
-        if (!$isTotalLessThanOneReal) {
-            return false;
-        }
-
-        $recHelper = new RecurringHelper();
-        if ($recHelper->isCartRecurring()) {
-            return false;
-        }
-
-        return true;
     }
 }
