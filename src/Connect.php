@@ -66,7 +66,7 @@ class Connect
         }
         
         //if pix enabled
-        if (Params::getConfig('pix_enabled')) {
+        if (Params::getPixConfig('enabled')) {
             //region cron to cancel expired pix non-paid payments
             add_action('rm_pagbank_cron_cancel_expired_pix', [__CLASS__, 'cancelExpiredPix']);
             if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
@@ -156,29 +156,29 @@ class Connect
             'standalone' => Params::getConfig('standalone'),
             'settings' => [
 				'enabled' => Params::getConfig('enabled'),
-				'cc_enabled' => Params::getConfig('cc_enabled'),
-				'pix_enabled' => Params::getConfig('pix_enabled'),
-				'boleto_enabled' => Params::getConfig('boleto_enabled'),
+				'cc_enabled' => Params::getCcConfig('enabled'),
+				'pix_enabled' => Params::getPixConfig('enabled'),
+				'boleto_enabled' => Params::getBoletoConfig('enabled'),
 				'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
 				'sandbox' => $api->getIsSandbox(),
 				'boleto' => [
-                    'enabled' => Params::getConfig('boleto_enabled'),
-                    'expiry_days' => Params::getConfig('boleto_expiry_days'),
+                    'enabled' => Params::getBoletoConfig('enabled'),
+                    'expiry_days' => Params::getBoletoConfig('boleto_expiry_days'),
                 ],
 				'pix' => [
-                    'enabled' => Params::getConfig('pix_enabled'),
-                    'expiry_minutes' => Params::getConfig('pix_expiry_minutes'),
+                    'enabled' => Params::getPixConfig('enabled'),
+                    'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes'),
                 ],
 				'cc' => [
-                    'enabled' => Params::getConfig('cc_enabled'),
-                    'enabled_installment' => Params::getConfig('cc_installment_product_page'),
-                    'installment_options' => Params::getConfig('cc_installment_options'),
-                    'installment_options_fixed' => Params::getConfig('cc_installment_options_fixed'),
-                    'installments_options_min_total' => Params::getConfig('cc_installments_options_min_total'),
-                    'installments_options_limit_installments' => Params::getConfig('cc_installments_options_limit_installments'),
-                    'installments_options_max_installments' => Params::getConfig('cc_installments_options_max_installments'),
-                    '3d_secure' => Params::getConfig('cc_3ds'),
-                    '3d_secure_allow_continue' => Params::getConfig('cc_3ds_allow_continue'),
+                    'enabled' => Params::getCcConfig('enabled'),
+                    'enabled_installment' => Params::getCcConfig('cc_installment_product_page'),
+                    'installment_options' => Params::getCcConfig('cc_installment_options'),
+                    'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed'),
+                    'installments_options_min_total' => Params::getCcConfig('cc_installments_options_min_total'),
+                    'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments'),
+                    'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments'),
+                    '3d_secure' => Params::getCcConfig('cc_3ds'),
+                    '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue'),
                 ]
             ]
         ];
@@ -340,7 +340,7 @@ class Connect
     public static function cancelExpiredPix()
     {
         //list all orders with pix payment method and status pending created longer than configured expiry time
-        $expiryMinutes = Params::getConfig('pix_expiry_minutes');
+        $expiryMinutes = Params::getPixConfig('pix_expiry_minutes');
         
         $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
 
@@ -424,7 +424,7 @@ class Connect
     public static function checkPixOrderKeys()
     {
         $userId = get_current_user_id();
-        $isPixEnabled = Params::getConfig('pix_enabled') == 'yes';
+        $isPixEnabled = Params::getPixConfig('enabled') == 'yes';
 
         // Check if the notice has been dismissed for this user
         if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true)) {

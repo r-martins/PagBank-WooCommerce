@@ -44,7 +44,7 @@ class Pix extends Common
         $amount->setValue(Params::convertToCents($orderTotal));
         $qr_code->setAmount($amount);
         //calculate expiry date based on current time + expiry days using ISO 8601 format
-        $qr_code->setExpirationDate(gmdate('c', strtotime('+' . Params::getConfig('pix_expiry_minutes', 1440) . 'minute')));
+        $qr_code->setExpirationDate(gmdate('c', strtotime('+' . Params::getPixConfig('pix_expiry_minutes', 1440) . 'minute')));
 
         $return['qr_codes'] = [$qr_code];
         return $return;

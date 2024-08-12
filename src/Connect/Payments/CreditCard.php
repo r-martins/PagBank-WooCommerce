@@ -56,12 +56,12 @@ class CreditCard extends Common
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
         $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
-        $paymentMethod->setSoftDescriptor(Params::getConfig('cc_soft_descriptor'));
+        $paymentMethod->setSoftDescriptor(Params::getCcConfig('cc_soft_descriptor'));
         $card = $this->getCardDetails();
         $paymentMethod->setCard($card);
 
         //3ds
-        if ($this->order->get_meta('_pagbank_card_3ds_id') && Params::getConfig('cc_3ds') === 'yes') {
+        if ($this->order->get_meta('_pagbank_card_3ds_id') && Params::getCcConfig('cc_3ds') === 'yes') {
             $authMethod = new AuthenticationMethod();
             $authMethod->setType('THREEDS');
             $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
@@ -308,8 +308,8 @@ class CreditCard extends Common
         
         delete_transient('rm_pagbank_product_installment_info_' . $product->get_id());
 
-        $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
-        $ccShortcodeInUse = Params::getConfig('cc_installment_shortcode_enabled');
+        $ccInstallmentProductPage = Params::getCcConfig('cc_installment_product_page');
+        $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
 
         if ($ccInstallmentProductPage === 'yes' || $ccShortcodeInUse === 'yes') {
             $default_installments = Params::getInstallments($product->get_price(), '555566');
@@ -353,10 +353,10 @@ class CreditCard extends Common
             return;
         }
 
-        $ccEnabledInstallments = Params::getConfig('cc_installment_product_page');
+        $ccEnabledInstallments = Params::getCcConfig('cc_installment_product_page');
 
         $calledByDoShortcode = Functions::isCalledByDoShortcode();
-        $ccShortcodeInUse = Params::getConfig('cc_installment_shortcode_enabled');
+        $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
         
         if (($ccEnabledInstallments === 'yes' && !$calledByDoShortcode)
             || ($calledByDoShortcode && $ccShortcodeInUse === 'yes')) {
@@ -370,7 +370,7 @@ class CreditCard extends Common
             }
 
             if ($installment_info) {
-                $type = Params::getConfig('cc_installment_product_page_type', 'table');
+                $type = Params::getCcConfig('cc_installment_product_page_type', 'table');
                 $type = preg_replace("/[^a-z\-]/", "", $type); //safety is paramount
                 $template_name = "product-installments-$type.php";
                 $template_path = locate_template('pagbank-connect/' . $template_name);
@@ -398,13 +398,13 @@ class CreditCard extends Common
      */
     public static function deleteInstallmentsTransientIfConfigHasChanged()
     {
-        $ccInstallmentProductPage = Params::getConfig('cc_installment_product_page');
+        $ccInstallmentProductPage = Params::getCcConfig('cc_installment_product_page');
 
-        $cc_installment_options = Params::getConfig('cc_installment_options');
-        $cc_installment_options_fixed = Params::getConfig('cc_installment_options_fixed');
-        $cc_installments_options_min_total = Params::getConfig('cc_installments_options_min_total');
-        $cc_installments_options_limit_installments = Params::getConfig('cc_installments_options_limit_installments');
-        $cc_installments_options_max_installments = Params::getConfig('cc_installments_options_max_installments');
+        $cc_installment_options = Params::getCcConfig('cc_installment_options');
+        $cc_installment_options_fixed = Params::getCcConfig('cc_installment_options_fixed');
+        $cc_installments_options_min_total = Params::getCcConfig('cc_installments_options_min_total');
+        $cc_installments_options_limit_installments = Params::getCcConfig('cc_installments_options_limit_installments');
+        $cc_installments_options_max_installments = Params::getCcConfig('cc_installments_options_max_installments');
 
         $installment_options = array(
             'installments' => $cc_installment_options,

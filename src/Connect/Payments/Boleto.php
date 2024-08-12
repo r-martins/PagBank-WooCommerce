@@ -56,10 +56,10 @@ class Boleto extends Common
         $paymentMethod = new PaymentMethod();
         $paymentMethod->setType('BOLETO');
         $boleto = new BoletoObj();
-        $boleto->setDueDate(gmdate('Y-m-d', strtotime('+' . Params::getConfig('boleto_expiry_days', 7) . 'day')));
+        $boleto->setDueDate(gmdate('Y-m-d', strtotime('+' . Params::getBoletoConfig('boleto_expiry_days', 7) . 'day')));
         $instruction_lines = new InstructionLines();
-        $instruction_lines->setLine1(Params::getConfig('boleto_line_1', 'Não aceitar após vencimento'));
-        $instruction_lines->setLine2(Params::getConfig('boleto_line_2', 'Obrigado por sua compra.'));
+        $instruction_lines->setLine1(Params::getBoletoConfig('boleto_line_1', 'Não aceitar após vencimento'));
+        $instruction_lines->setLine2(Params::getBoletoConfig('boleto_line_2', 'Obrigado por sua compra.'));
         $boleto->setInstructionLines($instruction_lines);
 
         //cpf or cnpj

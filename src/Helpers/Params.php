@@ -89,6 +89,21 @@ class Params
      *
      * @return mixed|string
      */
+    public static function getCcConfig($key, string $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-cc_settings');
+        if (isset($settings[$key])){
+            return $settings[$key];
+        }
+        return $default;
+    }
+
+    /**
+     * @param $key
+     * @param string $default
+     *
+     * @return mixed|string
+     */
     public static function getPixConfig($key, string $default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank-pix_settings');
