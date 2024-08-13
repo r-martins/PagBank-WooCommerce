@@ -49,7 +49,7 @@ class Connect
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
-        
+
         // Load plugin files
         self::includes();
 
@@ -58,14 +58,14 @@ class Connect
 
         // Payment method title used
         add_filter('woocommerce_gateway_title', [__CLASS__, 'getMethodTitle'], 10, 2);
-        
+
         self::addPagBankMenu();
-        
+
         if (Params::getConfig('recurring_enabled')) {
             $recurring = new Connect\Recurring();
             $recurring->init();
         }
-        
+
         //if pix enabled
         if (Params::getPixConfig('enabled')) {
             //region cron to cancel expired pix non-paid payments
@@ -110,7 +110,7 @@ class Connect
     {
         $section = sanitize_text_field($_GET['section'] ?? '');
         $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
-        
+
         if ($isStandalone
             && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
             $pix = new StandalonePix();
@@ -121,12 +121,12 @@ class Connect
 
             $boleto = new StandaloneBoleto();
             $gateways[] = $boleto;
-            
+
             return $gateways;
         }
-        
+
         $gateways[] = new Gateway();
-        
+
         return $gateways;
     }
 
@@ -146,7 +146,7 @@ class Connect
      */
     public static function configInfo(): void
     {
-		$api = new Api();
+        $api = new Api();
         $settings = [
             'platform' => 'Wordpress',
             'module_version' =>[
@@ -156,21 +156,21 @@ class Connect
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
             'standalone' => Params::getConfig('standalone'),
             'settings' => [
-				'enabled' => Params::getConfig('enabled'),
-				'cc_enabled' => Params::getCcConfig('enabled'),
-				'pix_enabled' => Params::getPixConfig('enabled'),
-				'boleto_enabled' => Params::getBoletoConfig('enabled'),
-				'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
-				'sandbox' => $api->getIsSandbox(),
-				'boleto' => [
+                'enabled' => Params::getConfig('enabled'),
+                'cc_enabled' => Params::getCcConfig('enabled'),
+                'pix_enabled' => Params::getPixConfig('enabled'),
+                'boleto_enabled' => Params::getBoletoConfig('enabled'),
+                'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
+                'sandbox' => $api->getIsSandbox(),
+                'boleto' => [
                     'enabled' => Params::getBoletoConfig('enabled'),
                     'expiry_days' => Params::getBoletoConfig('boleto_expiry_days'),
                 ],
-				'pix' => [
+                'pix' => [
                     'enabled' => Params::getPixConfig('enabled'),
                     'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes'),
                 ],
-				'cc' => [
+                'cc' => [
                     'enabled' => Params::getCcConfig('enabled'),
                     'enabled_installment' => Params::getCcConfig('cc_installment_product_page'),
                     'installment_options' => Params::getCcConfig('cc_installment_options'),
@@ -187,9 +187,9 @@ class Connect
         try{
             $api = new Api();
             $resp = $api->get('ws/public-keys/card');
-			if (isset($resp['public_key'])){
-				$resp['public_key'] = substr($resp['public_key'], 0, 50) . '...';
-			}
+            if (isset($resp['public_key'])){
+                $resp['public_key'] = substr($resp['public_key'], 0, 50) . '...';
+            }
             $settings['live_auth'] = $resp;
         }catch (Exception $e){
             $settings['live_auth'] = $e->getMessage();
@@ -225,12 +225,12 @@ class Connect
 
         return $title;
     }
-    
+
     public static function activate()
     {
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
-        
+
         $sql = "CREATE TABLE $recurringTable 
                 (
                     id               int auto_increment,
@@ -251,7 +251,7 @@ class Connect
                     PRIMARY KEY  (id)
                 )
                     comment 'Recurring profiles information for PagBank Subscribers';";
-        
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
         add_option('pagbank_db_version', '4.0');
@@ -274,15 +274,120 @@ class Connect
             $wpdb->query($sql);
             update_option('pagbank_db_version', '4.12');
         }
+
+        if (version_compare($stored_version, '4.13', '<')) {
+            $settingsTable = $wpdb->prefix . 'options';
+            $settings = get_option('woocommerce_rm-pagbank_settings');
+            $generalSettings = array();
+            $ccSettings = array();
+            $pixSettings = array();
+            $boletoSettings = array();
+            foreach ($settings as $key => $setting) {
+                if (strpos($key,'cc_') !== false) {
+                    $ccSettings[$key] = $setting;
+                    continue;
+                }
+                if (strpos($key,'pix_') !== false) {
+                    $pixSettings[$key] = $setting;
+                    continue;
+                }
+                if (strpos($key,'boleto_') !== false) {
+                    $boletoSettings[$key] = $setting;
+                    continue;
+                }
+
+                $generalSettings[$key] = $setting;
+            }
+
+            if (isset($ccSettings['cc_enabled'])) {
+                $ccSettings['enabled'] = $ccSettings['cc_enabled'];
+                unset($ccSettings['cc_enabled']);
+            }
+            if (isset($pixSettings['pix_enabled'])) {
+                $pixSettings['enabled'] = $pixSettings['pix_enabled'];
+                unset($pixSettings['pix_enabled']);
+            }
+            if (isset($boletoSettings['boleto_enabled'])) {
+                $boletoSettings['enabled'] = $boletoSettings['boleto_enabled'];
+                unset($boletoSettings['boleto_enabled']);
+            }
+
+            if (isset($ccSettings['cc_title'])) {
+                $ccSettings['title'] = $ccSettings['cc_title'];
+                unset($ccSettings['cc_title']);
+            }
+            if (isset($pixSettings['pix_title'])) {
+                $pixSettings['title'] = $pixSettings['pix_title'];
+                unset($pixSettings['pix_title']);
+            }
+            if (isset($boletoSettings['boleto_title'])) {
+                $boletoSettings['title'] = $boletoSettings['boleto_title'];
+                unset($boletoSettings['boleto_title']);
+            }
+
+            $generalSettings['standalone'] = 'yes';
+
+            $generalSettings = serialize($generalSettings);
+            $ccSettings = serialize($ccSettings);
+            $pixSettings = serialize($pixSettings);
+            $boletoSettings = serialize($boletoSettings);
+
+            $wpdb->update(
+                $settingsTable,
+                ['option_value' => $generalSettings],
+                ['option_name' => 'woocommerce_rm-pagbank_settings']
+            );
+
+            if (get_option('woocommerce_rm-pagbank-cc_settings')) {
+                $wpdb->update(
+                    $settingsTable,
+                    ['option_value' => $ccSettings],
+                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings']
+                );
+            } else {
+                $wpdb->insert(
+                    $settingsTable,
+                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings', 'option_value' => $ccSettings]
+                );
+            }
+
+            if (get_option('woocommerce_rm-pagbank-pix_settings')) {
+                $wpdb->update(
+                    $settingsTable,
+                    ['option_value' => $pixSettings],
+                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings']
+                );
+            } else {
+                $wpdb->insert(
+                    $settingsTable,
+                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings', 'option_value' => $pixSettings]
+                );
+            }
+
+            if (get_option('woocommerce_rm-pagbank-boleto_settings')) {
+                $wpdb->update(
+                    $settingsTable,
+                    ['option_value' => $boletoSettings],
+                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings']
+                );
+            } else {
+                $wpdb->insert(
+                    $settingsTable,
+                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings', 'option_value' => $boletoSettings]
+                );
+            }
+
+            update_option('pagbank_db_version', '4.13');
+        }
     }
-    
+
     public static function uninstall()
     {
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
         $wpdb->query($wpdb->prepare("DROP TABLE IF EXISTS $recurringTable"));
     }
-    
+
     public static function deactivate()
     {
         $timestamp = wp_next_scheduled('rm_pagbank_cron_process_recurring_payments');
@@ -307,13 +412,13 @@ class Connect
             );
         }
         parse_str($_REQUEST['feedback'], $formData);
-        
+
         if (isset($formData['selected-reason']) || isset($formData['comment'])) {
             $reason = $formData['selected-reason'];
             $commment = $formData['comment'] ?? '';
             $openTicket = $formData['autorizaContato'] ?? false;
             $siteUrl = get_site_url();
-            
+
             /** @var WP_User $currentUser */
             $currentUser = wp_get_current_user();
             $email = $currentUser->user_email;
@@ -331,22 +436,22 @@ class Connect
                 'entry.760515818' => WC()->version,
                 'entry.764056986' => WC_PAGSEGURO_CONNECT_VERSION,
                 'entry.817525399' => $commment
-                
+
             ]);
             $url .= '&' . $params;
             wp_remote_get($url);
         }
     }
-    
+
     public static function cancelExpiredPix()
     {
         //list all orders with pix payment method and status pending created longer than configured expiry time
         $expiryMinutes = Params::getPixConfig('pix_expiry_minutes');
-        
+
         $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
 
         Functions::addMetaQueryFilter();
-        
+
         $expiredOrders = wc_get_orders([
             'limit' => -1,
             'status' => 'pending',
@@ -363,9 +468,9 @@ class Connect
         foreach ($expiredOrders as $order) {
             //cancel order
             $order->update_status(
-                'cancelled'                
+                'cancelled'
             );
-            
+
             //send cancelled order email to customer
             $order->add_order_note(
                 __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
@@ -373,7 +478,7 @@ class Connect
             );
         }
     }
-    
+
 //    public static function redirectStandaloneConfigPage()
 //    {
 //        global $pagenow;
@@ -394,14 +499,14 @@ class Connect
 //            }
 //        }
 //    }
-    
+
     public static function removeOtherPaymentMethodsWhenRecurring()
     {
         // Check if WooCommerce is active
         if (!class_exists('WooCommerce')) {
             return;
         }
-        
+
         // if cart is recurring only show PagBank as payment method
         $recHelper = new Recurring();
         $isCartRecurring = $recHelper->isCartRecurring();
@@ -436,7 +541,7 @@ class Connect
 
         //enable meta query filter
         Functions::addMetaQueryFilter();
-        
+
         //get the pix key from the last pix order
         $lastPixOrder = wc_get_orders([
             'limit' => 1,
@@ -458,7 +563,7 @@ class Connect
         if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
             return;
         }
-        
+
         $pixKey = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode_text');
         $validationFailed = Functions::isValidPixCode($pixKey) === false;
 
