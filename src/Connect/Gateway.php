@@ -51,7 +51,6 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
 
-        add_action('woocommerce_admin_order_data_after_order_details', [$this, 'addPaymentInfoAdmin'], 10, 1);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
     }
@@ -142,18 +141,6 @@ class Gateway extends WC_Payment_Gateway_CC
     public function validate_fields():bool
     {
         return true; //@TODO validate_fields
-    }
-
-	/**
-	 * Adds order info to the admin order page by including the order info template
-	 *
-	 * @param $order
-	 *
-	 * @return void
-	 * @noinspection PhpUnusedParameterInspection*/
-	public function addPaymentInfoAdmin($order)
-    {
-        include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 
     public static function addStylesWoo($styles)

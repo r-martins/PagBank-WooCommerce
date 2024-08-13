@@ -48,6 +48,7 @@ class Connect
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
         
         // Load plugin files
         self::includes();
@@ -521,6 +522,18 @@ class Connect
         $response->data['meta_data'] = array_merge_recursive($response->data['meta_data'], $meta_array);
 
         return $response;
+    }
+
+    /**
+     * Adds order info to the admin order page by including the order info template
+     *
+     * @param $order
+     *
+     * @return void
+     * @noinspection PhpUnusedParameterInspection*/
+    public static function addPaymentInfoAdmin($order)
+    {
+        include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 
     private static function addPagBankMenu()
