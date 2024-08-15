@@ -2,6 +2,7 @@
 namespace RM_PagBank\Connect\Standalone;
 
 use RM_PagBank\Connect;
+use RM_PagBank\Connect\Payments\CreditCardTrial;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Traits\PaymentUnavailable;
@@ -175,39 +176,60 @@ class CreditCard extends WC_Payment_Gateway_CC
             $payment_method = $payment_method . '_trial';
         }
 
-        $order->add_meta_data(
-            'pagbank_card_installments',
-            filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT),
-            true
-        );
-        $order->add_meta_data(
-            'pagbank_card_last4',
-            substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
-            true
-        );
-        $order->add_meta_data(
-            '_pagbank_card_first_digits',
-            substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), 0, 6),
-            true
-        );
-        $order->add_meta_data(
-            '_pagbank_card_encrypted',
-            htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
-            true
-        );
-        $order->add_meta_data(
-            '_pagbank_card_holder_name',
-            htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
-            true
-        );
-        $order->add_meta_data(
-            '_pagbank_card_3ds_id',
-            isset($_POST['rm-pagbank-card-3d'])
-                ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
-                : false,
-        );
-        $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
-        $params = $method->prepare();
+        switch ($payment_method) {
+            case 'cc':
+                $order->add_meta_data(
+                    'pagbank_card_installments',
+                    filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT),
+                    true
+                );
+                $order->add_meta_data(
+                    'pagbank_card_last4',
+                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
+                    true
+                );
+                $order->add_meta_data(
+                    '_pagbank_card_first_digits',
+                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), 0, 6),
+                    true
+                );
+                $order->add_meta_data(
+                    '_pagbank_card_encrypted',
+                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
+                    true
+                );
+                $order->add_meta_data(
+                    '_pagbank_card_holder_name',
+                    htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
+                    true
+                );
+                $order->add_meta_data(
+                    '_pagbank_card_3ds_id',
+                    isset($_POST['rm-pagbank-card-3d'])
+                        ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
+                        : false,
+                );
+                $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
+                $params = $method->prepare();
+                break;
+            case 'cc_trial':
+                $order->add_meta_data(
+                    '_pagbank_card_encrypted',
+                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
+                    true
+                );
+                $method = new \RM_PagBank\Connect\Payments\CreditCardTrial($order);
+                $params = $method->prepare();
+                break;
+            default:
+                wc_add_wp_error_notices(
+                    new WP_Error('invalid_payment_method', __('Método de pagamento inválido', 'pagbank-connect'))
+                );
+                return array(
+                    'result' => 'fail',
+                    'redirect' => '',
+                );
+        }
 
         $resp = $this->makeRequest($order, $params, $method);
 
