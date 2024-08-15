@@ -327,6 +327,10 @@ class Connect
 
             $generalSettings['standalone'] = 'yes';
 
+            if (isset($generalSettings['hide_id_unavailable'])) {
+                $generalSettings['hide_if_unavailable'] = $generalSettings['hide_id_unavailable'];
+            }
+
             $generalSettings = serialize($generalSettings);
             $ccSettings = serialize($ccSettings);
             $pixSettings = serialize($pixSettings);
