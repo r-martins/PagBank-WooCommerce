@@ -68,12 +68,15 @@ $wpKsesSvg = ['svg'  => ['xmlns'   => [], 'width'   => [], 'height'  => [], 'vie
 	<?php if($charge_id):
 		$transaction = str_replace('CHAR_', '', $charge_id);
 		$link = 'https://minhaconta.pagseguro.uol.com.br/transacao/detalhes/' . $transaction;
-		if ($order->get_meta('pagbank_is_sandbox') == 1) {
-			$link = 'javascript:alert(\'Pedidos feitos em ambiente de testes não estão disponíveis no painel do PagBank.\');';
-		}
+		
+        $linkTagHtml = '<a href="' . esc_url($link) . '" title="Segure Ctrl ou Cmd para abrir em outra aba.">Ver no PagBank</a><span class="dashicons dashicons-external"></span>';
+
+        if ( $order->get_meta('pagbank_is_sandbox') == 1) {
+            $linkTagHtml = '<span title="Pedidos feitos em ambiente de testes não estão disponíveis no painel do PagBank.">Ver no PagBank</span><span class="dashicons dashicons-external" title="Pedidos feitos em ambiente de testes não estão disponíveis no painel do PagBank."></span>';
+        }
 		?>
 		<span class="form-field form-field-wide ps-pagbank-info">
-			<a href="<?php echo esc_url($link)?>" title="Segure Ctrl ou Cmd para abrir em outra aba.">Ver no PagBank</a><span class="dashicons dashicons-external"></span>
+            <?php echo $linkTagHtml;?>
 		</span>
 	<?php endif;?>
 </p>
