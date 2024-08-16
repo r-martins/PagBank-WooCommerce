@@ -42,6 +42,7 @@ $isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-cc' ) ?>#tab-credit-card" class="nav-tab <?php echo $this->id === 'rm-pagbank-cc' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Cartão de Crédito', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-pix' ) ?>#tab-pix" class="nav-tab <?php echo $this->id === 'rm-pagbank-pix' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('PIX', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-boleto' ) ?>#tab-boleto" class="nav-tab <?php echo $this->id === 'rm-pagbank-boleto' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Boleto', 'pagbank-connect') ?></a>
+        <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-recurring-settings' ) ?>#tab-recurring" class="nav-tab"><?php esc_html_e('Recorrência (beta)', 'pagbank-connect') ?></a>
     </nav>
     <?php if ($this->id === 'rm-pagbank'): ?>
         <h3><?php esc_html_e('Credenciais', 'pagbank-connect') ?></h3>

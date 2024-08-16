@@ -23,7 +23,7 @@ class Recurring
 
     public function init()
     {
-        if (Params::getConfig('recurring_enabled') != 'yes') {
+        if (get_option('woocommerce_rm-pagbank-recurring_enabled') != 'yes') {
             return;
         }
 
@@ -71,6 +71,27 @@ class Recurring
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
         add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
         add_filter('woocommerce_cart_needs_payment', [$this, 'enablePaymentInTrialOrder'], 10, 2);
+    }
+
+    public static function recurringSettingsFields($settings, $current_section)
+    {
+        if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
+            return $settings;
+        }
+
+        $settings = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
+
+        return $settings;
+    }
+
+    public static function recurringHeaderSettingsSection()
+    {
+        global $current_section;
+        if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
+            return;
+        }
+
+        include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-recurring-settings-page.php';
     }
     
     public function addInitialFeeToCart($cart)

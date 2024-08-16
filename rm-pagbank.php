@@ -48,6 +48,10 @@ add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
 
+//Add Recurring Config
+add_filter('woocommerce_get_settings_checkout' , [Connect\Recurring::class, 'recurringSettingsFields'] , 10, 2 );
+add_filter('woocommerce_settings_checkout' , [Connect\Recurring::class, 'recurringHeaderSettingsSection'] , 10, 2 );
+
 //envio facil
 add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 

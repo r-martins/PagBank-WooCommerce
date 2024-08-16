@@ -59,7 +59,6 @@ class Gateway extends WC_Payment_Gateway_CC
     {
         $fields = [];
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
-        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
         $this->form_fields = array_merge(...$fields);
     }
 
