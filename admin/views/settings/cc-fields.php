@@ -11,7 +11,7 @@ return array(
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'yes',
+        'default'     => 'no',
     ],
     'title'                                   => [
         'title'       => __('Título Principal', 'pagbank-connect'),
