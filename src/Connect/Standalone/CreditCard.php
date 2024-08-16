@@ -154,10 +154,15 @@ class CreditCard extends WC_Payment_Gateway_CC
         $order = wc_get_order( $order_id );
 
         //sanitize $_POST['ps_connect_method']
-        $payment_method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
+        $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
 
         $recurringHelper = new \RM_PagBank\Helpers\Recurring();
         $isCartRecurring = $recurringHelper->isCartRecurring();
+
+        $payment_method = str_replace('rm-pagbank-', '', $payment_method);
+        if ($isCartRecurring) {
+            $payment_method = 'cc'; //@TODO change when supporting other methods for recurring orders
+        }
 
         if ($isCartRecurring) {
             $order->add_meta_data('_pagbank_recurring_initial', true);
