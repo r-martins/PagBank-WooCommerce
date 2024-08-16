@@ -23,7 +23,7 @@ class Recurring
 
     public function init()
     {
-        if (get_option('woocommerce_rm-pagbank-recurring_enabled') != 'yes') {
+        if (Params::getRecurringConfig('recurring_enabled') != 'yes') {
             return;
         }
 
@@ -48,7 +48,7 @@ class Recurring
         if ( ! wp_next_scheduled('rm_pagbank_cron_process_recurring_payments') ) {
             wp_schedule_event(
                 time(),
-                Params::getConfig('recurring_process_frequency', 'hourly'),
+                Params::getRecurringConfig('recurring_process_frequency', 'hourly'),
                 'rm_pagbank_cron_process_recurring_payments'
             );
         }
@@ -713,11 +713,11 @@ class Recurring
                 break;
         }
 
-        if (!is_admin() && Params::getConfig('recurring_customer_can_cancel') === 'no') {
+        if (!is_admin() && Params::getRecurringConfig('recurring_customer_can_cancel') === 'no') {
             unset($actions['cancel']);
         }
 
-        if (!is_admin() && Params::getConfig('recurring_customer_can_pause') === 'no') {
+        if (!is_admin() && Params::getRecurringConfig('recurring_customer_can_pause') === 'no') {
             unset($actions['pause']);
         }
         

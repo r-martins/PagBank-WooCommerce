@@ -61,7 +61,7 @@ class Connect
 
         self::addPagBankMenu();
 
-        if (Params::getConfig('recurring_enabled')) {
+        if (Params::getRecurringConfig('recurring_enabled')) {
             $recurring = new Connect\Recurring();
             $recurring->init();
         }

@@ -129,6 +129,17 @@ class Params
     }
 
     /**
+     * @param $key
+     * @param string $default
+     *
+     * @return mixed|string
+     */
+    public static function getRecurringConfig($key, string $default = '')
+    {
+        return get_option('woocommerce_rm-pagbank-' . $key, $default);
+    }
+
+    /**
      * Gets the max allowed installments or false if no limit
 	 *
      * @return false|int
@@ -388,7 +399,7 @@ class Params
         $recurring = $recurringHelper->isCartRecurring();
         
         if ($recurring){
-            return in_array($method, Params::getConfig('recurring_payments'));
+            return in_array($method, Params::getRecurringConfig('recurring_payments'));
         }
 
         return Params::getConfig($method . '_enabled') == 'yes';

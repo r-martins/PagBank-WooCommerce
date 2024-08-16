@@ -332,7 +332,7 @@ class Recurring
             $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', 'pagbank-connect'), wc_price($initialFee)) . '</p>';;
         }
         
-        $recurringNoticeDays = (int)Params::getConfig('recurring_notice_days', 0);
+        $recurringNoticeDays = (int)Params::getRecurringConfig('recurring_notice_days', 0);
         if ($paymentMethod != 'creditcard' && $recurringNoticeDays > 0){
             switch ($paymentMethod){
                 case 'pix':
