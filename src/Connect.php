@@ -278,6 +278,12 @@ class Connect
         if (version_compare($stored_version, '4.13', '<')) {
             $settingsTable = $wpdb->prefix . 'options';
             $settings = get_option('woocommerce_rm-pagbank_settings');
+
+            if (!$settings) {
+                update_option('pagbank_db_version', '4.13');
+                return;
+            }
+
             $generalSettings = array();
             $recurringSettings = array();
             $ccSettings = array();
