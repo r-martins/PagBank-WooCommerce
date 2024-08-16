@@ -279,6 +279,7 @@ class Connect
             $settingsTable = $wpdb->prefix . 'options';
             $settings = get_option('woocommerce_rm-pagbank_settings');
             $generalSettings = array();
+            $recurringSettings = array();
             $ccSettings = array();
             $pixSettings = array();
             $boletoSettings = array();
@@ -293,6 +294,10 @@ class Connect
                 }
                 if (strpos($key,'boleto_') !== false) {
                     $boletoSettings[$key] = $setting;
+                    continue;
+                }
+                if (strpos($key,'recurring_') !== false) {
+                    $recurringSettings[$key] = $setting;
                     continue;
                 }
 
@@ -379,6 +384,11 @@ class Connect
                     $settingsTable,
                     ['option_name' => 'woocommerce_rm-pagbank-boleto_settings', 'option_value' => $boletoSettings]
                 );
+            }
+
+            foreach ($recurringSettings as $key => $setting) {
+                $key = 'woocommerce_rm-pagbank-' . $key;
+                update_option($key, $setting);
             }
 
             update_option('pagbank_db_version', '4.13');
