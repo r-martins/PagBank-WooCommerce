@@ -343,7 +343,18 @@ class Params
 	 */
 	public static function getDiscountText($method): string
 	{
-        $discountConfig = self::getConfig($method . '_discount', 0);
+        $discountConfig = 0;
+        switch ($method){
+            case 'pix':
+                $discountConfig = self::getPixConfig('pix_discount', 0);
+                break;
+            case 'boleto':
+                $discountConfig = self::getBoletoConfig('boleto_discount', 0);
+                break;
+            case 'cc':
+                $discountConfig = self::getCcConfig('cc_discount', 0);
+                break;
+        }
         $discountType = self::getDiscountType($discountConfig);
         if ( ! $discountType || is_wc_endpoint_url('order-pay')) {
             return '';
@@ -403,5 +414,22 @@ class Params
         }
 
         return Params::getConfig($method . '_enabled') == 'yes';
+    }
+
+    public static function convertMinutesToHumanTime($minutes) {
+        if ($minutes < 60) {
+            return sprintf(_n('%d minuto', '%d minutos', intval($minutes), 'pagbank-connect'), $minutes);
+        } elseif ($minutes < 1440) {
+            $hours = floor($minutes / 60);
+            return sprintf(_n('%d hora', '%d horas', intval($hours), 'pagbank-connect'), $hours);
+        } elseif ($minutes < 43200) {
+            $days = floor($minutes / 1440);
+            return sprintf(_n('%d dia', '%d dias', intval($days), 'pagbank-connect'), $days);
+        } elseif ($minutes < 259200) {
+            $months = floor($minutes / 43200);
+            return sprintf(_n('%d mês', '%d meses', intval($months), 'pagbank-connect'), $months);
+        } else {
+            return sprintf(_n('%d mês', '%d meses', 6, 'pagbank-connect'), 6);
+        }
     }
 }

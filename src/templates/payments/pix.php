@@ -7,40 +7,13 @@ use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
 
 $expiry = (int)$this->get_option('pix_expiry_minutes');
+$text = sprintf(
+    esc_html__('Você terá %s para pagar com seu código PIX.', 'pagbank-connect'),
+    esc_html(Params::convertMinutesToHumanTime($expiry))
+);
 $recHelper = new Recurring();
 $isCartRecurring = $recHelper->isCartRecurring();
-switch ($expiry) {
-    case $expiry % 1440 === 0:
-        $expiry = $expiry / 1440;
-        $text = sprintf(
-            _n(
-                'Você terá %d dia para usar seu código PIX.',
-                'Você terá %d dias para usar seu código PIX.',
-                $expiry,
-                'pagbank-connect'
-            ),
-            $expiry
-        );
-        break;
-    case 1440:
-        $text = __('Você terá 24 horas para pagar com seu código PIX.', 'pagbank-connect');
-        break;
-    case $expiry % 60 === 0:
-        $expiry = $expiry / 60;
-        $text = sprintf(
-            _n(
-                'Você terá %d hora para pagar com seu código PIX.',
-                'Você terá %d horas para pagar com seu código PIX.',
-                $expiry,
-                'pagbank-connect'
-            ),
-            $expiry
-        );
-        break;
-    default:
-        $text = sprintf(__('Você terá %d minutos para pagar com seu código PIX.', 'pagbank-connect'), $expiry);
-        break;
-}
+
 
 $hasDiscount = $this->get_option('pix_discount');
 $discountText = Params::getDiscountText('pix');
