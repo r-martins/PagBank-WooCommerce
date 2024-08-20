@@ -152,10 +152,10 @@ class Params
         }
         
         //returns false if cc_installments_options_limit_installments == no
-        if (self::getConfig('cc_installments_options_limit_installments', 'no') == 'no'){
+        if (self::getCcConfig('cc_installments_options_limit_installments', 'no') == 'no'){
             return false;
         }
-        return (int)self::getConfig('cc_installments_options_max_installments', 18);
+        return (int)self::getCcConfig('cc_installments_options_max_installments', 18);
     }
 
 	/**
@@ -168,7 +168,7 @@ class Params
 	 */
 	public static function getMaxInstallmentsNoInterest($orderTotal)
     {
-        $installment_option = self::getConfig('cc_installment_options', 'external');
+        $installment_option = self::getCcConfig('cc_installment_options', 'external');
         if ('external' == $installment_option){
             return '';
         }
@@ -178,11 +178,11 @@ class Params
         }
 
         if ('fixed' == $installment_option) {
-            return (int)self::getConfig('cc_installment_options_fixed', 3);
+            return (int)self::getCcConfig('cc_installment_options_fixed', 3);
         }
 
 //        if ('min_total' == $installment_option) {
-            $min_total = (int)self::getConfig('cc_installments_options_min_total', 50);
+            $min_total = (int)self::getCcConfig('cc_installments_options_min_total', 50);
             $min_total = max(5, $min_total); //avoiding blanks
             $installments = floor($orderTotal / $min_total);
             $installments = $installments == 1 ? 0 : $installments; //1 is not acceptable as a value by the api
