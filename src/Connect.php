@@ -165,10 +165,12 @@ class Connect
                 'boleto' => [
                     'enabled' => Params::getBoletoConfig('enabled'),
                     'expiry_days' => Params::getBoletoConfig('boleto_expiry_days'),
+                    'discount' => Params::getBoletoConfig('boleto_discount'),
                 ],
                 'pix' => [
                     'enabled' => Params::getPixConfig('enabled'),
                     'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes'),
+                    'discount' => Params::getPixConfig('pix_discount'),
                 ],
                 'cc' => [
                     'enabled' => Params::getCcConfig('enabled'),
