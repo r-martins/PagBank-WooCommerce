@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.14.0
+Stable tag: 4.15.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -146,7 +146,7 @@ Você também pode testar com dados reais e realizar o estorno. As tarifas e tax
 
 = Este é um plugin oficial? =
 
-Não. Este é um plugin desenvolvido por Ricardo Martins, assim como outros para Magento e WooCommerce desenvolvidos no passado.
+Não. Este é um plugin desenvolvido por Ricardo Martins, parceiro PagBank desde 2014.
 
 Apesar da parceria entre o desenvolvedor e o PagBank que concede descontos e benefícios, este NÃO é um produto oficial.
 
@@ -165,6 +165,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+== 4.15.0 =
+* Melhorias gerais de código, performance, e boas práticas em todo plugin. Trata-se de uma grande mudança na forma como o plugin é estruturado internamente e nos possibilitará evolui-lo com mais segurança e menos bugs.
+* Mudança: descontinuamos a opção de exibir os métodos de pagamento de forma agrupada. Agora eles são exibidos de forma individual, o que é mais amigável e intuitivo para o admin.
+* Correção: na conversão de minutos da expiração do PIX para o usuário (ex: 43200 minutos era exibido como 7 dias)
+
 = 4.14.0 =
 * Melhoria: Mensagem amigável e opção de esconder os meios de pagamento para pedidos inferiores a R$1,00
 * Melhoria: truncamos alguns campos como nome do cliente e alguns campos de endereço a fim de evitar erros na finalização do pedido quando o valor informado é maior que o permitido pelo PagBank.
