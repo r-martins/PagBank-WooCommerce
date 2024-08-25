@@ -45,9 +45,9 @@ jQuery(document).ready(function($) {
 
     //endregion
 
-	//region Showing that you are using test mode (when using a CONSANDBOX key)
     var value = jQuery('#woocommerce_rm-pagbank_connect_key').val();
-	if (value && value.indexOf('CONSANDBOX') === 0){
+    //region Showing that you are using test mode (when using a CONSANDBOX key)
+    if (value && value.indexOf('CONSANDBOX') === 0){
 		//create p element
 		var p = document.createElement('p');
 		p.innerHTML = '⚠️ Você está usando o <strong>modo de testes</strong>. Veja <a href="https://dev.pagbank.uol.com.br/reference/simulador" target="_blank">documentação</a>.<br/>Para usar o modo de produção, altere suas credenciais.<br/>Lembre-se: pagamentos em Sandbox não aparecerão no PagBank, mesmo no ambiente Sandbox.';
@@ -56,6 +56,16 @@ jQuery(document).ready(function($) {
 		jQuery(p).insertAfter('#woocommerce_rm-pagbank_connect_key');
 	}
 	//endregion
+    //region Showing that you are using Public Key (when using a PUB key)
+    if (value && value.indexOf('PUB') === 0){
+        //create p element
+        var warning = document.createElement('p');
+        warning.innerHTML = 'Parece que você informou o Token PagBank no lugar da Connect Key. Clique em Obter Connect Key para obter a sua.';
+        warning.style.color = '#f30649';
+        //insert under connect_key
+        jQuery(warning).insertAfter('#woocommerce_rm-pagbank_connect_key');
+    }
+    //endregion
 
     jQuery(".icon-color-picker").wpColorPicker({defaultColor: 'gray'});
 });

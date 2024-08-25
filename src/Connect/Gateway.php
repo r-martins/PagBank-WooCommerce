@@ -103,6 +103,11 @@ class Gateway extends WC_Payment_Gateway_CC
 	 */
 	public function validate_connect_key_field($key, $connect_key)
     {
+        if (strpos($connect_key, 'PUB') !== false) {
+            WC_Admin_Settings::add_error(__('Parece que você informou o Token PagBank no lugar da Connect Key. Clique em Obter Connect Key para obter a sua.', 'pagbank-connect'));
+            return $connect_key;
+        }
+
         $api = new Api();
         $api->setConnectKey($connect_key);
         
