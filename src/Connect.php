@@ -554,20 +554,12 @@ class Connect
     {
         $userId = get_current_user_id();
         $isPixEnabled = Params::getPixConfig('enabled') == 'yes';
-
-        // Check if the notice has been dismissed for this user
-        if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true)) {
-            return;
-        }
-
-        // Check if the last check was within the last 10 minutes
-        $lastCheck = get_transient('pagbank_pix_check_' . $userId);
-        if ($lastCheck && (time() - $lastCheck) < 600) {
-            return;
-        }
+        $alreadyChecked = get_transient('pagbank_pix_lastorder_checked');
         
-        // Update the transient with the current timestamp
-        set_transient('pagbank_pix_check_' . $userId, time(), 600);
+        // Check if the notice has been dismissed for this user
+        if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true) || $alreadyChecked) {
+            return;
+        }
 
         $validationFailed = true;
 
@@ -632,6 +624,8 @@ class Connect
         }
 
         if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
+            // Update the transient to prevent checking again for 30 minutes
+            set_transient('pagbank_pix_lastorder_checked', true, 1800 );
             return;
         }
 
@@ -666,6 +660,9 @@ class Connect
             </div>
             <?php
         }
+
+        // Update the transient to prevent checking again for 30 days
+        set_transient('pagbank_pix_lastorder_checked', true, 2592000 );
     }
 
     /**
