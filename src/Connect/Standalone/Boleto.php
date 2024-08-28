@@ -49,6 +49,7 @@ class Boleto extends WC_Payment_Gateway
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
+        add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
@@ -155,5 +156,20 @@ class Boleto extends WC_Payment_Gateway
     public function validate_fields():bool
     {
         return true; //@TODO validate_fields
+    }
+
+    public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
+        $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
+        if ($order->get_meta('pagbank_payment_method') === 'boleto' && in_array($email->id, $emailIds)) {
+            $boletoBarcode = $order->get_meta('pagbank_boleto_barcode_formatted');
+            $boletoPdfLink = $order->get_meta('pagbank_boleto_pdf');
+            $boletoDueDate = $order->get_meta('pagbank_boleto_due_date');
+            $boletoDueDate = $boletoDueDate ? Functions::formatDate($boletoDueDate) : '';
+
+            ob_start();
+            include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/boleto-payment-details.php';
+            $output = ob_get_clean();
+            echo $output;
+        }
     }
 }

@@ -50,6 +50,7 @@ class Pix extends WC_Payment_Gateway
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [$this, 'dismissPixOrderKeysNotice']);
+        add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
@@ -163,5 +164,20 @@ class Pix extends WC_Payment_Gateway
 
         // Set the user meta value
         update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
+    }
+
+    public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
+        $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
+        if ($order->get_meta('pagbank_payment_method') === 'pix' && in_array($email->id, $emailIds)) {
+            $pixQrCode = $order->get_meta('pagbank_pix_qrcode');
+            $pixQrCodeExpiration = $order->get_meta('pagbank_pix_qrcode_expiration');
+            $pixQrCodeExpiration = $pixQrCodeExpiration ? Functions::formatDate($pixQrCodeExpiration) : '';
+            $pixQrCodeText = $order->get_meta('pagbank_pix_qrcode_text');
+
+            ob_start();
+            include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/pix-payment-details.php';
+            $output = ob_get_clean();
+            echo $output;
+        }
     }
 }
