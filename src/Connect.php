@@ -14,6 +14,7 @@ use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
 use WC_Order;
+use WP_Query;
 
 /**
  * Class Connect
@@ -559,28 +560,76 @@ class Connect
             return;
         }
 
+        // Check if the last check was within the last 10 minutes
+        $lastCheck = get_transient('pagbank_pix_check_' . $userId);
+        if ($lastCheck && (time() - $lastCheck) < 600) {
+            return;
+        }
+        
+        // Update the transient with the current timestamp
+        set_transient('pagbank_pix_check_' . $userId, time(), 600);
+
         $validationFailed = true;
 
         //enable meta query filter
         Functions::addMetaQueryFilter();
 
         //get the pix key from the last pix order
-        $lastPixOrder = wc_get_orders([
-            'limit' => 1,
-            'orderby' => 'date',
-            'order' => 'DESC',
-            'meta_query' => [
-                'relation' => 'AND',
-                [
-                    'key' => 'pagbank_payment_method',
-                    'value' => 'pix',
-                ],
-                [
-                    'key' => 'pagbank_is_sandbox',
-                    'value' => '0',
+        // Check if HPOS is enabled
+        if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
+            // HPOS is enabled
+            $lastPixOrder = wc_get_orders([
+                'limit' => 1,
+                'orderby' => 'date',
+                'order' => 'DESC',
+                'meta_query' => [
+                    'relation' => 'AND',
+                    [
+                        'key' => 'pagbank_payment_method',
+                        'value' => 'pix',
+                    ],
+                    [
+                        'key' => 'pagbank_is_sandbox',
+                        'value' => '0',
+                    ]
                 ]
-            ]
-        ]);
+            ]);
+        } else {
+            // HPOS is disabled
+            $args = array(
+                'post_type'      => 'shop_order',
+                'posts_per_page' => 1,
+                'post_status'    => 'any',
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+                'meta_query'     => array(
+                    'relation' => 'AND',
+                    array(
+                        'key'     => 'pagbank_payment_method',
+                        'value'   => 'pix',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key'     => 'pagbank_is_sandbox',
+                        'value'   => '0',
+                        'compare' => '='
+                    )
+                ),
+            );
+
+            $query = new WP_Query($args);
+
+            $lastPixOrder = [];
+            if ($query->have_posts()) {
+                while ($query->have_posts()) {
+                    $query->the_post();
+                    $order_id = get_the_ID();
+                    $order = wc_get_order($order_id);
+                    $lastPixOrder[] = $order;
+                }
+                wp_reset_postdata();
+            }
+        }
 
         if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
             return;
