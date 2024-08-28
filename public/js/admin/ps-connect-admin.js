@@ -56,16 +56,6 @@ jQuery(document).ready(function($) {
 		jQuery(p).insertAfter('#woocommerce_rm-pagbank_connect_key');
 	}
 	//endregion
-    //region Showing that you are using Public Key (when using a PUB key)
-    if (value && value.indexOf('PUB') === 0){
-        //create p element
-        var warning = document.createElement('p');
-        warning.innerHTML = 'Parece que você informou o Token PagBank no lugar da Connect Key. Clique em Obter Connect Key para obter a sua.';
-        warning.style.color = '#f30649';
-        //insert under connect_key
-        jQuery(warning).insertAfter('#woocommerce_rm-pagbank_connect_key');
-    }
-    //endregion
 
     jQuery(".icon-color-picker").wpColorPicker({defaultColor: 'gray'});
 });
