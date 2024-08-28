@@ -650,13 +650,6 @@ class Connect
                         $orderId,
                         $helpUrl
                     ); ?></p>
-                <p><?php echo sprintf(
-                        __(
-                            'Obs: esta validação de chaves está em fase de testes. Se você acha que a chave gerada está correta, <a href="%s">clique aqui</a> e nos mande o conteúdo de <code>pagbank_pix_qrcode_text</code> do pedido para analisarmos.',
-                            'pagbank-connect'
-                        ),
-                        $openTicket
-                    ); ?></p>
             </div>
             <?php
         }
