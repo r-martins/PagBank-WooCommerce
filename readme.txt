@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.15.0
+Stable tag: 4.16.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -15,8 +15,12 @@ Autenticação 3D: menos chargeback e mais aprovações.
 
 **Aceite PagSeguro e PagBank (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
-Esta é a **forma mais fácil de integrar sua loja com PagBank (PagSeguro)**.
+Esta é a **forma mais fácil e gratuita de integrar sua loja com PagBank (PagSeguro)**.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
+
+⭐️Agora com taxas ainda menores (à partir de Agosto), válidas para lojas antigas e novas.⭐️
+
+Ou seja, você já economizava nas taxas do PagBank ao usar nosso plugin, e agora vai economizar ainda mais.
 
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
@@ -37,7 +41,7 @@ Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocup
 * Termos de uso e softwares terceiros
 Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html) do desenvolvedor.
 
-== Features ==
+== ⚡️ RECURSOS ==
 * Suporte a PIX, Cartão de Crédito e Boleto
 * Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
 * Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
@@ -55,6 +59,7 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 
 
 == Installation ==
+
 === Instalação automática via painel ===
 * Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
 * Clique no botão para instalar e ative o plugin
@@ -104,9 +109,9 @@ E não se preocupe, os serviços que você usa não serão afetados.
 
 = Como funcionam os descontos nas taxas? =
 
-Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará cerca de 0,60% a menos e estará isento da taxa de R$0,40 por transação.
+Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará até 1% a menos e estará isento da taxa de R$0,40 por transação.
 
-Taxas menores são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
+Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
 Consulte mais sobre elas no [nosso site](https://pagseguro.ricardomartins.net.br/connect/autorizar.html).
 
@@ -165,6 +170,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+== 4.16.0 ==
+* Melhoria: agora informações do PIX ou do Boleto também são enviadas no e-mail transacional
+* Melhoria: alguns administradores digitavam o token PagBank (nunca solicitado) no campo da Connect Key. Agora validamos isso e avisamos ele sobre o engano.
+* Melhoria: fazemos validação no último pedido pix a fim de ver se há erro de chave pix inválida causada pela não existência de chaves aleatórias na conta PagBank. Agora fazemos isso com bem menos frequência, ou uma vez só se estiver tudo certo. Isso deve melhorar a performance do plugin na área administrativa.
+* Correção: em lojas com HPOS desabilitado e com WooCommerce 9.2.0 ou superior, um Notice era gravado (ou exibido) dizendo que o método `WC_Order_Data_Store_CPT::query` foi chamado incorretamente.
 
 == 4.15.0 =
 * Melhorias gerais de código, performance, e boas práticas em todo plugin. Trata-se de uma grande mudança na forma como o plugin é estruturado internamente e nos possibilitará evolui-lo com mais segurança e menos bugs.
@@ -332,80 +343,6 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 
 = 4.3.0 =
 * Adicionado suporte a venda recorrente (clube de assinatura) sem depender de outros plugins
-
-= 4.2.14 =
-* Correção: dependendo do valor total do pedido, quando a autenticação 3d estava ativada, o erro 'amount.value must be an integer' era exibido
-* Melhoria: pequeno ajuste na mensagem de erro acima
-* Melhoria: algumas atualizações do plugin não surtiam efeito para alguns usuários devido a cache forçado do navegador ou configuração de outros plugins
-
-= 4.2.13 =
-* Correção: Parametro inválido (payment_method.card.encrypted) era exibido em alguns cenários, impedindo a finalização da compra.
-* Correção: tags html eram exibidas nas configurações do Envio Facil no admin. Não afetava o funcionamento, mas era feio. :)
-* Melhoria: na ferramenta de diagnóstico, para exibir configurações de 3d secure
-
-= 4.2.12 =
-* Correção/Melhoria: quando usado em conjunto com alguns plugins, em alguns casos não era exibido na lista de meios de pagamento disponíveis, e as configurações do plugin não eram carregadas. (Reportado por Leonardo)
-
-= 4.2.11 =
-* Correção: imagem e códigos pix e boleto não eram exibidos se recurso de High-performance order storage (HPOS) estivesse ativado
-
-= 4.2.10 =
-* Correção: compras com CNPJ exibiam erro 40002. (Reportado por Therus)
-
-= 4.2.9 =
-* Re-correção do problema anterior. Algo deu errado na publicação.
-
-= 4.2.8 =
-* Correção: após 4.2.6, ao desabilitar o 3d secure, o cartão de crédito deixava de ser exibido no checkout. (Reportado por Junior Marins)
-
-= 4.2.7 =
-* Correção: Erro era exibido no admin após última atualização. :O (Fatal error: Uncaught Error: Call to a member function get_total() on null) 
-
-= 4.2.6 =
-* Melhoria: PagBank deixa de ser exibido se valor total do pedido for menor que R$1,00, evitando erro 40002 charges[0].amount.value is invalid. PagBank não aceita pedidos abaixo deste valor.
-* Correção: Sempre usávamos kg como medida de peso para cálculo do envio fácil, fazendo com que lojas que configuraram o peso em outra medida tivesse o cálculo incorreto (geralmente não devolvendo nenhuma cotação).
-* Correção: quando um cliente decide pagar um pedido posteriormente indo em Minha conta > Pedidos > Pagar, o dropdown de parcelas do cartão não carregava como esperado. (Reportado por Therus)
-* Correção: em warning logado (undefined index $active['boleto'] e $active['pix']
-* Correção: exceção era gerada se a API do 3D Secure estiver fora do ar e o recurso ativo.
-* Melhoria: caso a opção de 3D Secure esteja ativo, mas a API 3D estiver fora do ar, o cartão de crédito não será exibido para o cliente caso a opção de "Permitir concluir" não estiver marcada. Nestes casos, um aviso será exibido pedindo que recarregue a página. (Reportado por Martin)
-
-
-= 4.2.5 =
-* Correção: em versões antigas do WooCommerce (ex: 6.4), em pedidos com cartao, o checkout era recarregado ao tentar finalizar compra, sem concluir o pedido. (#2)
-* Melhorias e refatoracao no JS de cartão de crédito, que agora não é mais inserido na página de sucesso desnecessariamente.
-* Mais melhorias em possíveis mensagens de erro no retorno de validações 3DSecure.
-* Mais ajustes pequenos em traduções, solicitados pela equipe do WordPress
-
-= 4.2.2 =
-* Ajustes diversos para compatibilidade com requisitos do WP Marketplace
-* Corrigido problema onde, em alguns cenários, logo após desativar a autenticação 3D, o plugin ainda tentava autenticar usando este método e gerando erro
-
-= 4.2.1 =
-* Pequenos ajustes de compatibilidade para estar de acordo com os requisitos do marketplace do WP Marketplace
-
-= 4.2.0 =
-* Adicionado suporte a autenticação 3D Secure, reduzindo drasticamente seus custos com chargebacks, e aumentando significativamente a taxa de aprovação.
-* Passamos a cachear algumas chamadas repetidas, aumentando significativamente a performance do processo de checkout.
-
-= 4.1.5 =
-* Corrigido problema no carregamento inicial de parcelas. Uma mudança no PagBank fez com que as parcelas iniciais não fossem carregadas até que o cliente informasse o número do cartão.
-
-= 4.1.3 =
-* Corrigido problema que ocorria em alguns checkouts (ex: FunnelKit) onde, ao atualizar o meio de frete, o valor da parcela do cartão não era atualizado corretamente. Reportado por Philippe.
-
-= 4.1.2 =
-* Corrigido problema onde EnvioFacil não era suportado em aplicações autorizadas no modelo de recebimento em 30 dias (Reportado por Ligia Salzano)
-
-= 4.1.1 =
-* Corrigido problema de erro com unit.amount nos casos onde um ou mais produtos com valor zero está presente
-* Administrador da loja agora recebe e-mail de novo pedido
-
-= 4.1.0 =
-* Mensagens mais amigáveis de erro ajudam o cliente a saber que parâmetro precisa ser corrigido
-* Agora há opção de [ocultar o endereço de entrega](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029), evitando erros de validação de endereço em vários cenários.
-
-= 4.0.0 =
-* Lançamento da primeira versão Connect, com suporte a PIX, Cartão de crédito, e Boleto.
 
 == Upgrade Notice ==
 Ao atualizar nosso plugin, você se protege contra falhas de funcionamento e segurança e aumenta suas chances de conversão no momento mais importante do ciclo de vendas.
