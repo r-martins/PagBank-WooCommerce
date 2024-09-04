@@ -47,6 +47,8 @@ add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
 
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
+//add_action('woocommerce_blocks_payment_method_type_registration', array(Connect::class, 'registerPaymentMethodOnCheckoutBlocks'));
+add_action('woocommerce_blocks_loaded', array(Connect::class, 'gatewayBlockSupport'));
 
 //Add Recurring Config
 add_filter('woocommerce_get_settings_checkout' , [Connect\Recurring::class, 'recurringSettingsFields'] , 10, 2 );
@@ -66,3 +68,11 @@ register_uninstall_hook(__FILE__, [Connect::class, 'uninstall']);
 
 // Upgrading scripts
 add_action('plugins_loaded', [Connect::class, 'upgrade']);
+
+
+function enqueue_payment_method_script() {
+    if ( is_checkout() ) {
+        wp_enqueue_script( 'rm-pagbank-boleto', plugins_url( 'pagbank-connect/build/js/frontend/blocks.js' ), [], false, true );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'enqueue_payment_method_script' );
