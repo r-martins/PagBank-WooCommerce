@@ -68,11 +68,3 @@ register_uninstall_hook(__FILE__, [Connect::class, 'uninstall']);
 
 // Upgrading scripts
 add_action('plugins_loaded', [Connect::class, 'upgrade']);
-
-
-function enqueue_payment_method_script() {
-    if ( is_checkout() ) {
-        wp_enqueue_script( 'rm-pagbank-boleto', plugins_url( 'pagbank-connect/build/js/frontend/blocks.js' ), [], false, true );
-    }
-}
-add_action( 'wp_enqueue_scripts', 'enqueue_payment_method_script' );

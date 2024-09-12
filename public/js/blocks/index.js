@@ -1,11 +1,11 @@
 console.debug('PagBank Connect BLOCK loaded');
-// import { sprintf, __ } from '@wordpress/i18n';
+
+import { registerPaymentMethod } from '@woocommerce/blocks-registry';
+import { getSetting } from '@woocommerce/settings';
+import { useEffect } from '@wordpress/element';
 import { decodeEntities } from '@wordpress/html-entities';
 // const { registerPaymentMethod } = window.wc.wcBlocksRegistry
 // const { getSetting } = window.wc.wcSettings
-import { registerPaymentMethod } from '@woocommerce/blocks-registry';
-import { getSetting } from '@woocommerce/settings';
-
 
 const settings = getSetting( 'rm-pagbank-boleto_data', {} )
 

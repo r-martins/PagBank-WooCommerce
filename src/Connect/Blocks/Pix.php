@@ -2,14 +2,14 @@
 namespace RM_PagBank\Connect\Blocks;
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
-use RM_PagBank\Connect\Standalone\Boleto as BoletoGateway;
+use RM_PagBank\Connect\Standalone\Pix as PixGateway;
 
-final class Boleto extends AbstractPaymentMethodType
+final class Pix extends AbstractPaymentMethodType
 {
     /**
      * The gateway instance.
      *
-     * @var BoletoGateway
+     * @var PixGateway
      */
     private $gateway;
 
@@ -18,7 +18,7 @@ final class Boleto extends AbstractPaymentMethodType
      *
      * @var string
      */
-    protected $name = 'rm-pagbank-boleto';
+    protected $name = 'rm-pagbank-pix';
 
     /**
      * Initializes the payment method type.
@@ -44,27 +44,10 @@ final class Boleto extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_script_handles() {
-//        $script_path = 'pagbank-connect/build/js/frontend/blocks.js';
-//        $script_asset_path = trailingslashit( plugin_dir_path( __FILE__ ) ) . 'build/js/frontend/blocks.asset.php';
-//        $script_asset = file_exists( $script_asset_path )
-//            ? require( $script_asset_path )
-//            : [
-//                'dependencies' => array(),
-//                'version'      => '1.2.0'
-//            ];
-//        $script_url = plugins_url( 'pagbank-connect/build/js/frontend/blocks.js' );
-//
-//        wp_register_script(
-//            'rm-pagbank-boleto-blocks-integration',
-//            $script_url,
-//            $script_asset[ 'dependencies' ],
-//            $script_asset[ 'version' ], // or time() or filemtime( ... ) to skip caching
-//            true
-//        );
 
         wp_register_script(
-            'rm-pagbank-boleto-blocks-integration',
-            plugins_url( 'pagbank-connect/public/js/blocks/checkout-blocks-boleto-test.js' ),
+            'rm-pagbank-pix-blocks-integration',
+            plugins_url( 'pagbank-connect/public/js/blocks/checkout-blocks-pix-test.js' ),
             [
                 'wc-blocks-registry',
                 'wc-settings',
@@ -76,11 +59,11 @@ final class Boleto extends AbstractPaymentMethodType
             true
         );
         if( function_exists( 'wp_set_script_translations' ) ) {
-            wp_set_script_translations( 'rm-pagbank-boleto-blocks-integration');
+            wp_set_script_translations( 'rm-pagbank-pix-blocks-integration');
 
         }
 
-        return ['rm-pagbank-boleto-blocks-integration'];
+        return ['rm-pagbank-pix-blocks-integration'];
 
     }
 
@@ -91,7 +74,7 @@ final class Boleto extends AbstractPaymentMethodType
      */
     public function get_payment_method_data() {
         return array(
-            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Boleto via PagBank',
+            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pix via PagBank',
             'description'  => $this->get_setting( 'description' ),
              'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] )
         );
