@@ -26,7 +26,7 @@ final class CreditCard extends AbstractPaymentMethodType
     public function initialize() {
         $this->settings = get_option( "woocommerce_{$this->name}_settings", [] );
         $gateways       = WC()->payment_gateways->payment_gateways();
-        $this->gateway  = $gateways[ $this->name ];
+        $this->gateway  = isset( $gateways[ $this->name ] ) ? $gateways[ $this->name ] : new CreditCardGateway();
     }
 
     /**
