@@ -3,6 +3,7 @@ namespace RM_PagBank\Connect\Standalone;
 
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
@@ -30,6 +31,10 @@ class Boleto extends WC_Payment_Gateway
             'wc_pagseguro_connect_icon',
             plugins_url('public/images/payment-icon.php?method=boleto', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
         );
+        $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
+        if (!$isDynamicIcoAccessible) {
+            $this->icon = plugins_url('public/images/boleto.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+        }
         $this->method_title = $this->get_option(
             'title',
             __('Boleto via PagBank', 'pagbank-connect')

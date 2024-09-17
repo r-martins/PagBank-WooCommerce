@@ -3,6 +3,7 @@ namespace RM_PagBank\Connect\Standalone;
 
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
@@ -26,10 +27,16 @@ class Pix extends WC_Payment_Gateway
             'products',
             'refunds'
         ];
+        
         $this->icon = apply_filters(
             'wc_pagseguro_connect_icon',
             plugins_url('public/images/payment-icon.php?method=pix', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
         );
+
+        $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
+        if (!$isDynamicIcoAccessible) {
+            $this->icon = plugins_url('public/images/pix.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+        }
         $this->method_title = $this->get_option(
             'title',
             __('Pix via PagBank', 'pagbank-connect')
@@ -180,4 +187,5 @@ class Pix extends WC_Payment_Gateway
             echo $output;
         }
     }
+
 }
