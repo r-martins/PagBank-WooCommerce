@@ -31,6 +31,10 @@ class CreditCard extends WC_Payment_Gateway_CC
             'wc_pagseguro_connect_icon',
             plugins_url('public/images/payment-icon.php?method=cc', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
         );
+        $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
+        if (!$isDynamicIcoAccessible) {
+            $this->icon = plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+        }
         $this->method_title = $this->get_option(
             'title',
             __('Cartão de Crédito via PagBank', 'pagbank-connect')

@@ -289,6 +289,7 @@ class Recurring
     public function avoidOtherThanRecurringInCart($canBeAdded, $productId)
     {
         $cart = WC()->cart;
+        $cart->empty_cart(true);
         $cartItems = $cart->get_cart();
         
         $product = wc_get_product($productId);

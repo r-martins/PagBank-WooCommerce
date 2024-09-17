@@ -6,6 +6,7 @@ use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Object\Address;
 use WC_Order;
+use WP_Error;
 
 /**
  * Helper Params - used to extract information from order to build api requests
@@ -375,6 +376,33 @@ class Params
         }
 
         return '';
+    }
+
+    /**
+     * Checks if the dynamic ico is accessible or is blocked by some security plugin, firewall or server configuration
+     * Saves the response in cache for a day
+     * @return bool
+     */
+    public static function getIsDynamicIcoAccessible(): bool
+    {
+        $transient_key = 'rm_pagbank_dynamic_ico_accessible';
+        $cached_result = get_transient($transient_key);
+
+        if ($cached_result !== false) {
+            return $cached_result === '1';
+        }
+
+        $isDynamicIcoAccessible = wp_remote_get(
+            plugins_url('public/images/payment-icon.php?method=pix', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['timeout' => 10]
+        );
+
+        $result = ($isDynamicIcoAccessible instanceof WP_Error) ? 0 : 1;
+
+        // Cache the result in a transient for 1 day (24 hours)
+        set_transient($transient_key, $result, DAY_IN_SECONDS);
+
+        return $result === 1;
     }
 
     /**
