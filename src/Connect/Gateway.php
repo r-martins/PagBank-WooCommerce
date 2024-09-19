@@ -5,6 +5,7 @@ namespace RM_PagBank\Connect;
 use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Params;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
@@ -136,6 +137,19 @@ class Gateway extends WC_Payment_Gateway_CC
 
         return $connect_key;
 
+    }
+    
+    public function validate_icons_color_field($key, $icon_color)
+    {
+        //Validate if dynamic icon is accessible
+        delete_transient('rm_pagbank_dynamic_ico_accessible');
+        $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
+        if (!$isDynamicIcoAccessible) {
+            WC_Admin_Settings::add_error(__('A personalização da cor dos ícones foi desativada, pois alguma configuração de segurança de sua loja impede ele de ser utilizado.', 'pagbank-connect'));
+            $icon_color = 'gray';
+        }
+        
+        return $icon_color;
     }
 
     /**

@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.16.0
+Stable tag: 4.17.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -170,6 +170,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+== 4.17.0 ==
+* Melhoria: Se por algum motivo os ícones com cores personalizadas não puderem ser exibidos (ex: plugin de segurança afetando funcionamento), usaremos a imagem estática e exibiremos um aviso no admin ao salvar as configs do pagbank.
 
 == 4.16.0 ==
 * Melhoria: agora informações do PIX ou do Boleto também são enviadas no e-mail transacional
