@@ -397,7 +397,7 @@ class Params
             ['timeout' => 10]
         );
 
-        $result = ($isDynamicIcoAccessible instanceof WP_Error) ? 0 : 1;
+        $result = (wp_remote_retrieve_response_code($isDynamicIcoAccessible) !== 200) ? 0 : 1;
 
         // Cache the result in a transient for 1 day (24 hours)
         set_transient($transient_key, $result, DAY_IN_SECONDS);
