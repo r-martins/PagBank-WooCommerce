@@ -3,6 +3,7 @@ namespace RM_PagBank\Connect\Blocks;
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use RM_PagBank\Connect\Standalone\CreditCard as CreditCardGateway;
+use RM_PagBank\Helpers\Recurring;
 
 final class CreditCard extends AbstractPaymentMethodType
 {
@@ -44,9 +45,15 @@ final class CreditCard extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_script_handles() {
+        if (!$this->gateway) {
+            return [];
+        }
+
+        $scriptPath = 'pagbank-connect/build/js/frontend/cc.js';
+
         wp_register_script(
             'rm-pagbank-cc-blocks-integration',
-            plugins_url( 'pagbank-connect/public/js/blocks/checkout-blocks-cc-test.js' ),
+            plugins_url( $scriptPath ),
             [
                 'wc-blocks-registry',
                 'wc-settings',
@@ -63,7 +70,6 @@ final class CreditCard extends AbstractPaymentMethodType
         }
 
         return ['rm-pagbank-cc-blocks-integration'];
-
     }
 
     /**
@@ -72,10 +78,16 @@ final class CreditCard extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_data() {
+        $recHelper = new Recurring();
+
         return array(
             'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Cartão de Crédito via PagBank',
             'description'  => $this->get_setting( 'description' ),
-            'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] )
+            'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
+            'isCartRecurring' => $recHelper->isCartRecurring(),
+            'recurringTerms' => wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong'),
+            'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'defaultInstallments' => $this->gateway->getDefaultInstallments(),
         );
     }
 }

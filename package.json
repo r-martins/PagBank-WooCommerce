@@ -10,9 +10,15 @@
     "npm": "^10.5.0"
   },
   "devDependencies": {
-    "@woocommerce/dependency-extraction-webpack-plugin": "2.2.0",
-    "@wordpress/scripts": "^28.6.0",
-    "cross-env": "7.0.3"
+    "@woocommerce/dependency-extraction-webpack-plugin": "^2.2.0",
+    "@woocommerce/eslint-plugin": "^2.2.0",
+    "@wordpress/scripts": "^29.0.0",
+    "cross-env": "7.0.3",
+    "css-minimizer-webpack-plugin": "^5.0.1",
+    "jshint": "^2.13.5",
+    "minify": "^7.2.2",
+    "webpack-cli": "^5.1.4",
+    "wp-pot": "^1.10.2"
   },
   "scripts": {
     "start": "wp-scripts start",

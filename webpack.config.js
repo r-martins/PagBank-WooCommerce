@@ -28,7 +28,9 @@ const requestToHandle = (request) => {
 module.exports = {
 	...defaultConfig,
 	entry: {
-		'frontend/blocks': '/public/js/blocks/index.js',
+		'frontend/pix': '/public/js/blocks/checkout-blocks-pix.js',
+		'frontend/boleto': '/public/js/blocks/checkout-blocks-boleto.js',
+		'frontend/cc': '/public/js/blocks/checkout-blocks-cc.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'build/js' ),
@@ -39,9 +41,6 @@ module.exports = {
 			(plugin) =>
 				plugin.constructor.name !== 'DependencyExtractionWebpackPlugin'
 		),
-		new WooCommerceDependencyExtractionWebpackPlugin({
-			requestToExternal,
-			requestToHandle
-		})
+		new WooCommerceDependencyExtractionWebpackPlugin()
 	]
 };

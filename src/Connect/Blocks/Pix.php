@@ -3,6 +3,8 @@ namespace RM_PagBank\Connect\Blocks;
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use RM_PagBank\Connect\Standalone\Pix as PixGateway;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
 
 final class Pix extends AbstractPaymentMethodType
 {
@@ -44,10 +46,15 @@ final class Pix extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_script_handles() {
+        if (!$this->gateway) {
+            return [];
+        }
+
+        $scriptPath = 'pagbank-connect/build/js/frontend/pix.js';
 
         wp_register_script(
             'rm-pagbank-pix-blocks-integration',
-            plugins_url( 'pagbank-connect/public/js/blocks/checkout-blocks-pix-test.js' ),
+            plugins_url( $scriptPath ),
             [
                 'wc-blocks-registry',
                 'wc-settings',
@@ -60,11 +67,9 @@ final class Pix extends AbstractPaymentMethodType
         );
         if( function_exists( 'wp_set_script_translations' ) ) {
             wp_set_script_translations( 'rm-pagbank-pix-blocks-integration');
-
         }
 
         return ['rm-pagbank-pix-blocks-integration'];
-
     }
 
     /**
@@ -76,7 +81,12 @@ final class Pix extends AbstractPaymentMethodType
         return array(
             'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pix via PagBank',
             'description'  => $this->get_setting( 'description' ),
-             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] )
+            'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
+            'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'instructions' => $this->gateway->get_option('pix_instructions'),
+            'expirationTime' => Params::convertMinutesToHumanTime((int)$this->gateway->get_option('pix_expiry_minutes')),
+            'hasDiscount' => $this->gateway->get_option('pix_discount'),
+            'discountText' => Params::getDiscountText('pix'),
         );
     }
 }

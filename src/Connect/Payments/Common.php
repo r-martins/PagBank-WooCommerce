@@ -188,6 +188,7 @@ class Common
         $address->setCity(substr($this->order->get_shipping_city('edit'), 0, 60));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
+
         return apply_filters('pagbank_connect_shipping_address', $address, $this->order);
     }
 

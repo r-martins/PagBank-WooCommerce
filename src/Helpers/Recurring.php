@@ -269,6 +269,10 @@ class Recurring
             }
         }
 
+        if (!isset($product)) {
+            return '';
+        }
+
         $msg = sprintf($msgDefault, wc_price($total), $frequency);
 
         $hasTrial = $this->getCartRecurringTrial($cart);
