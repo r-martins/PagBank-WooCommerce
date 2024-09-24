@@ -64,6 +64,20 @@ SVG;
             'rm-pagbank-subscriptions',
             [MenuPagBank::class, 'renderPagbankSubscriptionsListPage']
         );
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            add_submenu_page(
+                'rm-pagbank',
+                __('Logs', 'pagbank-connect'),
+                __('Logs', 'pagbank-connect'),
+                'manage_woocommerce',
+                'rm-pagbank-logs',
+                function () {
+                    wp_safe_redirect(admin_url('admin.php?page=wc-status&tab=logs&source=pagbank-connect'));
+                    exit;
+                }
+            );
+        }
 
         add_submenu_page(
             'rm-pagbank-hidden', // parent_slug doesn't exist, so it doesn't appear in the menu
