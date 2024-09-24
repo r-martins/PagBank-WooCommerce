@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.17.1
+Stable tag: 4.18.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -170,6 +170,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.18.0 =
+* Correção/Melhoria: em algumas situações onde um erro acontecia no retorno do PagBank no backend, o pedido era finalizado com sucesso. Isso fazia com que pedidos com PIX e Boleto fossem gerados sem QrCode ou QrCode Inválido. O mesmo ocorria em pedidos trial em recorrência e em outros cenários. Agora começamos a tratar os erros e exibi-los para o cliente de forma amigável.
+* Adicionado link para os Logs no menu PagBank (quando em DEBUG mode).
 
 = 4.17.1 =
 * Correção: em alguns cenários onde o ícone dinamico não era acessível, a validacao interna falhava dizendo que era acessivel, fazendo com que o ícone dos pagamentos permanecesse quebrado (imagem invalida).
