@@ -38,10 +38,7 @@ class Exception extends \Exception
         foreach ($error_messages as $error) {
             $original_error_messages[] = ($error['code'] ?? '').' - '.($error['description'] ?? '' ).' ('.($error['parameter_name'] ?? '')
                 .')';
-            $msg = isset($error['code']) ? $error['code'] . ' - ' : '';
-            $msg .= $this->errors[$error['code']] ?? 'Erro desconhecido';
-            $friendlyParamName = $this->getFriendlyParameterName($error['parameter_name'] ?? '');
-            $msg .= isset($error['parameter_name']) ? ' (' . $friendlyParamName . ')' : '';
+            $msg = $this->errors[$error['code']] ? $this->getFriendlyMsgWithErrorCode($error) : $this->getFriendlyMessageWithoutErrorCode($error);
             $message[] = $msg;
         }
 
@@ -58,28 +55,140 @@ class Exception extends \Exception
      */
     public function getFriendlyParameterName(string $parameterName): string
     {
-        switch ($parameterName){
-            case 'customer.tax_id':
-                return $parameterName . ' - ' . esc_html( __('CPF/CNPJ', 'pagbank-connect') );
-            case 'charges[0].payment_method.boleto.due_date':
-                return $parameterName . ' - ' . esc_html( __('Data de vencimento do boleto', 'pagbank-connect') );
-            case strpos($parameterName, 'locality') !== false:
-                return $parameterName . ' - ' .esc_html(  __('Bairro', 'pagbank-connect') );
-            case strpos($parameterName, 'address.number') !== false:
-                return $parameterName . ' - ' . esc_html( __('Número do Endereço', 'pagbank-connect') );
-            case strpos($parameterName, 'address.city') !== false:
-                return $parameterName . ' - ' . esc_html( __('Cidade do Endereço', 'pagbank-connect') );
-            case strpos($parameterName, 'address.region') !== false:
-                return $parameterName . ' - ' . esc_html( __('Estado do Endereço', 'pagbank-connect') );
-            case 'charges[0].payment_method.authentication_method.id':
-                return 'authentication_method.id - ' . esc_html( __('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect') );
-            case 'customer.name':
-                return esc_html( __('Nome do Cliente', 'pagbank-connect') );
-            case 'customer.email':
-                return esc_html( __('E-mail do Cliente', 'pagbank-connect') );
+        if ($parameterName === 'customer.tax_id') {
+            return $parameterName . ' - ' . esc_html(__('CPF/CNPJ', 'pagbank-connect'));
+        } elseif ($parameterName === 'charges[0].payment_method.boleto.due_date') {
+            return $parameterName . ' - ' . esc_html(__('Data de vencimento do boleto', 'pagbank-connect'));
+        } elseif (strpos($parameterName, 'locality') !== false) {
+            return $parameterName . ' - ' . esc_html(__('Bairro', 'pagbank-connect'));
+        } elseif (strpos($parameterName, 'address.number') !== false) {
+            return $parameterName . ' - ' . esc_html(__('Número do Endereço', 'pagbank-connect'));
+        } elseif (strpos($parameterName, 'address.city') !== false) {
+            return $parameterName . ' - ' . esc_html(__('Cidade do Endereço', 'pagbank-connect'));
+        } elseif (strpos($parameterName, 'address.region') !== false) {
+            return $parameterName . ' - ' . esc_html(__('Estado do Endereço', 'pagbank-connect'));
+        } elseif ($parameterName === 'charges[0].payment_method.authentication_method.id') {
+            return esc_html(__('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect'));
+        } elseif ($parameterName === 'charges[0].payment_method.card.encrypted') {
+            return esc_html(__('Criptografia do cartão', 'pagbank-connect'));
+        } elseif ($parameterName === 'customer.name') {
+            return esc_html(__('Nome do Cliente', 'pagbank-connect'));
+        } elseif ($parameterName === 'customer.phones[0].number') {
+            return esc_html(__('Telefone', 'pagbank-connect'));
+        } elseif ($parameterName === 'customer.email') {
+            return esc_html(__('E-mail do Cliente', 'pagbank-connect'));
         }
         
         return $parameterName;
+    }
+
+
+    /**
+     * Get friendly msg when error code is available
+     * @param $error
+     *
+     * @return string|void
+     */
+    public function getFriendlyMsgWithErrorCode($error)
+    {
+        if (isset($this->errors[$error['code']])) {
+            $friendlyParamName = $this->getFriendlyParameterName($error['parameter_name'] ?? '');
+            $parameterName = isset($error['parameter_name']) ? 
+                __(' Parâmetro: ', 'pagbank-connect') . $error['parameter_name'] : '';
+            $friendlyParam = isset($error['parameter_name']) ? ' (' . $friendlyParamName . ')' : '';
+            $msg = $this->getFriendlyMsg($error);
+            return $error['code'] . ' - ' . $msg . $parameterName . $friendlyParam;
+        }
+    }
+    public function getFriendlyMessageWithoutErrorCode($error)
+    {
+        switch ($error['message']) {
+            case 'CARD_CANNOT_BE_STORED':
+                return __(
+                    'Cartão não pode ser armazenado. Tente novamente com outro cartão ou verifique se as informações '
+                    .'digitadas estão corretas.',
+                    'pagbank-connect'
+                );
+                break;
+            case 'encrypted_is_invalid':
+                return __(
+                    'Cripografia do cartão inválida. Tente novamente com outro cartão ou verifique se as informações '
+                    .'digitadas estão corretas.',
+                    'pagbank-connect'
+                );
+                break;
+            default:
+                return $error['message'] ?? 'Erro desconhecido.';
+        }    
+    }
+    
+    public function getFriendlyMsg($error)
+    {
+        if(isset($error['description'])){
+            switch ($error['description']) {
+                case 'CARD_CANNOT_BE_STORED':
+                    return __(
+                        'Cartão não pode ser armazenado. Tente novamente com outro cartão ou verifique se as informações '
+                        .'digitadas estão corretas.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'buyer email must not be equals to merchant email':
+                    return __(
+                        'O e-mail do comprador não pode ser igual ao e-mail do lojista.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'must not be blank':
+                    return __(
+                        'Valor obrigatório.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'invalid_parameter':
+                    return __(
+                        'Valor inválido.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'must be a valid region code by ISO 3166-2:BR':
+                    return __(
+                        'Valor de estado inválido.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'must not contains any of the characters [!, @, #, $, %, ¨, *, (, ), ", ”, \, |, {, }, [, ], <, >, ;]':
+                    return __(
+                        'Valor não pode conter caracteres especiais.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'must be a valid CPF or CNPJ':
+                    return __(
+                        'CPF ou CNPJ inválido.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'Parameter value has an invalid value, see documentation.':
+                    return __(
+                        'Valor inválido. Veja documentação.',
+                        'pagbank-connect'
+                    );
+                    break;
+                case 'must be between 10000000 and 999999999':
+                    return __(
+                        'Valor deve estar entre 10000000 e 999999999.',
+                        'pagbank-connect'
+                    );
+                    break;
+                default:
+                    return $this->errors[$error['code']] ?? $error['description'];
+            }
+            return __(
+                'Erro desconhecido.',
+                'pagbank-connect'
+            );
+        }
     }
 
 }

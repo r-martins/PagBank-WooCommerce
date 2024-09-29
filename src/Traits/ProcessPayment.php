@@ -189,6 +189,7 @@ trait ProcessPayment
 
     /**
      * @throws WC_Data_Exception
+     * @throws Exception
      */
     public function makeRequest(WC_Order $order, $params, $method)
     {
@@ -198,21 +199,13 @@ trait ProcessPayment
         $order->set_payment_method(Connect::DOMAIN);
 
         $endpoint = $method->code == 'credit_card_trial' ? 'ws/tokens/cards' : 'ws/orders';
-        try {
-            $api = new Api();
-            $resp = $api->post($endpoint, $params);
-            if (isset($resp['error_messages'])) {
-                throw new Exception($resp['error_messages'], 40000);
-            }
-
-            return $resp;
-        } catch (Exception $e) {
-            wc_add_wp_error_notices(new WP_Error('api_error', $e->getMessage()));
-            return array(
-                'result' => 'fail',
-                'redirect' => '',
-            );
+        $api = new Api();
+        $resp = $api->post($endpoint, $params);
+        if (isset($resp['error_messages'])) {
+            throw new Exception($resp['error_messages'], 40000);
         }
+
+        return $resp;
     }
 
     /**

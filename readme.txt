@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.17.0
+Stable tag: 4.18.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -170,6 +170,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.18.0 =
+* Correção/Melhoria: em algumas situações onde um erro acontecia no retorno do PagBank no backend, o pedido era finalizado com sucesso. Isso fazia com que pedidos com PIX e Boleto fossem gerados sem QrCode ou QrCode Inválido. O mesmo ocorria em pedidos trial em recorrência e em outros cenários. Agora começamos a tratar os erros e exibi-los para o cliente de forma amigável.
+* Adicionado link para os Logs no menu PagBank (quando em DEBUG mode).
+
+= 4.17.1 =
+* Correção: em alguns cenários onde o ícone dinamico não era acessível, a validacao interna falhava dizendo que era acessivel, fazendo com que o ícone dos pagamentos permanecesse quebrado (imagem invalida).
 
 == 4.17.0 ==
 * Melhoria: Se por algum motivo os ícones com cores personalizadas não puderem ser exibidos (ex: plugin de segurança afetando funcionamento), usaremos a imagem estática e exibiremos um aviso no admin ao salvar as configs do pagbank.
@@ -245,107 +251,6 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 * Correção/Mudança: agora pessoas com permissão de gerente de loja e administradores poderão ter acesso ao menu PagBank. Antes somente administradores tinham acesso.
 * Agora é possível usar o shortcode [rm_pagbank_credit_card_installments] para exibir as parcelas de um produto em layouts personalizados.
 * Corrigido Erro na exibição das parcelas quando opção 'Texto com parcela máxima' era selecionado em alguns cenários.
-
-
-= 4.9.3 =
-* Correção: quando usado em conjunto com alguns plugins, chamadas ao jQuery falhavam e impediam a finalização do checkout com erros na criptografia do cartão, entre outras coisas.
-* Correção: quando linhas em branco eram inseridas pelo wp-load ou um de seus arquivos/plugins, a imagem dinâmica dos ícones das formas de pagamento não eram exibidas corretamente.
-* Correção: ao desativar o plugin um modal de feedback é exibido. No entanto, se a pessoa mudasse de ideia e clicasse em Cancelar, nada acontecia.
-
-= 4.9.2 =
-* Correção: ícones muito grandes em alguns temas
-* Correção: ao clicar em "Configurar" na lista de pagamentos (ao invés de ir em PagBank > Configurações) nenhuma alteração feita era salva.
-
-= 4.9.1 =
-* Correção: quando exibir meios de pagamento de forma separada estava ativada, os meios de pagamento apareciam mesmo quando desativados.
-
-= 4.9.0 =
-* Agora é possível exibir os meios de pagamento de forma individual (ideal para caso você aceite outros meios de pagamento além do PagBank)
-* Agora quando um carrinho for recorrente (contiver produtos recorrentes PagBank), somente os meios PagBank suportados serão exibidos. 
-
-= 4.8.0 =
-* Agora é possível exibir informações de parcelamento na página do produto em 3 formatos diferentes
-
-= 4.7.2 =
-* Melhoria: agora ao desativar o plugin damos a opção de você adicionar um comentário com mais detalhes sobre o motivo da desativação.
-* Melhoria: agora exibimos um aviso no admin caso o checkout em blocos esteja em uso.
-
-= 4.7.1 =
-* Melhorias gerais no JavaScript do plugin
-* Melhoria: adicionado métodos de criptografia no Helper do plugin. Por enquanto usado somente em um caso específico na página de pagamento avulso (order-pay).
-* Correção: cálculo de parcelas poderia falhar em alguns cenários quando usado em modo Sandbox, exibindo uma opção com mensagem "undefined...".
-* Correção: ao fazer um pedido com pix ou boleto e navegar até a área de meus pedidos, o cliente pode clicar em Pagar e escolher outro meio de pagamento. No entanto, pagamento com cartão e 3Ds não funcionava nesta página. Refizemos algumas coisas para tornar isso possível. Isso também traz compatibilidade a plugins de autorização de pedido (como Order Approval for Woocommerce). Reportado por Tiago da Tikovolpe.
-* Melhoria: instalação via composer agora sugere que habilite extensão openssl do PHP, a fim de ter melhor criptografia. No momento a criptografia só é usada para o número do pedido, na página de pagamento avulso (/order-pay).
-* Melhorias: code standards
-
-= 4.7.0 =
-* Melhoria: cliente passa a receber e-mail informando que o pedido foi cancelado automaticamente após expiração do PIX. Sugerido por Fellipe (The Growth Space). 
-* Melhoria: agora é possível excluir o valor frete ao dar desconto em boleto e pix, aplicando o desconto somente aos produtos. Sugerido por Fabio (Kaizen Digital). 
-
-= 4.6.3 =
-* Melhoria/Correção: quando determinada configuracao do php era realizada, os ícones dos meios de pagamento não eram exibidos. Reportado por Daniel Carvalho.
-
-= 4.6.2 =
-* Adicionado suporte ao WooCommerce 6.5
-* Adicionado dependencia do plugin Brazilian Market on WooCommerce, evitando erros de campos obrigatórios em algumas lojas
-* Pequenas melhorias de segurança (wp standards compliance)
-
-= 4.6.1 =
-* Correção: quando o cliente digitava um cartão inválido ou incompleto e tentava finalizar o pedido, ocasionando falha na criptografia do cartão, o pedido ainda era submetido para o backend e gerando outros erros desnecessários, especialmente se outros campos também estivessem errados ou faltando. O mais clássico era o erro 40002 de encrypted_card.id incorreto.
-* Correção: ao desativar e ativar novamente o plugin, um erro de SQL era gerado internamente devido a um bug no WordPress e uma mensagem de que o plugin teria gerado cerca de 1400 caracteres de saída inesperada durante a ativação era exibida no backend.
-
-= 4.6.0 =
-* Pedidos PIX agora são cancelados automaticamente após periodo de expiração se não forem pagos
-* Em alguns checkouts com plugins personalizados (ex: cartflows) o CSS de nosso plugin não era inserido corretamente, ocasionando quebra de layout e ignorando as cores dos ícones configuradas.
-* Ao desativar nosso plugin, agora exibimos uma pergunta sobre o motivo da desativação, para que possamos melhorar o plugin.
-
-= 4.5.0 =
-* Adicionado suporte a HPOS (High-Performance Order Storage) para ambientes com este recurso ativado.
-* Correção de problemas relacionados aos campos de endereço quando HPOS está ativo.
-* Correção em erro 40002 quando o campo complemento de endereço não foi preenchido
-
-= 4.4.4 =
-* Correção: em alguns cenários, quando havia algum erro e o cliente tentava finalizar um pedido com cartão novamente, um erro 40002 em payment_method.card.encrypted era exibido
-* Melhoria em mensagem específica de erro quando o e-mail do cliente está incorreto
-
-
-= 4.4.3 =
-* Correção: ao tentar pagar um pedido novamente descontos de PIX ou Boleto eram re-aplicados. Reportado por Fabio (Kaizen digital) e Igor Onofri.
-
-= 4.4.2 =
-* Correção: ao tentar finalizar pagamentos com Boleto usando CNPJ um erro 40002 era exibido. Reportado por Patrick (ctec).
-
-= 4.4.1 =
-* Melhoria: Quando o usuário começava a digitar um cartão, o sistema detectava a bandeira como Visa, mesmo que não fosse um cartão deste tipo. Só após o sexto dígito é que a bandeira correta era identificada. Reportado por Lucas Melo.
-* Correção: Logo PagBank aparecia muito pequeno em dispositivos móveis. Reportado por Jhonny Robson
-* Correção: o campo de Adicionar X dias à estimativa de frete trazia o cep da loja como placeholder. (oops) Embora pudesse causar certa confusão, o valor não era somado (indevidamente) à estimativa.
-* Correção: em alguns cenários de compra de Produtos Virtuais, atributos de endereço de cobrança não eram repassados corretamente para o endereço de envio, ocasionando erro na finalização de compra (Bairro, Numero, etc). Reportado por Marcio Gazetta.
-
-= 4.4.0 =
-* Agora é possível adicionar X dias ao cálculo de frete (Envio Fácil) 
-* Agora é possível ajustar o preço do frete de forma fixa ou percentual, como desconto ou acréscimo (Envio Fácil)
-* Redução de requisições ajax no checkout com 3d
-* Melhoria para contornar erro de credit_car_bin not found quando estamos testando em Sandbox (já que o PagBank não atualiza os cartões de teste).
-* Pequenos ajustes estéticos de código e espaçamentos, e conformidade com padrões do PCP.
-* Melhorias de segurança.
-* Correção de erro em payment_method.authentication_method.id invalid_parameter quando alguns pagamentos em 3D com parcelamento maior que 1 parcela era finalizado.
-* Corrige problema com exibição de validade do código pix quando era maior que 60 minutos e menos que 1 dia. Nesses cenários a validade do Pix não era informada ao cliente no frontend.
-* Corrigindo erro Call to undefined function wp_add_notice em alguns cenários no admin.
-* Melhoria em mensagens de erro de e-mail inválido, nome do titular do cartão inválido e cartão criptografado com problema.
-
-= 4.3.1 =
-* Correção em erro grave que eliminava CSS de várias páginas causando quebras de layout em vários cenários, mesmo onde o plugin não era inserido (Reportado por William T. e outros). O problema foi introduzido na versão 4.3.0.
-* Ajustes no CSS de configuracao de cor dos icones, logo e afins
-* Agora é possível escolher a cor dos ícones via admin
-* Corrigido css que fazia o nome ou logo do PagBank aparecerem abaixo do radio button
-* Em algumas situações, era provável que uma autenticação 3D fosse rejeitada ocorrendo erro 'authentication_method.id' invalido. É provável que isso ocorresse quando um consumidor esperasse mais de 11 minutos para preencher e concluir os dados do checkout, e somente quando um outro cliente chegou ao checkout há menos de 20 minutos mas não concluiu uma compra (Reportado por William T.). Também melhoramos a mensagem de erro nestes casos, recomendando atualização de página.
-* Melhoria na forma como os ícones são inseridos para possibilitar personalização via css (não usarmos mais <img..)
-* Correção em aviso de depreciação do jQuery .change (embora isso não afetava o funcionamento do plugin)
-* Ao invés de mostrar JOSÉ DA SILVA como placeholder do campo de titular de cartão, agora exibimos "como gravado no cartão", e o nome sempre será em caixa alta
-* Ícones de pagamento podem ter ficado maior em alguns checkouts. Instruções para personalização foram adicionados ao admin.
-
-= 4.3.0 =
-* Adicionado suporte a venda recorrente (clube de assinatura) sem depender de outros plugins
 
 == Upgrade Notice ==
 Ao atualizar nosso plugin, você se protege contra falhas de funcionamento e segurança e aumenta suas chances de conversão no momento mais importante do ciclo de vendas.
