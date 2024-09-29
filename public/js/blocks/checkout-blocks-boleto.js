@@ -6,9 +6,10 @@ import { __, _n } from '@wordpress/i18n';
 
 import PaymentInstructions from './components/PaymentInstructions';
 import PaymentUnavailable from './components/PaymentUnavailable';
+import CustomerDocumentField from './components/CustomerDocumentField';
 
 const settings = getSetting('rm-pagbank-boleto_data', {});
-const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'Boleto Gateway', 'rm-pagbank-pix' );
+const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Boleto', 'rm-pagbank-pix' );
 
 /**
  * Label component
@@ -23,7 +24,7 @@ const Label = ( props ) => {
 /**
  * Content component
  */
-const Content = () => {
+const Content = ( props ) => {
     let instructions = settings.instructions;
     let expiry = settings.expirationTime;
     let expiryText = expiry === 1 ? __('Seu boleto vencerá amanhã.', 'rm-pagbank') : sprintf( __( 'Seu boleto vence em %d dias.', 'rm-pagbank' ), expiry );
@@ -39,12 +40,34 @@ const Content = () => {
         );
     }
 
+    const { eventRegistration, emitResponse } = props;
+    const { onPaymentSetup, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
+
+    useEffect( () => {
+        const unsubscribe = onPaymentSetup(() => {
+            const customerDocumentValue = document.getElementById('rm-pagbank-customer-document').value;
+            return {
+                type: emitResponse.responseTypes.SUCCESS,
+                meta: {
+                    paymentMethodData: {
+                        'rm-pagbank-customer-document': customerDocumentValue.replace(/\D/g, ''),
+                    },
+                },
+            };
+        } );
+
+        return () => {
+            unsubscribe();
+        };
+    }, [onPaymentSetup] );
+
     return (
         <div className="rm-pagbank-boleto">
             <PaymentInstructions
                 checkoutClass={'boleto'}
                 instructions={instructions}
             />
+            <CustomerDocumentField />
             <input type="hidden" name="ps_connect_method" value="boleto"/>
         </div>
     );

@@ -236,6 +236,7 @@ class Recurring
     public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
     {
         if (!$cart) $cart = WC()->cart;
+        if (!$cart) return '';
         $msgDefault = __('O valor de %s será cobrado %s.', 'pagbank-connect');
         $total = $cart->get_total('edit');
         $frequency = __('mensalmente', 'pagbank-connect');

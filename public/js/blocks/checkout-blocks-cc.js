@@ -4,7 +4,7 @@ import { useEffect } from '@wordpress/element';
 import { decodeEntities } from '@wordpress/html-entities';
 
 import PaymentUnavailable from './components/PaymentUnavailable';
-import PaymentInstructions from "./components/PaymentInstructions";
+import CreditCardForm from "./components/CreditCardForm";
 
 const settings = getSetting('rm-pagbank-cc_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'Cartão de Crédito Gateway', 'rm-pagbank-pix' );
@@ -33,7 +33,7 @@ const Content = () => {
 
     return (
         <div className="rm-pagbank-cc">
-            <p>TESTE</p>
+            <CreditCardForm fields={settings.formFields} />
             <input type="hidden" name="ps_connect_method" value="cc"/>
         </div>
     );
