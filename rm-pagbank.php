@@ -14,7 +14,7 @@
  * Requires at least: 5.2
  * Tested up to:      6.6
  * Requires PHP:      7.4
- * Author:            PagSeguro/PagBank Integrações (Ricardo Martins)
+ * Author:            PagBank Integrações (Ricardo Martins)
  * Author URI:        https://magenteiro.com
  * License:           GPL-3.0
  * License URI:       https://opensource.org/license/gpl-3/
@@ -43,7 +43,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 add_action('init', [Connect::class, 'init']);
 add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoints']);
-add_action('plugins_loaded', [Connect::class, 'loadTextDomain']);
+add_action('after_setup_theme', [Connect::class, 'loadTextDomain']);
 
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
