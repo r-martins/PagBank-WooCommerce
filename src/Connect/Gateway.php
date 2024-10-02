@@ -92,6 +92,9 @@ class Gateway extends WC_Payment_Gateway_CC
         
         return $recurring_enabled ? 'yes' : 'no';
     }
+    
+    
+    
 	/**
 	 * Validates the inputed connect key and save additional information like public key and sandbox mode
 	 *
