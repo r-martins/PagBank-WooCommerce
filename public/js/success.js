@@ -3,7 +3,11 @@ jQuery(document).ready(function($) {
     jQuery('.copy-btn').click(function() {
         var copyText = jQuery('.pix-code').val();
         copyToClipboard(copyText, function(){
-            jQuery('.copied').fadeIn(500).delay(3000).fadeOut(500);
+            var originalText = jQuery('.copy-btn').text();
+            jQuery('.copy-btn').text('Copiado!');
+            setTimeout(function() {
+                jQuery('.copy-btn').text(originalText);
+            }, 2000);
         });
     });
 });

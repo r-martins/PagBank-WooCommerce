@@ -12,11 +12,7 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     display: flex;
     margin-bottom: 30px;
 }
-.copy-btn{
-    width: 2rem;
-	height: 2rem;
-    cursor: pointer;
-}
+
 
 .code-container .copied{
     display: none;
