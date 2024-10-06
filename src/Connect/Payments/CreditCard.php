@@ -396,43 +396,54 @@ class CreditCard extends Common
      * Function to delete the installment transients if the configuration has changed
      * @return void
      */
-    public static function deleteInstallmentsTransientIfConfigHasChanged()
+    public static function deleteInstallmentsTransientIfConfigHasChanged($option_name, $old_value, $value)
     {
-        $ccInstallmentProductPage = Params::getCcConfig('cc_installment_product_page');
+        if (strpos($option_name, 'rm-pagbank-cc_settings') === false) {
+            return;
+        }
+        
+        $isDisablingInstallmentsOnPdpNow = (isset($old_value['cc_installment_product_page']) && $old_value['cc_installment_product_page'] === 'yes')
+            && (isset($value['cc_installment_product_page']) && $value['cc_installment_product_page'] === 'no');
 
-        $cc_installment_options = Params::getCcConfig('cc_installment_options');
-        $cc_installment_options_fixed = Params::getCcConfig('cc_installment_options_fixed');
-        $cc_installments_options_min_total = Params::getCcConfig('cc_installments_options_min_total');
-        $cc_installments_options_limit_installments = Params::getCcConfig('cc_installments_options_limit_installments');
-        $cc_installments_options_max_installments = Params::getCcConfig('cc_installments_options_max_installments');
-
-        $installment_options = array(
-            'installments' => $cc_installment_options,
-            'installments_fixed' => $cc_installment_options_fixed,
-            'min_total' => $cc_installments_options_min_total,
-            'limit_installments' => $cc_installments_options_limit_installments,
-            'max_installments' => $cc_installments_options_max_installments
-        );
-
-        $installment_options = json_encode($installment_options);
-
-        if ($ccInstallmentProductPage === 'no'
-            || $installment_options !== get_transient(
-                'pagbank_product_installment_options'
-            )) {
-            $product_ids = wc_get_products(array(
-                'status' => 'publish',
-                'limit' => -1,
-                'return' => 'ids',
-            ));
-
-            foreach ($product_ids as $product_id) {
-                delete_transient('rm_pagbank_product_installment_info_' . $product_id);
-                delete_transient('wc_related_' . $product_id);
-                delete_transient('timeout_wc_related_' . $product_id);
+        $optionsToCheck = [
+            'cc_installment_options',
+            'cc_installment_options_fixed',
+            'cc_installments_options_min_total',
+            'cc_installments_options_limit_installments',
+            'cc_installments_options_max_installments'
+        ];
+        $optionsChanged = false;
+        foreach ($optionsToCheck as $option) {
+            if (isset($old_value[$option]) && isset($value[$option]) && $old_value[$option] !== $value[$option]) {
+                $optionsChanged = true;
+                break;
             }
         }
+        if ($isDisablingInstallmentsOnPdpNow || $optionsChanged) {
+            
+            global $wpdb;
 
+            // Delete transients in bulk
+            $transient_prefix = '_transient_rm_pagbank_product_installment_info_';
+            $transient_timeout_prefix = '_transient_timeout_rm_pagbank_product_installment_info_';
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+                    $wpdb->esc_like($transient_prefix) . '%',
+                    $wpdb->esc_like($transient_timeout_prefix) . '%',
+                )
+            );
+
+        }
+
+        $installment_options = array(
+            'installments' => $value['cc_installment_options'] ?? '',
+            'installments_fixed' => $value['cc_installment_options_fixed'] ?? '',
+            'min_total' => $value['cc_installments_options_min_total'] ?? '',
+            'limit_installments' => $value['cc_installments_options_limit_installments'] ?? '',
+            'max_installments' => $value['cc_installments_options_max_installments'] ?? '',
+        );
+        
         set_transient('pagbank_product_installment_options', $installment_options, YEAR_IN_SECONDS);
     }
 }

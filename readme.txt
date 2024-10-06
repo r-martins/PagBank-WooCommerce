@@ -1,11 +1,11 @@
-=== PagSeguro / PagBank Connect para WooCommerce ===
+=== PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
 Tags: pagseguro, pagbank, pix, cartão de crédito, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.18.0
+Stable tag: 4.18.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -18,13 +18,13 @@ Autenticação 3D: menos chargeback e mais aprovações.
 Esta é a **forma mais fácil e gratuita de integrar sua loja com PagBank (PagSeguro)**.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
-⭐️Agora com taxas ainda menores (à partir de Agosto), válidas para lojas antigas e novas.⭐️
+⭐️Agora com taxas ainda menores (desde Agosto), válidas para lojas antigas e novas.⭐️
 
-Ou seja, você já economizava nas taxas do PagBank ao usar nosso plugin, e agora vai economizar ainda mais.
+Economize nas tarifas oficiais do PagBank. Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação. [Veja tabela completa](https://pbintegracoes.com/compare/).
 
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
-Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2015**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
+Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
 Além disso, você também pode aceitar pagamentos recorrentes e criar clubes de assinatura sem depender de plugins de terceiros.
 
@@ -39,7 +39,7 @@ Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocup
 
 
 * Termos de uso e softwares terceiros
-Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html) do desenvolvedor.
+Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/) do desenvolvedor.
 
 == ⚡️ RECURSOS ==
 * Suporte a PIX, Cartão de Crédito e Boleto
@@ -80,7 +80,7 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 === A gente instala pra você 🙀 ===
 Se você preferir, podemos instalar e configurar o plugin para você sem nenhum custo.
 
-[Saiba mais](https://pagseguro.ricardomartins.net.br/woocommerce/agenteinstala.html). 
+[Saiba mais](https://pbintegracoes.com/woocommerce/agenteinstala/). 
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -104,16 +104,16 @@ E não se preocupe, os serviços que você usa não serão afetados.
 * Ter WooCommerce 4.0 ou superior
 * PHP 7.4 ou superior
 * Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank
-* [Autorizar nossa integração](https://pagseguro.ricardomartins.net.br/connect/autorizar.html) em sua conta PagBank.
+* [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/) em sua conta PagBank.
 * Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 = Como funcionam os descontos nas taxas? =
 
-Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará até 1% a menos e estará isento da taxa de R$0,40 por transação.
+Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará 3,97% ou 3,05% e estará isento da taxa de R$0,40 por transação.
 
 Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
-Consulte mais sobre elas no [nosso site](https://pagseguro.ricardomartins.net.br/connect/autorizar.html).
+Consulte mais sobre elas no [nosso site](https://pbintegracoes.com/compare/).
 
 = Eu tenho uma taxa ou condição negociada menor que estas. O que faço? =
 
@@ -123,9 +123,13 @@ Ao usar nossa integração, nossas taxas e condições serão aplicadas ao invé
 
 Se mesmo assim você possuir uma taxa ou condição melhor, e se compromete a faturar mais de R$20 mil / mês (pedidos aprovados usando nossa integração), podemos incluir sua loja em uma aplicação especial.
 
-Ao [autorizar sua conta](https://pagseguro.ricardomartins.net.br/connect/autorizar.html), escolha a opção "Suas condições e taxas".
+Ao [autorizar sua conta](https://pbintegracoes.com/connect/autorizar/), escolha a opção "Suas condições e taxas".
 
 Sua Connect key será gerada respeitando as taxas e condições negociadas que você tem com o PagSeguro/PagBank.
+
+= Estou tendo muitas transações negadas. O que fazer? =
+
+Consulte [este artigo](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/360027712431) e entre em contato conosco se o problema persistir.
 
 = Tenho outra pergunta não listada aqui =
 
@@ -170,6 +174,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.18.1 =
+* Performance: um problema na forma como lidávamos com as configurações e cache do parcelamento na página de produto afetavam significativamente a performance da loja em várias páginas, mesmo que o recurso estivesse desabilitado. Mudamos totalmente a forma como limpávamos o cache (que afetava lojas com muitos produtos) quando uma configuração de parcelamento era realizada e a quantidade de vezes que isso era feito
+* Correção: Chamar o load_text_domain no plugins_loaded ficou depreciado e warnings passarão a ser exibidos.
+
 = 4.18.0 =
 * Correção/Melhoria: em algumas situações onde um erro acontecia no retorno do PagBank no backend, o pedido era finalizado com sucesso. Isso fazia com que pedidos com PIX e Boleto fossem gerados sem QrCode ou QrCode Inválido. O mesmo ocorria em pedidos trial em recorrência e em outros cenários. Agora começamos a tratar os erros e exibi-los para o cliente de forma amigável.
 * Adicionado link para os Logs no menu PagBank (quando em DEBUG mode).
