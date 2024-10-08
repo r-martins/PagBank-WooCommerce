@@ -4,8 +4,10 @@ namespace RM_PagBank\Helpers;
 
 use Exception;
 use RM_PagBank\Connect;
+use RM_PagBank\Object\Amount;
 use WC_Order;
 use WC_Payment_Gateways;
+use WP_Error;
 
 /**
  * Class Api
@@ -260,5 +262,46 @@ class Api
             }
         }
         return $total;
+    }
+    
+    public static function refund($orderId, $amount = null)
+    {
+        $order = wc_get_order( $orderId );
+        if (!$order) {
+            return new WP_Error( 'error', __('Pedido não encontrado para reembolso.', 'pagbank_connect' ));
+        }
+
+        $charge = $order->get_meta('pagbank_charge_id');
+
+        $amountObj = new Amount();
+        $amountObj->setValue(Params::convertToCents($amount));
+        $helper = new Api();
+        try {
+            $response = $helper->post('ws/charges/'.$charge.'/cancel', ['amount' => $amountObj]);
+        } catch (Exception $e) {
+            return new WP_Error(
+                'error',
+                __('Erro ao solicitar reembolso via PagBank. Tente novamente mais tarde.', 'pagbank-connect')
+                . ' ' . $e->getMessage()
+            );
+        }
+
+        if(isset($response['amount']['summary'])) {
+            $order->add_order_note(
+                sprintf(
+                    __('PagBank: Reembolso de %s solicitado com sucesso. Total: %s / Pago: %s / Reembolsado: %s', 'pagbank_connect'),
+                    wc_price($amount),
+                    wc_price($response['amount']['summary']['total']/100, ['currency' => 'BRL']),
+                    wc_price($response['amount']['summary']['paid']/100, ['currency' => 'BRL']),
+                    wc_price($response['amount']['summary']['refunded']/100, ['currency' => 'BRL']),
+                )
+            );
+            return true;
+        }
+
+        return new WP_Error(
+            'error',
+            __('Reembolso via PagBank pode ter falhado. Veja transação no PagBank.', 'pagbank-connect')
+        );
     }
 }
