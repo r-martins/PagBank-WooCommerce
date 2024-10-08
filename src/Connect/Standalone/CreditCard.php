@@ -5,6 +5,7 @@ use RM_PagBank\Connect;
 use RM_PagBank\Connect\Payments\CreditCardTrial;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
@@ -185,23 +186,32 @@ class CreditCard extends WC_Payment_Gateway_CC
             $payment_method = $payment_method . '_trial';
         }
 
+        $isCheckoutBlocks = Functions::isCheckoutBlocks();
         switch ($payment_method) {
             case 'cc':
+                $installments = $isCheckoutBlocks ?
+                    filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT):
+                    filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT);
                 $order->add_meta_data(
                     'pagbank_card_installments',
-                    filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT),
+                    $installments,
                     true
                 );
+
+                $ccNumber = $isCheckoutBlocks ?
+                    filter_var($_POST['rm-pagbank-card-number'], FILTER_SANITIZE_NUMBER_INT):
+                    filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT);
                 $order->add_meta_data(
                     'pagbank_card_last4',
-                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), -4),
+                    substr($ccNumber, -4),
                     true
                 );
                 $order->add_meta_data(
                     '_pagbank_card_first_digits',
-                    substr(filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT), 0, 6),
+                    substr($ccNumber, 0, 6),
                     true
                 );
+
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
@@ -218,6 +228,21 @@ class CreditCard extends WC_Payment_Gateway_CC
                         ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
                         : false,
                 );
+
+                $order->add_meta_data(
+                    '_rm_pagbank_checkout_blocks',
+                    wc_bool_to_string(isset($_POST['wc-rm-pagbank-cc-new-payment-method'])),
+                    true
+                );
+
+                if(isset($_POST['rm-pagbank-customer-document'])) {
+                    $order->add_meta_data(
+                        '_rm_pagbank_customer_document',
+                        htmlspecialchars($_POST['rm-pagbank-customer-document'], ENT_QUOTES, 'UTF-8'),
+                        true
+                    );
+                }
+
                 $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
                 $params = $method->prepare();
                 break;
@@ -344,7 +369,18 @@ class CreditCard extends WC_Payment_Gateway_CC
             );
         }
 
-        if ( is_checkout() && !is_order_received_page() ) {
+        $alreadyEnqueued = wp_script_is('pagseguro-checkout-sdk');
+        if ( is_checkout() && !is_order_received_page() && !$alreadyEnqueued ) {
+            wp_enqueue_script('pagseguro-checkout-sdk',
+                'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js',
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION,
+                true
+            );
+        }
+
+        $isCheckoutBlocks = Functions::isCheckoutBlocks();
+        if ( is_checkout() && !is_order_received_page() && !$isCheckoutBlocks ) {
             $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
             if (!$alreadyEnqueued) {
                 wp_enqueue_script(
@@ -404,12 +440,6 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'pagseguro-connect-checkout',
                     "const pagseguro_connect_environment = '$environment';",
                     'before'
-                );
-                wp_enqueue_script('pagseguro-checkout-sdk',
-                    'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js',
-                    [],
-                    WC_PAGSEGURO_CONNECT_VERSION,
-                    true
                 );
             }
             self::$addedScripts = true;

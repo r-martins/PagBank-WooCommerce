@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import InputMask from 'react-input-mask';
-
+import { __, _n } from '@wordpress/i18n';
+import MaskedInput from './MaskedInput';
 const CustomerDocumentField = () => {
     const [mask, setMask] = useState('999.999.999-999');
 
@@ -14,19 +14,17 @@ const CustomerDocumentField = () => {
     };
 
     return (
-        <div>
-            <label htmlFor="document">Documento:</label>
-            <InputMask
-                id="rm-pagbank-customer-document"
-                name="rm-pagbank-customer-document"
-                mask={mask}
-                maskChar={null}
-                onKeyDown={handleMask} >
-                {
-                    (inputProps) => <input {...inputProps} type="text" />
-                }
-            </InputMask>
-        </div>
+        <MaskedInput
+            name="rm-pagbank-customer-document"
+            type="text"
+            className="input-text"
+            label={__('CPF/CNPJ', 'rm-pagbank')}
+            placeholder="documento do pagador"
+            mask={mask}
+            maskChar={null}
+            onKeyDown={handleMask}
+            required
+        />
     );
 };
 

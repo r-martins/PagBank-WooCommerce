@@ -40,7 +40,6 @@ const Content = ( props ) => {
         );
     }
 
-    // console.debug('props', props)
     const { eventRegistration, emitResponse } = props;
     const { onPaymentSetup, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
 
@@ -61,29 +60,6 @@ const Content = ( props ) => {
             unsubscribe();
         };
     }, [onPaymentSetup] );
-
-    useEffect( () => {
-        const unsubscribe = onCheckoutSuccess( () => {
-            console.debug('onCheckoutSuccess');
-            // debugger;
-        } );
-
-        return () => {
-            unsubscribe();
-        };
-    }, [onCheckoutSuccess] );
-
-    useEffect( () => {
-        const unsubscribe = onCheckoutFail( () => {
-            console.debug('onCheckoutFail');
-            // debugger;
-        } );
-
-        return () => {
-            unsubscribe();
-        };
-    }, [onCheckoutFail] );
-
 
     return (
         <div className="rm-pagbank-pix">
