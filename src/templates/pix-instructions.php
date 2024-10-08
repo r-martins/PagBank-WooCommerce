@@ -34,7 +34,7 @@ use RM_PagBank\Helpers\Functions;
 </div>
 
 <script type="text/javascript">
-    // get order status in ?wc-api=wc_order_status&order_id=123 every 10 seconds for up to 5 minutes
+    // get order status in ?wc-api=wc_order_status&order_id=123 every 10 seconds for up to 10 minutes
     <?php /** @var int $order_id */?>
     const order_id = '<?php echo $order_id;?>';
     const url = '<?php echo add_query_arg(array('wc-api' => 'wc_order_status', 'order_id' => $order_id),
@@ -51,6 +51,6 @@ use RM_PagBank\Helpers\Functions;
         }, 10000);
         setTimeout(function(){
             clearInterval(interval);
-        }, 60*5*1000);
+        }, 60*10*1000);
     });
 </script>
