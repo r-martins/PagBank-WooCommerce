@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.18.1
+Stable tag: 4.19.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -174,6 +174,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.19.0 =
+* Melhoria: agora exibimos que um pedido foi pago ainda na tela de sucesso se ele for pago nos primeiros 10 minutos.
+* Melhoria: atendendo a pedidos, o ícone de Copiar exibido na tela de sucesso de PIX e Boleto passou a ser um botão ao invés de ícone.
 
 = 4.18.1 =
 * Performance: um problema na forma como lidávamos com as configurações e cache do parcelamento na página de produto afetavam significativamente a performance da loja em várias páginas, mesmo que o recurso estivesse desabilitado. Mudamos totalmente a forma como limpávamos o cache (que afetava lojas com muitos produtos) quando uma configuração de parcelamento era realizada e a quantidade de vezes que isso era feito
