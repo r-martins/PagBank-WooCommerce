@@ -50,6 +50,8 @@ class Connect
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
+        add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
+
 
         // Load plugin files
         self::includes();
@@ -702,6 +704,27 @@ class Connect
         include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 
+
+    /**
+     * Get order status (used for automatically update pix payment on the success page)
+     * @return void
+     */
+    public static function getOrderStatus()
+    {
+        $orderId = $_GET['order_id'] ?? null;
+        if (!$orderId) {
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+        }
+
+        $order = wc_get_order((int)$orderId);
+        if (!$order) {
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+        }
+
+        $status = $order->get_status();
+        wp_send_json_success($status);    
+    }
+    
     private static function addPagBankMenu()
     {
         add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);

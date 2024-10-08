@@ -27,3 +27,30 @@ use RM_PagBank\Helpers\Functions;
     </div>
     <?php endif;?>
 </div>
+
+<div class="pix-payment-confirmed" style="display: none;">
+    <h2><?php _e('Pagamento Confirmado', 'pagbank-connect');?></h2>
+    <p><?php _e('Seu pagamento foi confirmado com sucesso.', 'pagbank-connect');?></p>
+</div>
+
+<script type="text/javascript">
+    // get order status in ?wc-api=wc_order_status&order_id=123 every 10 seconds for up to 5 minutes
+    <?php /** @var int $order_id */?>
+    const order_id = '<?php echo $order_id;?>';
+    const url = '<?php echo add_query_arg(array('wc-api' => 'wc_order_status', 'order_id' => $order_id),
+        home_url('/'));?>';
+    jQuery(document).ready(function($){
+        const interval = setInterval(function () {
+            $.get(url, function (response) {
+                if (response.data === 'processing' || response.data === 'completed') {
+                    clearInterval(interval);
+                    $('.pix-payment').hide();
+                    $('.pix-payment-confirmed').show();
+                }
+            });
+        }, 10000);
+        setTimeout(function(){
+            clearInterval(interval);
+        }, 60*5*1000);
+    });
+</script>
