@@ -285,6 +285,12 @@ jQuery(document).ready(function ($) {
             return true;
         }
 
+        if (selectedInstallments > 1) {
+            let totalAmount = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount;
+            totalAmount = parseInt(parseFloat(totalAmount.toString()).toFixed(2) * 100);
+            cartTotal = totalAmount;
+        }
+
         //region 3ds authentication method
         PagSeguro.setUp({
             session: pagseguro_connect_3d_session,
