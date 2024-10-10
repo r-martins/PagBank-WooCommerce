@@ -2,6 +2,7 @@
 namespace RM_PagBank\Connect\Standalone;
 
 use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Traits\PaymentUnavailable;
@@ -10,6 +11,7 @@ use RM_PagBank\Traits\StaticResources;
 use RM_PagBank\Traits\ThankyouInstructions;
 use WC_Payment_Gateway;
 use WC_Data_Exception;
+use WP_Error;
 
 /** Standalone Pix */
 class Boleto extends WC_Payment_Gateway
@@ -176,5 +178,20 @@ class Boleto extends WC_Payment_Gateway
             $output = ob_get_clean();
             echo $output;
         }
+    }
+
+    /**
+     * Process refund.
+     *
+     * If the gateway declares 'refunds' support, this will allow it to refund.
+     * a passed in amount.
+     *
+     * @param  int        $order_id Order ID.
+     * @param  float|null $amount Refund amount.
+     * @param  string     $reason Refund reason.
+     * @return bool|WP_Error True or false based on success, or a WP_Error object.
+     */
+    public function process_refund( $order_id, $amount = null, $reason = '' ) {
+        return Api::refund($order_id, $amount);
     }
 }
