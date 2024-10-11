@@ -57,7 +57,7 @@ class Pix extends WC_Payment_Gateway
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
-        add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
+        add_action('woocommerce_thankyou_' . Connect::DOMAIN . '-pix', [$this, 'addThankyouInstructions']);
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [$this, 'dismissPixOrderKeysNotice']);
         add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
 
