@@ -8,10 +8,6 @@ if (!defined('ABSPATH')) {
  * @package RM_PagBank/Admin/Settings
  */
 
-use RM_PagBank\Helpers\Functions;
-
-$isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
-
 ?>
 <fieldset name="PagSeguro">
     <div class="pslogo-container">
@@ -23,16 +19,6 @@ $isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
     </div>
     <div class="ps-subtitle">
         <?php echo '<h4>' . esc_html( __('Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).') ) . '</h4>'; ?>
-    </div>
-    <div class="block-checkout-not-supported" style="<?php echo (!$isCheckoutBlocksInUse) ? 'display:none' : ''?>">
-        <h4>
-            🚨<?php
-            esc_html_e('Você parece estar usando o checkout em blocos. O PagBank não será exibido '
-                .'se ele estiver ativo.', 'pagbank-connect');
-            printf(' <a href="%s" target="_blank">Saiba mais</a>.', esc_url('https://pagsegurotransparente.'
-                .'zendesk.com/hc/pt-br/articles/12925708634125#block-checkout'));
-            ?>
-        </h4>
     </div>
     <nav class="nav-tab-wrapper ">
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank' ) ?>#tab-general" class="nav-tab"><?php esc_html_e('Geral', 'pagbank-connect') ?></a>

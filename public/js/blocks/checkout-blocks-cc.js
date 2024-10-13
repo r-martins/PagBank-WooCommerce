@@ -1,8 +1,8 @@
-import { registerPaymentMethod } from '@woocommerce/blocks-registry';
-import { getSetting } from '@woocommerce/settings';
-import { useEffect, useState } from '@wordpress/element';
-import { decodeEntities } from '@wordpress/html-entities';
-import { __, _n } from '@wordpress/i18n';
+import {registerPaymentMethod} from '@woocommerce/blocks-registry';
+import {getSetting} from '@woocommerce/settings';
+import {useEffect} from '@wordpress/element';
+import {decodeEntities} from '@wordpress/html-entities';
+import {__} from '@wordpress/i18n';
 
 import PaymentUnavailable from './components/PaymentUnavailable';
 import CreditCardForm from "./components/CreditCardForm";
@@ -33,15 +33,13 @@ const Content = ( props ) => {
         );
     }
 
-    const { eventRegistration, emitResponse } = props;
+    const { eventRegistration, emitResponse, billing } = props;
     const { onPaymentSetup, onCheckoutBeforeProcessing, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
 
-    let encryptedCard, card3d = null;
+    let canContinue = false;
+    let encryptedCard = null;
+    let card3d = '';
 
-    // console.debug('props', props)
-    // console.debug('eventRegistration', eventRegistration)
-
-    // 4000000000002701
     useEffect( () => {
         const unsubscribe = onPaymentSetup(() => {
             const customerDocumentValue = document.getElementById('rm-pagbank-customer-document').value;
@@ -59,7 +57,7 @@ const Content = ( props ) => {
                         'rm-pagbank-card-installments': installments,
                         'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),
                         'rm-pagbank-card-holder-name': ccHolderName,
-                        // 'rm-pagbank-card-3d': card3d
+                        'rm-pagbank-card-3d': card3d
                     },
                 },
             };
@@ -71,25 +69,78 @@ const Content = ( props ) => {
     }, [onPaymentSetup] );
 
     useEffect( () => {
+        const pagBankParseErrorMessage = function(errorMessage) {
+            const codes = {
+                '40001': 'Parâmetro obrigatório',
+                '40002': 'Parâmetro inválido',
+                '40003': 'Parâmetro desconhecido ou não esperado',
+                '40004': 'Limite de uso da API excedido',
+                '40005': 'Método não permitido',
+            };
+
+            const descriptions = {
+                "must match the regex: ^\\p{L}+['.-]?(?:\\s+\\p{L}+['.-]?)+$": 'parece inválido ou fora do padrão permitido',
+                'cannot be blank': 'não pode estar em branco',
+                'size must be between 8 and 9': 'deve ter entre 8 e 9 caracteres',
+                'must be numeric': 'deve ser numérico',
+                'must be greater than or equal to 100': 'deve ser maior ou igual a 100',
+                'must be between 1 and 24': 'deve ser entre 1 e 24',
+                'only ISO 3166-1 alpha-3 values are accepted': 'deve ser um código ISO 3166-1 alpha-3',
+                'either paymentMethod.card.id or paymentMethod.card.encrypted should be informed': 'deve ser informado o cartão de crédito criptografado ou o id do cartão',
+                'must be an integer number': 'deve ser um número inteiro',
+                'card holder name must contain a first and last name': 'o nome do titular do cartão deve conter um primeiro e último nome',
+                'must be a well-formed email address': 'deve ser um endereço de e-mail válido',
+            };
+
+            const parameters = {
+                'amount.value': 'valor do pedido',
+                'customer.name': 'nome do cliente',
+                'customer.phones[0].number': 'número de telefone do cliente',
+                'customer.phones[0].area': 'DDD do telefone do cliente',
+                'billingAddress.complement': 'complemento/bairro do endereço de cobrança',
+                'paymentMethod.installments': 'parcelas',
+                'billingAddress.country': 'país de cobrança',
+                'paymentMethod.card': 'cartão de crédito',
+                'paymentMethod.card.encrypted': 'cartão de crédito criptografado',
+                'customer.email': 'e-mail',
+            };
+
+            // Get the code, description, and parameterName from the errorMessage object
+            const { code, description, parameterName } = errorMessage;
+
+            // Look up the translations
+            const codeTranslation = codes[code] || code;
+            const descriptionTranslation = descriptions[description] || description;
+            const parameterTranslation = parameters[parameterName] || parameterName;
+
+            // Concatenate the translations into a single string
+            return `${codeTranslation}: ${parameterTranslation} - ${descriptionTranslation}`;
+        }
+
         const encryptCard = function () {
-            let card, cc_number, cc_cvv;
-            //replace trim and remove duplicated spaces from holder name
-            let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
+            let card, holder_name, cc_number, cc_cvv, expMonth, expYear;
+
+            holder_name = document.getElementById('rm-pagbank-card-holder-name').value
+                .trim().replace(/\s+/g, ' ').trim().replace(/\s+/g, ' ');
+            cc_number = document.getElementById('rm-pagbank-card-number').value.replace(/\s/g, '');
+            cc_cvv = document.getElementById('rm-pagbank-card-cvc').value.replace(/\s/g, '');
+            expMonth = document.getElementById('rm-pagbank-card-expiry').value.split('/')[0].replace(/\s/g, '');
+            expYear = document.getElementById('rm-pagbank-card-expiry').value.split('/')[1].replace(/\s/g, '');
+
             try {
-                cc_number = jQuery('#rm-pagbank-card-number').val().replace(/\s/g, '');
-                cc_cvv = jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
                 card = PagSeguro.encryptCard({
                     publicKey: settings.publicKey,
                     holder: holder_name,
                     number: cc_number,
-                    expMonth: jQuery('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                    expYear: '20' + jQuery('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
+                    expMonth: expMonth,
+                    expYear: '20' + expYear,
                     securityCode: cc_cvv,
                 });
             } catch (e) {
                 alert("Erro ao criptografar o cartão.\nVerifique se os dados digitados estão corretos.");
                 return false;
             }
+
             if (card.hasErrors) {
                 let error_codes = [
                     {code: 'INVALID_NUMBER', message: 'Número do cartão inválido'},
@@ -118,22 +169,177 @@ const Content = ( props ) => {
                 }
                 alert('Erro ao criptografar cartão.\n' + error);
                 throw new Error('Erro ao criptografar cartão');
-                // return false;
             }
 
-            // jQuery('#rm-pagbank-card-encrypted').val(card.encryptedCard);
-            // window.ps_cc_has_changed = false;
-            // window.ps_cc_number = cc_number;
-            // window.ps_cc_cvv = cc_cvv;
             return card.encryptedCard;
         }
 
-        const unsubscribe = onCheckoutBeforeProcessing(() => {
+        const authenticate3DS = async function (request) {
+
+            //region 3ds authentication method
+            PagSeguro.setUp({
+                session: settings.ccThreeDSession,
+                env: settings.pagbankConnectEnvironment,
+            });
+
+            await PagSeguro.authenticate3DS(request).then(result => {
+                switch (result.status) {
+                    case 'CHANGE_PAYMENT_METHOD':
+                        // The user must change the payment method used
+                        alert('Pagamento negado pelo PagBank. Escolha outro método de pagamento ou cartão.');
+                        canContinue = false;
+                        return Promise.resolve(false);
+                    case 'AUTH_FLOW_COMPLETED':
+                        //O processo de autenticação foi realizado com sucesso, dessa forma foi gerado um id do 3DS que poderá ter o resultado igual a Autenticado ou Não Autenticado.
+                        if (result.authenticationStatus === 'AUTHENTICATED') {
+                            //O cliente foi autenticado com sucesso, dessa forma o pagamento foi autorizado.
+                            card3d = result.id;
+                            console.debug('PagBank: 3DS Autenticado ou Sem desafio');
+                            canContinue = true;
+                            return Promise.resolve(true);
+                        }
+
+                        alert('Autenticação 3D falhou. Tente novamente.');
+                        canContinue = false;
+                        return Promise.resolve(false);
+                    case 'AUTH_NOT_SUPPORTED':
+                        //A autenticação 3DS não ocorreu, isso pode ter ocorrido por falhas na comunicação com emissor ou bandeira, ou algum controle que não possibilitou a geração do 3DS id, essa transação não terá um retorno de status de autenticação e seguirá como uma transação sem 3DS.
+                        //O cliente pode seguir adiante sem 3Ds (exceto débito)
+                        if (settings.ccThreeDAllowContinue === 'yes') {
+                            console.debug('PagBank: 3DS não suportado pelo cartão. Continuando sem 3DS.');
+                            canContinue = true;
+                            card3d = false;
+                            return Promise.resolve(true);
+                        }
+
+                        alert('Seu cartão não suporta autenticação 3D. Escolha outro método de pagamento ou cartão.');
+                        return Promise.resolve(false);
+                    case 'REQUIRE_CHALLENGE':
+                        //É um status intermediário que é retornando em casos que o banco emissor solicita desafios, é importante para identificar que o desafio deve ser exibido.
+                        console.debug('PagBank: REQUIRE_CHALLENGE - O desafio está sendo exibido pelo banco.');
+                        canContinue = false;
+                        break;
+                }
+            }).catch((err) => {
+                if (err instanceof PagSeguro.PagSeguroError ) {
+                    console.error(err);
+                    console.debug('PagBank: ' + err.detail);
+                    let errMsgs = err.detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
+                    alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
+                }
+                canContinue = false;
+                return false;
+            })
+        }
+
+        const unsubscribe = onCheckoutBeforeProcessing(async () => {
             console.debug('PagBank: submit');
+            console.debug('PagBank: encrypting card');
             encryptedCard = encryptCard();
             if (encryptedCard === false) {
-                console.debug('PagBank: error on encryptCard');
-                return false;
+                console.error('PagBank: error on encrypting card');
+                return {
+                    type: emitResponse.responseTypes.ERROR,
+                    message: __('Erro ao criptografar o cartão. Verifique se os dados digitados estão corretos.', 'rm-pagbank'),
+                };
+            }
+
+            let treeDSession = settings.ccThreeDSession;
+
+            //if 3ds is not enabled, continue
+            if ('undefined' === typeof treeDSession || !treeDSession) {
+                return {
+                    type: emitResponse.responseTypes.SUCCESS,
+                    message: __('Continue submition', 'rm-pagbank'),
+                };
+            }
+
+            //if 3ds is enabled, start 3ds verification
+            console.debug('PagBank: initing 3ds verification');
+            async function start3dsVerification() {
+                let selectedInstallments = document.getElementById('rm-pagbank-card-installments').value;
+                if (selectedInstallments === "") {
+                    selectedInstallments = 1;
+                }
+
+                let cartTotal = billing.cartTotal.value;
+
+                //if cart total is less than 100, don't continue with 3ds
+                if (cartTotal < 100) {
+                    return true;
+                }
+
+                let request = {
+                    data: {
+                        paymentMethod: {
+                            type: 'CREDIT_CARD',
+                            installments: selectedInstallments,
+                            card: {
+                                number: document.getElementById('rm-pagbank-card-number').value.replace(/\s/g, ''),
+                                expMonth: document.getElementById('rm-pagbank-card-expiry').value.split('/')[0].replace(/\s/g, ''),
+                                expYear: '20' + document.getElementById('rm-pagbank-card-expiry').value.split('/')[1].replace(/\s/g, ''),
+                                holder: {
+                                    name: document.getElementById('rm-pagbank-card-holder-name').value
+                                        .trim().replace(/\s+/g, ' ').trim().replace(/\s+/g, ' ')
+                                }
+                            }
+                        },
+                        dataOnly: false
+                    }
+                }
+
+                let orderData = {
+                    customer: {
+                        name: billing.billingData.first_name + ' ' + billing.billingData.last_name,
+                        email: billing.billingData.email,
+                        phones: [
+                            {
+                                country: '55',
+                                area: billing.billingData.phone.replace(/\D/g, '').substring(0, 2),
+                                number: billing.billingData.phone.replace(/\D/g, '').substring(2),
+                                type: 'MOBILE'
+                            }]
+                    },
+                    amount: {
+                        value: cartTotal,
+                        currency: 'BRL'
+                    },
+                    billingAddress: {
+                        street: billing.billingData.address_1.replace(/\s+/g, ' '),
+                        number: billing.billingData.address_1.replace(/\s+/g, ' '),
+                        complement: billing.billingData.address_2.replace(/\s+/g, ' '),
+                        regionCode: billing.billingData.state,
+                        country: 'BRA',
+                        city: billing.billingData.city.replace(/\s+/g, ' '),
+                        postalCode: billing.billingData.postcode.replace(/\D+/g, '')
+                    }
+                };
+
+                request.data = {
+                    ...request.data,
+                    ...orderData
+                };
+
+                console.debug('PagBank 3DS Request Amount: ' + request.data.amount.value);
+
+                let result;
+                try {
+                    result = await authenticate3DS(request);
+                } catch (error) {
+                    console.error('Erro ao verificar 3DS:', error);
+                    result = false;
+                }
+
+                return result;
+            }
+
+            const threeDResult = await start3dsVerification();
+            if (canContinue === false || threeDResult === false) {
+                console.error('PagBank: error during 3ds verification');
+                return {
+                    type: emitResponse.responseTypes.ERROR,
+                    messageContext: __('Erro ao verificar 3DS. Tente novamente.', 'rm-pagbank'),
+                };
             }
         } );
 

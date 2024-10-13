@@ -1,6 +1,6 @@
 import React from 'react';
 import { __, _n } from '@wordpress/i18n';
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useState, useRef } from '@wordpress/element';
 import { getSetting } from '@woocommerce/settings';
 import MaskedInput from './MaskedInput';
 import InstallmentsOptions from './InstallmentsOptions';
@@ -8,21 +8,28 @@ const PaymentInstructions = () => {
     const settings = getSetting('rm-pagbank-cc_data', {});
     const defaultInstallments = settings.installments || [];
     const [creditCardNumber, setCreditCardNumber] = useState('');
+    const [ccBin, setCcBin] = useState('');
+    const prevCcBinRef = useRef();
     const [installments, setInstallments] = useState(defaultInstallments);
 
-    let ccBin = '';
-    useEffect( () => {
-        console.debug('creditCardNumber', creditCardNumber);
-        let ccBinNew = creditCardNumber.replace(/\D/g, '').substring(0, 6);
-        //get only digits from credit card number
-        console.debug('ccBin', ccBin);
-        console.debug('ccBinNew', ccBinNew);
+    useEffect(() => {
+        prevCcBinRef.current = ccBin;
+    }, [ccBin]);
 
-        if (ccBinNew === ccBin || ccBinNew.length < 6) {
+    const prevCcBin = prevCcBinRef.current;
+
+    useEffect( () => {
+        if (creditCardNumber.replace(/\D/g, '').length < 6) {
             return;
         }
-        console.debug('ccBinNew === ccBin');
-        ccBin = ccBinNew;
+
+        let ccBinNew = creditCardNumber.replace(/\D/g, '').substring(0, 6);
+        if (ccBinNew === prevCcBin) {
+            return;
+        }
+
+        setCcBin(ccBinNew);
+
         let url = settings.ajax_url;
 
         jQuery.ajax({
