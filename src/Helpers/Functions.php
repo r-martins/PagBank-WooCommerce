@@ -7,6 +7,7 @@ use DateTimeZone;
 use Exception;
 use RM_PagBank\Connect;
 use WC_Admin_Settings;
+use WC_Blocks_Utils;
 use WC_Order;
 
 /**
@@ -332,5 +333,14 @@ class Functions
 
             return $wp_query_args;
         }, 10, 2);
+    }
+
+    /**
+     * Check if the current page is the checkout page and uses Woocommerce Blocks
+     * @return bool
+     */
+    public static function isCheckoutBlocks(): bool
+    {
+        return is_checkout() && WC_Blocks_Utils::has_block_in_page( wc_get_page_id('checkout'), 'woocommerce/checkout' );
     }
 }

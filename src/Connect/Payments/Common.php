@@ -92,6 +92,10 @@ class Common
             }
         }
 
+        if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
+            $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
+        }
+
         $taxId = Params::removeNonNumeric($taxId);
         
         $customer->setTaxId($taxId);
@@ -169,17 +173,20 @@ class Common
         );
         $billingNeighborhood = substr($billingNeighborhood, 0, 60);
         $shippingNeighborhood = substr($shippingNeighborhood, 0, 60);
-        
+
+        $billingNumber = !empty($billingNumber) ? $billingNumber : '...';
         $address->setNumber($billingNumber);
         if (!empty($shippingNumber)) {
             $address->setNumber($shippingNumber);
         }
-        
+
+        $billingComplement = !empty($billingComplement) ? $billingComplement : '...';
         $address->setComplement($billingComplement);
         if (!empty($shippingComplement)) {
             $address->setComplement($shippingComplement);
         }
 
+        $billingNeighborhood = !empty($billingNeighborhood) ? $billingNeighborhood : '...';
         $address->setLocality($billingNeighborhood);
         if (!empty($shippingNeighborhood)) {
             $address->setLocality($shippingNeighborhood);
@@ -188,6 +195,7 @@ class Common
         $address->setCity(substr($this->order->get_shipping_city('edit'), 0, 60));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
+
         return apply_filters('pagbank_connect_shipping_address', $address, $this->order);
     }
 

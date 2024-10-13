@@ -2,6 +2,7 @@
 
 namespace RM_PagBank;
 
+use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
@@ -9,6 +10,9 @@ use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
 use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
 use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
+use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
+use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
+use RM_PagBank\Connect\Blocks\Pix as PixBlock;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -84,6 +88,23 @@ class Connect
         }
 
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
+    }
+
+    public static function gatewayBlockSupport() {
+        // Check if the required class exists
+        if ( ! class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+            return;
+        }
+
+        // Hook the registration function to the 'woocommerce_blocks_payment_method_type_registration' action
+        add_action(
+            'woocommerce_blocks_payment_method_type_registration',
+            function( PaymentMethodRegistry $payment_method_registry ) {
+                $payment_method_registry->register( new BoletoBlock() );
+                $payment_method_registry->register( new PixBlock() );
+                $payment_method_registry->register( new CreditCardBlock() );
+            }
+        );
     }
 
     /**

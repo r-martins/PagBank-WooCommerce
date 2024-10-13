@@ -47,6 +47,8 @@ add_action('after_setup_theme', [Connect::class, 'loadTextDomain']);
 
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
+//add_action('woocommerce_blocks_payment_method_type_registration', array(Connect::class, 'registerPaymentMethodOnCheckoutBlocks'));
+add_action('woocommerce_blocks_loaded', array(Connect::class, 'gatewayBlockSupport'));
 
 //Add Recurring Config
 add_filter('woocommerce_get_settings_checkout' , [Connect\Recurring::class, 'recurringSettingsFields'] , 10, 2 );

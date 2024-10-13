@@ -43,6 +43,10 @@ trait PaymentUnavailable
      */
     public function paymentUnavailable(): bool
     {
+        if (is_admin()) {
+            return false;
+        }
+
         $total = Api::getOrderTotal();
         $total = Params::convertToCents($total);
         $isTotalLessThanOneReal = $total < 100;

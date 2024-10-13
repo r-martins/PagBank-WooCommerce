@@ -236,6 +236,7 @@ class Recurring
     public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
     {
         if (!$cart) $cart = WC()->cart;
+        if (!$cart) return '';
         $msgDefault = __('O valor de %s será cobrado %s.', 'pagbank-connect');
         $total = $cart->get_total('edit');
         $frequency = __('mensalmente', 'pagbank-connect');
@@ -267,6 +268,10 @@ class Recurring
                 $frequency = sprintf(__('a cada %d %s', 'pagbank-connect'), $cycle, $this->translateFrequencyTermsPlural($frequency));
                 break;       
             }
+        }
+
+        if (!isset($product)) {
+            return '';
         }
 
         $msg = sprintf($msgDefault, wc_price($total), $frequency);

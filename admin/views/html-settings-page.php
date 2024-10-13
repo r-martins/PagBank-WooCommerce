@@ -9,9 +9,6 @@ if (!defined('ABSPATH')) {
  */
 
 use RM_PagBank\Connect\Gateway;
-use RM_PagBank\Helpers\Functions;
-
-$isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
 
 /** @var Gateway $this */
 ?>
@@ -25,16 +22,6 @@ $isCheckoutBlocksInUse = Functions::isBlockCheckoutInUse();
     </div>
     <div class="ps-subtitle">
         <?php echo '<h4>' . esc_html( $this->get_method_description() ) . '</h4>'; ?>
-    </div>
-    <div class="block-checkout-not-supported" style="<?php echo (!$isCheckoutBlocksInUse) ? 'display:none' : ''?>">
-        <h4>
-            🚨<?php
-            esc_html_e('Você parece estar usando o checkout em blocos. O PagBank não será exibido '
-                .'se ele estiver ativo.', 'pagbank-connect');
-            printf(' <a href="%s" target="_blank">Saiba mais</a>.', esc_url('https://pagsegurotransparente.'
-                .'zendesk.com/hc/pt-br/articles/12925708634125#block-checkout'));
-            ?>
-        </h4>
     </div>
 <!--    navigation tabs-->
     <nav class="nav-tab-wrapper ">

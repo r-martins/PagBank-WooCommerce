@@ -41,3 +41,8 @@ cache
 #PhpUnit
 .phpunit.cache
 .phpunit.result.cache
+
+# Grunt
+/node_modules/
+/deploy/
+package-lock.json

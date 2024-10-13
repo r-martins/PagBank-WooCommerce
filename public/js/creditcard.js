@@ -207,7 +207,7 @@ jQuery(document).ready(function ($) {
 
     //region 3ds authentication
     let isSubmitting = false;
-    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review';
+    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review, .wc-block-components-form, .wc-block-checkout__form';
     if (!jQuery(checkoutFormIdentifiers).length) {
         console.debug('PagBank: checkout form not found');
         return true;
@@ -499,7 +499,7 @@ jQuery(document).ready(function ($) {
         //if success, update the installments select with the response
         //if error, show error message
         let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
-        let total = jQuery('.order-total bdi, .product-total bdi').last().html();
+        let total = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value').last().html();
         //extract amount from total, removing html elements
         total = total.replace(/<[^>]*>?/gm, '');
         //remove ,

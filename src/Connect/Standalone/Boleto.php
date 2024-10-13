@@ -97,6 +97,20 @@ class Boleto extends WC_Payment_Gateway
         $this->handleCustomerChangeMethod($order, $payment_method);
         // endregion
 
+        $order->add_meta_data(
+            '_rm_pagbank_checkout_blocks',
+            wc_bool_to_string(isset($_POST['wc-rm-pagbank-boleto-new-payment-method'])),
+            true
+        );
+
+        if(isset($_POST['rm-pagbank-customer-document'])) {
+            $order->add_meta_data(
+                '_rm_pagbank_customer_document',
+                htmlspecialchars($_POST['rm-pagbank-customer-document'], ENT_QUOTES, 'UTF-8'),
+                true
+            );
+        }
+
         $method = new \RM_PagBank\Connect\Payments\Boleto($order);
         $params = $method->prepare();
 
