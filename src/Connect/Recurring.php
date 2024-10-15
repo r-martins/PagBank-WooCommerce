@@ -35,6 +35,7 @@ class Recurring
 
         //region frontend initial-order flow
         add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
+        add_action('woocommerce_store_api_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
         add_filter('woocommerce_checkout_registration_required', [$this, 'disableGuestCheckoutForRecurringOrder'], 1, 1);
         //endregion
