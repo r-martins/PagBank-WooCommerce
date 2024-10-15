@@ -11,6 +11,7 @@ const PaymentInstructions = () => {
     const [ccBin, setCcBin] = useState('');
     const prevCcBinRef = useRef();
     const [installments, setInstallments] = useState(defaultInstallments);
+    window.ps_cc_installments = installments;
 
     useEffect(() => {
         prevCcBinRef.current = ccBin;
@@ -36,12 +37,12 @@ const PaymentInstructions = () => {
             url: url,
             method: 'POST',
             data: {
-                cc_bin: ccBin,
+                cc_bin: ccBinNew,
                 nonce: settings.rm_pagbank_nonce,
                 action: 'ps_get_installments',
             },
             success: (response)=>{
-                console.debug('response ajax', response);
+                window.ps_cc_installments = response;
                 setInstallments(response);
             },
             error: (response)=>{

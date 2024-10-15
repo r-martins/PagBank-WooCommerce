@@ -269,6 +269,10 @@ const Content = ( props ) => {
                     return true;
                 }
 
+                if (selectedInstallments > 1) {
+                    cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount_raw;
+                }
+
                 let request = {
                     data: {
                         paymentMethod: {
