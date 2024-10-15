@@ -97,9 +97,11 @@ const PaymentInstructions = () => {
                 placeholder="CVC"
             />
 
-            <InstallmentsOptions
-                installments={installments}
-            />
+            {installments.hasOwnProperty('error') || installments == 0 ? null :
+                <InstallmentsOptions
+                    installments={installments}
+                />
+            }
 
         </div>
     )

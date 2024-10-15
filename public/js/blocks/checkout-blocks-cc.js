@@ -43,7 +43,7 @@ const Content = ( props ) => {
     useEffect( () => {
         const unsubscribe = onPaymentSetup(() => {
             const customerDocumentValue = document.getElementById('rm-pagbank-customer-document').value;
-            const installments = document.getElementById('rm-pagbank-card-installments').value || 1;
+            const installments = document.getElementById('rm-pagbank-card-installments')?.value || 1;
             const ccNumber = document.getElementById('rm-pagbank-card-number').value;
             const ccHolderName = document.getElementById('rm-pagbank-card-holder-name').value;
 
@@ -257,8 +257,8 @@ const Content = ( props ) => {
             //if 3ds is enabled, start 3ds verification
             console.debug('PagBank: initing 3ds verification');
             async function start3dsVerification() {
-                let selectedInstallments = document.getElementById('rm-pagbank-card-installments').value;
-                if (selectedInstallments === "") {
+                let selectedInstallments = document.getElementById('rm-pagbank-card-installments')?.value;
+                if (selectedInstallments === "" || selectedInstallments === null || selectedInstallments === undefined) {
                     selectedInstallments = 1;
                 }
 
@@ -266,6 +266,8 @@ const Content = ( props ) => {
 
                 //if cart total is less than 100, don't continue with 3ds
                 if (cartTotal < 100) {
+                    canContinue = true;
+                    card3d = false;
                     return true;
                 }
 
@@ -342,7 +344,8 @@ const Content = ( props ) => {
                 console.error('PagBank: error during 3ds verification');
                 return {
                     type: emitResponse.responseTypes.ERROR,
-                    messageContext: __('Erro ao verificar 3DS. Tente novamente.', 'rm-pagbank'),
+                    messageContext: emitResponse.noticeContexts.PAYMENTS,
+                    message: __('Erro ao verificar 3DS. Tente novamente.', 'rm-pagbank'),
                 };
             }
         } );

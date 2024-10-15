@@ -122,6 +122,12 @@ class CreditCard extends Common
     */
     public static function getAjaxInstallments()
     {
+        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $recurring = $recurringHelper->isCartRecurring();
+        if ($recurring) {
+            return;
+        }
+
         if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
             wp_send_json_error(
                 [
