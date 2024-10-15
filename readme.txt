@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.20.1
+Stable tag: 4.20.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -175,6 +175,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.20.2 =
+* Correção importante: em alguns casos uma falha de arredondamento na autenticação 3d em compras parceladas fazia com que o pedido não pudesse ser concluído, ocasionando erro 'payment_method.authentication_method.id (Autenticação 3D - Recarregue e tente novamente)'.
 
 = 4.20.1 =
 * Correção: instruções de boleto e pix pararam de ser adicionadas na tela de sucesso após nossa última atualização

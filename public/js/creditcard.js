@@ -271,11 +271,10 @@ jQuery(document).ready(function ($) {
         if (typeof window.ps_cc_installments === 'undefined') {
             cartTotal = jQuery('.order-total bdi, .product-total bdi').last().html();
             cartTotal = cartTotal.replace(/[^0-9,]/g, '');
+            cartTotal = Math.round(parseFloat(cartTotal.toString()).toFixed(2) * 100);
         } else {
-            cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount
+            cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount_raw;
         }
-
-        cartTotal = parseInt(parseFloat(cartTotal.toString()).toFixed(2) * 100);
 
         //if cart total is less than 100, don't continue with 3ds
         if (cartTotal < 100) {
