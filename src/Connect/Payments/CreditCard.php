@@ -124,7 +124,9 @@ class CreditCard extends Common
     {
         $recurringHelper = new \RM_PagBank\Helpers\Recurring();
         $recurring = $recurringHelper->isCartRecurring();
-        if ($recurring) {
+
+        $isCheckoutBlocks = Functions::isCheckoutBlocks();
+        if ($recurring && $isCheckoutBlocks) {
             return;
         }
 
