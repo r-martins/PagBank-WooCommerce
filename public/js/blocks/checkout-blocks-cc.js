@@ -7,6 +7,7 @@ import {__} from '@wordpress/i18n';
 import PaymentUnavailable from './components/PaymentUnavailable';
 import CreditCardForm from "./components/CreditCardForm";
 import CustomerDocumentField from './components/CustomerDocumentField';
+import RecurringInfo from './components/RecurringInfo';
 
 const settings = getSetting('rm-pagbank-cc_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Cartão de Crédito', 'rm-pagbank-pix' );
@@ -371,6 +372,7 @@ const Content = ( props ) => {
         <div className="rm-pagbank-cc">
             <CreditCardForm />
             <CustomerDocumentField />
+            {settings.isCartRecurring ? <RecurringInfo /> : null}
         </div>
     );
 };
