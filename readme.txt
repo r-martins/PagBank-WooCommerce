@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.20.2
+Stable tag: 4.21.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -20,7 +20,7 @@ Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Ca
 
 ⭐️Agora com taxas ainda menores (desde Agosto), válidas para lojas antigas e novas.⭐️
 
-Economize nas tarifas oficiais do PagBank. Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação. [Veja tabela completa](https://pbintegracoes.com/compare/).
+Economize nas tarifas oficiais do PagBank. Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
 
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
@@ -39,12 +39,13 @@ Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocup
 
 
 * Termos de uso e softwares terceiros
-Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/) do desenvolvedor.
+Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
 
 == ⚡️ RECURSOS ==
 * Suporte a PIX, Cartão de Crédito e Boleto
 * Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
 * Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
+* Suporte nativo ao checkout em Blocos do WooCommerce (sem gambiarras com iframes)
 * Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
 * Diversas [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
 * Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto)
@@ -81,7 +82,7 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 === A gente instala pra você 🙀 ===
 Se você preferir, podemos instalar e configurar o plugin para você sem nenhum custo.
 
-[Saiba mais](https://pbintegracoes.com/woocommerce/agenteinstala/). 
+[Saiba mais](https://pbintegracoes.com/woocommerce/agenteinstala/?utm_source=readme&utm_content=agenteinstala). 
 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -105,8 +106,8 @@ E não se preocupe, os serviços que você usa não serão afetados.
 * Ter WooCommerce 4.0 ou superior
 * PHP 7.4 ou superior
 * Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank
-* [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/) em sua conta PagBank.
-* Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/?utm_source=readme&utm_content=pre-requisitos) em sua conta PagBank.
+* Usar o Checkout em Blocos (nativo) **ou** Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 = Como funcionam os descontos nas taxas? =
 
@@ -114,7 +115,7 @@ Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invé
 
 Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
-Consulte mais sobre elas no [nosso site](https://pbintegracoes.com/compare/).
+Consulte mais sobre elas no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=faq).
 
 = Eu tenho uma taxa ou condição negociada menor que estas. O que faço? =
 
@@ -124,7 +125,7 @@ Ao usar nossa integração, nossas taxas e condições serão aplicadas ao invé
 
 Se mesmo assim você possuir uma taxa ou condição melhor, e se compromete a faturar mais de R$20 mil / mês (pedidos aprovados usando nossa integração), podemos incluir sua loja em uma aplicação especial.
 
-Ao [autorizar sua conta](https://pbintegracoes.com/connect/autorizar/), escolha a opção "Suas condições e taxas".
+Ao [autorizar sua conta](https://pbintegracoes.com/connect/autorizar/?utm_source=readme&utm_content=autorizar-sua-conta), escolha a opção "Suas condições e taxas".
 
 Sua Connect key será gerada respeitando as taxas e condições negociadas que você tem com o PagSeguro/PagBank.
 
@@ -175,6 +176,8 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.21.0 =
+* Adicionado suporte ao novo Checkoutem Blocks do WooCommerce
 
 = 4.20.2 =
 * Correção importante: em alguns casos uma falha de arredondamento na autenticação 3d em compras parceladas fazia com que o pedido não pudesse ser concluído, ocasionando erro 'payment_method.authentication_method.id (Autenticação 3D - Recarregue e tente novamente)'.
@@ -292,3 +295,5 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 6. Envio Fácil
 7. Autenticação 3D Secure
 8. Pedidos Recorrentes (assinaturas)
+9. Parcelamento na Página de Produto
+10. Suporte a Checkout em Blocos do WooCommerce

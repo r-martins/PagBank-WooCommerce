@@ -71,8 +71,8 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 * Ter WooCommerce 4.0 ou superior
 * PHP 7.4 ou superior
 * Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank (e obter a sua Connect Key)
-* [Autorizar nossa integração](https://pagseguro.ricardomartins.net.br/connect/autorizar.html) em sua conta PagBank.
-* Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/?utm_source=github&utm_medium=readme&utm_content=pre-requisitos) em sua conta PagBank.
+* Usar checkout em Blocos do WooCommerce **ou** Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 # Perguntas Frequentes (FAQ)
 
@@ -140,7 +140,7 @@ Esta é uma iniciativa pessoal, sem vínculo com PagBank. PagBank é uma marca d
 
 Este não é um produto oficial do PagBank.
 
-Ao usar este plugin você concorda com os [Termos de Uso e Política de Privacidade](https://pagseguro.ricardomartins.net.br/terms.html).
+Ao usar este plugin você concorda com os [Termos de Uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=github&utm_medium=readme&utm_content=terms).
 
 ---
 ¹ A Integração com Envio Fácil está disponível apenas para lojas com integração 14 ou 30 dias. Embora utilizemos as APIs do PagSeguro para isso, eles não encorajam o uso dessas APIs. Use com cautela. O PagSeguro não oferece suporte para esta integração.
