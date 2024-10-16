@@ -48,7 +48,7 @@ if ($default_installments){
 			break;
 		}
         $installment_options .= '<option value="'.$installment['installments'].'">'.$installment['installments'].'x de R$ '. $installment['installment_amount'] . ' (';
-        $installment_options .= $installment['interest_free'] ? 'sem acréscimo)' : 'Total: R$ ' . $installment['total_amount'] . ')';
+        $installment_options .= $installment['interest_free'] ? 'sem juros)' : 'Total: R$ ' . $installment['total_amount'] . ')';
     }
 }
 
