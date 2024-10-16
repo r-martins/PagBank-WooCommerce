@@ -90,14 +90,14 @@ final class CreditCard extends AbstractPaymentMethodType
             'description'  => $this->get_setting( 'description' ),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'publicKey'  => Params::getConfig('public_key'),
+            'ccThreeDEnabled'  => wc_string_to_bool(Params::getCcConfig('cc_3ds', 'no')),
             'ccThreeDSession'  => $api->get3DSession(),
             'ccThreeDAllowContinue'  => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
             'pagbankConnectEnvironment'  => $api->getIsSandbox() ? 'SANDBOX' : 'PROD',
             'isCartRecurring' => $recHelper->isCartRecurring(),
             'recurringTerms' => wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong'),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
-            'defaultInstallments' => $this->gateway->getDefaultInstallments(),
-            'installments' => $this->gateway->getDefaultInstallments(),
+            'defaultInstallments' => is_checkout() ? $this->gateway->getDefaultInstallments() : null,
             'ajax_url' => admin_url('admin-ajax.php'),
             'rm_pagbank_nonce' => wp_create_nonce('rm_pagbank_nonce')
         );

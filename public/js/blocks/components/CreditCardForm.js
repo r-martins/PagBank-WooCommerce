@@ -6,7 +6,7 @@ import MaskedInput from './MaskedInput';
 import InstallmentsOptions from './InstallmentsOptions';
 const PaymentInstructions = () => {
     const settings = getSetting('rm-pagbank-cc_data', {});
-    const defaultInstallments = settings.installments || [];
+    const defaultInstallments = settings.defaultInstallments || [];
     const [creditCardNumber, setCreditCardNumber] = useState('');
     const [ccBin, setCcBin] = useState('');
     const prevCcBinRef = useRef();

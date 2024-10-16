@@ -41,34 +41,6 @@ const Content = ( props ) => {
     let card3d = '';
 
     useEffect( () => {
-        const unsubscribe = onPaymentSetup(() => {
-            const customerDocumentValue = document.getElementById('rm-pagbank-customer-document').value;
-            const installments = document.getElementById('rm-pagbank-card-installments')?.value || 1;
-            const ccNumber = document.getElementById('rm-pagbank-card-number').value;
-            const ccHolderName = document.getElementById('rm-pagbank-card-holder-name').value;
-
-            return {
-                type: emitResponse.responseTypes.SUCCESS,
-                meta: {
-                    paymentMethodData: {
-                        'payment_method': 'cc',
-                        'rm-pagbank-customer-document': customerDocumentValue.replace(/\D/g, ''),
-                        'rm-pagbank-card-encrypted': encryptedCard,
-                        'rm-pagbank-card-installments': installments,
-                        'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),
-                        'rm-pagbank-card-holder-name': ccHolderName,
-                        'rm-pagbank-card-3d': card3d
-                    },
-                },
-            };
-        } );
-
-        return () => {
-            unsubscribe();
-        };
-    }, [onPaymentSetup] );
-
-    useEffect( () => {
         const pagBankParseErrorMessage = function(errorMessage) {
             const codes = {
                 '40001': 'Parâmetro obrigatório',
@@ -238,20 +210,22 @@ const Content = ( props ) => {
             encryptedCard = encryptCard();
             if (encryptedCard === false) {
                 console.error('PagBank: error on encrypting card');
-                return {
-                    type: emitResponse.responseTypes.ERROR,
-                    message: __('Erro ao criptografar o cartão. Verifique se os dados digitados estão corretos.', 'rm-pagbank'),
-                };
+                return;
+            }
+
+            //if 3ds is not enabled, continue
+            let treeDEnabled = settings.ccThreeDEnabled;
+            if (!treeDEnabled) {
+                canContinue = true;
+                card3d = false;
+                return
             }
 
             let treeDSession = settings.ccThreeDSession;
-
-            //if 3ds is not enabled, continue
             if ('undefined' === typeof treeDSession || !treeDSession) {
-                return {
-                    type: emitResponse.responseTypes.SUCCESS,
-                    message: __('Continue submition', 'rm-pagbank'),
-                };
+                canContinue = true;
+                card3d = false;
+                return;
             }
 
             //if 3ds is enabled, start 3ds verification
@@ -339,8 +313,26 @@ const Content = ( props ) => {
                 return result;
             }
 
-            const threeDResult = await start3dsVerification();
-            if (canContinue === false || threeDResult === false) {
+            await start3dsVerification();
+        } );
+
+        return () => {
+            unsubscribe();
+        };
+    }, [onCheckoutBeforeProcessing] );
+
+    useEffect( () => {
+        const unsubscribe = onPaymentSetup(() => {
+            if (encryptedCard === false) {
+                console.error('PagBank: error on encrypting card');
+                return {
+                    type: emitResponse.responseTypes.ERROR,
+                    messageContext: emitResponse.noticeContexts.PAYMENTS,
+                    message: __('Erro ao criptografar o cartão. Verifique se os dados digitados estão corretos.', 'rm-pagbank'),
+                };
+            }
+
+            if (canContinue === false) {
                 console.error('PagBank: error during 3ds verification');
                 return {
                     type: emitResponse.responseTypes.ERROR,
@@ -348,12 +340,32 @@ const Content = ( props ) => {
                     message: __('Erro ao verificar 3DS. Tente novamente.', 'rm-pagbank'),
                 };
             }
+
+            const customerDocumentValue = document.getElementById('rm-pagbank-customer-document').value;
+            const installments = document.getElementById('rm-pagbank-card-installments')?.value || 1;
+            const ccNumber = document.getElementById('rm-pagbank-card-number').value;
+            const ccHolderName = document.getElementById('rm-pagbank-card-holder-name').value;
+
+            return {
+                type: emitResponse.responseTypes.SUCCESS,
+                meta: {
+                    paymentMethodData: {
+                        'payment_method': 'cc',
+                        'rm-pagbank-customer-document': customerDocumentValue.replace(/\D/g, ''),
+                        'rm-pagbank-card-encrypted': encryptedCard,
+                        'rm-pagbank-card-installments': installments,
+                        'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),
+                        'rm-pagbank-card-holder-name': ccHolderName,
+                        'rm-pagbank-card-3d': card3d
+                    },
+                },
+            };
         } );
 
         return () => {
             unsubscribe();
         };
-    }, [onCheckoutBeforeProcessing] );
+    }, [onPaymentSetup] );
 
     return (
         <div className="rm-pagbank-cc">
