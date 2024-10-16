@@ -65,6 +65,7 @@ const PaymentInstructions = () => {
                 label={__('Titular do Cartão', 'rm-pagbank')}
                 mask=""
                 placeholder="como gravado no cartão"
+                onKeyDown={e => e.target.value = e.target.value.toUpperCase()}
             />
 
             <MaskedInput
@@ -85,6 +86,14 @@ const PaymentInstructions = () => {
                 label={__('Validade (MM/AA)', 'rm-pagbank')}
                 mask="99/99"
                 placeholder="MM / AA"
+                /*if first char is > 1, add 0 + typed char */
+                onKeyDown={e => {
+                    if (e.target.value === e.key + '_/__') {
+                        if (parseInt(e.key) > 1) {
+                            e.target.value = '0' + e.key;
+                            e.preventDefault();
+                        }
+                }}}
             />
 
             <MaskedInput
