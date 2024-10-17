@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.21.0
+Stable tag: 4.21.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -176,6 +176,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.21.1 =
+* Pequena correção no dropdown de parcelas em pagamentos recorrentes (quebrado na última versão)
+* Normalizamos a nomenclatura de "sem juros" que antes aparecia "sem acréscimo" em alguns casos no dropdown de parcelamento
+
 = 4.21.0 =
 * Adicionado suporte ao novo Checkoutem Blocks do WooCommerce
 
@@ -206,16 +211,16 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 = 4.17.1 =
 * Correção: em alguns cenários onde o ícone dinamico não era acessível, a validacao interna falhava dizendo que era acessivel, fazendo com que o ícone dos pagamentos permanecesse quebrado (imagem invalida).
 
-== 4.17.0 ==
+= 4.17.0 =
 * Melhoria: Se por algum motivo os ícones com cores personalizadas não puderem ser exibidos (ex: plugin de segurança afetando funcionamento), usaremos a imagem estática e exibiremos um aviso no admin ao salvar as configs do pagbank.
 
-== 4.16.0 ==
+= 4.16.0 =
 * Melhoria: agora informações do PIX ou do Boleto também são enviadas no e-mail transacional
 * Melhoria: alguns administradores digitavam o token PagBank (nunca solicitado) no campo da Connect Key. Agora validamos isso e avisamos ele sobre o engano.
 * Melhoria: fazemos validação no último pedido pix a fim de ver se há erro de chave pix inválida causada pela não existência de chaves aleatórias na conta PagBank. Agora fazemos isso com bem menos frequência, ou uma vez só se estiver tudo certo. Isso deve melhorar a performance do plugin na área administrativa.
 * Correção: em lojas com HPOS desabilitado e com WooCommerce 9.2.0 ou superior, um Notice era gravado (ou exibido) dizendo que o método `WC_Order_Data_Store_CPT::query` foi chamado incorretamente.
 
-== 4.15.0 =
+= 4.15.0 =
 * Melhorias gerais de código, performance, e boas práticas em todo plugin. Trata-se de uma grande mudança na forma como o plugin é estruturado internamente e nos possibilitará evolui-lo com mais segurança e menos bugs.
 * Mudança: descontinuamos a opção de exibir os métodos de pagamento de forma agrupada. Agora eles são exibidos de forma individual, o que é mais amigável e intuitivo para o admin.
 * Correção: na conversão de minutos da expiração do PIX para o usuário (ex: 43200 minutos era exibido como 7 dias)
