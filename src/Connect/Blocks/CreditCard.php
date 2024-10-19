@@ -88,6 +88,7 @@ final class CreditCard extends AbstractPaymentMethodType
         return array(
             'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Cartão de Crédito via PagBank',
             'description'  => $this->get_setting( 'description' ),
+            'icon'  => $this->gateway->icon,
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'publicKey'  => Params::getConfig('public_key'),
             'ccThreeDEnabled'  => wc_string_to_bool(Params::getCcConfig('cc_3ds', 'no')),

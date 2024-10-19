@@ -12,13 +12,29 @@ const settings = getSetting('rm-pagbank-boleto_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Boleto', 'rm-pagbank-pix' );
 
 /**
+ * Icon component
+ * @returns {JSX.Element|string}
+ * @constructor
+ */
+const Icon = () => {
+    return settings.icon
+        ? <img src={settings.icon} style={{ marginLeft: '20px' }} />
+        : ''
+}
+
+/**
  * Label component
  *
  * @param {*} props Props from payment API.
  */
 const Label = ( props ) => {
     const { PaymentMethodLabel } = props.components;
-    return <PaymentMethodLabel text={ label } />;
+    return (
+        <>
+            <PaymentMethodLabel text={ label } />
+            <Icon />
+        </>
+    );
 };
 
 /**
