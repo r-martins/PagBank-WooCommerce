@@ -26,16 +26,31 @@ const Label = ( props ) => {
  * Content component
  */
 const Content = ( props ) => {
+    const { eventRegistration, emitResponse, billing } = props;
+    const { onPaymentSetup, onCheckoutBeforeProcessing, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
+
     if (settings.paymentUnavailable) {
+        useEffect( () => {
+            const unsubscribe = onPaymentSetup(() => {
+                console.error('PagBank indisponível para pedidos inferiores a R$1,00.');
+                return {
+                    type: emitResponse.responseTypes.ERROR,
+                    messageContext: emitResponse.noticeContexts.PAYMENTS,
+                    message: __('PagBank indisponível para pedidos inferiores a R$1,00.', 'rm-pagbank'),
+                };
+            });
+
+            return () => {
+                unsubscribe();
+            };
+        }, [onPaymentSetup] );
+
         return (
             <div className="rm-pagbank-cc">
                 <PaymentUnavailable />
             </div>
         );
     }
-
-    const { eventRegistration, emitResponse, billing } = props;
-    const { onPaymentSetup, onCheckoutBeforeProcessing, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
 
     let canContinue = false;
     let encryptedCard = null;
