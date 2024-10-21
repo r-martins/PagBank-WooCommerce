@@ -62,20 +62,36 @@ li.payment_method_rm-pagbank label img {
 /*}*/
 
 /*region pagbank cc flags*/
+#payment-method .rm-pagbank-cc .card-number-input.elo,
 #payment .payment_methods .payment_box .wc-credit-card-form-card-number.elo{
     background-image: url('../images/credit-cards/elo.svg');
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.hipercard,
 #payment .payment_methods .payment_box .wc-credit-card-form-card-number.hipercard{
     background-image: url('../images/credit-cards/hipercard.svg');
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.aura,
 #payment .payment_methods .payment_box .wc-credit-card-form-card-number.aura{
     background-image: url('../images/credit-cards/aura.svg');
 }
 /*endregion*/
 
+/*region credit card flags (for woocommerce checkout blocks)*/
+.card-number-input {
+    position: relative;
+}
+.card-number-input .card-brand-icon {
+    position: absolute;
+    right: 10px;
+    bottom: 11px;
+    color: dimgray;
+}
+/*endregion*/
+
 /*region credit card flags (extracted from storefront theme /woocommerce.css for compatibility)*/
+#payment-method .rm-pagbank-cc .card-number-input,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number {
     background-repeat: no-repeat;
     background-position: right .6180469716em center;
@@ -83,34 +99,42 @@ li.payment_method_rm-pagbank label img {
     background-image: url(../images/credit-cards/unknown.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.visa,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.visa {
     background-image: url(../images/credit-cards/visa.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.mastercard,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.mastercard {
     background-image: url(../images/credit-cards/mastercard.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.laser,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.laser {
     background-image: url(../images/credit-cards/laser.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.dinersclub,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.dinersclub {
     background-image: url(../images/credit-cards/diners.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.maestro,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.maestro {
     background-image: url(../images/credit-cards/maestro.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.jcb,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.jcb {
     background-image: url(../images/credit-cards/jcb.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.amex,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.amex {
     background-image: url(../images/credit-cards/amex.svg)
 }
 
+#payment-method .rm-pagbank-cc .card-number-input.discover,
 #payment .payment_methods li .payment_box .wc-credit-card-form-card-number.discover {
     background-image: url(../images/credit-cards/discover.svg)
 }
