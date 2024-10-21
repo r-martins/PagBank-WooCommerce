@@ -11,7 +11,8 @@ const MaskedInput = ({ name, label, mask, rowClass = "form-row-wide", ...props }
                 <label htmlFor={name}>{label}</label>
                 <input
                     {...registerWithMask(name, mask, {
-                        required: true
+                        required: true,
+                        showMaskOnHover: false
                     })}
                     id={name}
                     name={name}
