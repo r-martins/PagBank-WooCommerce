@@ -25,6 +25,9 @@ const Label = ( props ) => {
  * Content component
  */
 const Content = ( props ) => {
+    const { eventRegistration, emitResponse } = props;
+    const { onPaymentSetup, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
+
     let instructions = settings.instructions;
     let expiry = settings.expirationTime;
     let expiryText = expiry === 1 ? __('Seu boleto vencerá amanhã.', 'rm-pagbank') : sprintf( __( 'Seu boleto vence em %d dias.', 'rm-pagbank' ), expiry );
@@ -33,15 +36,27 @@ const Content = ( props ) => {
     instructions = `${instructions} <br> ${expiryText} <br> ${discountText}`;
 
     if (settings.paymentUnavailable) {
+        useEffect( () => {
+            const unsubscribe = onPaymentSetup(() => {
+                console.error('PagBank indisponível para pedidos inferiores a R$1,00.');
+                return {
+                    type: emitResponse.responseTypes.ERROR,
+                    messageContext: emitResponse.noticeContexts.PAYMENTS,
+                    message: __('PagBank indisponível para pedidos inferiores a R$1,00.', 'rm-pagbank'),
+                };
+            });
+
+            return () => {
+                unsubscribe();
+            };
+        }, [onPaymentSetup] );
+
         return (
             <div className="rm-pagbank-boleto">
                 <PaymentUnavailable />
             </div>
         );
     }
-
-    const { eventRegistration, emitResponse } = props;
-    const { onPaymentSetup, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
 
     useEffect( () => {
         const unsubscribe = onPaymentSetup(() => {
