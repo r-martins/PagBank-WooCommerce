@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.21.1
+Stable tag: 4.22.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -15,25 +15,25 @@ Autenticação 3D: menos chargeback e mais aprovações.
 
 **Aceite PagSeguro e PagBank (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
+**Economize nas tarifas oficiais do PagBank.** Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação e PIX na hora por 0,99%. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
+
 Esta é a **forma mais fácil e gratuita de integrar sua loja com PagBank (PagSeguro)**.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
 ⭐️Agora com taxas ainda menores (desde Agosto), válidas para lojas antigas e novas.⭐️
 
-Economize nas tarifas oficiais do PagBank. Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
-
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
 Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
-Além disso, você também pode aceitar pagamentos recorrentes e criar clubes de assinatura sem depender de plugins de terceiros.
+Além disso, você também pode aceitar **pagamentos recorrentes** e criar clubes de assinatura sem depender de plugins de terceiros.
 
 https://www.youtube.com/watch?v=FOPwBTRryNM
 
 
 **Problemas com aprovação de pagamentos e chargebacks em transações com cartão de crédito?**
 
-Nossa integração suporta [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a taxa de aprovação.
+Nossa integração possui [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a **taxa de aprovação**.
 
 Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocupar em contratar um serviço de antifraude.
 
@@ -45,11 +45,11 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Suporte a PIX, Cartão de Crédito e Boleto
 * Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
 * Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
-* Suporte nativo ao checkout em Blocos do WooCommerce (sem gambiarras com iframes)
+* Suporte nativo ao [checkout em Blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
 * Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
 * Diversas [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
 * Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto)
-* Permite definir validade de boletos e código PIX
+* Permite definir [validade de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados)
 * [Reembolso parcial ou total](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualizações automáticas de status de pedidos
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
@@ -65,19 +65,20 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 === Instalação automática via painel ===
 * Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
 * Clique no botão para instalar e ative o plugin
-* Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Se você não estiver usando o [checkout em blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === WP-CLI ===
 Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/). 
 
 * Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
-* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
+* Se você não estiver usando o [checkout em blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
 
 === Instalação manual ===
 * Baixe o [arquivo zip](https://codeload.github.com/r-martins/PagBank-WooCommerce/zip/refs/heads/master) e descompacte ele em sua máquina
 * Faça upload dos arquivos na pasta /wp-content/plugins/pagbank-connect, usando seu FTP
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
-* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Se você não estiver usando o [checkout em blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* No terminal, navegue até a pasta do plugin (wp-content/plugins/pagbank-connect) e rode `npm install` para instalar as dependências do plugin. Em seguida, rode `npm run build` para compilar os arquivos do plugin.
 
 === A gente instala pra você 🙀 ===
 Se você preferir, podemos instalar e configurar o plugin para você sem nenhum custo.
@@ -87,12 +88,13 @@ Se você preferir, podemos instalar e configurar o plugin para você sem nenhum 
 === Configuração ===
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
 * Clique no PagBank Connect para acessar as configurações do módulo
-* Clique em "Obter Connect Key". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação.
-* Ao clicar no modelo de recebimento desejado, você será levado(a) para o site do PagBank, onde deverá se logar com sua conta e autorizar nossa aplicação.
-* Em seguida, será levado(a) de volta para nosso site, onde deverá preencher as informações do responsável técnico por sua loja.
-* Feito isso, sua *Connect Key* será exibida e enviada para o e-mail informado. Use ela nas configurações da sua loja.
+* Clique em "Obter Connect Key". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação sem nenhum custo ou mensalidade.
+* No nosso site, selecione o modelo de recebimento desejado (14 ou 30 dias - ou suas condições negociadas) e preencha as informações do responsável técnico por sua loja.
+* Você será levado para o site do PagBank, onde poderá se logar e autorizar nossa aplicação em sua conta.
+* Em seguida, sua *Connect Key* será exibida e enviada para o e-mail informado no passo anterior. Use ela nas configurações da sua loja.
 * Salve as configurações e sua loja está pronta para vender.
 * Se desejar, configure [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento), e validade do boleto e código pix de acordo com suas necessidades.
+* Conheça os [recursos disponíveis na sua integração](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/26127218629133-Recursos) para aproveitar ao máximo dela e vender ainda mais.
 
 == Frequently Asked Questions ==
 = PagSeguro ou PagBank? =
@@ -176,6 +178,15 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.22.0 =
+* Melhoria: detecção automática de bandeira no checkout em bloco
+* Melhoria: não exibimos mais o seletor de parcelas em pagamentos recorrentes (já que era sempre 1x)
+* Melhoria: agora os ícones dos meios de pagamento também aparecem no checkout em blocos
+* Melhoria: removemos o efeito hover nos campos do plugin no checkout em blocos, que substituia os placeholders por __/__ (por exemplo)
+* Melhoria: campo de data de validade do cartão adicionará 0 quando o primeiro número digitado for maior que 1. Ex: 2, ficará 02/, assim como ocorre no form nativo no Woocommerce legado.
+* Mudança interna: removemos os arquivos da pasta build do nosso git. Se você instala nosso plugin via git ou composer, precisará compilá-los manualmente com npm run build. Mais detalhes no README.md.
+* Correção: dependendo da configuração da loja, o checkout em blocos permitia o envio do formulário e checkout em pedidos menores que R$1,00, ocasionando erro de CPF/CNPJ
 
 = 4.21.1 =
 * Pequena correção no dropdown de parcelas em pagamentos recorrentes (quebrado na última versão)
