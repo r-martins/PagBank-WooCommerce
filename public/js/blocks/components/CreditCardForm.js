@@ -43,7 +43,6 @@ const PaymentInstructions = () => {
                 '(6550(2[1-9]|3[0-9]|4[0-9]|5[0-8])))\\d*$'
             );
 
-            if (visaRegex.test(number)) return 'visa';
             if (mastercardRegex.test(number)) return 'mastercard';
             if (amexRegex.test(number)) return 'amex';
             if (dinersRegex.test(number)) return 'diners';
@@ -51,6 +50,8 @@ const PaymentInstructions = () => {
             if (auraRegex.test(number)) return 'aura';
             if (hiperRegex.test(number)) return 'hipercard';
             if (eloRegex.test(number)) return 'elo';
+            if (visaRegex.test(number)) return 'visa';
+            
             return '';
         };
 
