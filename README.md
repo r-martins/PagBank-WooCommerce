@@ -49,7 +49,8 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 * Crie um diretorio em wp-content/plugins chamado rm-pagbank
 * Descompacte o conteúdo do arquivo no diretório criado
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
-* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Ative o Checkout em Blocos *ou* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Rode o comando `npm install` e `npm run build` na raiz do plugin para compilar os arquivos frontend.
 
 ## Instalação automática
 * Navegue até Plugins > Adicionar Novo e procure por \"PagBank Ricardo Martins\"
