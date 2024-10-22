@@ -1,0 +1,8 @@
+#!/bin/sh
+# This script runs `npm run build` after checking out a new branch
+
+# Navigate to the project root directory
+cd "$(git rev-parse --show-toplevel)"
+
+# Run the build command
+npm run build

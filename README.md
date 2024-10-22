@@ -142,6 +142,10 @@ Este não é um produto oficial do PagBank.
 
 Ao usar este plugin você concorda com os [Termos de Uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=github&utm_medium=readme&utm_content=terms).
 
+# Nota aos desenvolvedores
+
+Para compilar os arquivos frontend digite `npm run build` no terminal, na raiz do plugin. Se desejar automatizar este processo, copie o arquivo `./git-hooks/post-checkout` para `.git/hooks/` e torne-o executável (`chmod +x .git/hooks/post-checkout`).
+
 ---
 ¹ A Integração com Envio Fácil está disponível apenas para lojas com integração 14 ou 30 dias. Embora utilizemos as APIs do PagSeguro para isso, eles não encorajam o uso dessas APIs. Use com cautela. O PagSeguro não oferece suporte para esta integração.
 

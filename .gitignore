@@ -46,3 +46,6 @@ cache
 /node_modules/
 /deploy/
 package-lock.json
+
+# React & WP-Build scripts
+build/
