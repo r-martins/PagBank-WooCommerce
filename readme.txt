@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.22.0
+Stable tag: 4.22.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -21,6 +21,17 @@ Esta é a **forma mais fácil e gratuita de integrar sua loja com PagBank (PagSe
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
 ⭐️Agora com taxas ainda menores (desde Agosto), válidas para lojas antigas e novas.⭐️
+
+===Economize nas taxas ⚡===
+Ao invés de pagar 3,99% + R$0,40 ou 4,99% + R$0,40 por transação aprovada no Cartão de Crédito, você pode optar por:
+1. **Recebimento em 30 dias**: **3,05% + R$0,00** por transação aprovada no Cartão de Crédito
+2. **Recebimento em 14 dias**: 3,97% + R$0,00 por transação aprovada no Cartão de Crédito
+3. **PIX**: sempre 0,99% com recebimento na hora
+4. **Boleto**: sempre 1,99% com recebimento em 2 dias
+
+Se você tiver taxas negociadas ou condições negociadas melhores que estas, você também pode utilizá-las.
+
+Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=taxas).
 
 https://www.youtube.com/watch?v=wnzA0KQZCQs
 
@@ -48,8 +59,8 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Suporte nativo ao [checkout em Blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
 * Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
 * Diversas [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
-* Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto)
-* Permite definir [validade de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados)
+* Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
+* Permite definir [validade de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
 * [Reembolso parcial ou total](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualizações automáticas de status de pedidos
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
@@ -117,8 +128,6 @@ Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invé
 
 Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
-Consulte mais sobre elas no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=faq).
-
 = Eu tenho uma taxa ou condição negociada menor que estas. O que faço? =
 
 Ao usar nossa integração, nossas taxas e condições serão aplicadas ao invés das suas. Isto é, nas transações realizadas com nosso plugin.
@@ -178,6 +187,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.22.1 =
+* Ajuste: logo após a instalação do plugin, uma falha na validação da disponibilidade de usar icones com cored dinâmicas tornava o admin bem lento por alguns segundos. Refatoramos o momento que a validação é feita evitando problemas com loops. :)
 
 = 4.22.0 =
 * Melhoria: detecção automática de bandeira no checkout em bloco
