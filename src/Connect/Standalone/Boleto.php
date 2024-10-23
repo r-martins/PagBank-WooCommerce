@@ -60,7 +60,6 @@ class Boleto extends WC_Payment_Gateway
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
-        add_filter('woocommerce_gateway_icon', [$this, 'getGatewayIcon'], 10, 2);
     }
 
     public function init_form_fields()
