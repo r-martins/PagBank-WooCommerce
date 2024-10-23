@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 4.22.1
+Stable tag: 4.22.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -187,6 +187,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.22.2 =
+* Ajuste: devido a um bug no plugin `pix-por-piggly` algumas lojas tiveram problemas com nossa última atualização. Refizemos a última correção de outra forma, a fim de não ser mais impactado pelo bug no outro plugin.  
 
 = 4.22.1 =
 * Ajuste: logo após a instalação do plugin, uma falha na validação da disponibilidade de usar icones com cored dinâmicas tornava o admin bem lento por alguns segundos. Refatoramos o momento que a validação é feita evitando problemas com loops. :)
