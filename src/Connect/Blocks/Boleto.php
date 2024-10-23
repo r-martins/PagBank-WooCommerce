@@ -81,7 +81,7 @@ final class Boleto extends AbstractPaymentMethodType
         return array(
             'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Boleto via PagBank',
             'description'  => $this->get_setting( 'description' ),
-            'icon'  => $this->gateway->icon,
+            'icon'  => $this->gateway->get_icon(),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
             'instructions' => $this->gateway->get_option('boleto_instructions'),

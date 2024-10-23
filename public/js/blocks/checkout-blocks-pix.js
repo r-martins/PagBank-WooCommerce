@@ -17,9 +17,9 @@ const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Co
  * @constructor
  */
 const Icon = () => {
-    return settings.icon
-        ? <img src={settings.icon} style={{ marginLeft: '20px' }} />
-        : ''
+    return (
+        <div dangerouslySetInnerHTML={{ __html: settings.icon }}  style={{ marginLeft: '12px', lineHeight: '0.5rem' }} />
+    )
 }
 
 /**

@@ -6,6 +6,7 @@ use RM_PagBank\Connect\Payments\CreditCardTrial;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Traits\PaymentMethodIcon;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
@@ -23,19 +24,16 @@ class CreditCard extends WC_Payment_Gateway_CC
     use PaymentUnavailable;
     use ProcessPayment;
     use StaticResources;
+    use PaymentMethodIcon;
     use ThankyouInstructions;
+
+    public string $code = '';
 
     public function __construct()
     {
-        $this->id = Connect::DOMAIN . '-cc';
-        $this->icon = apply_filters(
-            'wc_pagseguro_connect_icon',
-            plugins_url('public/images/payment-icon.php?method=cc', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
-        );
-        $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
-        if (!$isDynamicIcoAccessible) {
-            $this->icon = plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
-        }
+        $this->code = 'cc';
+        $this->id = Connect::DOMAIN . '-' . $this->code;
+        $this->icon = plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
         $this->method_title = $this->get_option(
             'title',
             __('Cartão de Crédito via PagBank', 'pagbank-connect')
@@ -68,6 +66,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
+        add_filter('woocommerce_gateway_icon', [$this, 'getGatewayIcon'], 10, 2);
     }
 
     public function init_form_fields()
