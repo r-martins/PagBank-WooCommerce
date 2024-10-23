@@ -7,11 +7,11 @@
 - *phpunit.xml.dist
 - *vendor/phpunit/php-code-coverage/src/Report/*.dist
 - *vendor/theseer/tokenizer/.php_cs.dist
-- *assets/*
+- */assets/*
 - *svn/*
 - *.codacy.yml
 - *.eslintrc.json
 - *.stylelintrc.json
 - *phpmd.xml
 - *phpcs.xml
-- *git-hooks/*
+- */git-hooks/*

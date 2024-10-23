@@ -82,6 +82,9 @@ jobs:
         run: |
           # Get the latest tag name
           latest_tag=$(grep "Version:" rm-pagbank.php | awk -F' ' '{print $3}')
+          
+          # Print latest tag name
+          echo "Latest tag: $latest_tag"
 
           # Copy the trunk to the tags directory with the name of the latest tag
           svn copy ./svn/trunk/ ./svn/tags/$latest_tag/
