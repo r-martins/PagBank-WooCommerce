@@ -320,7 +320,7 @@ const Content = ( props ) => {
                         street: billing.billingData.address_1.replace(/\s+/g, ' '),
                         number: billing.billingData.address_1.replace(/\s+/g, ' '),
                         complement: billing.billingData.address_2.replace(/\s+/g, ' '),
-                        regionCode: billing.billingData.state,
+                        regionCode: billing.billingData.state.toUpperCase(),
                         country: 'BRA',
                         city: billing.billingData.city.replace(/\s+/g, ' '),
                         postalCode: billing.billingData.postcode.replace(/\D+/g, '')
