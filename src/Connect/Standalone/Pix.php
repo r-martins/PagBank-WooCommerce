@@ -5,6 +5,7 @@ use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Traits\OrderInvoiceEmail;
 use RM_PagBank\Traits\PaymentMethodIcon;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
@@ -22,6 +23,7 @@ class Pix extends WC_Payment_Gateway
     use StaticResources;
     use PaymentMethodIcon;
     use ThankyouInstructions;
+    use OrderInvoiceEmail;
 
     public string $code = '';
 
@@ -58,6 +60,7 @@ class Pix extends WC_Payment_Gateway
         add_action('woocommerce_thankyou_' . Connect::DOMAIN . '-pix', [$this, 'addThankyouInstructions']);
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [$this, 'dismissPixOrderKeysNotice']);
         add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
+        add_action('pagbank_connect_after_proccess_response', [$this, 'sendNewOrderEmail'], 10, 2);
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
@@ -217,4 +220,20 @@ class Pix extends WC_Payment_Gateway
         return Api::refund($order_id, $amount);
     }
 
+    /**
+     * Send new order email with invoice and payment details
+     *
+     * @param $order
+     * @param $resp
+     * @return void
+     */
+    public function sendNewOrderEmail($order, $resp) {
+        $shouldNotify = wc_string_to_bool(Params::getPixConfig('pix_send_new_order_email', 'yes'));
+
+        if (!$shouldNotify || $this->id !== $order->get_payment_method()) {
+            return;
+        }
+
+        $this->sendOrderInvoiceEmail($order);
+    }
 }

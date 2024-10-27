@@ -68,4 +68,15 @@ return array(
         'default'     => 'no',
         'desc_tip'    => true,
     ], 
+    'boleto_send_new_order_email' => [
+        'title'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
+        'label'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => __(
+            'Se marcado, um e-mail será enviado ao cliente logo após a criação do pedido com os detalhes de pagamento.',
+            'pagbank-connect'
+        ),
+        'default'     => 'yes',
+        'desc_tip'    => true,
+    ],
 );
