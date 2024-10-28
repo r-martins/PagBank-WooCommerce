@@ -57,7 +57,6 @@ class Boleto extends WC_Payment_Gateway
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN . '-boleto', [$this, 'addThankyouInstructions']);
         add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
-        add_action('pagbank_connect_after_proccess_response', [$this, 'sendNewOrderEmail'], 10, 2);
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
@@ -122,6 +121,8 @@ class Boleto extends WC_Payment_Gateway
 
         $method->process_response($order, $resp);
         self::updateTransaction($order, $resp);
+
+        $this->maybeSendNewOrderEmail($order, $resp);
 
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
@@ -220,10 +221,10 @@ class Boleto extends WC_Payment_Gateway
      * @param $resp
      * @return void
      */
-    public function sendNewOrderEmail($order, $resp) {
+    public function maybeSendNewOrderEmail($order, $resp) {
         $shouldNotify = wc_string_to_bool(Params::getBoletoConfig('boleto_send_new_order_email', 'yes'));
 
-        if (!$shouldNotify || $this->id !== $order->get_payment_method()) {
+        if (!$shouldNotify) {
             return;
         }
 
