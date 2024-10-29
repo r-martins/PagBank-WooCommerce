@@ -57,6 +57,10 @@ const PaymentInstructions = () => {
 
         setCardBrand(detectCardBrand(creditCardNumber.replace(/\D/g, '')));
 
+        if (settings.isCartRecurring === true) {
+            return;
+        }
+
         if (creditCardNumber.replace(/\D/g, '').length < 6) {
             return;
         }
