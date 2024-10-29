@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro, pagbank, pix, cartão de crédito, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 6.6
+Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.22.2
+Stable tag: 4.23.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -187,6 +187,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.23.0 =
+* Adicionado suporte ao WP 6.7 e WooCommerce 9.4.
+* Melhoria: agora você não precisa mais de plugins de terceiros para disparar e-mail de novo pedido com código PIX ou Boleto. Basta ativar a opção nas configurações.
+* Pequena correção de notice de payment_method não definido em algumas situações quando usado com checkout em blocos.
+* Melhoria: notamos que algumas lojas enviavam ou permitiam enviar o campo Estado com letras minúsculas, ocasionando erro na finalização da compra. Agora tratamos isso no próprio plugin antes do envio.
 
 = 4.22.2 =
 * Ajuste: devido a um bug no plugin `pix-por-piggly` algumas lojas tiveram problemas com nossa última atualização. Refizemos a última correção de outra forma, a fim de não ser mais impactado pelo bug no outro plugin.  
