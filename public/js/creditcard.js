@@ -339,7 +339,7 @@ jQuery(document).ready(function ($) {
                     street: checkoutFormDataObj['billing_address_1'].replace(/\s+/g, ' '),
                     number: checkoutFormDataObj['billing_number'].replace(/\s+/g, ' '),
                     complement: checkoutFormDataObj['billing_neighborhood'].replace(/\s+/g, ' '),
-                    regionCode: checkoutFormDataObj['billing_state'].replace(/\s+/g, ' '),
+                    regionCode: checkoutFormDataObj['billing_state'].replace(/\s+/g, ' ').toUpperCase(),
                     country: 'BRA',
                     city: checkoutFormDataObj['billing_city'].replace(/\s+/g, ' '),
                     postalCode: checkoutFormDataObj['billing_postcode'].replace(/\D+/g, '')

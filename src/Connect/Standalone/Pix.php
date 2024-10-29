@@ -5,6 +5,7 @@ use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Traits\OrderInvoiceEmail;
 use RM_PagBank\Traits\PaymentMethodIcon;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
@@ -22,6 +23,7 @@ class Pix extends WC_Payment_Gateway
     use StaticResources;
     use PaymentMethodIcon;
     use ThankyouInstructions;
+    use OrderInvoiceEmail;
 
     public string $code = '';
 
@@ -143,6 +145,8 @@ class Pix extends WC_Payment_Gateway
         $method->process_response($order, $resp);
         self::updateTransaction($order, $resp);
 
+        $this->maybeSendNewOrderEmail($order, $resp);
+
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
         $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
@@ -217,4 +221,20 @@ class Pix extends WC_Payment_Gateway
         return Api::refund($order_id, $amount);
     }
 
+    /**
+     * Send new order email with invoice and payment details
+     *
+     * @param $order
+     * @param $resp
+     * @return void
+     */
+    public function maybeSendNewOrderEmail($order, $resp) {
+        $shouldNotify = wc_string_to_bool(Params::getPixConfig('pix_send_new_order_email', 'yes'));
+
+        if (!$shouldNotify) {
+            return;
+        }
+
+        $this->sendOrderInvoiceEmail($order);
+    }
 }

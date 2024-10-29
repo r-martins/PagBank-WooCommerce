@@ -107,7 +107,7 @@ class Address implements JsonSerializable
      */
     public function setRegionCode(string $region_code): void
     {
-        $this->region_code = substr($region_code, 0, 2);
+        $this->region_code = strtoupper(substr($region_code, 0, 2));
         if ($this->country == 'BRA'){
             $this->region = $this->getRegion();
         }

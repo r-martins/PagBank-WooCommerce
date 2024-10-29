@@ -287,7 +287,7 @@ class CreditCard extends Common
                     'street'     => preg_replace('/\s+/', ' ', $order->get_billing_address_1()),
                     'number'     => $billingNumber,
                     'complement' => $billingNeighborhood,
-                    'regionCode' => preg_replace('/\s+/', ' ', $order->get_billing_state()),
+                    'regionCode' => preg_replace('/\s+/', ' ', strtoupper($order->get_billing_state())),
                     'country'    => 'BRA',
                     'city'       => preg_replace('/\s+/', ' ', $order->get_billing_city()),
                     'postalCode' => Params::removeNonNumeric($order->get_billing_postcode()),
