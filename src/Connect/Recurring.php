@@ -295,10 +295,22 @@ class Recurring
         $product = wc_get_product($productId);
         $productIsRecurring = $product->get_meta('_recurring_enabled') == 'yes';
         $recurringHelper = new RecurringHelper();
+
+        $canClearCart = wc_string_to_bool(Params::getRecurringConfig('recurring_clear_cart'));
+        $recurringCart = $productIsRecurring || $recurringHelper->isCartRecurring();
+
+        if (empty($cartItems) || !$recurringCart) {
+            return $canBeAdded;
+        }
         
-        if (!empty($cartItems) && ($productIsRecurring || $recurringHelper->isCartRecurring())) {
+        if (!$canClearCart) {
             wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', 'pagbank-connect'), 'error');
             $canBeAdded = false;
+        }
+
+        if ($canClearCart) {
+            $cart->empty_cart();
+            $canBeAdded = true;
         }
         
         return $canBeAdded;
