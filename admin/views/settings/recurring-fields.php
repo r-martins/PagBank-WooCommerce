@@ -76,6 +76,16 @@ return array(
         'default'     => 'yes'
     ],
     [
+        'id'          => 'woocommerce_rm-pagbank-recurring_clear_cart',
+        'title'       => __( 'Remover automaticamente outros produtos do carrinho ao adicionar um produto recorrente?', 'pagbank-connect'),
+        'label'       => __( 'Remover', 'pagbank-connect' ),
+        'desc'        => __( 'Remover', 'pagbank-connect' ),
+        'type'        => 'checkbox',
+        'description' => '',
+        'desc_tip'    => __('Isso evitará que o plugin exiba a mensagem de que produtos recorrentes sejam comprados sozinhos', 'pagbank-connect'),
+        'default'     => 'no'
+    ],
+    [
         'type' => 'sectionend',
         'id' => 'rm-pagbank-recurring-settings'
     ]
