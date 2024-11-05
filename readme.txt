@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.23.0
+Stable tag: 4.24.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -187,6 +187,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.24.0 =
+* Recorrência: agora é possível configurar o plugin para excluir outros produtos do carrinho, evitando que a mensagem de que produtos recorrentes devem ser comprados sozinhos seja exibida.
+* Envio Fácil só exibia uma forma de envio (geralmente a mais cara) ao invés de exibir todas disponíveis.
+* Correção: em alguns temas o cálculo de parcelas era chamado na tela de sucesso, fazendo com que uma msg de erro fosse logada no pagbank-connect.log.
 
 = 4.23.0 =
 * Adicionado suporte ao WP 6.7 e WooCommerce 9.4.

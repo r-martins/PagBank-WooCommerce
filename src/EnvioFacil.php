@@ -113,14 +113,13 @@ class EnvioFacil extends WC_Shipping_Method
             'sslverify' => false,
             'httpversion' => '1.1'
         ]);
-
-
+        
         if (is_wp_error($ret)) {
             return [];
         }
         $ret = wp_remote_retrieve_body($ret);
         $ret = json_decode($ret, true);
-
+        
         if (isset($ret['error_messages'])) {
             Functions::log('Erro ao calcular o frete: '.print_r($ret['error_messages'], true), 'debug');
 
@@ -139,7 +138,7 @@ class EnvioFacil extends WC_Shipping_Method
             $adjustment = $this->get_option('adjustment_fee', 0);
             $provider['contractValue'] = Functions::applyPriceAdjustment($provider['contractValue'], $adjustment);
             $rate = array(
-                'id'       => 'ef-'.$provider['provider'],
+                'id'       => 'ef-'.$provider['provider'] . '-' . $provider['providerMethod'],
                 'label'    => $provider['provider'].' - '.$provider['providerMethod'].sprintf(
                     __(' - %d dias úteis', 'pagbank-connect'),
                     $provider['estimateDays']
