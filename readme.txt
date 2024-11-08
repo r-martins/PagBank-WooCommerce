@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.24.0
+Stable tag: 4.24.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -187,6 +187,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.24.1 =
+* Correção Recorrência: quando a primeira tentativa de fechar um pedido falhava (ex: cartao negado) o pedido era criado de forma insuficiente, impossibilitando o processamento da recorrência para futuros pedidos.
 
 = 4.24.0 =
 * Recorrência: agora é possível configurar o plugin para excluir outros produtos do carrinho, evitando que a mensagem de que produtos recorrentes devem ser comprados sozinhos seja exibida.
