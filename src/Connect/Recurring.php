@@ -345,13 +345,14 @@ class Recurring
         global $wpdb;
         
         $recHelper = new RecurringHelper();
-        
+
         $frequency = $order->get_meta('_recurring_frequency');
         $cycle = (int)$order->get_meta('_recurring_cycle');
-        $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
         $initialFee = (float)$order->get_meta('_recurring_initial_fee');
         $discount = (float)$order->get_meta('_recurring_discount_amount');
         $discountCycles = (int)$order->get_meta('_recurring_discount_cycles');
+
+        $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
 
         $trialLength = (int) $order->get_meta('_pagbank_recurring_trial_length');
         if ($trialLength) {
@@ -365,7 +366,8 @@ class Recurring
 
         $paymentInfo = $this->getPaymentInfo($order);
         $statusFromOrder = $recHelper->getStatusFromOrder($order);
-        $success = $wpdb->insert($wpdb->prefix.'pagbank_recurring', [
+
+        $success = $this->insertOrUpdateSubscription([
             'initial_order_id'          => $order->get_id(),
             'recurring_amount'          => $recurringAmount,
             'recurring_initial_fee'     => $initialFee,
@@ -379,18 +381,36 @@ class Recurring
             'updated_at'                => gmdate('Y-m-d H:i:s'),
             'next_bill_at'              => $nextBill->format('Y-m-d H:i:s'),
             'payment_info'              => json_encode($paymentInfo),
-        ], ['%d', '%f', '%f', '%d', '%f', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s']);
+        ]);
         
         if ($success !== false && $statusFromOrder == 'ACTIVE') {
-            $subId = $wpdb->insert_id;
-            $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d";
-//            $wpdb->query($wpdb->prepare($sql, $subId));
-            $subscription = $wpdb->get_row($wpdb->prepare($sql, $subId));
+            $subOrderId = $order->get_id();
+            $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = %d";
+            $subscription = $wpdb->get_row($wpdb->prepare($sql, $subOrderId));
+
             //send welcome e-mail
             do_action('pagbank_recurring_subscription_created_notification', $subscription, $order);
         }
         
         return $success !== false;
+    }
+
+    private function insertOrUpdateSubscription(array $data): bool
+    {
+        global $wpdb;
+        $format = ['%d', '%f', '%f', '%d', '%f', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'];
+        $table = $wpdb->prefix . 'pagbank_recurring';
+
+        $existingSubscription = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE initial_order_id = %d",
+            $data['initial_order_id']
+        ));
+
+        if ($existingSubscription && $existingSubscription->status === 'PENDING') {
+            return $wpdb->update($table, $data, ['id' => $existingSubscription->id]) !== false;
+        }
+
+        return $wpdb->insert($table, $data, $format) !== false;
     }
     
     public function processRecurringPayments(\stdClass $subscription = null)
@@ -461,7 +481,7 @@ class Recurring
                 'expiration_date' => $chargeInfo['card']['exp_month'] . '/' .
                     $chargeInfo['card']['exp_year'],
                 'brand' => $chargeInfo['card']['brand'],
-                'id' => $chargeInfo['card']['id']
+                'id' => $chargeInfo['card']['id'] ?? null,
             ];
         }
 
