@@ -53,6 +53,18 @@ return array(
         'default' => 'no',
         'id'    => 'wc_pagseguro_connect_together_options',
     ],
+    'skip_processing_virtual' => [
+        'title' => esc_html(__( 'Produtos Virtuais', 'pagbank-connect')),
+        'label' => esc_html(__('Marcar como Completo após confirmação de pagamento', 'pagbank-connect')),
+        'type'  => 'checkbox',
+        'desc_tip' => true,
+        'description' => esc_html(
+            __(
+                'Por padrão, pedidos só com produtos virtuais tem o status Processando após a confirmação do pagamento.',
+                'pagbank-connect'
+            )),
+        'default' => 'no',
+    ],
 	'title' => [
         'title'       => esc_html( __( 'Título Principal' , 'pagbank-connect' ) ),
         'type'        => 'text',
