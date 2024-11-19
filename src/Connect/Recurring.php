@@ -246,6 +246,37 @@ class Recurring
                     'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
                 ]);
                 ?>
+                </div>
+                <div class="options_group">
+                <?php
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_pages',
+                    'label' => __('Páginas restritas', 'pagbank-connect'),
+                    'description' => __('Selecione as páginas que só podem ser acessadas por assinantes.', 'pagbank-connect'),
+                    'options' => $this->getPagesOptions(),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_restricted_pages', true),
+                    'custom_attributes' => ['multiple' => 'multiple'],
+                ]);
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_categories',
+                    'label' => __('Categorias restritas', 'pagbank-connect'),
+                    'description' => __('Selecione as categorias que só podem ser acessadas por assinantes.', 'pagbank-connect'),
+                    'options' => $this->getCategoriesOptions(),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_restricted_categories', true),
+                    'custom_attributes' => ['multiple' => 'multiple'],
+                ]);
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_unauthorized_page',
+                    'label' => __('Redirecionar para', 'pagbank-connect'),
+                    'description' => __('Selecione a página que o cliente verá quando não tiver acesso.', 'pagbank-connect'),
+                    'options' => array_merge([''=> __('Selecione', 'pagbank-connect')], $this->getPagesOptions()),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_restricted_pages', true),
+                ]);
+                
+                ?>
             </div>
             <div class="options_group">
                 <p><?php echo esc_html(
@@ -254,6 +285,24 @@ class Recurring
             </div>
         </div>
         <?php
+    }
+
+    private function getPagesOptions() {
+        $pages = get_pages();
+        $options = [];
+        foreach ($pages as $page) {
+            $options[$page->ID] = $page->post_title . ' (ID: ' . $page->ID . ')';
+        }
+        return $options;
+    }
+
+    private function getCategoriesOptions() {
+        $categories = get_categories();
+        $options = [];
+        foreach ($categories as $category) {
+            $options[$category->term_id] = $category->name . ' (ID: ' . $category->term_id . ')';
+        }
+        return $options;
     }
     
     public function saveRecurringTabContent($postId)
@@ -284,6 +333,18 @@ class Recurring
 
             $cycle = isset($_POST['_recurring_discount_cycles']) ? sanitize_text_field($_POST['_recurring_discount_cycles']) : 0;
             update_post_meta($postId, '_recurring_discount_cycles', $cycle);
+
+            //region Restricted Access (pages and categories - coming soon)
+            $recurringEnabled = isset($_POST['_recurring_enabled']) ? 'yes' : 'no';
+            update_post_meta($postId, '_recurring_enabled', $recurringEnabled);
+
+            $restrictedPages = isset($_POST['_restricted_pages']) ? array_map('sanitize_text_field', $_POST['_restricted_pages']) : [];
+            update_post_meta($postId, '_restricted_pages', $restrictedPages);
+
+            $restrictedCategories = isset($_POST['_restricted_categories']) ? array_map('sanitize_text_field', $_POST['_restricted_categories']) : [];
+            update_post_meta($postId, '_restricted_categories', $restrictedCategories);
+            //@TODO add restricted settings to somewhere we don't have too loop through all products
+            //endregion
         }
     }
     
