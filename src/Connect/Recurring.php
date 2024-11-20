@@ -72,6 +72,7 @@ class Recurring
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
         add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
         add_filter('woocommerce_cart_needs_payment', [$this, 'enablePaymentInTrialOrder'], 10, 2);
+        add_action('template_redirect', [$this, 'handleRestrictedAccess']);
     }
 
     public static function recurringSettingsFields($settings, $current_section)
@@ -251,36 +252,38 @@ class Recurring
                 <?php
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_pages',
+                    'name' => '_recurring_restricted_pages[]',
                     'label' => __('Páginas restritas', 'pagbank-connect'),
-                    'description' => __('Selecione as páginas que só podem ser acessadas por assinantes.', 'pagbank-connect'),
+                    'description' => __('Selecione as páginas que só podem ser acessadas por assinantes. Use a tecla Crtl ou Command (Mac) para selecionar mais de uma.', 'pagbank-connect'),
                     'options' => $this->getPagesOptions(),
                     'desc_tip' => true,
-                    'value' => get_post_meta($post->ID, '_restricted_pages', true),
+                    'value' => get_post_meta($post->ID, '_recurring_restricted_pages', true),
                     'custom_attributes' => ['multiple' => 'multiple'],
                 ]);
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_categories',
+                    'name' => '_recurring_restricted_categories[]',
                     'label' => __('Categorias restritas', 'pagbank-connect'),
                     'description' => __('Selecione as categorias que só podem ser acessadas por assinantes.', 'pagbank-connect'),
                     'options' => $this->getCategoriesOptions(),
                     'desc_tip' => true,
-                    'value' => get_post_meta($post->ID, '_restricted_categories', true),
+                    'value' => get_post_meta($post->ID, '_recurring_restricted_categories', true),
                     'custom_attributes' => ['multiple' => 'multiple'],
                 ]);
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_unauthorized_page',
                     'label' => __('Redirecionar para', 'pagbank-connect'),
                     'description' => __('Selecione a página que o cliente verá quando não tiver acesso.', 'pagbank-connect'),
-                    'options' => array_merge([''=> __('Selecione', 'pagbank-connect')], $this->getPagesOptions()),
+                    'options' => [''=> __('Selecione', 'pagbank-connect')] + $this->getPagesOptions(),
                     'desc_tip' => true,
-                    'value' => get_post_meta($post->ID, '_restricted_pages', true),
+                    'value' => get_post_meta($post->ID, '_recurring_restricted_unauthorized_page', true),
                 ]);
                 
                 ?>
             </div>
             <div class="options_group">
                 <p><?php echo esc_html(
-                        __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect')
+                        __('Alterações de valor, ciclos, taxas, periodos de testes, etc só afetarão futuras assinaturas.', 'pagbank-connect')
                     );?></p>
             </div>
         </div>
@@ -304,7 +307,13 @@ class Recurring
         }
         return $options;
     }
-    
+
+    /**
+     * Save the recurring tab content (from product edit page)
+     * @param $postId
+     *
+     * @return void
+     */
     public function saveRecurringTabContent($postId)
     {
         $recurringEnabled = isset($_POST['_recurring_enabled']) ? 'yes' : 'no';
@@ -335,17 +344,27 @@ class Recurring
             update_post_meta($postId, '_recurring_discount_cycles', $cycle);
 
             //region Restricted Access (pages and categories - coming soon)
-            $recurringEnabled = isset($_POST['_recurring_enabled']) ? 'yes' : 'no';
-            update_post_meta($postId, '_recurring_enabled', $recurringEnabled);
+            // if restricted pages info changed, clear transient recurring_restricted_products
+            $oldRestrictedPages = get_post_meta($postId, '_recurring_restricted_pages', true);
+            $oldRestrictedCategories = get_post_meta($postId, '_recurring_restricted_categories', true);
 
-            $restrictedPages = isset($_POST['_restricted_pages']) ? array_map('sanitize_text_field', $_POST['_restricted_pages']) : [];
-            update_post_meta($postId, '_restricted_pages', $restrictedPages);
+            $restrictedPages = isset($_POST['_recurring_restricted_pages']) ? array_map('sanitize_text_field', $_POST['_recurring_restricted_pages']) : [];
+            update_post_meta($postId, '_recurring_restricted_pages', $restrictedPages);
 
-            $restrictedCategories = isset($_POST['_restricted_categories']) ? array_map('sanitize_text_field', $_POST['_restricted_categories']) : [];
-            update_post_meta($postId, '_restricted_categories', $restrictedCategories);
-            //@TODO add restricted settings to somewhere we don't have too loop through all products
+            $restrictedCategories = isset($_POST['_recurring_restricted_categories']) ? array_map('sanitize_text_field', $_POST['_recurring_restricted_categories']) : [];
+            update_post_meta($postId, '_recurring_restricted_categories', $restrictedCategories);
+
+            if ($oldRestrictedPages != $restrictedPages || $oldRestrictedCategories != $restrictedCategories) {
+                delete_transient('recurring_restricted_products');
+            }
+            $unauthoridedPageId = isset($_POST['_recurring_restricted_unauthorized_page']) ? intval(sanitize_text_field($_POST['_recurring_restricted_unauthorized_page'])) : get_option('page_on_front');
+            update_post_meta($postId, '_recurring_restricted_unauthorized_page', $unauthoridedPageId);
+            
+            
             //endregion
         }
+        
+        update_post_meta($postId, '_recurring_restriction_active', (!empty($restrictedCategories) || !empty($restrictedPages)));
     }
     
     public function avoidOtherThanRecurringInCart($canBeAdded, $productId)
@@ -1164,4 +1183,146 @@ class Recurring
 
         return $needs_payment;
     }
+
+    public function handleRestrictedAccess() {
+        if ((!is_page() && !is_single()) || is_product_category() || is_product() || is_shop()) {
+            return;
+        }
+        
+        $pageId = get_the_ID();
+        $categoryId = $this->getPostCategories();
+        $userId = get_current_user_id();
+
+        // Get all restricted products from cache or database
+        $restrictedProducts = get_transient('recurring_restricted_products');
+        if ($restrictedProducts === false) {
+            $restrictedProducts = get_posts([
+                'post_type' => 'product',
+                'fields' => 'ids',
+                'meta_query' => [
+                    [
+                        'key' => '_recurring_restriction_active',
+                        'value' => 1,
+                    ],
+                ],
+                'numberposts' => -1,
+            ]);
+            set_transient('recurring_restricted_products', $restrictedProducts, HOUR_IN_SECONDS);
+        }
+
+        if (empty($restrictedProducts)) {
+            return;
+        }
+
+        // Check if the current page or category is restricted
+        $restrictedProductIds = [];
+        $isPageRestricted = false;
+        foreach ($restrictedProducts as $product) {
+            $restrictedPages = get_post_meta($product, '_recurring_restricted_pages', true);
+            $restrictedCategories = get_post_meta($product, '_recurring_restricted_categories', true);
+
+            if (in_array($pageId, $restrictedPages) || array_intersect($categoryId, $restrictedCategories)) {
+                $restrictedProductIds[] = $product;
+                $isPageRestricted = true;
+            }
+        }
+
+        if (empty($restrictedProductIds) || !$isPageRestricted) {
+            return;
+        }
+
+        if (!is_user_logged_in()) {
+            $this->redirectToUnauthorizedPage($product ?? 0);
+        }
+
+        
+        
+        // Get all order IDs for the current user
+        $orders = wc_get_orders([
+            'customer' => $userId,
+            'limit' => -1,
+        ]);
+
+        $orderIds = array_map(function($order) {
+            return $order->get_id();
+        }, $orders);
+
+        if (empty($orderIds)) {
+            $this->redirectToUnauthorizedPage($restrictedProductIds[0]);
+        }
+
+        // Get all active subscriptions for the current user's orders
+        global $wpdb;
+        $orderIdsString = implode(',', array_map('intval', $orderIds));
+        $subscriptions = $wpdb->get_results(
+            "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE status = 'ACTIVE' AND initial_order_id IN ($orderIdsString)"
+        );
+
+        if (empty($subscriptions)) {
+            $this->redirectToUnauthorizedPage($restrictedProductIds[0]);
+        }
+
+        // Check if the user has an active subscription for any of the restricted products
+        foreach ($subscriptions as $subscription) {
+            $order = wc_get_order($subscription->initial_order_id);
+            if (!$order) {
+                continue;
+            }
+
+            foreach ($order->get_items() as $item) {
+                if (in_array($item->get_product_id(), $restrictedProductIds)) {
+                    return; // User has access
+                }
+            }
+        }
+
+        // If no active subscription found, redirect to unauthorized page
+        $this->redirectToUnauthorizedPage($restrictedProductIds[0]);
+    }
+
+    public function getPostCategories(): array
+    {
+        $categories = get_the_category();
+        $category_ids = [];
+
+        if ( ! empty( $categories ) ) {
+            foreach ( $categories as $category ) {
+                $category_ids[] = $category->term_id;
+            }
+        }
+        return $category_ids;
+    }
+    public function redirectToUnauthorizedPage($productId) {
+        $unauthorizedPageId = get_post_meta($productId, '_recurring_restricted_unauthorized_page', true);
+        wp_redirect(get_permalink($unauthorizedPageId));
+        exit;
+    }
+
+    /**
+     * Deletes all transients matching the given pattern (i.e.: foo% will delete _transient_foo_123, etc)
+     * @param $nameLike
+     *
+     * @return void
+     */
+    function deleteTransientLike($nameLike) {
+        global $wpdb;
+
+        // Query to find all transients matching the pattern
+        $transients = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+                '_transient_' . $nameLike,
+                '_transient_timeout_' . $nameLike
+            )
+        );
+
+
+        // Loop through each transient and delete it
+        foreach ($transients as $transient) {
+            $transient_name = str_replace('_transient_', '', $transient);
+            delete_transient($transient_name);
+        }
+    }
+
+
 }

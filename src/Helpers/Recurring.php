@@ -412,4 +412,26 @@ class Recurring
         return (float)$product->get_meta('_recurring_discount_amount') > 0
         && (int)$product->get_meta('_recurring_discount_cycles') > 0;
     }
+    
+    public function isUserActiveOnProduct($productId): bool
+    {
+        // select user orders that are in pagbank_recurring table with an active status
+        // join with the items table to get the product id
+        // and return true if the product id is the same as the one passed
+        global $wpdb;
+        $table = $wpdb->prefix . 'pagbank_recurring';
+        $sql = "SELECT * FROM `$table` WHERE user_id = %d AND status = 'ACTIVE'";
+        $subscriptions = $wpdb->get_results($wpdb->prepare($sql, get_current_user_id()));
+        if (!$subscriptions) return false;
+        foreach ($subscriptions as $subscription){
+            $order = wc_get_order($subscription->initial_order_id);
+            if (!$order) continue;
+            foreach ($order->get_items() as $item){
+                $product = $item->get_product();
+                if ($product->get_id() == $productId){
+                    return true;
+                }
+            }
+        }
+    }
 }
