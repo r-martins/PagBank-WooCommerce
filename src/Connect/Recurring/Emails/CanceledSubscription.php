@@ -19,8 +19,9 @@ if ( ! class_exists( 'CanceledSubscription', false ) ) :
      * @copyright 2023 Magenteiro
      */
     class CanceledSubscription extends WC_Email {
+        private $subscription;
 
-		/**
+        /**
 		 * Constructor.
 		 */
 		public function __construct() {
@@ -88,7 +89,10 @@ if ( ! class_exists( 'CanceledSubscription', false ) ) :
             
             $this->placeholders['{subscription_id}'] = $subscription->id;
             $this->placeholders['{next_bill_at}'] = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
-            $this->placeholders['{canceled_at}'] = gmdate('d/m/Y', strtotime($subscription->canceled_at));
+            $this->placeholders['{canceled_at}'] = '';
+            if (isset($subscription->canceled_at)) {
+                $this->placeholders['{canceled_at}'] = gmdate('d/m/Y', strtotime($subscription->canceled_at));
+            }
             $this->subscription = $subscription;
 
 			if ( $this->is_enabled() && $this->get_recipient() ) {

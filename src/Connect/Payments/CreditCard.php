@@ -196,8 +196,8 @@ class CreditCard extends Common
             //get card data from subscription
             global $wpdb;
             $initialSubOrderId = $this->order->get_parent_id('edit');
-            $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0{$initialSubOrderId}";
-            $recurring = $wpdb->get_row( $wpdb->prepare( $sql ) );
+            $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0%d;";
+            $recurring = $wpdb->get_row( $wpdb->prepare( $sql, $initialSubOrderId ) );
             $paymentInfo = json_decode($recurring->payment_info);
             $card->setId($paymentInfo->card->id);
             $holder = new Holder();

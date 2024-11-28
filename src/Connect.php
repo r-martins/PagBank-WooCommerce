@@ -426,6 +426,22 @@ class Connect
 
             update_option('pagbank_db_version', '4.13');
         }
+        
+        if (version_compare($stored_version, '4.25', '<')) {
+            global $wpdb;
+            $contentRestrictionTable = $wpdb->prefix . 'pagbank_content_restriction';
+            $sql = "CREATE TABLE IF NOT EXISTS $contentRestrictionTable
+                    (
+                        user_id    int  not null,
+                        categories text null,
+                        pages      text null,
+                        CONSTRAINT pagbank_content_restriction_pk
+                            UNIQUE (user_id)
+                    )
+                        comment 'User permissions based on subscription status';";
+            $wpdb->query($sql);
+            update_option('pagbank_db_version', '4.25');
+        }
     }
 
     public static function uninstall()

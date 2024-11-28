@@ -3,6 +3,7 @@
 namespace RM_PagBank\Helpers;
 
 use DateInterval;
+use DateMalformedStringException;
 use DateTime;
 use DateTimeZone;
 use Exception;
@@ -212,7 +213,6 @@ class Recurring
      * @param stdClass $subscription
      *
      * @return bool
-     * @throws Exception
      */
     public function areBenefitsActive(\stdClass $subscription): bool
     {
@@ -221,8 +221,12 @@ class Recurring
                 return true;
             case 'PAUSED':
             case 'PENDING_CANCEL':
-                $nextBilling = $subscription->next_billing_at;
-                $now = new DateTime('now', new DateTimeZone('GMT'));
+                $nextBilling = $subscription->next_bill_at;
+                try {
+                    $now = new DateTime('now', new DateTimeZone('GMT'));
+                } catch (Exception $e) {
+                    return false;
+                }
                 return $nextBilling > $now->format('Y-m-d H:i:s');
             case 'PENDING':
             case 'SUSPENDED':
@@ -413,25 +417,34 @@ class Recurring
         && (int)$product->get_meta('_recurring_discount_cycles') > 0;
     }
     
-    public function isUserActiveOnProduct($productId): bool
+
+
+    /**
+     * Checks if the user has access to restricted content
+     *
+     * @param int   $userId
+     * @param int   $pageId     
+     * @param array $categoriesIds array of categories ids
+     *
+     * @return bool
+     */
+    public function canAccessRestrictedContent(int $userId, int $pageId, array $categoriesIds): bool
     {
-        // select user orders that are in pagbank_recurring table with an active status
-        // join with the items table to get the product id
-        // and return true if the product id is the same as the one passed
         global $wpdb;
-        $table = $wpdb->prefix . 'pagbank_recurring';
-        $sql = "SELECT * FROM `$table` WHERE user_id = %d AND status = 'ACTIVE'";
-        $subscriptions = $wpdb->get_results($wpdb->prepare($sql, get_current_user_id()));
-        if (!$subscriptions) return false;
-        foreach ($subscriptions as $subscription){
-            $order = wc_get_order($subscription->initial_order_id);
-            if (!$order) continue;
-            foreach ($order->get_items() as $item){
-                $product = $item->get_product();
-                if ($product->get_id() == $productId){
-                    return true;
-                }
-            }
+        $table = $wpdb->prefix . 'pagbank_content_restriction';
+        $sql = "SELECT * FROM `$table` WHERE user_id = %d";
+        $restrictions = $wpdb->get_row($wpdb->prepare($sql, $userId));
+        if (!$restrictions) return false;
+        
+        // get pages and categories that the user has access
+        $pages = explode(',', $restrictions->pages ?? '');
+        $categories = explode(',', $restrictions->categories ?? '');
+        
+        //see if $pageId or $categoriesIds are in the user's access list
+        if (in_array($pageId, $pages) || count(array_intersect($categoriesIds, $categories)) > 0){
+            return true;
         }
+    
+        return false;
     }
 }
