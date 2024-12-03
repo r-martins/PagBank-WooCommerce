@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.24.1
+Stable tag: 4.25.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -55,6 +55,7 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 == ⚡️ RECURSOS ==
 * Suporte a PIX, Cartão de Crédito e Boleto
 * Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
+* OnlyFans - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante.
 * Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
 * Suporte nativo ao [checkout em Blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
 * Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
@@ -187,6 +188,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.25.0 =
+* Recorrência agora tem suporte a restrição de conteúdo só para assinantes. Você pode restringir o acesso à páginas e categorias somente pra quem é assinante.
+* Correções e melhorias diversas no recurso de assinaturas. Corrigimos um problema onde uma assinatura pendente de cancelamento não era cancelada, tratamos algumas exceções que poderiam atrasar a cobrança de outras assinaturas, e muito mais.
+* Adicionamos detalhes aos logs sobre a assinatura que foi cancelada. Seja por conta de um cancelamento esperado como por um erro no pagamento da recorrência.
+* Adicionamos novas actions na recorrência que podem ser úteis para quem deseja estender esta funcionalidade em outros plugins.
+* Adicionada opção para marcar pedidos como completo quando só tiver produtos virtuais
 
 = 4.24.1 =
 * Correção Recorrência: quando a primeira tentativa de fechar um pedido falhava (ex: cartao negado) o pedido era criado de forma insuficiente, impossibilitando o processamento da recorrência para futuros pedidos.
