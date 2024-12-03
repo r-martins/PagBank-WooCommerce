@@ -53,6 +53,24 @@ class Recurring
                 'rm_pagbank_cron_process_recurring_payments'
             );
         }
+
+        add_action('rm_pagbank_cron_process_recurring_cancellations', [$this, 'processRecurringCancellations']);
+        if ( ! wp_next_scheduled('rm_pagbank_cron_process_recurring_cancellations') ) {
+            wp_schedule_event(
+                time(),
+                'daily',
+                'rm_pagbank_cron_process_recurring_cancellations'
+            );
+        }
+
+        add_action('rm_pagbank_cron_process_expired_paused', [$this, 'processRecurringExpiredPaused']);
+        if ( ! wp_next_scheduled('rm_pagbank_cron_process_expired_paused') ) {
+            wp_schedule_event(
+                time(),
+                'daily',
+                'rm_pagbank_cron_process_expired_paused'
+            );
+        }
         //endregion
         
         //region frontend subscription management
@@ -72,6 +90,10 @@ class Recurring
         add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
         add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
         add_filter('woocommerce_cart_needs_payment', [$this, 'enablePaymentInTrialOrder'], 10, 2);
+        add_action('template_redirect', [$this, 'handleRestrictedAccess']);
+        add_action('pagbank_recurring_cancellation_processed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 1);
+        add_action('pagbank_recurring_subscription_created_notification', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 1);
+        add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
     }
 
     public static function recurringSettingsFields($settings, $current_section)
@@ -80,9 +102,7 @@ class Recurring
             return $settings;
         }
 
-        $settings = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
-
-        return $settings;
+        return include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/recurring-fields.php';
     }
 
     public static function recurringHeaderSettingsSection()
@@ -246,20 +266,87 @@ class Recurring
                     'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
                 ]);
                 ?>
+                </div>
+                <h2><?php echo __('Restringir conteúdo', 'pagbank-connect');?> (beta)<span class="woocommerce-help-tip" tabindex="0" aria-label="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>" data-tip="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>"></span></h2>
+                
+                <div class="options_group">
+                <?php
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_pages',
+                    'name' => '_recurring_restricted_pages[]',
+                    'label' => __('Páginas restritas', 'pagbank-connect'),
+                    'description' => __('Selecione as páginas que só podem ser acessadas por assinantes. Use a tecla Crtl ou Command (Mac) para selecionar mais de uma.', 'pagbank-connect'),
+                    'options' => $this->getPagesOptions(),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_recurring_restricted_pages', true),
+                    'custom_attributes' => ['multiple' => 'multiple'],
+                ]);
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_categories',
+                    'name' => '_recurring_restricted_categories[]',
+                    'label' => __('Categorias restritas', 'pagbank-connect'),
+                    'description' => __('Selecione as categorias que só podem ser acessadas por assinantes.', 'pagbank-connect'),
+                    'options' => $this->getCategoriesOptions(),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_recurring_restricted_categories', true),
+                    'custom_attributes' => ['multiple' => 'multiple'],
+                ]);
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_unauthorized_page',
+                    'label' => __('Redirecionar para', 'pagbank-connect'),
+                    'description' => __('Selecione a página que o cliente verá quando não tiver acesso.', 'pagbank-connect'),
+                    'options' => [''=> __('Selecione', 'pagbank-connect')] + $this->getPagesOptions(),
+                    'desc_tip' => true,
+                    'value' => get_post_meta($post->ID, '_recurring_restricted_unauthorized_page', true),
+                ]);
+                
+                ?>
             </div>
             <div class="options_group">
                 <p><?php echo esc_html(
-                        __('Alterações realizadas aqui só afetarão futuras assinaturas.', 'pagbank-connect')
+                        __('Alterações de valor, ciclos, taxas, periodos de testes, etc só afetarão futuras assinaturas.', 'pagbank-connect')
+                    );?></p>
+                <p><?php echo esc_html(
+                        __('Alterações na restrição de conteúdo terão efeito imediato.', 'pagbank-connect')
                     );?></p>
             </div>
         </div>
         <?php
     }
-    
+
+    private function getPagesOptions() {
+        $pages = get_pages();
+        $options = [];
+        foreach ($pages as $page) {
+            $options[$page->ID] = $page->post_title . ' (ID: ' . $page->ID . ')';
+        }
+        return $options;
+    }
+
+    private function getCategoriesOptions() {
+        $categories = get_categories();
+        $options = [];
+        foreach ($categories as $category) {
+            $options[$category->term_id] = $category->name . ' (ID: ' . $category->term_id . ')';
+        }
+        return $options;
+    }
+
+    /**
+     * Save the recurring tab content (from product edit page)
+     * @param $postId
+     *
+     * @return void
+     */
     public function saveRecurringTabContent($postId)
     {
+        $oldRecurringEnabled = get_post_meta($postId, '_recurring_enabled', true);
         $recurringEnabled = isset($_POST['_recurring_enabled']) ? 'yes' : 'no';
         update_post_meta($postId, '_recurring_enabled', $recurringEnabled);
+        if ($oldRecurringEnabled != $recurringEnabled) {
+            delete_transient('recurring_restricted_products');
+            $this->updateAllUsersRestrictedAccess();
+        }
         
         $frequency = isset($_POST['_frequency']) ? sanitize_text_field($_POST['_frequency']) : 'monthly'; //phpcs:ignore WordPress.Security.NonceVerification
         update_post_meta($postId, '_frequency', $frequency);
@@ -284,7 +371,30 @@ class Recurring
 
             $cycle = isset($_POST['_recurring_discount_cycles']) ? sanitize_text_field($_POST['_recurring_discount_cycles']) : 0;
             update_post_meta($postId, '_recurring_discount_cycles', $cycle);
+
+            //region Restricted Access (pages and categories - coming soon)
+            // if restricted pages info changed, clear transient recurring_restricted_products
+            $oldRestrictedPages = get_post_meta($postId, '_recurring_restricted_pages', true);
+            $oldRestrictedCategories = get_post_meta($postId, '_recurring_restricted_categories', true);
+
+            $restrictedPages = isset($_POST['_recurring_restricted_pages']) ? array_map('sanitize_text_field', $_POST['_recurring_restricted_pages']) : [];
+            update_post_meta($postId, '_recurring_restricted_pages', $restrictedPages);
+
+            $restrictedCategories = isset($_POST['_recurring_restricted_categories']) ? array_map('sanitize_text_field', $_POST['_recurring_restricted_categories']) : [];
+            update_post_meta($postId, '_recurring_restricted_categories', $restrictedCategories);
+
+            if ($oldRestrictedPages != $restrictedPages || $oldRestrictedCategories != $restrictedCategories) {
+                delete_transient('recurring_restricted_products');
+                $this->updateAllUsersRestrictedAccess();
+            }
+            $unauthoridedPageId = isset($_POST['_recurring_restricted_unauthorized_page']) ? intval(sanitize_text_field($_POST['_recurring_restricted_unauthorized_page'])) : get_option('page_on_front');
+            update_post_meta($postId, '_recurring_restricted_unauthorized_page', $unauthoridedPageId);
+            
+            
+            //endregion
         }
+        
+        update_post_meta($postId, '_recurring_restriction_active', (!empty($restrictedCategories) || !empty($restrictedPages)));
     }
     
     public function avoidOtherThanRecurringInCart($canBeAdded, $productId)
@@ -304,7 +414,7 @@ class Recurring
         }
         
         if (!$canClearCart) {
-            wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('Produtos recorrentes ou assinaturas devem ser comprados separadamente. Remova os itens recorrentes do carrinho antes de prosseguir.', 'pagbank-connect'), 'error');
             $canBeAdded = false;
         }
 
@@ -412,7 +522,13 @@ class Recurring
 
         return $wpdb->insert($table, $data, $format) !== false;
     }
-    
+
+    /**
+     * Will get subscriptions that are due (or the given subscription) and process the recurring payment
+     * @param stdClass|null $subscription
+     *
+     * @return void
+     */
     public function processRecurringPayments(\stdClass $subscription = null)
     {
         global $wpdb;
@@ -428,6 +544,42 @@ class Recurring
         foreach ($subscriptions as $subscription) {
             $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
             $recurringOrder->createRecurringOrderFromSub();
+        }
+    }
+
+    /**
+     * Cron job to process recurring cancellations
+     * @return void
+     */
+    public function processRecurringCancellations()
+    {
+        global $wpdb;
+        $now = gmdate('Y-m-d H:i:s');
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring 
+         WHERE status = 'PENDING_CANCEL' AND next_bill_at <= canceled_at";
+        $subscriptions = $wpdb->get_results($sql);
+        foreach ($subscriptions as $subscription) {
+            $subscription->status = 'CANCELED';
+            $wpdb->update($wpdb->prefix . 'pagbank_recurring', ['status' => $subscription->status], ['id' => $subscription->id]);
+            do_action('pagbank_recurring_cancellation_processed', $subscription);
+        }
+    }
+    
+    /**
+     * Process subscriptions that are due but paused and trigger further actions
+     * @return void
+     */
+    public function processRecurringExpiredPaused()
+    {
+        global $wpdb;
+        $now = gmdate('Y-m-d H:i:s');
+        $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring 
+         WHERE status = 'PAUSED' AND next_bill_at <= '%s'";
+        $subscriptions = $wpdb->get_results($wpdb->prepare($sql, $now));
+        foreach ($subscriptions as $subscription) {
+            //remove access to restricted content if any
+            $this->updateUserRestrictedAccessForSubscription($subscription);
+            do_action('pagbank_recurring_expired_paused_processed', $subscription);
         }
     }
     
@@ -790,14 +942,14 @@ class Recurring
         
         $referrer = wp_get_referer() ? wp_get_referer() : home_url();
         if (empty($subscriptionId) || empty($action)) {
-            wc_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');
             wp_safe_redirect($referrer);
             return;
         }
 
         $subscription = $this->getSubscription($subscriptionId);
         if ( ! $subscription->id ) {
-            wc_add_notice(__('Assinatura não encontrada.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('Assinatura não encontrada.', 'pagbank-connect'), 'error');
             wp_safe_redirect($referrer);
             return;
         }
@@ -820,7 +972,7 @@ class Recurring
         }
 
         if ( ! method_exists($this, $action . 'SubscriptionAction')) {
-            wc_add_notice(__('Ação não implementada.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('Ação não implementada.', 'pagbank-connect'), 'error');
             wp_safe_redirect($referrer);
             return;
         }
@@ -891,14 +1043,30 @@ class Recurring
                         $initialOrder
                     );
             }
+            
+            //if canceled, remove the user content authorizations
+            if ($newStatus == 'CANCELED') {
+                $order = wc_get_order($subscription->initial_order_id);
+                $userId = $order->get_customer_id();
+                $this->updateUserRestrictions($userId);
+            }
         }
         
         if ($update > 0) {
-            wc_add_notice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'));
+            if(defined('DOING_CRON') && DOING_CRON){
+                Functions::log('Assinatura cancelada com sucesso.', 'info', ['subscription id' => $subscription->id]);
+                return;
+            }
+            \wc_add_notice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'));
             return;            
         }
         
-        wc_add_notice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'), 'error');
+        if(defined('DOING_CRON') && DOING_CRON){
+            Functions::log('Não foi possível cancelar a assinatura.', 'error', ['subscription id' => $subscription->id]);
+            return;
+        }
+        
+        \wc_add_notice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'), 'error');
     }
 
     /** @noinspection PhpUnused */
@@ -907,7 +1075,7 @@ class Recurring
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         if ($subscription->status != 'PENDING_CANCEL') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         
@@ -928,11 +1096,11 @@ class Recurring
         }
         
         if ($update > 0) {
-            wc_add_notice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'));
+            \wc_add_notice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'));
             return;
         }
         
-        wc_add_notice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'), 'error');
+        \wc_add_notice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'), 'error');
     }
 
     /**
@@ -948,7 +1116,7 @@ class Recurring
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
@@ -966,10 +1134,10 @@ class Recurring
             
         }
         if ($update > 0){
-            wc_add_notice(__('Assinatura pausada com sucesso.', 'pagbank-connect'));
+            \wc_add_notice(__('Assinatura pausada com sucesso.', 'pagbank-connect'));
             return;
         }
-        wc_add_notice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'), 'error');
+        \wc_add_notice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'), 'error');
     }
 
     /** @noinspection PhpUnused */
@@ -980,7 +1148,7 @@ class Recurring
         $status = 'ACTIVE';
 
         if ($subscription->status != 'PAUSED') {
-            wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
+            \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         //if next_bill_at < current date, update the next_bill_at with current time
@@ -1004,7 +1172,7 @@ class Recurring
 
         if ($update > 0)
         {
-            wc_add_notice(__('Assinatura resumida com sucesso.', 'pagbank-connect'));
+            \wc_add_notice(__('Assinatura resumida com sucesso.', 'pagbank-connect'));
             do_action(
                 'pagbank_recurring_subscription_unpaused_notification',
                 $subscription,
@@ -1013,7 +1181,7 @@ class Recurring
             return;
         }
         
-        wc_add_notice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), 'error');
+        \wc_add_notice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), 'error');
     }
 
     /**
@@ -1033,10 +1201,10 @@ class Recurring
         ]);
 
         if ($update){
-            wc_add_notice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'));
+            \wc_add_notice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'));
             return;
         }
-        wc_add_notice(__('Não foi possível atualizar a assinatura.', 'pagbank-connect'), 'error');
+        \wc_add_notice(__('Não foi possível atualizar a assinatura.', 'pagbank-connect'), 'error');
     }
     // endregion
 
@@ -1103,4 +1271,273 @@ class Recurring
 
         return $needs_payment;
     }
+
+    public function handleRestrictedAccess() {
+        if ((!is_page() && !is_single()) || is_product_category() || is_product() || is_shop()) {
+            return; //has access
+        }
+        
+        $pageId = get_the_ID();
+        $categoryId = $this->getPostCategories();
+        $userId = get_current_user_id();
+        $restrictedProducts = $this->getProductsWithRestriction();
+
+        if (empty($restrictedProducts)) {
+            return;
+        }
+        
+        // Check if the current page or category is restricted
+        $restrictedProductIds = [];
+        $isPageRestricted = false;
+        foreach ($restrictedProducts as $product) {
+            $restrictedPages = get_post_meta($product, '_recurring_restricted_pages', true);
+            $restrictedCategories = get_post_meta($product, '_recurring_restricted_categories', true);
+
+            if (in_array($pageId, $restrictedPages) || array_intersect($categoryId, $restrictedCategories)) {
+                $restrictedProductIds[] = $product;
+                $isPageRestricted = true;
+            }
+        }
+
+        if (empty($restrictedProductIds) || !$isPageRestricted) {
+            return;
+        }
+
+        if (!is_user_logged_in()) {
+            $this->redirectToUnauthorizedPage($product ?? 0);
+        }
+
+        $recHelper = new RecurringHelper();
+        if ($recHelper->canAccessRestrictedContent($userId, $pageId, $categoryId)) {
+            return;
+        }
+
+        $this->redirectToUnauthorizedPage($product ?? 0);
+    }
+
+    /**
+     * Update user restricted access for a given subscription
+     * @param $subscription
+     *
+     * @return void
+     */
+    public function updateUserRestrictedAccessForSubscription($subscription)
+    {
+        if (!isset($subscription->initial_order_id)) {
+            return;
+        }
+        $order = wc_get_order($subscription->initial_order_id);
+        if (!$order) {
+            return;
+        }
+        $userId = $order->get_customer_id();
+        $this->updateUserRestrictions($userId);
+    }
+    
+    public function getPostCategories(): array
+    {
+        $categories = get_the_category();
+        $category_ids = [];
+
+        if ( ! empty( $categories ) ) {
+            foreach ( $categories as $category ) {
+                $category_ids[] = $category->term_id;
+            }
+        }
+        return $category_ids;
+    }
+    
+    public function updateUserRestrictionsAfterOrderIsPaid($order, $orderData)
+    {
+        $isRecurring = $order->get_meta('_pagbank_is_recurring');
+        $userId = $order->get_customer_id();
+        if ($isRecurring && $userId) {
+            $this->updateUserRestrictions($userId);
+        }
+    }
+
+    /**
+     * @param $productId
+     *
+     * @return void
+     */
+    public function redirectToUnauthorizedPage($productId) {
+        $unauthorizedPageId = get_post_meta($productId, '_recurring_restricted_unauthorized_page', true);
+        wp_redirect(get_permalink($unauthorizedPageId));
+        exit;
+    }
+
+    
+    /**
+     * Get all restricted products from cache or database
+     * @return int[]|mixed|\WP_Post[]
+     */
+    protected function getProductsWithRestriction()
+    {
+        $restrictedProducts = get_transient('recurring_restricted_products');
+        if ($restrictedProducts === false) {
+            $restrictedProducts = get_posts([
+                'post_type'   => 'product',
+                'fields'      => 'ids',
+                'meta_query'  => [
+                    [
+                        'key'   => '_recurring_restriction_active',
+                        'value' => 1,
+                    ],
+                ],
+                'numberposts' => -1,
+            ]);
+            set_transient('recurring_restricted_products', $restrictedProducts, HOUR_IN_SECONDS);
+        }
+
+        return $restrictedProducts;
+    }
+
+    /**
+     * @param int|null $userId
+     *
+     * @return stdClass|WC_Order[]
+     */
+    protected function getUserRecurringOrders(int $userId = null)
+    {
+        $userId = $userId ?? get_current_user_id();
+        // Check if HPOS is enabled
+        if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
+            return wc_get_orders([
+                'customer_id' => $userId,
+                'limit'       => -1,
+                'meta_query' => [
+                    'relation' => 'AND',
+                    [
+                        'key' => '_pagbank_recurring_initial',
+                        'value' => '1',
+                    ]
+                ]
+            ]);
+        }
+        // else, HPOS is disabled
+        $args = array(
+            'post_type'      => 'shop_order',
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => '_pagbank_recurring_initial',
+                    'value'   => '1',
+                    'compare' => '='
+                ],
+                [
+                    'key'     => '_customer_user',
+                    'value'   => $userId,
+                    'compare' => '='
+                ]
+            ],
+        );
+
+        $query = new \WP_Query($args);
+
+        $recurringOrders = [];
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $order_id = get_the_ID();
+                $order = wc_get_order($order_id);
+                $recurringOrders[] = $order;
+            }
+            wp_reset_postdata();
+        }
+
+        return $recurringOrders;
+    }
+
+    /**
+     * @param $userId
+     *
+     * @return void
+     */
+    public function updateUserRestrictions($userId)
+    {
+        $userRecurringOrders = $this->getUserRecurringOrders($userId);
+        if (empty($userRecurringOrders)) {
+            return;
+        }
+        
+        $allowedPages = [];
+        $allowedCategories = [];
+        $recHelper = new RecurringHelper();
+        foreach ($userRecurringOrders as $order) {
+            $subscription = $this->getSubscriptionFromOrder($order);
+            if (!$subscription || !$recHelper->areBenefitsActive($subscription)) {
+                continue;
+            }
+            foreach($order->get_items() as $item) {
+                $originalItem = wc_get_product($item->get_product_id());
+                if ($originalItem->get_meta('_recurring_enabled') != 'yes') {
+                    continue;
+                }
+                    
+                $restrictedPages = get_post_meta($originalItem->get_id(), '_recurring_restricted_pages', true);
+                $restrictedCategories = get_post_meta($originalItem->get_id(), '_recurring_restricted_categories', true);
+                $allowedPages = array_merge($allowedPages, $restrictedPages);
+                $allowedCategories = array_merge($allowedCategories, $restrictedCategories);
+            }
+        }
+        
+        $allowedPages = array_unique($allowedPages);
+        $allowedCategories = array_unique($allowedCategories);
+        $this->updateUserRestrictionsContent($userId, $allowedPages, $allowedCategories);
+        
+    }
+
+    /**
+     * @param $uscerId
+     * @param $restrictedPages
+     * @param $restrictedCategories
+     *
+     * @return void
+     */
+    public function updateUserRestrictionsContent($userId, $restrictedPages, $restrictedCategories)
+    {
+        // create new entry on pagbank_content_restriction if user is not listed there
+        global $wpdb;
+        $table = $wpdb->prefix . 'pagbank_content_restriction';
+        $query = $wpdb->prepare("SELECT * FROM $table WHERE user_id = %d", $userId);
+        $user = $wpdb->get_row($query);
+        $restrictedPages = $restrictedPages ? implode(',', $restrictedPages) : null;
+        $restrictedCategories = $restrictedCategories ? implode(',', $restrictedCategories) : null;
+        if (is_null($user)) {
+            $wpdb->insert($table, ['user_id' => $userId, 'pages' => $restrictedPages, 'categories' => $restrictedCategories]);
+            return;
+        }
+        //or update the existing entry
+        $wpdb->update($table, ['pages' => $restrictedPages, 'categories' => $restrictedCategories], ['user_id' => $userId]);
+    }
+    
+    public function updateAllUsersRestrictedAccess()
+    {
+        //all subscriptions
+        global $wpdb;
+        $table = $wpdb->prefix . 'pagbank_recurring';
+        $query = "SELECT * FROM $table WHERE status IN ('ACTIVE', 'PAUSED', 'PENDING_CANCEL')";
+        $subscriptions = $wpdb->get_results($query);
+        if (empty($subscriptions)) {
+            return;
+        }
+        $usersNeedUpdate = [];
+        foreach ($subscriptions as $subscription) {
+            $order = wc_get_order($subscription->initial_order_id);
+            $userId = $order->get_customer_id();
+            if (!in_array($userId, $usersNeedUpdate)) {
+                $usersNeedUpdate[] = $userId;
+            }
+        }
+        foreach ($usersNeedUpdate as $userId) {
+            $this->updateUserRestrictions($userId);
+        }
+    }
+
+    
 }

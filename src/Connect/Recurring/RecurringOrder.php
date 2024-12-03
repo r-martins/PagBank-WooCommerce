@@ -94,10 +94,11 @@ class RecurringOrder
 
         $order->save();
 
-        $this->processSubscriptionPayment($order, $subscription);
-
-
-//        $this->updateSubscription($subscription, $order);
+        try {
+            $this->processSubscriptionPayment($order, $subscription);
+        } catch (\Exception $e) {
+            do_action('pagbank_recurring_failed_process_subscription_payment', $subscription, $order, $e);
+        }
     }
     
 
@@ -115,6 +116,15 @@ class RecurringOrder
                 'FAILURE'
             );
             throw new Exception('Erro ao decodificar informações de pagamento para subscription ' . esc_attr($subscription->id));
+        }
+        
+        if(!isset($paymentInfo->method)){
+            $recurring->cancelSubscription(
+                $subscription->id,
+                __('Método de pagamento não encontrado.', 'pagbank-connect'),
+                'FAILURE'
+            );
+            throw new Exception('Método de pagamento não encontrado para subscription ' . esc_attr($subscription->id));
         }
         
         $payment_method = $paymentInfo->method;
