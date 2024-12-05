@@ -1479,8 +1479,8 @@ class Recurring
                     continue;
                 }
                     
-                $restrictedPages = get_post_meta($originalItem->get_id(), '_recurring_restricted_pages', true);
-                $restrictedCategories = get_post_meta($originalItem->get_id(), '_recurring_restricted_categories', true);
+                $restrictedPages = get_post_meta($originalItem->get_id(), '_recurring_restricted_pages', true) ?? [];
+                $restrictedCategories = get_post_meta($originalItem->get_id(), '_recurring_restricted_categories', true) ?? [];
                 $allowedPages = array_merge($allowedPages, $restrictedPages);
                 $allowedCategories = array_merge($allowedCategories, $restrictedCategories);
             }
