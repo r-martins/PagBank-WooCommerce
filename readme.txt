@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.0
+Stable tag: 4.25.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -188,6 +188,8 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.25.1 =
+* Correção: Possível erro ao finalizar compras de pedidos recorrentes sem restrição de conteúdo (array_merge argument 2 must be array). Reportado por Dennis (Sysney Informática).
 
 = 4.25.0 =
 * Recorrência agora tem suporte a restrição de conteúdo só para assinantes. Você pode restringir o acesso à páginas e categorias somente pra quem é assinante.
