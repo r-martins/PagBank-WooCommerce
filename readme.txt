@@ -1,11 +1,11 @@
 === PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, cartão de crédito, pagamento
+Tags: pagseguro, pagbank, pix, recorrência, brasil
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.1
+Stable tag: 4.25.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -52,13 +52,15 @@ Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocup
 * Termos de uso e softwares terceiros
 Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
 
-== ⚡️ RECURSOS ==
+== ⚡️ RECURSOS PRINCIPAIS ==
 * Suporte a PIX, Cartão de Crédito e Boleto
 * Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
-* OnlyFans - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante.
+* OnlyFans - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Saiba mais](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
 * Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
 * Suporte nativo ao [checkout em Blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
 * Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
+
+== ⚡️ RECURSOS ADICIONAIS ==
 * Diversas [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
 * Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
 * Permite definir [validade de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
@@ -188,6 +190,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.25.2 =
+* Cartflows: corrigido erro de valor inválido no payment_method.card.encrypted quando usado com o plugin Cartflows.
+
 = 4.25.1 =
 * Correção: Possível erro ao finalizar compras de pedidos recorrentes sem restrição de conteúdo (array_merge argument 2 must be array). Reportado por Dennis (Sysney Informática).
 
