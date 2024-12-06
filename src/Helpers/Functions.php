@@ -336,11 +336,19 @@ class Functions
     }
 
     /**
-     * Check if the current page is the checkout page and uses Woocommerce Blocks
+     * Check if the current page is the checkout page and uses Woocommerce Blocks. Also returns false if the page is a CartFlows checkout.
      * @return bool
      */
     public static function isCheckoutBlocks(): bool
     {
-        return is_checkout() && WC_Blocks_Utils::has_block_in_page( wc_get_page_id('checkout'), 'woocommerce/checkout' );
+        return is_checkout() && WC_Blocks_Utils::has_block_in_page( wc_get_page_id('checkout'), 'woocommerce/checkout' ) && !Functions::isCartflowCheckout();
+    }
+
+    public static function isCartflowCheckout() {
+        // Check if CartFlows plugin is active and the current page is a wcf checkout
+        if ( ! class_exists( 'CartFlows_Checkout' ) || !function_exists('_is_wcf_checkout_type')) {
+            return false;
+        }
+        return _is_wcf_checkout_type();
     }
 }
