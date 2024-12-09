@@ -37,13 +37,20 @@ class OrdersList extends WP_List_Table
 
     public function column_default($item, $column_name)
     {
+        $editOrderUrl = method_exists('get_edit_order_url', $item) ? $item->get_edit_order_url() : '';
+        if (!$editOrderUrl) {
+            $parentOrderId = $item->get_parent_id();
+            $parentOrder = wc_get_order($parentOrderId);
+            $editOrderUrl = $parentOrder ? $parentOrder->get_edit_order_url() : '';
+        }
         switch ($column_name) {
             case 'id':
-                return '<a href="' . $item->get_edit_order_url() . '">' . $item->get_id() . '</a>';
+                $id = isset($parentOrder) ? $parentOrder->get_id() : $item->get_id();
+                return '<a href="' . $editOrderUrl . '">' . $id . '</a>';
             case 'date':
                 return date_i18n(get_option('date_format'), strtotime($item->get_date_created()));
             default:
-                return $item->get_data()[$column_name];
+                return (isset($parentOrder)) ? $parentOrder->get_data()[$column_name] : $item->get_data()[$column_name];
         }
     }
 
