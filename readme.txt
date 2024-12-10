@@ -1,11 +1,11 @@
 === PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, recorrência, brasil
+Tags: pagseguro, pagbank, pix, recorrencia, brasil
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.2
+Stable tag: 4.25.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -190,6 +190,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.25.3 =
+* Corrige erro na exibição de lista de pedidos associados a uma assinatura quando um dos pedidos foi reembolsado. Reportado por Dennis (Sysney Informática).
+
 = 4.25.2 =
 * Cartflows: corrigido erro de valor inválido no payment_method.card.encrypted quando usado com o plugin Cartflows.
 
