@@ -351,4 +351,68 @@ class Functions
         }
         return _is_wcf_checkout_type();
     }
+
+    /**
+     * @return array
+     */
+    public static function getExpiredPixOrders(): array
+    {
+        $expiryMinutes = Params::getPixConfig('pix_expiry_minutes');
+
+        $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes * 60;
+
+        Functions::addMetaQueryFilter();
+
+        // Check if HPOS is enabled
+        if (wc_get_container()->get(
+            \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
+        )->custom_orders_table_usage_is_enabled()) {
+            return wc_get_orders([
+                'limit'        => -1,
+                'status'       => 'pending',
+                'date_created' => '<'.$expiredDate,
+                'meta_query'   => [
+                    [
+                        'key'     => 'pagbank_payment_method',
+                        'value'   => 'pix',
+                        'compare' => '='
+                    ]
+                ]
+            ]);
+        }
+        // else, HPOS is disabled
+        $args = array(
+            'post_type'      => 'shop_order',
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'orderby'        => 'date',
+            'post_status'    => 'wc-pending',
+            'date_query'     => [
+                'before' => date('Y-m-d H:i:s', $expiredDate),
+            ],
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'pagbank_payment_method',
+                    'value'   => 'pix',
+                    'compare' => '='
+                ]
+            ],
+        );
+
+        $query = new \WP_Query($args);
+
+        $expiringOrders = [];
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $order_id = get_the_ID();
+                $order = wc_get_order($order_id);
+                $expiringOrders[] = $order;
+            }
+            wp_reset_postdata();
+        }
+
+        return $expiringOrders;
+    }
 }

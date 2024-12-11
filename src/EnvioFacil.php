@@ -104,6 +104,12 @@ class EnvioFacil extends WC_Shipping_Method
             'weight' => $dimensions['weight'],
             'value' => max($productValue, 0.1)
         ];
+        
+        if (!$senderPostcode || strlen($senderPostcode) != 8) {
+            Functions::log('EnvioFacil: CEP de origem não configurado ou incorreto', 'debug');
+            return [];
+        }
+        
         $url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
         $ret = wp_remote_get($url, [
             'headers' => [

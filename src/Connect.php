@@ -510,25 +510,7 @@ class Connect
     public static function cancelExpiredPix()
     {
         //list all orders with pix payment method and status pending created longer than configured expiry time
-        $expiryMinutes = Params::getPixConfig('pix_expiry_minutes');
-
-        $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes*60;
-
-        Functions::addMetaQueryFilter();
-
-        $expiredOrders = wc_get_orders([
-            'limit' => -1,
-            'status' => 'pending',
-            'date_created' => '<' . $expiredDate,
-            'meta_query' => [
-                [
-                    'key' => 'pagbank_payment_method',
-                    'value' => 'pix',
-                    'compare' => '='
-                ]
-            ]
-        ]);
-
+        $expiredOrders = Functions::getExpiredPixOrders();
         foreach ($expiredOrders as $order) {
             //cancel order
             $order->update_status(
@@ -796,4 +778,5 @@ class Connect
         add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
         add_action('admin_enqueue_scripts', [MenuPagBank::class, 'adminPagesStyle']);
     }
+
 }
