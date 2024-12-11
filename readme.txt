@@ -1,11 +1,11 @@
 === PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, recorrencia, brasil
+Tags: pagseguro, pagbank, pix, recorrencia, brasil, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.3
+Stable tag: 4.25.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -13,14 +13,18 @@ Autenticação 3D: menos chargeback e mais aprovações.
 
 == Description ==
 
-**Aceite PagSeguro e PagBank (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
+**Aceite PagBank (PagSeguro) (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
 **Economize nas tarifas oficiais do PagBank.** Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação e PIX na hora por 0,99%. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
 
-Esta é a **forma mais fácil e gratuita de integrar sua loja com PagBank (PagSeguro)**.
+O **melhor plugin de pagamentos** do Brasil.
+
+Completo, de código aberto e gratuito, permite integrar sua loja com PagBank (PagSeguro) em poucos minutos.
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
-⭐️Agora com taxas ainda menores (desde Agosto), válidas para lojas antigas e novas.⭐️
+⭐️Com atualizações quase todas as semanas, suporte gratuito, e taxas cada vez menores para lojas antigas e novas.⭐️
+
+O preferido do Brasil, dos lojistas, e das agências e desenvolvedores profissionais.
 
 ===Economize nas taxas ⚡===
 Ao invés de pagar 3,99% + R$0,40 ou 4,99% + R$0,40 por transação aprovada no Cartão de Crédito, você pode optar por:
@@ -53,25 +57,25 @@ Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocup
 Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
 
 == ⚡️ RECURSOS PRINCIPAIS ==
-* Suporte a PIX, Cartão de Crédito e Boleto
-* Suporte a [recorrência (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
-* OnlyFans - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Saiba mais](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
-* Integração com [Envio Fácil](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
-* Suporte nativo ao [checkout em Blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
-* Suporte a [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
+* Suporte a **PIX**, **Cartão de Crédito** e **Boleto**
+* Suporte a [**recorrência** (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
+* **OnlyFans** - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Saiba mais](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
+* Integração com [**Envio Fácil**](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
+* Suporte nativo ao [**checkout em Blocos**](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
+* Suporte a [**autenticação 3D** Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
 
 == ⚡️ RECURSOS ADICIONAIS ==
-* Diversas [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
-* Suporte a [descontos no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
-* Permite definir [validade de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
-* [Reembolso parcial ou total](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
-* Atualizações automáticas de status de pedidos
+* Diversas [opções de **parcelamento**](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
+* Suporte a [**descontos** no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
+* Permite definir [**validade** de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
+* [**Reembolso** parcial ou total](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
+* Atualizações automáticas de **status de pedidos**
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
-* Suporte a [High-Performance Order Storage (HPOS)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
-* Exibição de [informações de parcelas na página de produto em 3 formatos diferentes](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
-* Permite exibir os meios de pagamento de [forma individual ou agrupada](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26581505001357-Separar-meios-de-pagamento) (melhor experiência)
-* Hooks disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
+* Suporte a [High-Performance Order Storage (**HPOS**)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
+* Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
+* **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
+* Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
 
 
 == Installation ==
@@ -190,6 +194,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.25.4 =
+* Correcão: ao usar um cartao invalido a falha no cálculo de parcelas poderia logar erros no backend em alguns cenários na chamada de um método print_r do php.
+* Correção: Notice de que query estaria sendo chamada de forma incorreta ao processar o cron de pedidos pix expirados era logada quando HPOS não está ativo.
+* Melhoria: Quando CEP da loja não está configurado, chamadas do Envio Facil logavam retorno de que algum parametro estava faltando sem indicar qual. Agora sequer faremos a requisição ao servidor.
+
 = 4.25.3 =
 * Corrige erro na exibição de lista de pedidos associados a uma assinatura quando um dos pedidos foi reembolsado. Reportado por Dennis (Sysney Informática).
 
