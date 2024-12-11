@@ -225,7 +225,7 @@ class Params
 
         if (isset($installments['error_messages'])){
 			$return['error'] = $installments['error_messages'][0]['description'] ?? 'Erro ao calcular as parcelas';
-            Functions::log('Erro ao calcular as parcelas' . print_r([$installments['error_messages'], $params], true), 'debug');
+            Functions::log('Erro ao calcular as parcelas' . \print_r([$installments['error_messages'], $params], true), 'debug');
         }
 
         if (isset($installments['payment_methods']['credit_card'])){
