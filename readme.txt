@@ -1,11 +1,11 @@
 === PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, recorrencia, brasil, pagamento
+Tags: pagseguro, pagbank, pix, recorrencia, brasil
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.4
+Stable tag: 4.25.5
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
@@ -24,9 +24,9 @@ Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Ca
 
 ⭐️Com atualizações quase todas as semanas, suporte gratuito, e taxas cada vez menores para lojas antigas e novas.⭐️
 
-O preferido do Brasil, dos lojistas, e das agências e desenvolvedores profissionais.
+**O preferido do Brasil, dos lojistas, e das agências e desenvolvedores profissionais.**
 
-===Economize nas taxas ⚡===
+=== ⚡️Economize nas taxas===
 Ao invés de pagar 3,99% + R$0,40 ou 4,99% + R$0,40 por transação aprovada no Cartão de Crédito, você pode optar por:
 1. **Recebimento em 30 dias**: **3,05% + R$0,00** por transação aprovada no Cartão de Crédito
 2. **Recebimento em 14 dias**: 3,97% + R$0,00 por transação aprovada no Cartão de Crédito
@@ -194,6 +194,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.25.5 =
+* Correção: pedidos PIX eram cancelados antes da hora em lojas com HPOS desabilitado.
+
 = 4.25.4 =
 * Correcão: ao usar um cartao invalido a falha no cálculo de parcelas poderia logar erros no backend em alguns cenários na chamada de um método print_r do php.
 * Correção: Notice de que query estaria sendo chamada de forma incorreta ao processar o cron de pedidos pix expirados era logada quando HPOS não está ativo.
