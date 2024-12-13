@@ -359,14 +359,13 @@ class Functions
     {
         $expiryMinutes = Params::getPixConfig('pix_expiry_minutes');
 
-        $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes * 60;
-
         Functions::addMetaQueryFilter();
 
         // Check if HPOS is enabled
         if (wc_get_container()->get(
             \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
         )->custom_orders_table_usage_is_enabled()) {
+            $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes * 60;
             return wc_get_orders([
                 'limit'        => -1,
                 'status'       => 'pending',
@@ -381,6 +380,7 @@ class Functions
             ]);
         }
         // else, HPOS is disabled
+        $expiredDate = current_time('timestamp') - $expiryMinutes * 60;
         $args = array(
             'post_type'      => 'shop_order',
             'posts_per_page' => -1,
@@ -412,7 +412,6 @@ class Functions
             }
             wp_reset_postdata();
         }
-
         return $expiringOrders;
     }
 }
