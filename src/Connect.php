@@ -51,6 +51,7 @@ class Connect
         add_action('update_option', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged'], 10, 3);
 //        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
+        add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'recurringRestrictPaymentMethod']);
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
         add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
@@ -567,6 +568,19 @@ class Connect
                 return [Connect::DOMAIN => new Gateway()];
             });
         }
+    }
+
+    public static function recurringRestrictPaymentMethod($gateways)
+    {
+        $recHelper = new Recurring();
+        $isCartRecurring = $recHelper->isCartRecurring();
+        $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
+        if ($isStandalone && $isCartRecurring) {
+            $cc = new StandaloneCc();
+            $cc->id = Connect::DOMAIN . '-cc';
+            return [$cc->id => $cc];
+        }
+        return $gateways;
     }
 
     /**
