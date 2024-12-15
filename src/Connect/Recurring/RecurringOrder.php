@@ -92,6 +92,20 @@ class RecurringOrder
         $order->add_meta_data('_pagbank_is_recurring', true);
         $this->addMetaFromOriginalOrder($order, $initialOrder);
 
+        $order->add_meta_data(
+            '_rm_pagbank_checkout_blocks',
+            $initialOrder->get_meta('_rm_pagbank_checkout_blocks'),
+            true
+        );
+
+        if($initialOrder->get_meta('_rm_pagbank_customer_document')) {
+            $order->add_meta_data(
+                '_rm_pagbank_customer_document',
+                $initialOrder->get_meta('_rm_pagbank_customer_document'),
+                true
+            );
+        }
+
         $order->save();
 
         try {
