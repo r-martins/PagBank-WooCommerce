@@ -84,6 +84,7 @@ final class CreditCard extends AbstractPaymentMethodType
     public function get_payment_method_data() {
         $recHelper = new Recurring();
         $api = new Api();
+        $isPaymentStep = is_checkout() && !is_order_received_page();
 
         return array(
             'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Cartão de Crédito via PagBank',
@@ -98,7 +99,7 @@ final class CreditCard extends AbstractPaymentMethodType
             'isCartRecurring' => $recHelper->isCartRecurring(),
             'recurringTerms' => wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong'),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
-            'defaultInstallments' => is_checkout() && !$recHelper->isCartRecurring() ? $this->gateway->getDefaultInstallments() : null,
+            'defaultInstallments' => $isPaymentStep && !$recHelper->isCartRecurring() ? $this->gateway->getDefaultInstallments() : null,
             'ajax_url' => admin_url('admin-ajax.php'),
             'rm_pagbank_nonce' => wp_create_nonce('rm_pagbank_nonce')
         );
