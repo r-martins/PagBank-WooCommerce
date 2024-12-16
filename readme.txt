@@ -5,11 +5,11 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.5
+Stable tag: 4.25.6
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
-PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com taxas ainda menores no PagSeguro.
-Autenticação 3D: menos chargeback e mais aprovações.
+PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
+Autenticação 3D: menos chargeback + aprovações.
 
 == Description ==
 
@@ -194,6 +194,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.25.6 =
+* Correção: cobranças recorrentes subsequentes (após pedido inicial) falhavam por conta do documento do cliente quando checkout em blocos era utilizado
+* Correção: em alguns cenários, boleto e pix eram exibidos como formas de pagamento em pedidos recorrentes quando checkout em blocos era utilizado
 
 = 4.25.5 =
 * Correção: pedidos PIX eram cancelados antes da hora em lojas com HPOS desabilitado.
