@@ -44,6 +44,7 @@ jQuery(document).ready(function($) {
         const parameters = {
             'amount.value': 'valor do pedido',
             'customer.name': 'nome do cliente',
+            'customer.phones': 'telefone do cliente',
             'customer.phones[0].number': 'número de telefone do cliente',
             'customer.phones[0].area': 'DDD do telefone do cliente',
             'billingAddress.complement': 'complemento/bairro do endereço de cobrança',
