@@ -135,11 +135,13 @@ class CreditCard extends WC_Payment_Gateway_CC
      * @inheritDoc
      */
     public function form() {
+        
         if ($this->paymentUnavailable()) {
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/unavailable.php';
             return;
         }
 
+        $this->addScripts(true);
         include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard.php';
     }
 
@@ -351,7 +353,7 @@ class CreditCard extends WC_Payment_Gateway_CC
      * Add js files for checkout and success page
      * @return void
      */
-    public function addScripts() {
+    public function addScripts($force=false) {
 
         // If the method has already been called, return early
         if (self::$addedScripts) {
@@ -368,17 +370,20 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         $alreadyEnqueued = wp_script_is('pagseguro-checkout-sdk');
-        if ( is_checkout() && !is_order_received_page() && !$alreadyEnqueued ) {
-            wp_enqueue_script('pagseguro-checkout-sdk',
-                'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js',
-                [],
-                WC_PAGSEGURO_CONNECT_VERSION,
-                true
-            );
+        if ($force || (is_checkout() && !is_order_received_page()) ) {
+            if ( !$alreadyEnqueued ) {
+                wp_enqueue_script(
+                    'pagseguro-checkout-sdk',
+                    'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js',
+                    [],
+                    WC_PAGSEGURO_CONNECT_VERSION,
+                    true
+                );
+            }
         }
 
         $isCheckoutBlocks = Functions::isCheckoutBlocks();
-        if ( is_checkout() && !is_order_received_page() && !$isCheckoutBlocks ) {
+        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) ) {
             $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
             if (!$alreadyEnqueued) {
                 wp_enqueue_script(
