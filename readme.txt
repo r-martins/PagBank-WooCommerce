@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.25.6
+Stable tag: 4.26.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -194,6 +194,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.26.0 =
+* Correção: em lojas com checkout em blocos, o método de calcular parcelas era chamado indevidamente na tela de sucesso de compra logando erros.
+* Correção/melhoria: em alguns cenários onde campos do checkout eram omitidos, a validação 3DS tornava o botão de Finalizar Compra inoperante devido a erros. Agora não só exibiremos o que pode ter dado errado, como também preenchemos alguns campos com valores como 'Nao informado' e 'n/d' a fim de garantir compatibilidade com tais tentativas e melhorar experiência do usuário nesses cenários.
+* Correção/melhoria: em alguns cenários, dependendo da configuração ou plugin de checkout utilizado, alguns arquivos JavaScript não eram inseridos, ocasionando erros na criptografia do cartao, aplicação de máscaras, e consequentemente impedindo a finalização de pedidos com Cartão de Crédito em checkouts diferentes do checkout em bloco.
 
 = 4.25.6 =
 * Correção: cobranças recorrentes subsequentes (após pedido inicial) falhavam por conta do documento do cliente quando checkout em blocos era utilizado
