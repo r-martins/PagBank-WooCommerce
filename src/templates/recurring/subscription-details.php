@@ -68,6 +68,14 @@ wc_print_notices();
                     </td>
                 </tr>
             <?php endif;?>
+            <?php if ((int)$subscription->recurring_max_cycles): ?>
+                <tr>
+                    <th scope="row"><?php _e('Número de cobranças', 'pagbank-connect')?></th>
+                    <td>
+                        <?php echo $subscription->recurring_max_cycles;?>
+                    </td>
+                </tr>
+            <?php endif;?>
             <tr>
                 <th scope="row"><?php _e('Status', 'pagbank-connect')?></th>
                 <td><?php echo Recurring::getFriendlyStatus($subscription->status);?></td>

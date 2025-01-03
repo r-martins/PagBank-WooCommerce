@@ -444,6 +444,15 @@ class Connect
             $wpdb->query($sql);
             update_option('pagbank_db_version', '4.25');
         }
+
+        if (version_compare($stored_version, '4.26', '<')) {
+            $sql = "ALTER TABLE $recurringTable
+                    ADD COLUMN recurring_max_cycles int null comment 'Maximum number of billing cycles' AFTER recurring_discount_cycles;
+                    ";
+
+            $wpdb->query($sql);
+            update_option('pagbank_db_version', '4.26');
+        }
     }
 
     public static function uninstall()

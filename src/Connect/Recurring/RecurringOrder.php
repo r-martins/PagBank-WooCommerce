@@ -42,8 +42,9 @@ class RecurringOrder
         $subscription = $this->subscription;
         $initialOrder = wc_get_order($subscription->initial_order_id);
 
-        // calculate total before new order creation
         $recHelper = new Recurring();
+
+        // calculate total before new order creation
         $total = $subscription->recurring_amount;
         $hasDiscount = $recHelper->hasSubscriptionDiscountRemaining($subscription);
         if ($hasDiscount) {
@@ -112,6 +113,12 @@ class RecurringOrder
             $this->processSubscriptionPayment($order, $subscription);
         } catch (\Exception $e) {
             do_action('pagbank_recurring_failed_process_subscription_payment', $subscription, $order, $e);
+        }
+
+        $canContinue = $recHelper->hasSubscriptionChargeRemaining($subscription);
+        if (!$canContinue) {
+            $recurring = new \RM_PagBank\Connect\Recurring();
+            $recurring->completeSubscription($subscription);
         }
     }
     

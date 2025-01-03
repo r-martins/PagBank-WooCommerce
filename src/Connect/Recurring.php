@@ -231,6 +231,18 @@ class Recurring
                 'desc_tip' => true,
                 'value' => get_post_meta($post->ID, '_initial_fee', true),
             ]);
+            woocommerce_wp_text_input([
+                'id' => '_recurring_max_cycles',
+                'label' => __('Não cobrar mais que X ciclos', 'pagbank-connect'),
+                'description' => __('Número máximo de ciclos de cobrança. Nesse caso, o cliente não poderá cancelar a assinatura antes de finalizar.', 'pagbank-connect'),
+                'desc_tip' => true,
+                'value' => get_post_meta($post->ID, '_recurring_max_cycles', true),
+                'type' => 'number',
+                'custom_attributes' => [
+                    'min' => 1,
+                    'step' => 1,
+                ],
+            ]);
             ?>
             </div>
             <div class="options_group">
@@ -372,6 +384,9 @@ class Recurring
             $cycle = isset($_POST['_recurring_discount_cycles']) ? sanitize_text_field($_POST['_recurring_discount_cycles']) : 0;
             update_post_meta($postId, '_recurring_discount_cycles', $cycle);
 
+            $maxCycles = isset($_POST['_recurring_max_cycles']) ? sanitize_text_field($_POST['_recurring_max_cycles']) : 0;
+            update_post_meta($postId, '_recurring_max_cycles', $maxCycles);
+
             //region Restricted Access (pages and categories - coming soon)
             // if restricted pages info changed, clear transient recurring_restricted_products
             $oldRestrictedPages = get_post_meta($postId, '_recurring_restricted_pages', true);
@@ -461,6 +476,7 @@ class Recurring
         $initialFee = (float)$order->get_meta('_recurring_initial_fee');
         $discount = (float)$order->get_meta('_recurring_discount_amount');
         $discountCycles = (int)$order->get_meta('_recurring_discount_cycles');
+        $maxCycles = (int)$order->get_meta('_recurring_max_cycles');
 
         $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
 
@@ -484,6 +500,7 @@ class Recurring
             'recurring_trial_period'    => $trialLength,
             'recurring_discount_amount' => $discount,
             'recurring_discount_cycles' => $discountCycles,
+            'recurring_max_cycles'      => $maxCycles,
             'status'                    => $statusFromOrder,
             'recurring_type'            => $frequency,
             'recurring_cycle'           => $cycle,
@@ -508,7 +525,7 @@ class Recurring
     private function insertOrUpdateSubscription(array $data): bool
     {
         global $wpdb;
-        $format = ['%d', '%f', '%f', '%d', '%f', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'];
+        $format = ['%d', '%f', '%f', '%d', '%f', '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'];
         $table = $wpdb->prefix . 'pagbank_recurring';
 
         $existingSubscription = $wpdb->get_row($wpdb->prepare(
@@ -532,6 +549,8 @@ class Recurring
     public function processRecurringPayments(\stdClass $subscription = null)
     {
         global $wpdb;
+        $recHelper = new \RM_PagBank\Helpers\Recurring();
+
         //Get all recurring orders that are due or past due and active
         $now = gmdate('Y-m-d H:i:s');
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE ";
@@ -599,6 +618,7 @@ class Recurring
                 $order->update_meta_data('_recurring_initial_fee', $originalItem->get_meta('_initial_fee'));
                 $order->update_meta_data('_recurring_discount_amount', $originalItem->get_meta('_recurring_discount_amount'));
                 $order->update_meta_data('_recurring_discount_cycles', $originalItem->get_meta('_recurring_discount_cycles'));
+                $order->update_meta_data('_recurring_max_cycles', $originalItem->get_meta('_recurring_max_cycles'));
                 $order->save();
             }
         }
@@ -860,6 +880,17 @@ class Recurring
     
     public function filterAllowedActions($actions, $subscription)
     {
+        if ($subscription->recurring_max_cycles > 0) {
+            unset($actions['cancel']);
+            unset($actions['uncancel']);
+            unset($actions['pause']);
+            unset($actions['unpause']);
+            unset($actions['activate']);
+            unset($actions['edit']);
+
+            return $actions;
+        }
+
         switch ($subscription->status){
             case 'PAUSED':
                 unset($actions['pause']);
@@ -1182,6 +1213,19 @@ class Recurring
         }
         
         \wc_add_notice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), 'error');
+    }
+
+    /**
+     * Change subscription status to COMPLETED if the subscription has finished the max cycles
+     *
+     * @param $subscription
+     * @return void
+     */
+    public function completeSubscription($subscription)
+    {
+        global $wpdb;
+        $subscription->status = 'COMPLETED';
+        $wpdb->update($wpdb->prefix . 'pagbank_recurring', ['status' => $subscription->status], ['id' => $subscription->id]);
     }
 
     /**
