@@ -50,12 +50,11 @@ $actions = apply_filters('rm_pagbank_account_recurring_actions', [
         'url' => admin_url('admin.php?page=rm-pagbank-subscriptions-edit&action=edit&id=' . $subscription->id),
         'class' => 'subscription-button edit',
     ],
-    // Coming soon
-    /*'update' => [
+    'update' => [
         'name' => __('Atualizar Cartão', 'pagbank-connect'),
-        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=update&id=' . $subscription->id,
+        'url' => wc_get_account_endpoint_url('rm-pagbank-subscriptions-update/' . $subscription->id),
         'class' => 'subscription-button update',
-    ]*/
+    ]
 ], $subscription);
 if ( ! empty( $actions ) ) {
     foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited

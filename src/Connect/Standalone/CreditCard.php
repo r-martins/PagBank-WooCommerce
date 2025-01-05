@@ -369,8 +369,9 @@ class CreditCard extends WC_Payment_Gateway_CC
             );
         }
 
+        $recHelper = new \RM_PagBank\Helpers\Recurring();
         $alreadyEnqueued = wp_script_is('pagseguro-checkout-sdk');
-        if ($force || (is_checkout() && !is_order_received_page()) ) {
+        if ($force || (is_checkout() && !is_order_received_page()) || $recHelper->isSubscriptionUpdatePage() ) {
             if ( !$alreadyEnqueued ) {
                 wp_enqueue_script(
                     'pagseguro-checkout-sdk',
@@ -383,7 +384,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         $isCheckoutBlocks = Functions::isCheckoutBlocks();
-        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) ) {
+        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) || $recHelper->isSubscriptionUpdatePage() ) {
             $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
             if (!$alreadyEnqueued) {
                 wp_enqueue_script(
@@ -420,7 +421,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'var pagseguro_connect_public_key = \''.Params::getConfig('public_key').'\';',
                     'before'
                 );
-                if ( $this->get_option('cc_3ds') === 'yes') {
+                if ( $this->get_option('cc_3ds') === 'yes' && !$recHelper->isSubscriptionUpdatePage()) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
@@ -447,6 +448,13 @@ class CreditCard extends WC_Payment_Gateway_CC
             }
             self::$addedScripts = true;
         }
+
+        $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
+        wp_add_inline_script(
+            'pagseguro-connect-checkout',
+            "const pagseguro_connect_change_card_page = {$isUpdatePage};",
+            'before'
+        );
     }
 
     /**

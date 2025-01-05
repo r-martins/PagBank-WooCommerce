@@ -447,4 +447,14 @@ class Recurring
     
         return false;
     }
+
+    /**
+     * @return bool
+     */
+    public function isSubscriptionUpdatePage(): bool
+    {
+        global $wp;
+        $endpoint = $wp->request;
+        return stripos($endpoint, 'rm-pagbank-subscriptions-update') !== false;
+    }
 }
