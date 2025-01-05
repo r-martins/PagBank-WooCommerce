@@ -199,7 +199,7 @@ trait ProcessPayment
         //force payment method, to avoid problems with standalone methods
         $order->set_payment_method(Connect::DOMAIN);
 
-        $endpoint = $method->code == 'credit_card_trial' ? 'ws/tokens/cards' : 'ws/orders';
+        $endpoint = $method->code == 'credit_card_token' ? 'ws/tokens/cards' : 'ws/orders';
         $api = new Api();
         $resp = $api->post($endpoint, $params);
         if (isset($resp['error_messages'])) {

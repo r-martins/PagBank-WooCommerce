@@ -2,7 +2,7 @@
 namespace RM_PagBank\Connect\Standalone;
 
 use RM_PagBank\Connect;
-use RM_PagBank\Connect\Payments\CreditCardTrial;
+use RM_PagBank\Connect\Payments\CreditCardToken;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Functions;
@@ -252,7 +252,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
                     true
                 );
-                $method = new \RM_PagBank\Connect\Payments\CreditCardTrial($order);
+                $method = new CreditCardToken($order);
                 $params = $method->prepare();
                 break;
             default:

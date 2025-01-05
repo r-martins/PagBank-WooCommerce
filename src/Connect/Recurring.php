@@ -3,6 +3,7 @@ namespace RM_PagBank\Connect;
 
 use Exception;
 use RM_PagBank\Connect;
+use RM_PagBank\Connect\Payments\CreditCardToken;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -661,7 +662,7 @@ class Recurring
             ];
         }
 
-        if ($paymentMethod == 'credit_card_trial') {
+        if ($paymentMethod == 'credit_card_token') {
             $paymentInfo['method'] = 'credit_card';
             $cardInfo = $order->get_meta('pagbank_order_recurring_card');
             if ( ! isset($cardInfo['id'])){
@@ -1284,7 +1285,7 @@ class Recurring
             htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
             true
         );
-        $method = new \RM_PagBank\Connect\Payments\CreditCardTrial($order);
+        $method = new CreditCardToken($order);
         $params = $method->prepare();
 
         $api = new Api();
