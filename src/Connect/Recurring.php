@@ -603,7 +603,6 @@ class Recurring
         });
 
         wc_get_template('recurring/my-account/form-change-credit-card.php', [
-//        wc_get_template('payments/creditcard.php', [
             'subscription' => $subscription,
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
     }
