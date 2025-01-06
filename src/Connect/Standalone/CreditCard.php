@@ -183,7 +183,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         if ($recurringTrialPeriod && $order->get_total() == 0) {
-            $payment_method = $payment_method . '_trial';
+            $payment_method = $payment_method . '_token';
         }
 
         $isCheckoutBlocks = Functions::isCheckoutBlocks();
@@ -246,7 +246,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
                 $params = $method->prepare();
                 break;
-            case 'cc_trial':
+            case 'cc_token':
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
