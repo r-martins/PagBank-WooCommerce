@@ -589,19 +589,6 @@ class Recurring
 
     public function subscriptionUpdatePayment($subscription)
     {
-        add_action('wp_enqueue_scripts', function() {
-            wp_register_style(
-                    'credit-card-style',
-                    plugins_url('public/css/checkout.css',
-                        WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                    [],
-                    WC_PAGSEGURO_CONNECT_VERSION,
-                    'all'
-            );
-
-            wp_enqueue_style('credit-card-style');
-        });
-
         wc_get_template('recurring/my-account/form-change-credit-card.php', [
             'subscription' => $subscription,
         ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;

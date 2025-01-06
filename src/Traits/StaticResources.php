@@ -3,6 +3,7 @@
 namespace RM_PagBank\Traits;
 
 use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 
 trait StaticResources
 {
@@ -29,7 +30,8 @@ trait StaticResources
         }
 
         $alreadyEnqueued = wp_style_is('pagseguro-connect-checkout');
-        if (is_checkout() && !$alreadyEnqueued) {
+        $recHelper = new RecurringHelper();
+        if ((is_checkout() || $recHelper->isSubscriptionUpdatePage() ) && !$alreadyEnqueued) {
             $styles['pagseguro-connect-checkout'] = [
                 'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 'deps'    => [],
