@@ -300,15 +300,42 @@ const Content = ( props ) => {
                     }
                 }
 
+                let customerName = billing.billingData.first_name + ' ' + billing.billingData.last_name;
+                if(customerName.trim() === '') {
+                    customerName = document.getElementById('billing-first_name').value.replace(/\s/g, '')
+                        + ' ' + document.getElementById('billing-last_name').value.replace(/\s/g, '');
+                }
+
+                let customerEmail = billing.billingData.email;
+                customerEmail = customerEmail.trim() === '' ? document.getElementById('email').value : customerEmail;
+
+                let customerPhone = billing.billingData.phone;
+                customerPhone = customerPhone.trim() === '' ? document.getElementById('billing-phone').value : customerPhone;
+
+                let billingAddress1 = billing.billingData.address_1;
+                billingAddress1 = billingAddress1.trim() === '' ? document.getElementById('billing-address_1').value : billingAddress1;
+
+                let billingAddress2 = billing.billingData.address_2;
+                billingAddress2 = billingAddress2.trim() === '' ? document.getElementById('billing-address_2').value : billingAddress2;
+
+                let regionCode = billing.billingData.state;
+                regionCode = regionCode.trim() === '' ? document.getElementById('billing-state').value : regionCode;
+
+                let billingAddressCity = billing.billingData.city;
+                billingAddressCity = billingAddressCity.trim() === '' ? document.getElementById('billing-city').value : billingAddressCity;
+
+                let billingAddressPostcode = billing.billingData.postcode;
+                billingAddressPostcode = billingAddressPostcode.trim() === '' ? document.getElementById('billing-postcode').value : billingAddressPostcode;
+
                 let orderData = {
                     customer: {
-                        name: billing.billingData.first_name + ' ' + billing.billingData.last_name,
-                        email: billing.billingData.email,
+                        name: customerName,
+                        email: customerEmail,
                         phones: [
                             {
                                 country: '55',
-                                area: billing.billingData.phone.replace(/\D/g, '').substring(0, 2),
-                                number: billing.billingData.phone.replace(/\D/g, '').substring(2),
+                                area: customerPhone.replace(/\D/g, '').substring(0, 2),
+                                number: customerPhone.replace(/\D/g, '').substring(2),
                                 type: 'MOBILE'
                             }]
                     },
@@ -317,13 +344,13 @@ const Content = ( props ) => {
                         currency: 'BRL'
                     },
                     billingAddress: {
-                        street: billing.billingData.address_1.replace(/\s+/g, ' '),
-                        number: billing.billingData.address_1.replace(/\s+/g, ' '),
-                        complement: billing.billingData.address_2.replace(/\s+/g, ' '),
-                        regionCode: billing.billingData.state.toUpperCase(),
+                        street: billingAddress1.replace(/\s+/g, ' '),
+                        number: billingAddress1.replace(/\s+/g, ' '),
+                        complement: billingAddress2.replace(/\s+/g, ' '),
+                        regionCode: regionCode.toUpperCase(),
                         country: 'BRA',
-                        city: billing.billingData.city.replace(/\s+/g, ' '),
-                        postalCode: billing.billingData.postcode.replace(/\D+/g, '')
+                        city: billingAddressCity.replace(/\s+/g, ' '),
+                        postalCode: billingAddressPostcode.replace(/\D+/g, '')
                     }
                 };
 
