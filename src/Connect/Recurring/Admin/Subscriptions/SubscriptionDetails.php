@@ -73,11 +73,18 @@ class SubscriptionDetails extends WP_List_Table
 
     public function column_value($item)
     {
-        if ($item['name'] === 'Pedido Inicial') {
-            $order = wc_get_order($item['value']);
-            return '<a href="' . $order->get_edit_order_url() . '">' . $item['value'] . '</a>';
+        $name = $item['name'] ?? '';
+        $value = $item['value'] ?? '';
+        if ($name !== 'Pedido Inicial') {
+            return $value;
         }
-        return $item['value'];
+
+        $order = wc_get_order($value);
+        if (!$order) {
+            return $value;
+        }
+
+        return '<a href="' . $order->get_edit_order_url() . '">' . $value . '</a>';
     }
 
     public function prepare_items()
