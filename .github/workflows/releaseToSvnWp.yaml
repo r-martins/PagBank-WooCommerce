@@ -24,6 +24,9 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Install Subversion
+        run: sudo apt-get install subversion
+        
       - name: Setup SVN
         uses: actions/setup-java@v2
         with:
