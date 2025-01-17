@@ -38,7 +38,7 @@ class Exception extends \Exception
         foreach ($error_messages as $error) {
             $original_error_messages[] = ($error['code'] ?? '').' - '.($error['description'] ?? '' ).' ('.($error['parameter_name'] ?? '')
                 .')';
-            $msg = $this->errors[$error['code']] ? $this->getFriendlyMsgWithErrorCode($error) : $this->getFriendlyMessageWithoutErrorCode($error);
+            $msg = array_key_exists(($error['code'] ?? ''), $this->errors) ? $this->getFriendlyMsgWithErrorCode($error) : $this->getFriendlyMessageWithoutErrorCode($error);
             $message[] = $msg;
         }
 

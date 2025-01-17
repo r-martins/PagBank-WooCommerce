@@ -2,7 +2,7 @@
 namespace RM_PagBank\Connect\Standalone;
 
 use RM_PagBank\Connect;
-use RM_PagBank\Connect\Payments\CreditCardTrial;
+use RM_PagBank\Connect\Payments\CreditCardToken;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Functions;
@@ -183,7 +183,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         if ($recurringTrialPeriod && $order->get_total() == 0) {
-            $payment_method = $payment_method . '_trial';
+            $payment_method = $payment_method . '_token';
         }
 
         $isCheckoutBlocks = Functions::isCheckoutBlocks();
@@ -246,13 +246,13 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
                 $params = $method->prepare();
                 break;
-            case 'cc_trial':
+            case 'cc_token':
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
                     true
                 );
-                $method = new \RM_PagBank\Connect\Payments\CreditCardTrial($order);
+                $method = new CreditCardToken($order);
                 $params = $method->prepare();
                 break;
             default:
@@ -369,8 +369,9 @@ class CreditCard extends WC_Payment_Gateway_CC
             );
         }
 
+        $recHelper = new \RM_PagBank\Helpers\Recurring();
         $alreadyEnqueued = wp_script_is('pagseguro-checkout-sdk');
-        if ($force || (is_checkout() && !is_order_received_page()) ) {
+        if ($force || (is_checkout() && !is_order_received_page()) || $recHelper->isSubscriptionUpdatePage() ) {
             if ( !$alreadyEnqueued ) {
                 wp_enqueue_script(
                     'pagseguro-checkout-sdk',
@@ -383,7 +384,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         $isCheckoutBlocks = Functions::isCheckoutBlocks();
-        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) ) {
+        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) || $recHelper->isSubscriptionUpdatePage() ) {
             $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
             if (!$alreadyEnqueued) {
                 wp_enqueue_script(
@@ -420,7 +421,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'var pagseguro_connect_public_key = \''.Params::getConfig('public_key').'\';',
                     'before'
                 );
-                if ( $this->get_option('cc_3ds') === 'yes') {
+                if ( $this->get_option('cc_3ds') === 'yes' && !$recHelper->isSubscriptionUpdatePage()) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
@@ -447,6 +448,13 @@ class CreditCard extends WC_Payment_Gateway_CC
             }
             self::$addedScripts = true;
         }
+
+        $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
+        wp_add_inline_script(
+            'pagseguro-connect-checkout',
+            "const pagseguro_connect_change_card_page = {$isUpdatePage};",
+            'before'
+        );
     }
 
     /**
