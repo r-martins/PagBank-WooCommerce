@@ -38,6 +38,7 @@ class Recurring
         add_action('woocommerce_store_api_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
         add_filter('woocommerce_checkout_registration_required', [$this, 'disableGuestCheckoutForRecurringOrder'], 1, 1);
+        add_filter('woocommerce_order_needs_payment', [$this, 'requestPaymentForRecurringTrialOrder'], 1, 3);
         //endregion
         
         //emails
@@ -456,6 +457,23 @@ class Recurring
             $mustBeRegistered = true;
         }
         return $mustBeRegistered;
+    }
+
+    /**
+     * Will check if the order is a recurring trial order and if so,
+     * will force the payment to be required for getting the card token and create the subscription
+     *
+     * @param $needsPayment
+     * @param $order
+     * @return mixed|true
+     */
+    public function requestPaymentForRecurringTrialOrder($needsPayment, $order)
+    {
+        $recHelper = new RecurringHelper();
+        if ($recHelper->isCartRecurring() && $order->get_total() == 0) {
+            $needsPayment = true;
+        }
+        return $needsPayment;
     }
 
     /**
