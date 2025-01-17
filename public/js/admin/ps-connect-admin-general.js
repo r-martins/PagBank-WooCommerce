@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
     let hold_stock_boleto_validation = script_data.woocommerce_hold_stock_boleto_validation;
 
     let message_hold_stock = document.createElement('p');
-    message_hold_stock.innerHTML = '⚠️ A retenção de estoque está configurada com um prazo inferior a este e irá cancelar os pedidos antes deste prazo.';
+    message_hold_stock.innerHTML = '⚠️ A <a href="?page=wc-settings&tab=products&section=inventory">retenção de estoque</a> está configurada com um prazo inferior a este e poderá cancelar os pedidos antes deste prazo.';
     message_hold_stock.style.color = '#f30649';
 
     if (hold_stock_pix_validation) {
