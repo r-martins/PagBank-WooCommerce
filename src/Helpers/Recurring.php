@@ -29,6 +29,8 @@ class Recurring
                 return __('Pendente', 'pagbank-connect');
             case 'CANCELED':
                 return __('Cancelado', 'pagbank-connect');
+            case 'COMPLETED':
+                return __('Finalizado', 'pagbank-connect');
             default:
                 return __('Desconhecido', 'pagbank-connect');
         }
@@ -353,6 +355,11 @@ class Recurring
             }
             $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', 'pagbank-connect');
         }
+
+        $maxCycles = (int)$product->get_meta('_recurring_max_cycles');
+        if ($maxCycles > 0){
+            $msg .= '<p>' . sprintf(__(' Esta assinatura será cobrada %s por %d ciclos.', 'pagbank-connect'),$frequency, $maxCycles) . '</p>';
+        }
         
         return $msg;
     }
@@ -382,6 +389,32 @@ class Recurring
             }
         }
         return $total;
+    }
+
+    public function hasSubscriptionChargeRemaining($subscription): bool
+    {
+        $maxCycles = (int)$subscription->recurring_max_cycles;
+        if (!$maxCycles) {
+            return true;
+        }
+
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        $orders = wc_get_orders([
+            'parent' => $subscription->initial_order_id,
+        ]);
+
+        $ordersNumber = count($orders);
+
+        // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
+        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+            $ordersNumber = $ordersNumber + 1;
+        }
+
+        if ($ordersNumber < $maxCycles){
+            return true;
+        }
+
+        return false;
     }
 
     public function hasSubscriptionDiscountRemaining($subscription): bool
