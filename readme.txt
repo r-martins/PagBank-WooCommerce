@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.27.0
+Stable tag: 4.27.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -194,13 +194,16 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.27.1 =
+* Corrige erro fatal em alguns cenários do admin após última atualização, que fazia o plugin ser desativado.
+
 = 4.27.0 =
-- Assinantes de um plano recorrente agora podem trocar de cartão de crédito.
-- Agora é possível especificar o número máximo de cobranças em um produto recorrente.
-- Melhoria: Adicionamos uma mensagem de aviso nas configs do plugin quando a validade do pix ou boleto for superior à configuração de retenção de estoque, o que poderá fazer um pedido ser cancelado antes de ser pago.
-- Correção: Corrigido possível erro fatal na área de assinaturas que desativaria o plugin.
-- Correção: pedidos com período de teste na recorrência não eram finalizados como esperado no Checkout em blocos, fazendo com que a assinatura não fosse criada
-- Correção: no checkout em Blocos com 3D Secure ativo, um cliente não registrado tinha problemas ao finalizar compras (dados inválidos ou insuficientes) na primeira tentativa de finalizar compra com cartão.
+* Assinantes de um plano recorrente agora podem trocar de cartão de crédito.
+* Agora é possível especificar o número máximo de cobranças em um produto recorrente.
+* Melhoria: Adicionamos uma mensagem de aviso nas configs do plugin quando a validade do pix ou boleto for superior à configuração de retenção de estoque, o que poderá fazer um pedido ser cancelado antes de ser pago.
+* Correção: Corrigido possível erro fatal na área de assinaturas que desativaria o plugin.
+* Correção: pedidos com período de teste na recorrência não eram finalizados como esperado no Checkout em blocos, fazendo com que a assinatura não fosse criada
+* Correção: no checkout em Blocos com 3D Secure ativo, um cliente não registrado tinha problemas ao finalizar compras (dados inválidos ou insuficientes) na primeira tentativa de finalizar compra com cartão.
 
 = 4.26.0 =
 * Correção: em lojas com checkout em blocos, o método de calcular parcelas era chamado indevidamente na tela de sucesso de compra logando erros.
