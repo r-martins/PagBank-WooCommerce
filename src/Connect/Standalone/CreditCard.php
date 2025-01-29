@@ -228,6 +228,12 @@ class CreditCard extends WC_Payment_Gateway_CC
                         ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
                         : false,
                 );
+                $order->add_meta_data(
+                    '_pagbank_card_retry_with_3ds',
+                    isset($_POST['rm-pagbank-card-retry-with-3ds'])
+                        ? htmlspecialchars($_POST['rm-pagbank-card-retry-with-3ds'], ENT_QUOTES, 'UTF-8')
+                        : false,
+                );
 
                 $order->add_meta_data(
                     '_rm_pagbank_checkout_blocks',
@@ -278,12 +284,21 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $additional_error = '';
                 if(isset($charge['payment_response']))
                     $additional_error .= $charge['payment_response']['message'] . ' ('
-                        . $charge['payment_response']['code'] . ')';
+                        . $charge['payment_response']['code'] . '). ';
 
-                wc_add_wp_error_notices(new WP_Error('api_error', 'Pagamento Recusado. ' . $additional_error));
+                $retryWith3ds = !wc_string_to_bool($this->get_option('cc_3ds'))
+                    && wc_string_to_bool($this->get_option('cc_3ds_retry'))
+                    && $this->codeCanRetryPayment((string) $charge['payment_response']['code']);
+                if ($retryWith3ds) {
+                    $additional_error .= ' ' . 'Vamos tentar com validação 3DS? Basta clicar em finalizar a compra novamente.';
+                }
+
+                $message = 'Pagamento Recusado. ' . $additional_error;
+                wc_add_wp_error_notices(new WP_Error('api_error', $message));
                 return [
                     'result' => 'fail',
                     'redirect' => '',
+                    'message' => $message
                 ];
             }
         }
@@ -421,7 +436,9 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'var pagseguro_connect_public_key = \''.Params::getConfig('public_key').'\';',
                     'before'
                 );
-                if ( $this->get_option('cc_3ds') === 'yes' && !$recHelper->isSubscriptionUpdatePage()) {
+
+                if ( (wc_string_to_bool($this->get_option('cc_3ds')) || wc_string_to_bool($this->get_option('cc_3ds_retry')))
+                    && !$recHelper->isSubscriptionUpdatePage()) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
@@ -470,5 +487,23 @@ class CreditCard extends WC_Payment_Gateway_CC
      */
     public function process_refund( $order_id, $amount = null, $reason = '' ) {
         return Api::refund($order_id, $amount);
+    }
+
+    /**
+     * @param string $code
+     * @return bool
+     */
+    private function codeCanRetryPayment(string $code)
+    {
+        $allowedCodes = [
+            '10000', // NAO AUTORIZADO PELO PAGSEGURO: NEGADO NO ANTIFRAUDE PAGBANK
+            '10002', // NAO AUTORIZADO PELO EMISSOR DO CARTAO
+            '20001', // CONTATE A CENTRAL DO SEU CARTAO: GENÉRICA, SUSPEITA DE FRAUDE ETC
+            '20119', // REFAZER A TRANSAÇÃO (EMISSOR SOLICITA RETENTATIVA)
+            '20158', // NAO AUTORIZADA - TENTE NOVAMENTE MAIS TARDE
+            '20159', // NAO AUTORIZADA - TENTE NOVAMENTE USANDO AUTENTICACAO
+        ];
+
+        return in_array($code, $allowedCodes);
     }
 }

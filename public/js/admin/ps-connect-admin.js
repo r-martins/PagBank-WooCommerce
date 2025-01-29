@@ -30,7 +30,7 @@ jQuery(document).ready(function($) {
 
 
     //display #woocommerce_rm-pagbank-cc_cc_installments_options_max_installments based on #woocommerce_rm-pagbank-cc_cc_installments_options_limit_installments == yes
-    function hideOrShowMasInstallmentsOptions() {
+    function hideOrShowMaxInstallmentsOptions() {
         return function () {
             if (jQuery(this).val() === 'yes') {
                 jQuery('#woocommerce_rm-pagbank-cc_cc_installments_options_max_installments').closest('tr').show();
@@ -40,8 +40,36 @@ jQuery(document).ready(function($) {
         };
     }
 
-    jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_installments_options_limit_installments', hideOrShowMasInstallmentsOptions());
-    hideOrShowMasInstallmentsOptions().call(jQuery('#woocommerce_rm-pagbank-cc_cc_installments_options_limit_installments'));
+    jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_installments_options_limit_installments', hideOrShowMaxInstallmentsOptions());
+    hideOrShowMaxInstallmentsOptions().call(jQuery('#woocommerce_rm-pagbank-cc_cc_installments_options_limit_installments'));
+
+    // display #woocommerce_rm-pagbank-cc_cc_3ds_allow_continue based on #woocommerce_rm-pagbank-cc_cc_3ds == yes
+    function hideOrShow3dsAllowContinueOption() {
+        return function () {
+            if (jQuery(this).is(':checked')) {
+                jQuery('#woocommerce_rm-pagbank-cc_cc_3ds_allow_continue').closest('tr').show();
+            } else {
+                jQuery('#woocommerce_rm-pagbank-cc_cc_3ds_allow_continue').closest('tr').hide();
+            }
+        };
+    }
+
+    jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_3ds', hideOrShow3dsAllowContinueOption());
+    hideOrShow3dsAllowContinueOption().call(jQuery('#woocommerce_rm-pagbank-cc_cc_3ds'));
+
+    // display #woocommerce_rm-pagbank-cc_cc_3ds_retry based on #woocommerce_rm-pagbank-cc_cc_3ds == no
+    function hideOrShowRetryWith3dsOption() {
+        return function () {
+            if (jQuery(this).is(':checked')) {
+                jQuery('#woocommerce_rm-pagbank-cc_cc_3ds_retry').closest('tr').hide();
+            } else {
+                jQuery('#woocommerce_rm-pagbank-cc_cc_3ds_retry').closest('tr').show();
+            }
+        };
+    }
+
+    jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_3ds', hideOrShowRetryWith3dsOption());
+    hideOrShowRetryWith3dsOption().call(jQuery('#woocommerce_rm-pagbank-cc_cc_3ds'));
 
     //endregion
 
