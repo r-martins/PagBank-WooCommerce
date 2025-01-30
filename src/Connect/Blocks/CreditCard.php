@@ -92,7 +92,7 @@ final class CreditCard extends AbstractPaymentMethodType
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'publicKey'  => Params::getConfig('public_key'),
             'ccThreeDEnabled'  => wc_string_to_bool(Params::getCcConfig('cc_3ds', 'no')),
-            'ccThreeDCanRetry'  => wc_string_to_bool(Params::getCcConfig('cc_3ds_retry', 'no')),
+            'ccThreeDCanRetry'  => wc_string_to_bool(Params::getCcConfig('cc_3ds_retry', 'yes')),
             'ccThreeDSession'  => $api->get3DSession(),
             'ccThreeDAllowContinue'  => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
             'pagbankConnectEnvironment'  => $api->getIsSandbox() ? 'SANDBOX' : 'PROD',

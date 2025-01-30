@@ -209,6 +209,7 @@ class Connect
                     'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments'),
                     '3d_secure' => Params::getCcConfig('cc_3ds'),
                     '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue'),
+                    '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry'),
                 ]
             ]
         ];

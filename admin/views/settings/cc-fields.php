@@ -160,6 +160,6 @@ return array(
         'type'        => 'checkbox',
         'description' => 'Permitir que o cliente tente finalizar o pedido usando 3DS quando a primeira tentativa for recusada. <br/>'
             .'Esta opção só será exibida se o motivo da recusa do pagamento pelo PagBank permitir uma nova tentativa. <br/>',
-        'default'     => 'no',
+        'default'     => 'yes',
     ],
 );
