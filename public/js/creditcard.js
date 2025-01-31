@@ -8,6 +8,7 @@ jQuery(document).ready(function ($) {
      */
     let encryptCard = function () {
         let cardHasChanged = (window.ps_cc_has_changed === true);
+        console.debug('PagBank: encryptCard', cardHasChanged);
         let card, cc_number, cc_cvv;
         //replace trim and remove duplicated spaces from holder name
         let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
@@ -242,13 +243,34 @@ jQuery(document).ready(function ($) {
             return true;
         }
 
+        if (window.ps_cc_has_changed !== false) {
+            console.debug('Pagbank: cartao mudou NOVO');
+            let card_number = jQuery('#rm-pagbank-card-number').val();
+            window.ps_cc_number = card_number.replace(/\s/g, '');
+            window.ps_cc_cvv = jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
+        }
+
         if (encryptCard() === false) {
             return false;
         }
 
-        //if 3ds is not enabled ou retry is not checked, continue
-        let canRetry3ds = jQuery('#rm-pagbank-card-retry-with-3ds').is(':checked');
-        if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session || !canRetry3ds) {
+        //if 3ds is not enabled, continue
+        if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
+            isSubmitting = true;
+            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            jQuery(checkoutFormIdentifiers).trigger('submit');
+            return true;
+        }
+
+        //if retry is not checked or not loaded, continue
+        let canRetry3ds = false;
+        let canRetry3dsInput = jQuery('#rm-pagbank-card-retry-with-3ds');
+
+        if (canRetry3dsInput.length !== 0) {
+            canRetry3ds = jQuery('#rm-pagbank-card-retry-with-3ds').is(':checked');
+        }
+
+        if (pagseguro_connect_3ds_retry_enabled && !canRetry3ds) {
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
