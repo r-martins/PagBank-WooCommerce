@@ -70,6 +70,7 @@ class Holder implements JsonSerializable
      */
     public function setEmail(string $email): void
     {
+        $email = strtolower($email);
         $this->email = substr($email, 0, 255);
     }
 

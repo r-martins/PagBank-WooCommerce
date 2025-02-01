@@ -269,7 +269,7 @@ class CreditCard extends Common
             'data' => [
                 'customer' => [
                     'name'           => $order->get_billing_first_name().' '.$order->get_billing_last_name(),
-                    'email'          => $order->get_billing_email(),
+                    'email'          => strtolower($order->get_billing_email()),
                     'phones'         => [
                         [
                             'country' => '55',
