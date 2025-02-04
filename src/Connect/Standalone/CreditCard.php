@@ -457,13 +457,12 @@ class CreditCard extends WC_Payment_Gateway_CC
                     }
                 }
 
-                if (wc_string_to_bool($this->get_option('cc_3ds_retry'))) {
-                    wp_add_inline_script(
-                        'pagseguro-connect-creditcard',
-                        'var pagseguro_connect_3ds_retry_enabled = true;',
-                        'before'
-                    );
-                }
+                $retryWith3ds = wc_string_to_bool($this->get_option('cc_3ds_retry')) ? 'true' : 'false';
+                wp_add_inline_script(
+                    'pagseguro-connect-creditcard',
+                    "var pagseguro_connect_3ds_retry_enabled = {$retryWith3ds};",
+                    'before'
+                );
 
                 $environment = $api->getIsSandbox() ? 'SANDBOX' : 'PROD';
                 wp_add_inline_script(
