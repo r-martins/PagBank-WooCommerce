@@ -117,7 +117,10 @@ class Pix extends WC_Payment_Gateway
         $order = wc_get_order( $order_id );
 
         //sanitize $_POST['ps_connect_method']
-        $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
+        $payment_method = 'pix';
+        if(isset($_POST['payment_method'])){
+            $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
+        }
 
         // region Add note if customer changed payment method
         $this->handleCustomerChangeMethod($order, $payment_method);

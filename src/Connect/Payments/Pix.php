@@ -36,9 +36,24 @@ class Pix extends Common
 
         if (($discountConfig = Params::getPixConfig('pix_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
             $discount = Params::getDiscountValue($discountConfig, $this->order, $discountExcludesShipping);
-            $this->order->set_discount_total(floatval($this->order->get_discount_total()) + $discount);
-            $this->order->set_total($this->order->get_total() - $discount);
             $orderTotal = $orderTotal - $discount;
+
+            $fee = new \WC_Order_Item_Fee();
+            $fee->set_name(__('Desconto para pagamento com PIX', 'rm-pagbank'));
+
+            // Define the fee amount, negative number to discount
+            $fee->set_amount(-$discount);
+            $fee->set_total(-$discount);
+
+            // Define the tax class for the fee
+            $fee->set_tax_class('');
+            $fee->set_tax_status('none');
+
+            // Add the fee to the order
+            $this->order->add_item($fee);
+
+            // Recalculate the order
+            $this->order->calculate_totals();
         }
 
         $amount->setValue(Params::convertToCents($orderTotal));
