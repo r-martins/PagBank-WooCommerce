@@ -341,7 +341,8 @@ class Functions
      */
     public static function isCheckoutBlocks(): bool
     {
-        return is_checkout() && WC_Blocks_Utils::has_block_in_page( wc_get_page_id('checkout'), 'woocommerce/checkout' ) && !Functions::isCartflowCheckout();
+        $page_id = get_the_ID();
+        return is_checkout() && WC_Blocks_Utils::has_block_in_page( $page_id, 'woocommerce/checkout' ) && !Functions::isCartflowCheckout();
     }
 
     public static function isCartflowCheckout() {
