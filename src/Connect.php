@@ -200,16 +200,24 @@ class Connect
                     'discount' => Params::getPixConfig('pix_discount'),
                 ],
                 'cc' => [
-                    'enabled' => Params::getCcConfig('enabled'),
-                    'enabled_installment' => Params::getCcConfig('cc_installment_product_page'),
+                    'enabled' => Params::getCcConfig('enabled', 'no'),
+                    'enabled_installment' => Params::getCcConfig('cc_installment_product_page', 'no'),
                     'installment_options' => Params::getCcConfig('cc_installment_options'),
-                    'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed'),
-                    'installments_options_min_total' => Params::getCcConfig('cc_installments_options_min_total'),
+                    'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed', '3'),
+                    'installments_options_min_total' => Params::getCcConfig('cc_installments_options_min_total', '50'),
                     'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments'),
-                    'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments'),
-                    '3d_secure' => Params::getCcConfig('cc_3ds'),
-                    '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue'),
+                    'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments', '18'),
+                    '3d_secure' => Params::getCcConfig('cc_3ds', 'yes'),
+                    '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
                     '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry'),
+                    '3d_retry_failed' => Params::getCcConfig('cc_3ds_retry', 'yes'),
+                ],
+                'recurring' => [
+                        'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
+                        'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency'),
+                        'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
+                        'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
+                        'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
                 ]
             ]
         ];
