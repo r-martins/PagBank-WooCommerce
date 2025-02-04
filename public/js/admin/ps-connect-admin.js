@@ -14,6 +14,26 @@ jQuery(document).ready(function($) {
     jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_installment_options', hideOrShowFixedOptions());
     hideOrShowFixedOptions().call(jQuery('#woocommerce_rm-pagbank-cc_cc_installment_options'));
 
+    // display #woocommerce_rm-pagbank-cc_cc_installment_product_page_type based on #woocommerce_rm-pagbank-cc_cc_installment_product_page == yes or #woocommerce_rm-pagbank-cc_cc_installment_shortcode_enabled == yes
+    function hideOrShowInstallmentTypeOption() {
+        return function () {
+            let installmentProductPage = jQuery('#woocommerce_rm-pagbank-cc_cc_installment_product_page');
+            let installmentShotcode = jQuery('#woocommerce_rm-pagbank-cc_cc_installment_shortcode_enabled');
+            if (installmentProductPage.is(':checked') || installmentShotcode.is(':checked')) {
+                jQuery('#woocommerce_rm-pagbank-cc_cc_installment_product_page_type').closest('tr').show();
+            } else {
+                jQuery('#woocommerce_rm-pagbank-cc_cc_installment_product_page_type').closest('tr').hide();
+            }
+        };
+    }
+
+    jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_installment_product_page', hideOrShowInstallmentTypeOption());
+    hideOrShowInstallmentTypeOption().call(jQuery('#woocommerce_rm-pagbank-cc_cc_installment_product_page'));
+
+    jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_installment_shortcode_enabled', hideOrShowInstallmentTypeOption());
+    hideOrShowInstallmentTypeOption().call(jQuery('#woocommerce_rm-pagbank-cc_cc_installment_shortcode_enabled'));
+
+
     //display woocommerce_rm-pagbank-cc_cc_installment_options_min_total based on #woocommerce_rm-pagbank-cc_cc_installment_options == min_total
     function hideOrShowMinTotalOptions() {
         return function () {
