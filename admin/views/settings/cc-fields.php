@@ -154,4 +154,12 @@ return array(
             .'ou se a obtenção da sessão 3D Secure junto ao PagBank falhar.',
         'default'     => 'no',
     ],
+    'cc_3ds_retry' => [
+        'title'       => __('Quando o pagamento for recusado', 'pagbank-connect'),
+        'label'       => __('Permitir tentar novamente com validação 3DS', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => 'Permitir que o cliente tente finalizar o pedido usando 3DS quando a primeira tentativa for recusada. <br/>'
+            .'Esta opção só será exibida se o motivo da recusa do pagamento pelo PagBank permitir uma nova tentativa. <br/>',
+        'default'     => 'yes',
+    ],
 );

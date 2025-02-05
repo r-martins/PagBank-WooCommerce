@@ -8,9 +8,11 @@ import PaymentUnavailable from './components/PaymentUnavailable';
 import CreditCardForm from "./components/CreditCardForm";
 import CustomerDocumentField from './components/CustomerDocumentField';
 import RecurringInfo from './components/RecurringInfo';
+import RetryInput from './components/RetryInput';
 
 const settings = getSetting('rm-pagbank-cc_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Cartão de Crédito', 'rm-pagbank-pix' );
+let showRetryInput = false;
 
 /**
  * Icon component
@@ -71,6 +73,19 @@ const Content = ( props ) => {
     let canContinue = false;
     let encryptedCard = null;
     let card3d = '';
+
+    useEffect( () => {
+        return onCheckoutFail((response) => {
+            console.error('PagBank: checkout fail', response);
+            showRetryInput = settings.ccThreeDCanRetry
+                && response.processingResponse.paymentDetails.message.includes('Vamos tentar com validação 3DS');
+            return {
+                type: emitResponse.responseTypes.ERROR,
+                messageContext: emitResponse.noticeContexts.PAYMENTS,
+                message: response.processingResponse.paymentDetails.message,
+            };
+        });
+    }, [onCheckoutFail]);
 
     useEffect( () => {
         const pagBankParseErrorMessage = function(errorMessage) {
@@ -247,7 +262,8 @@ const Content = ( props ) => {
 
             //if 3ds is not enabled, continue
             let treeDEnabled = settings.ccThreeDEnabled;
-            if (!treeDEnabled) {
+            let ccThreeDCanRetry = document.getElementById('rm-pagbank-card-retry-with-3ds')?.checked;
+            if (!treeDEnabled && !ccThreeDCanRetry) {
                 canContinue = true;
                 card3d = false;
                 return
@@ -404,6 +420,7 @@ const Content = ( props ) => {
             const installments = document.getElementById('rm-pagbank-card-installments')?.value || 1;
             const ccNumber = document.getElementById('rm-pagbank-card-number').value;
             const ccHolderName = document.getElementById('rm-pagbank-card-holder-name').value;
+            const card3dRetry = document.getElementById('rm-pagbank-card-retry-with-3ds');
 
             return {
                 type: emitResponse.responseTypes.SUCCESS,
@@ -415,7 +432,8 @@ const Content = ( props ) => {
                         'rm-pagbank-card-installments': installments,
                         'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),
                         'rm-pagbank-card-holder-name': ccHolderName,
-                        'rm-pagbank-card-3d': card3d
+                        'rm-pagbank-card-3d': card3d,
+                        'rm-pagbank-card-retry-with-3ds': card3dRetry?.checked
                     },
                 },
             };
@@ -428,6 +446,7 @@ const Content = ( props ) => {
 
     return (
         <div className="rm-pagbank-cc">
+            {showRetryInput ? <RetryInput /> : null}
             <CreditCardForm />
             <CustomerDocumentField />
             {settings.isCartRecurring ? <RecurringInfo /> : null}

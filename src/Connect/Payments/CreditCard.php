@@ -61,7 +61,8 @@ class CreditCard extends Common
         $paymentMethod->setCard($card);
 
         //3ds
-        if ($this->order->get_meta('_pagbank_card_3ds_id') && Params::getCcConfig('cc_3ds') === 'yes') {
+        if ($this->order->get_meta('_pagbank_card_3ds_id')
+            && (wc_string_to_bool(Params::getCcConfig('cc_3ds')) || wc_string_to_bool(Params::getCcConfig('cc_3ds_retry')))) {
             $authMethod = new AuthenticationMethod();
             $authMethod->setType('THREEDS');
             $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
