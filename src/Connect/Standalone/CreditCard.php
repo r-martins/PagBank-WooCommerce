@@ -464,6 +464,13 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'before'
                 );
 
+                $enable3ds = wc_string_to_bool($this->get_option('cc_3ds')) ? 'true' : 'false';
+                wp_add_inline_script(
+                    'pagseguro-connect-creditcard',
+                    "var pagseguro_connect_3ds_enabled = {$enable3ds};",
+                    'before'
+                );
+
                 $environment = $api->getIsSandbox() ? 'SANDBOX' : 'PROD';
                 wp_add_inline_script(
                     'pagseguro-connect-checkout',

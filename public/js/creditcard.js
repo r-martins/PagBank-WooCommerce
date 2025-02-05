@@ -254,31 +254,28 @@ jQuery(document).ready(function ($) {
             return false;
         }
 
-        //if 3ds is not enabled, continue
-        if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
+        let has3dSession = typeof pagseguro_connect_3d_session !== 'undefined' && pagseguro_connect_3d_session;
+        let is3dsEnabled = pagseguro_connect_3ds_enabled;
+        let isRetryEnabled = pagseguro_connect_3ds_retry_enabled;
+        let canRetry = jQuery('#rm-pagbank-card-retry-with-3ds')?.is(':checked');
+
+        // If 3ds and 3ds_retry is not enabled, continue
+        if (!is3dsEnabled && !isRetryEnabled || !has3dSession) {
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
 
-        //if retry is not checked or not loaded, continue
-        let canRetry3ds = false;
-        let canRetry3dsInput = jQuery('#rm-pagbank-card-retry-with-3ds');
-
-        if (canRetry3dsInput.length !== 0) {
-            canRetry3ds = jQuery('#rm-pagbank-card-retry-with-3ds').is(':checked');
-        }
-
-        if (pagseguro_connect_3ds_retry_enabled && !canRetry3ds) {
+        // If 3DS authorization has already occurred, proceed normally
+        if (typeof pagbank3dAuthorized !== 'undefined' && pagbank3dAuthorized === true) {
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
 
-        //if 3ds authorization is successful, continue
-        if ('undefined' !== typeof pagbank3dAuthorized && pagbank3dAuthorized === true) {
+        if (isRetryEnabled && !canRetry && !is3dsEnabled) {
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
