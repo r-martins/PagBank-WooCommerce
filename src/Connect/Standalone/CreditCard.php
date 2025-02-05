@@ -290,7 +290,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                     && wc_string_to_bool($this->get_option('cc_3ds_retry'))
                     && $this->codeCanRetryPayment((string) $charge['payment_response']['code']);
                 if ($retryWith3ds) {
-                    $additional_error .= '<br /> ' . 'Vamos tentar com validação 3DS? Basta clicar em finalizar a compra novamente.';
+                    $additional_error .= '<br /> ' . '<strong>Vamos tentar com validação 3DS?</strong> Basta Finalizar a compra novamente.';
                 }
 
                 $message = 'Pagamento Recusado. ' . $additional_error;
