@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.27.1
+Stable tag: 4.28.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -37,7 +37,7 @@ Se você tiver taxas negociadas ou condições negociadas melhores que estas, vo
 
 Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=taxas).
 
-https://www.youtube.com/watch?v=wnzA0KQZCQs
+https://www.youtube.com/watch?v=a8rkT8IyIYo
 
 Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
@@ -48,7 +48,7 @@ https://www.youtube.com/watch?v=FOPwBTRryNM
 
 **Problemas com aprovação de pagamentos e chargebacks em transações com cartão de crédito?**
 
-Nossa integração possui [autenticação 3D Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a **taxa de aprovação**.
+Nossa integração possui [autenticação 3D Secure](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a **taxa de aprovação**.
 
 Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocupar em contratar um serviço de antifraude.
 
@@ -58,24 +58,24 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 
 == ⚡️ RECURSOS PRINCIPAIS ==
 * Suporte a **PIX**, **Cartão de Crédito** e **Boleto**
-* Suporte a [**recorrência** (assinaturas)](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
+* Suporte a [**recorrência** (assinaturas)](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
 * **OnlyFans** - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Saiba mais](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
-* Integração com [**Envio Fácil**](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
-* Suporte nativo ao [**checkout em Blocos**](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
-* Suporte a [**autenticação 3D** Secure](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
+* Integração com [**Envio Fácil**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
+* Suporte nativo ao [**checkout em Blocos**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
+* Suporte a [**autenticação 3D** Secure](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
 
 == ⚡️ RECURSOS ADICIONAIS ==
-* Diversas [opções de **parcelamento**](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
-* Suporte a [**descontos** no boleto e pix](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
-* Permite definir [**validade** de boletos e código PIX](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
-* [**Reembolso** parcial ou total](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
+* Diversas [opções de **parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
+* Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
+* Permite definir [**validade** de boletos e código PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
+* [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualizações automáticas de **status de pedidos**
-* Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
-* Diversas [opções de configuração de endereço](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
+* Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
+* Diversas [opções de configuração de endereço](https://ajuda.pbintegracoes.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
 * Suporte a [High-Performance Order Storage (**HPOS**)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
-* Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
-* **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
-* Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
+* Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
+* **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
+* Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
 
 
 == Installation ==
@@ -83,19 +83,19 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 === Instalação automática via painel ===
 * Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
 * Clique no botão para instalar e ative o plugin
-* Se você não estiver usando o [checkout em blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 === WP-CLI ===
 Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/). 
 
 * Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
-* Se você não estiver usando o [checkout em blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
+* Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
 
 === Instalação manual ===
 * Baixe o [arquivo zip](https://codeload.github.com/r-martins/PagBank-WooCommerce/zip/refs/heads/master) e descompacte ele em sua máquina
 * Faça upload dos arquivos na pasta /wp-content/plugins/pagbank-connect, usando seu FTP
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
-* Se você não estiver usando o [checkout em blocos](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 * No terminal, navegue até a pasta do plugin (wp-content/plugins/pagbank-connect) e rode `npm install` para instalar as dependências do plugin. Em seguida, rode `npm run build` para compilar os arquivos do plugin.
 
 === A gente instala pra você 🙀 ===
@@ -111,8 +111,8 @@ Se você preferir, podemos instalar e configurar o plugin para você sem nenhum 
 * Você será levado para o site do PagBank, onde poderá se logar e autorizar nossa aplicação em sua conta.
 * Em seguida, sua *Connect Key* será exibida e enviada para o e-mail informado no passo anterior. Use ela nas configurações da sua loja.
 * Salve as configurações e sua loja está pronta para vender.
-* Se desejar, configure [opções de parcelamento](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento), e validade do boleto e código pix de acordo com suas necessidades.
-* Conheça os [recursos disponíveis na sua integração](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/26127218629133-Recursos) para aproveitar ao máximo dela e vender ainda mais.
+* Se desejar, configure [opções de parcelamento](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento), e validade do boleto e código pix de acordo com suas necessidades.
+* Conheça os [recursos disponíveis na sua integração](https://ajuda.pbintegracoes.com/hc/pt-br/sections/26127218629133-Recursos) para aproveitar ao máximo dela e vender ainda mais.
 
 == Frequently Asked Questions ==
 = PagSeguro ou PagBank? =
@@ -149,11 +149,11 @@ Sua Connect key será gerada respeitando as taxas e condições negociadas que v
 
 = Estou tendo muitas transações negadas. O que fazer? =
 
-Consulte [este artigo](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/360027712431) e entre em contato conosco se o problema persistir.
+Consulte [este artigo](https://ajuda.pbintegracoes.com/hc/pt-br/articles/360027712431) e entre em contato conosco se o problema persistir.
 
 = Tenho outra pergunta não listada aqui =
 
-Consulte nossa [Central de ajuda](https://pagsegurotransparente.zendesk.com/hc/pt-br/) e [entre em contato](https://pagsegurotransparente.zendesk.com/hc/pt-br/requests/new) conosco se não encontrar sua dúvida respondida por lá.
+Consulte nossa [Central de ajuda](https://ajuda.pbintegracoes.com/hc/pt-br/) e [entre em contato](https://ajuda.pbintegracoes.com/hc/pt-br/requests/new) conosco se não encontrar sua dúvida respondida por lá.
 
 A maioria das dúvidas estão respondidas lá. As outras são respondidas em até 2 dias após entrar em contato.
 
@@ -163,7 +163,7 @@ Sim.
 
 E quando há uma transação no PagBank, um link para ela é exibida na página do pedido. Assim você pode confirmar novamente o status do mesmo.
 
-Caso utilize Cloudflare ou CDN, certifique-se de [configurá-lo corretamente](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/115002699823-Usu%C3%A1rios-Cloudflare-e-CDN-s) e liberar os IPs do PagSeguro para evitar bloqueios nas notificações.
+Caso utilize Cloudflare ou CDN, certifique-se de [configurá-lo corretamente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/115002699823-Usu%C3%A1rios-Cloudflare-e-CDN-s) e liberar os IPs do PagSeguro para evitar bloqueios nas notificações.
 
 = Posso testar usando a Sandbox? =
 
@@ -184,7 +184,7 @@ PagSeguro e PagBank são marcas do UOL.
 
 = O plugin é compatível com o WooCommerce Subscriptions? =
 
-Você não precisa do plugin WooCommerce Subscriptions ou nenhum outro para aceitar [pagamentos recorrentes com nossa integração](https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce).
+Você não precisa do plugin WooCommerce Subscriptions ou nenhum outro para aceitar [pagamentos recorrentes com nossa integração](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce).
 
 
 = Posso modificar e comercializar este plugin? =
@@ -194,6 +194,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.28.0 =
+* Agora você pode dar a opção do seu cliente usar 3D Secure somente quando uma transação falhar e permitir retentativa (ex: antifraude). [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34051167045517-Permitir-tentar-novamente-com-valida%C3%A7%C3%A3o-3DS).
+* Descontos PIX ou Boleto agora são preservados após atualização de um pedido e exibidos profissionalmente no admin.
+* Em alguns casos onde o checkout do Woocommerce apontava para uma página incorreta, nosso JS não era inserido com sucesso no checkout em blocos impedindo criptografia do cartão e finalização do pedido.
+* Correção: Em alguns cenários quando o e-mail do cliente continha letras em caixa alta (geralmente no celular), o PagBank impedia a finalização do pedido.
+* Melhoria: agora o campo de formato das informações de parcelamento no admin só é exibido se o shortcode de parcelamento ou informações de parcelamento na página de produto estiver ativo, tornando a configuração mais limpa e precisa.
+
 = 4.27.1 =
 * Corrige erro fatal em alguns cenários do admin após última atualização, que fazia o plugin ser desativado.
 
@@ -340,7 +347,7 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 * Mudamos a forma como obtemos o preço do produto na finalização de compra, a fim de corrigir erros de compatibilidade com alguns plugins e tornar o processo mais enxuto e rápido
 
 = 4.11.5 =
-* Pequena melhoria: adicionamos alguns hooks com filters e actions para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis). 
+* Pequena melhoria: adicionamos alguns hooks com filters e actions para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis). 
 
 = 4.11.4 =
 * Correção: alguns plugins de terceiros não utilizam filtros corretamente, fazendo com que nosso css não seja inserido e o checkout apresente problemas, como ícones grandes e afins. Contornamos o problema aqui. 

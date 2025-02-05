@@ -54,6 +54,7 @@ class Customer implements JsonSerializable
      */
     public function setEmail(string $email): void
     {
+        $email = strtolower($email);
         $this->email = $email;
     }
 

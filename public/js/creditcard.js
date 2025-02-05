@@ -8,6 +8,7 @@ jQuery(document).ready(function ($) {
      */
     let encryptCard = function () {
         let cardHasChanged = (window.ps_cc_has_changed === true);
+        console.debug('PagBank: encryptCard', cardHasChanged);
         let card, cc_number, cc_cvv;
         //replace trim and remove duplicated spaces from holder name
         let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
@@ -242,20 +243,39 @@ jQuery(document).ready(function ($) {
             return true;
         }
 
+        if (window.ps_cc_has_changed !== false) {
+            console.debug('Pagbank: cartao mudou NOVO');
+            let card_number = jQuery('#rm-pagbank-card-number').val();
+            window.ps_cc_number = card_number.replace(/\s/g, '');
+            window.ps_cc_cvv = jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
+        }
+
         if (encryptCard() === false) {
             return false;
         }
 
-        //if 3ds is not enabled, continue
-        if ('undefined' === typeof pagseguro_connect_3d_session || !pagseguro_connect_3d_session) {
+        let has3dSession = typeof pagseguro_connect_3d_session !== 'undefined' && pagseguro_connect_3d_session;
+        let is3dsEnabled = pagseguro_connect_3ds_enabled;
+        let isRetryEnabled = pagseguro_connect_3ds_retry_enabled;
+        let canRetry = jQuery('#rm-pagbank-card-retry-with-3ds')?.is(':checked');
+
+        // If 3ds and 3ds_retry is not enabled, continue
+        if (!is3dsEnabled && !isRetryEnabled || !has3dSession) {
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
 
-        //if 3ds authorization is successful, continue
-        if ('undefined' !== typeof pagbank3dAuthorized && pagbank3dAuthorized === true) {
+        // If 3DS authorization has already occurred, proceed normally
+        if (typeof pagbank3dAuthorized !== 'undefined' && pagbank3dAuthorized === true) {
+            isSubmitting = true;
+            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            jQuery(checkoutFormIdentifiers).trigger('submit');
+            return true;
+        }
+
+        if (isRetryEnabled && !canRetry && !is3dsEnabled) {
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
@@ -553,3 +573,21 @@ jQuery(document).ready(function ($) {
             }
         });
     });
+
+jQuery(document.body).on('checkout_error', function(event, error_data) {
+    let method = jQuery('input[name="payment_method"]:checked').val();
+    if (error_data.includes('Vamos tentar com validação 3DS') && method === 'rm-pagbank-cc') {
+        const retry3dsInput = '<div class="rm-pagbank-retry-select">' +
+            '<input type="checkbox" id="rm-pagbank-card-retry-with-3ds" class="rm-pagbank-checkbox" name="rm-pagbank-card-retry-with-3ds" value="1" checked>' +
+            '<label for="rm-pagbank-card-retry-with-3ds">Tentar novamente com Validação 3DS</label>' +
+            '</div>';
+
+        const rmPagbankCcForm = jQuery('#wc-rm-pagbank-cc-form');
+        if (rmPagbankCcForm.find('.rm-pagbank-retry-select').length > 0) {
+            jQuery('#rm-pagbank-card-retry-with-3ds').prop('checked', true);
+            return;
+        }
+
+        rmPagbankCcForm.prepend(retry3dsInput);
+    }
+});
