@@ -16,7 +16,7 @@ use RM_PagBank\Helpers\Functions;
     <p><?php _e('Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.', 'pagbank-connect');?></p>
     <div class="code-container">
         <label>
-            <?php _e('Código PIX', 'pagbank-connect');?>
+            <span class="pix-code-label"><?php _e('Código PIX', 'pagbank-connect');?></span>
             <input type="text" class="pix-code" value="<?php echo esc_attr($qr_code_text);?>" readonly="readonly"/>
         </label>
         <a href="javascript:void(0)" class="button copy-btn"><?php esc_html_e('Copiar', 'pagbank-connect'); ?></a>

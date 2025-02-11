@@ -79,5 +79,6 @@ class Pix extends Common
         $qr_code_text = $order->get_meta('pagbank_pix_qrcode_text');
         $qr_code_exp = $order->get_meta('pagbank_pix_qrcode_expiration');
         require_once dirname(__FILE__) . '/../../templates/pix-instructions.php';
+        parent::getThankyouInstructions($order_id);
     }
 }

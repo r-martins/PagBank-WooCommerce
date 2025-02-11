@@ -304,4 +304,18 @@ class Common
 
         do_action('pagbank_connect_after_proccess_response', $order, $response);
 	}
+    
+    public function getThankyouInstructions($order_id){
+        $alreadyEnqueued = wp_script_is('pagseguro-connect-success');
+        if ($alreadyEnqueued) {
+            return;
+        }
+        
+        add_action('wp_footer', function() {
+            wp_enqueue_script(
+                'pagseguro-connect-success',
+                plugins_url('public/js/success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+            );
+        });
+    }
 }

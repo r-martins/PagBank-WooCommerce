@@ -54,16 +54,7 @@ trait StaticResources
         if (self::$addedScripts) {
             return;
         }
-
-        //thank you page
-        $alreadyEnqueued = wp_script_is('pagseguro-connect');
-        if (is_checkout() && !empty(is_wc_endpoint_url('order-received')) && !$alreadyEnqueued) {
-            wp_enqueue_script(
-                'pagseguro-connect',
-                plugins_url('public/js/success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
-            );
-        }
-
+        
         $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
         if ( is_checkout() && !is_order_received_page() && !$alreadyEnqueued) {
             wp_enqueue_script(
