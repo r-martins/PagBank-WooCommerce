@@ -5,6 +5,7 @@ namespace RM_PagBank\Traits;
 use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Recurring;
+use RM_PagBank\Connect\Payments\CreditCard;
 
 trait ThankyouInstructions
 {
@@ -23,6 +24,9 @@ trait ThankyouInstructions
                 break;
             case 'pix':
                 $method = new Pix($order);
+                break;
+            case 'credit_card':
+                $method = new CreditCard($order);
                 break;
         }
         if (!empty($method)) {

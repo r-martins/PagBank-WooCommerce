@@ -54,16 +54,7 @@ trait StaticResources
         if (self::$addedScripts) {
             return;
         }
-
-        //thank you page
-        $alreadyEnqueued = wp_script_is('pagseguro-connect');
-        if (is_checkout() && !empty(is_wc_endpoint_url('order-received')) && !$alreadyEnqueued) {
-            wp_enqueue_script(
-                'pagseguro-connect',
-                plugins_url('public/js/success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
-            );
-        }
-
+        
         $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
         if ( is_checkout() && !is_order_received_page() && !$alreadyEnqueued) {
             wp_enqueue_script(
@@ -119,7 +110,8 @@ trait StaticResources
         wp_register_script(
             'pagseguro-connect-admin-pix-notice',
             plugins_url('public/js/admin/ps-connect-admin-general.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            ['jquery']
+            ['jquery'],
+            WC_PAGSEGURO_CONNECT_VERSION,
         );
         $scriptData = array(
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -136,7 +128,9 @@ trait StaticResources
         if ($current_section && strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
-                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
             );
         }
 

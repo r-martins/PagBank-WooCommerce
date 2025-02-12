@@ -2,6 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 
 /** @var string $qr_code */
 /** @var string $qr_code_text */
@@ -16,7 +17,7 @@ use RM_PagBank\Helpers\Functions;
     <p><?php _e('Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.', 'pagbank-connect');?></p>
     <div class="code-container">
         <label>
-            <?php _e('Código PIX', 'pagbank-connect');?>
+            <span class="pix-code-label"><?php _e('Código PIX', 'pagbank-connect');?></span>
             <input type="text" class="pix-code" value="<?php echo esc_attr($qr_code_text);?>" readonly="readonly"/>
         </label>
         <a href="javascript:void(0)" class="button copy-btn"><?php esc_html_e('Copiar', 'pagbank-connect'); ?></a>
@@ -46,6 +47,10 @@ use RM_PagBank\Helpers\Functions;
                     clearInterval(interval);
                     $('.pix-payment').hide();
                     $('.pix-payment-confirmed').show();
+                    if (typeof handleSuccessBehaviorPagbank === 'function' && typeof pagbankVars !== 'undefined') {
+                        pagbankVars.orderStatus = response.data;
+                        handleSuccessBehaviorPagbank();
+                    }
                 }
             });
         }, 10000);
