@@ -304,18 +304,37 @@ class Common
 
         do_action('pagbank_connect_after_proccess_response', $order, $response);
 	}
-    
+
     public function getThankyouInstructions($order_id){
         $alreadyEnqueued = wp_script_is('pagseguro-connect-success');
         if ($alreadyEnqueued) {
             return;
         }
-        
-        add_action('wp_footer', function() {
+
+        add_action('wp_footer', function() use ($order_id) {
             wp_enqueue_script(
                 'pagseguro-connect-success',
                 plugins_url('public/js/success.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
+
+            // Define the variables
+            $order = new WC_Order($order_id);
+
+            $jsVars = array(
+                'orderId'            => $order_id,
+                'orderStatus'        => $order->get_status(),
+                'successBehavior'    => Params::getConfig('success_behavior', ''),
+                'successBehaviorUrl' => Functions::applyOrderPlaceholders(
+                    Params::getConfig('success_behavior_url', wc_get_page_permalink('myaccount')),
+                    $order_id
+                ),
+                'successBehaviorJs'  => json_encode(
+                    Functions::applyOrderPlaceholders(Params::getConfig('success_behavior_js', ''), $order_id)
+                ),
+            );
+
+            // Pass the variables to the JavaScript file
+            wp_localize_script('pagseguro-connect-success', 'pagbankVars', $jsVars);
         });
     }
 }

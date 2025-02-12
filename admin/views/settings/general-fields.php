@@ -90,7 +90,7 @@ return array(
     'shipping_param' => [
         'title'		=> __('Endereço de Entrega', 'pagbank-connect'),
         'type'		=> 'select',
-        'description' => '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20835022998029" '
+        'description' => '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/20835022998029" '
             .'target="_blank">' . __('Saiba mais', 'pagbank-connect') . '</a>',
         'default'	=> '',
         'options'	=> [
@@ -103,9 +103,40 @@ return array(
         'title'		=> __('Cor dos Ícones', 'pagbank-connect'),
         'type'		=> 'text',
         'description' => __('Escolha as cores do ícone dos meios de pagamento no checkout. <br/>'
-            .'Para mais customizações visuais, veja este <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles'
+            .'Para mais customizações visuais, veja este <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles'
             .'/18278019489677">artigo</a>.', 'pagbank-connect'),
         'default'	=> 'gray',
         'class' => 'icon-color-picker'
+    ],
+    'success_behavior' => [
+        'title'		=> __('Comportamento ao confirmar pagamento', 'pagbank-connect'),
+        'type'		=> 'select',
+        'description' => 'O que deve acontecer na tela de sucesso quando um pagamento for confirmado.<br/><a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437" '
+            .'target="_blank">' . __('Saiba mais', 'pagbank-connect') . '</a>',
+        'default'	=> '',
+        'options'	=> [
+            ''		    => __('Mostar que pedido foi pago (padrão)', 'pagbank-connect'),
+            'redirect'		=> __('Redirecionar para outra URL', 'pagbank-connect'),
+            'js'		=> __('Executar código JavaScript', 'pagbank-connect'),
+        ],
+    ],
+    'success_behavior_url' => [
+        'title'       => esc_html( __( 'URL' , 'pagbank-connect' ) ),
+        'type'        => 'text',
+        'description' => __( 'URL para onde o cliente será redirecionado quando o pagamento for confirmado. <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437#placeholders">Placeholders</a> disponíveis.', 'pagbank-connect' ),
+        'default'     => wc_get_page_permalink('myaccount'),
+        'desc_tip'    => false,
+        'required'    => true
+    ],
+    'success_behavior_js' => [
+        'title'       => esc_html(__('JavaScript Personalizado', 'pagbank-connect')),
+        'type'        => 'textarea',
+        'description' => __( 'Não é necessário adicionar tags javascript. <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437#placeholders">Placeholders</a> disponíveis.', 'pagbank-connect' ),
+        'default'     => '',
+        'desc_tip'    => false,
+        'class'       => 'pagbank-success-js',
+        'custom_attributes' => [
+            'spellcheck' => 'false',
+        ],
     ],
 );

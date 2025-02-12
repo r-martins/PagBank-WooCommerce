@@ -110,7 +110,8 @@ trait StaticResources
         wp_register_script(
             'pagseguro-connect-admin-pix-notice',
             plugins_url('public/js/admin/ps-connect-admin-general.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            ['jquery']
+            ['jquery'],
+            WC_PAGSEGURO_CONNECT_VERSION,
         );
         $scriptData = array(
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -127,7 +128,9 @@ trait StaticResources
         if ($current_section && strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
-                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
             );
         }
 

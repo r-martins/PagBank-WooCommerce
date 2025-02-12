@@ -15,6 +15,12 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
     margin-right: 5px;
 }
 
+#woocommerce_rm-pagbank_success_behavior_js.pagbank-success-js{
+    width: 450px;
+    height: 230px;
+    resize: both;
+}
+
 #woocommerce-product-data ul.wc-tabs li.recurring_pagbank_options a:before { font-family: WooCommerce; content: '\e00e'; }
 
 .sandbox-label {

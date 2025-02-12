@@ -2,6 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 
 /** @var string $qr_code */
 /** @var string $qr_code_text */
@@ -46,6 +47,10 @@ use RM_PagBank\Helpers\Functions;
                     clearInterval(interval);
                     $('.pix-payment').hide();
                     $('.pix-payment-confirmed').show();
+                    if (typeof handleSuccessBehaviorPagbank === 'function' && typeof pagbankVars !== 'undefined') {
+                        pagbankVars.orderStatus = response.data;
+                        handleSuccessBehaviorPagbank();
+                    }
                 }
             });
         }, 10000);

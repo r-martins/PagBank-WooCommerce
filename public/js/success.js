@@ -10,7 +10,26 @@ jQuery(document).ready(function($) {
             }, 2000);
         });
     });
+    handleSuccessBehaviorPagbank();
 });
+
+function handleSuccessBehaviorPagbank(){
+    if (typeof pagbankVars !== 'undefined' && pagbankVars.successBehavior != '' && (pagbankVars.orderStatus == 'processing' || pagbankVars.orderStatus == 'completed')) {
+        switch (pagbankVars.successBehavior) {
+            case 'redirect':
+                window.location.href = pagbankVars.successBehaviorUrl;
+                break;
+            case 'js':
+                try {
+                    const jsCode = JSON.parse(pagbankVars.successBehaviorJs);
+                    eval(jsCode);
+                }catch (e) {
+                    console.error("PagBank: JavaScript Personalizado contém erros.", e);
+                }
+                break;
+        }
+    }
+}
 
 async function copyToClipboard(textToCopy, successCallback) {
     // Navigator clipboard api needs a secure context (https)
