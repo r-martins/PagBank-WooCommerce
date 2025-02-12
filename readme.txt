@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.28.0
+Stable tag: 4.29.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -70,6 +70,8 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Permite definir [**validade** de boletos e código PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
 * [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualizações automáticas de **status de pedidos**
+* [Confirmação imediata de pagamento](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) na tela de sucesso PIX
+* Permite adicionar [código JavaScript ou redirecionar](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento) o cliente após a confirmação de pagamento.
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://ajuda.pbintegracoes.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
 * Suporte a [High-Performance Order Storage (**HPOS**)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
@@ -115,12 +117,6 @@ Se você preferir, podemos instalar e configurar o plugin para você sem nenhum 
 * Conheça os [recursos disponíveis na sua integração](https://ajuda.pbintegracoes.com/hc/pt-br/sections/26127218629133-Recursos) para aproveitar ao máximo dela e vender ainda mais.
 
 == Frequently Asked Questions ==
-= PagSeguro ou PagBank? =
-
-Em 2023 o PagBank e o PagSeguro se tornaram uma única empresa: PagBank.
-
-E não se preocupe, os serviços que você usa não serão afetados.
-
 = Quais os requisitos para usar esta integração? =
 
 * Ter WooCommerce 4.0 ou superior
@@ -131,9 +127,11 @@ E não se preocupe, os serviços que você usa não serão afetados.
 
 = Como funcionam os descontos nas taxas? =
 
-Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará 3,97% ou 3,05% e estará isento da taxa de R$0,40 por transação.
+Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará 3,97% ou 3,05% respectivamente e estará isento da taxa de R$0,40 por transação.
 
 Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
+
+Por exemplo, com PIX a taxa é de apenas 0,99% e o valor estará disponível em sua conta PagBank na hora.
 
 = Eu tenho uma taxa ou condição negociada menor que estas. O que faço? =
 
@@ -175,12 +173,19 @@ Você também pode testar com dados reais e realizar o estorno. As tarifas e tax
 
 = Este é um plugin oficial? =
 
-Não. Este é um plugin desenvolvido por Ricardo Martins, parceiro PagBank desde 2014.
+Não. Este é um plugin desenvolvido por Ricardo Martins (e colaboradores), parceiro PagBank desde 2014.
 
 Apesar da parceria entre o desenvolvedor e o PagBank que concede descontos e benefícios, este NÃO é um produto oficial.
 
 PagSeguro e PagBank são marcas do UOL.
 
+= Qual diferença deste plugin pro oficial? =
+
+Nosso plugin está em constante evolução, possui recursos exclusivos e é desenvolvido por um parceiro oficial PagBank desde 2014.
+
+Além disso você conta com um suporte profissional e eficiente.
+
+Por estas e outras razões, muitos lojistas e agências profissionais preferem nossa integração.
 
 = O plugin é compatível com o WooCommerce Subscriptions? =
 
@@ -194,6 +199,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.29.0 =
+* Agora é possível adicionar códigos JavaScript na tela de sucesso após a confirmação de pagamento ser recebida ou redirecionar o cliente pra outra url. Isso torna sua vida mais fácil ao integrar com GA4, Tag Manager, Facebook pixel, etc. [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
+* Corrigido bug no botão de Copiar código Pix ou boleto. Ocorria em alguns checkouts de plugins de terceiros.
+* Melhoria: adicionado pequeno <span> no texto das instruções de PIX a fim de facilitar customizações CSS. (Sugerido por Weliton Martins)
+
 = 4.28.0 =
 * Agora você pode dar a opção do seu cliente usar 3D Secure somente quando uma transação falhar e permitir retentativa (ex: antifraude). [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34051167045517-Permitir-tentar-novamente-com-valida%C3%A7%C3%A3o-3DS).
 * Descontos PIX ou Boleto agora são preservados após atualização de um pedido e exibidos profissionalmente no admin.
