@@ -124,7 +124,6 @@ trait ProcessPayment
                 $recurring->updateSubscription($subscription, [
                     'status' => $shouldBeStatus,
                 ]);
-                do_action('pagbank_recurring_subscription_status_changed', $subscription, $shouldBeStatus);
             }
 
             if ($shouldBeStatus == 'ACTIVE') {
