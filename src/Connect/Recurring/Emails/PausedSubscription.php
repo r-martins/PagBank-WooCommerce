@@ -20,8 +20,9 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
      * @copyright 2023 Magenteiro
      */
     class PausedSubscription extends RecurringEmails {
+        public $subscription;
 
-		/**
+        /**
 		 * Constructor.
 		 */
 		public function __construct() {

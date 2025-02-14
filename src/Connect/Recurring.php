@@ -556,7 +556,11 @@ class Recurring
         ));
 
         if ($existingSubscription && $existingSubscription->status === 'PENDING') {
-            return $wpdb->update($table, $data, ['id' => $existingSubscription->id]) !== false;
+            $update = $wpdb->update($table, $data, ['id' => $existingSubscription->id]) !== false;
+            if ($update && isset($data['status']) && strcmp($data['status'], $existingSubscription->status) != 0) {
+                do_action('pagbank_recurring_subscription_status_changed', $existingSubscription, $data['status']);
+            }
+            return $update; 
         }
 
         return $wpdb->insert($table, $data, $format) !== false;
@@ -600,8 +604,7 @@ class Recurring
          WHERE status = 'PENDING_CANCEL' AND next_bill_at <= canceled_at";
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
-            $subscription->status = 'CANCELED';
-            $wpdb->update($wpdb->prefix . 'pagbank_recurring', ['status' => $subscription->status], ['id' => $subscription->id]);
+            $this->updateSubscription($subscription, ['status' => 'CANCELED']);
             do_action('pagbank_recurring_cancellation_processed', $subscription);
         }
     }
@@ -1158,6 +1161,10 @@ class Recurring
         }
         
         if ($update > 0) {
+            if (strcmp($newStatus, $subscription->status) != 0) {
+                do_action('pagbank_recurring_subscription_status_changed', $subscription, $newStatus);
+            }
+            
             if(defined('DOING_CRON') && DOING_CRON){
                 Functions::log('Assinatura cancelada com sucesso.', 'info', ['subscription id' => $subscription->id]);
                 return;
@@ -1198,6 +1205,7 @@ class Recurring
                 $subscription,
                 $initialOrder
             );
+            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'ACTIVE');
         }
         
         if ($update > 0) {
@@ -1236,7 +1244,7 @@ class Recurring
             $notifAction = current_user_can('manage_options') ? 'pagbank_recurring_subscription_paused_by_admin'
                 : 'pagbank_recurring_subscription_paused_by_customer';
             do_action($notifAction, $subscription, $initialOrder);
-            
+            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'PAUSED');
         }
         if ($update > 0){
             \wc_add_notice(__('Assinatura pausada com sucesso.', 'pagbank-connect'));
@@ -1270,10 +1278,6 @@ class Recurring
             ['%s', '%s', '%s'],
             ['%d']
         );
-        
-        if ($isDueNow) {
-            $this->processRecurringPayments($subscription);
-        }
 
         if ($update > 0)
         {
@@ -1283,6 +1287,12 @@ class Recurring
                 $subscription,
                 $initialOrder
             );
+            do_action('pagbank_recurring_subscription_status_changed', $subscription, $status);
+            
+            if ($isDueNow) {
+                $this->processRecurringPayments($subscription);
+                \wc_add_notice(__('Um pagamento devido foi processado.', 'pagbank-connect'));
+            }
             return;
         }
         
@@ -1299,7 +1309,10 @@ class Recurring
     {
         global $wpdb;
         $subscription->status = 'COMPLETED';
-        $wpdb->update($wpdb->prefix . 'pagbank_recurring', ['status' => $subscription->status], ['id' => $subscription->id]);
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', ['status' => $subscription->status], ['id' => $subscription->id]);
+        if ($update) {
+            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'COMPLETED');
+        }
     }
 
     /**
@@ -1388,6 +1401,11 @@ class Recurring
                 $subscription,
                 $data
             );
+            
+            if (isset($data['status']) && strcasecmp($data['status'], $subscription->status) != 0) {
+                do_action('pagbank_recurring_subscription_status_changed', $subscription, $data['status']);
+            }
+            
             return true;
         }
         return false;        
