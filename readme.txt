@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.29.0
+Stable tag: 4.29.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -37,25 +37,6 @@ Se você tiver taxas negociadas ou condições negociadas melhores que estas, vo
 
 Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=taxas).
 
-https://www.youtube.com/watch?v=a8rkT8IyIYo
-
-Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
-
-Além disso, você também pode aceitar **pagamentos recorrentes** e criar clubes de assinatura sem depender de plugins de terceiros.
-
-https://www.youtube.com/watch?v=FOPwBTRryNM
-
-
-**Problemas com aprovação de pagamentos e chargebacks em transações com cartão de crédito?**
-
-Nossa integração possui [autenticação 3D Secure](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a **taxa de aprovação**.
-
-Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocupar em contratar um serviço de antifraude.
-
-
-* Termos de uso e softwares terceiros
-Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
-
 == ⚡️ RECURSOS PRINCIPAIS ==
 * Suporte a **PIX**, **Cartão de Crédito** e **Boleto**
 * Suporte a [**recorrência** (assinaturas)](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
@@ -74,10 +55,30 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Permite adicionar [código JavaScript ou redirecionar](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento) o cliente após a confirmação de pagamento.
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://ajuda.pbintegracoes.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
-* Suporte a [High-Performance Order Storage (**HPOS**)](https://woo.com/document/high-performance-order-storage/): Este plugin é otimizado para ambientes com High-Performance Order Storage, garantindo um manuseio rápido e eficiente de seus pedidos WooCommerce.
+* Suporte a [High-Performance Order Storage (**HPOS**)](https://woo.com/document/high-performance-order-storage/)
 * Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
 * **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
 * Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
+
+
+https://www.youtube.com/watch?v=a8rkT8IyIYo
+
+Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
+
+Além disso, você também pode aceitar **pagamentos recorrentes** e criar clubes de assinatura sem depender de plugins de terceiros.
+
+https://www.youtube.com/watch?v=FOPwBTRryNM
+
+
+**Problemas com aprovação de pagamentos e chargebacks em transações com cartão de crédito?**
+
+Nossa integração possui [autenticação 3D Secure](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a **taxa de aprovação**.
+
+Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocupar em contratar um serviço de antifraude.
+
+
+* Termos de uso e softwares terceiros
+Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
 
 
 == Installation ==
@@ -127,7 +128,7 @@ Se você preferir, podemos instalar e configurar o plugin para você sem nenhum 
 
 = Como funcionam os descontos nas taxas? =
 
-Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará 3,97% ou 3,05% respectivamente e estará isento da taxa de R$0,40 por transação.
+Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará 3,97% ou 3,05% respectivamente e estará isento da taxa de R$0,40 por transação. Sem mensalidades.
 
 Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
@@ -199,6 +200,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.29.1 =
+* Correção: o hook de mudança de status de uma assinatura (pagbank_recurring_subscription_status_changed) não era acionado em todas as ocasiões, dificultando integrações de terceiros. Reportado por Thiago Póvoa.
 
 = 4.29.0 =
 * Agora é possível adicionar códigos JavaScript na tela de sucesso após a confirmação de pagamento ser recebida ou redirecionar o cliente pra outra url. Isso torna sua vida mais fácil ao integrar com GA4, Tag Manager, Facebook pixel, etc. [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
