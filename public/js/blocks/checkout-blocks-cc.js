@@ -322,6 +322,8 @@ const Content = ( props ) => {
                         + ' ' + document.getElementById('billing-last_name').value.replace(/\s/g, '');
                 }
                 customerName = customerName.trim().replace(/\s+/g, ' '); //removing duplicated spaces in the middle
+                customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
+                
 
                 let customerEmail = billing.billingData.email;
                 customerEmail = customerEmail.trim() === '' ? document.getElementById('email').value : customerEmail;

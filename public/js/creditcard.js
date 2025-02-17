@@ -338,7 +338,9 @@ jQuery(document).ready(function ($) {
         }
         
         let customerName = checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'];
-        customerName = customerName.trim().replace(/\s+/g, ' ');
+        customerName = customerName.trim().replace(/\s+/g, ' '); //removing duplicated spaces in the middle
+        customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
+
         let orderData = typeof pagBankOrderDetails !== 'undefined'
             ? pagBankOrderDetails.data //if order-pay page
             : { //if checkout page get from form fields
