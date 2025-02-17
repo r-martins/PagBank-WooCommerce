@@ -11,7 +11,8 @@ jQuery(document).ready(function ($) {
         console.debug('PagBank: encryptCard', cardHasChanged);
         let card, cc_number, cc_cvv;
         //replace trim and remove duplicated spaces from holder name
-        let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
+        let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '); //dupl spaces
+        holder_name = holder_name.trim().replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, ''); //specials
         try {
             cc_number = cardHasChanged ? jQuery('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
             cc_cvv = cardHasChanged ? jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
@@ -329,7 +330,7 @@ jQuery(document).ready(function ($) {
                         expMonth: jQuery('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
                         expYear: expiryVal.includes('/') ? '20' + expiryVal.split('/')[1].slice(-2).replace(/\s/g, '') : '',
                         holder: {
-                            name: jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '),
+                            name: jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ').replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')
                         }
                     }
                 },
@@ -337,11 +338,15 @@ jQuery(document).ready(function ($) {
             }
         }
         
+        let customerName = checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'];
+        customerName = customerName.trim().replace(/\s+/g, ' '); //removing duplicated spaces in the middle
+        customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
+
         let orderData = typeof pagBankOrderDetails !== 'undefined'
             ? pagBankOrderDetails.data //if order-pay page
             : { //if checkout page get from form fields
                 customer: {
-                    name: checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'],
+                    name: customerName,
                     email: checkoutFormDataObj['billing_email'],
                     phones: [
                         {

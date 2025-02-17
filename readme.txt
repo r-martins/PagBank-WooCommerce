@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.29.1
+Stable tag: 4.29.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -200,6 +200,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.29.2 =
+* Alteração: evento depreciado onCheckoutBeforeProcessing alterado para onCheckoutValidation, evitando problemas futuros para usuários do checkout em blocos (nativo woo).
+* Correção: quando nome do cliente era informado com espaços duplicados um erro na validação 3D Secure poderia acontecer.
+* Correção: nome do cliente com caracteres inválidos (ex: $#@) digitados acidentalmente ocasionavam erros na finalização do pedido e agora são removidos pro-ativamente.
 
 = 4.29.1 =
 * Correção: o hook de mudança de status de uma assinatura (pagbank_recurring_subscription_status_changed) não era acionado em todas as ocasiões, dificultando integrações de terceiros. Reportado por Thiago Póvoa.

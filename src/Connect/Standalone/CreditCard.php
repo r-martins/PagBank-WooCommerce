@@ -217,9 +217,12 @@ class CreditCard extends WC_Payment_Gateway_CC
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
                     true
                 );
+                $holderName = htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8');
+                $holderName = preg_replace('/\s+/', ' ', trim($holderName));
+                $holderName = preg_replace('/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/', '', $holderName);
                 $order->add_meta_data(
                     '_pagbank_card_holder_name',
-                    htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8'),
+                    $holderName,
                     true
                 );
                 $order->add_meta_data(
