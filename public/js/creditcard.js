@@ -11,7 +11,8 @@ jQuery(document).ready(function ($) {
         console.debug('PagBank: encryptCard', cardHasChanged);
         let card, cc_number, cc_cvv;
         //replace trim and remove duplicated spaces from holder name
-        let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ');
+        let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '); //dupl spaces
+        holder_name = holder_name.trim().replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, ''); //specials
         try {
             cc_number = cardHasChanged ? jQuery('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
             cc_cvv = cardHasChanged ? jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
@@ -329,7 +330,7 @@ jQuery(document).ready(function ($) {
                         expMonth: jQuery('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
                         expYear: expiryVal.includes('/') ? '20' + expiryVal.split('/')[1].slice(-2).replace(/\s/g, '') : '',
                         holder: {
-                            name: jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '),
+                            name: jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ').replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')
                         }
                     }
                 },
