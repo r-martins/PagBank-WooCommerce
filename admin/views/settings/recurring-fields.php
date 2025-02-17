@@ -85,6 +85,24 @@ return array(
         'default'     => 'no'
     ],
     [
+        'id'          => 'woocommerce_rm-pagbank-recurring_retry_charge',
+        'title'       => __( 'Tentar novamente quando falhar?', 'pagbank-connect'),
+        'label'       => __( 'Permitir', 'pagbank-connect' ),
+        'type'        => 'checkbox',
+        'description' => '',
+        'default'     => 'yes'
+    ],
+    [
+		'id'          => 'woocommerce_rm-pagbank-recurring_retry_attempts',
+		'title'       => __( 'Número de tentativas', 'pagbank-connect' ),
+		'type'        => 'number',
+		'default'     => 3,
+		'custom_attributes' => [
+			'min' => 1,
+			'max' => 4,
+		],
+	],
+    [
         'type' => 'sectionend',
         'id' => 'rm-pagbank-recurring-settings'
     ]

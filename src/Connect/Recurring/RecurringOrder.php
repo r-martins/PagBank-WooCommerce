@@ -9,6 +9,7 @@ use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
 use WC_Data_Exception;
 use WC_Meta_Data;
@@ -215,13 +216,35 @@ class RecurringOrder
 
         // region Immediately decline if payment method is credit card and charge was declined
         if ($payment_method == 'credit_card' && $charge !== false) {
-            if ($charge['status'] == 'DECLINED'){
-                //@TODO suspend subscription instead of cancelling
-                $recurring->cancelSubscription(
-                    $subscription->id,
+            if ($charge['status'] == 'DECLINED' && $subscription->status != 'SUSPENDED'){
+                $canRetry = wc_string_to_bool(Params::getRecurringConfig('recurring_retry_charge', 'yes'));
+                if (!$canRetry) {
+                    $recurring->cancelSubscription(
+                        $subscription->id,
+                        __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect'),
+                        'FAILURE'
+                    );
+                }
+
+                $recurring->suspendSubscription(
+                    $subscription,
                     __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect'),
-                    'FAILURE'
+                    (int) Params::getRecurringConfig('recurring_retry_attempts', '3')
                 );
+            }
+
+            if ($charge['status'] == 'DECLINED' && $subscription->status == 'SUSPENDED'){
+                $retryAttemptsRemaining = $subscription->retry_attempts_remaining;
+                if (!$retryAttemptsRemaining) {
+                    $recurring->cancelSubscription(
+                        $subscription,
+                        __('Pagamento recusado durante a renovação da assinatura. Número de tentativas de cobrança esgotado.', 'pagbank-connect'),
+                        'FAILURE'
+                    );
+                    return 0;
+                }
+
+                $recurring->updateSuspendedSubscription($subscription);
             }
         }
         // endregion

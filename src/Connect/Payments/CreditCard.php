@@ -200,7 +200,7 @@ class CreditCard extends Common
             $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0%d;";
             $recurring = $wpdb->get_row( $wpdb->prepare( $sql, $initialSubOrderId ) );
             $paymentInfo = json_decode($recurring->payment_info);
-            $card->setId($paymentInfo->card->id);
+            $card->setId($paymentInfo->card->id ?: '');
             $holder = new Holder();
             $holder->setName($paymentInfo->card->holder_name);
             $card->setHolder($holder);

@@ -129,8 +129,8 @@ class Recurring
      * Calculates the DateTime for the next billing date
      *
      * @param string $frequency Accepted values are: 'daily', 'weekly', 'monthly', 'yearly'
-     * @param int $cycle 
-     *
+     * @param int $cycle
+     * @param null $trialLenght
      * @return DateTime The next billing date GMT timezone
      * @throws Exception
      */

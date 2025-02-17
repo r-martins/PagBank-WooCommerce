@@ -7,6 +7,7 @@ use RM_PagBank\Connect\Exception;
 use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use WC_Data_Exception;
 use WC_Order;
 use WP_Error;
@@ -119,6 +120,11 @@ trait ProcessPayment
             if ( ! $subscription instanceof \stdClass) {
                 return;
             }
+
+//            if ($status == 'DECLINED' && $charge["recurring"]["type"] == 'SUBSEQUENT') {
+//                $canRetry = wc_string_to_bool(Params::getRecurringConfig('recurring_retry_charge', 'yes'));
+//                $shouldBeStatus = $canRetry ? 'SUSPENDED' : $shouldBeStatus;
+//            }
 
             if ($subscription->status != $shouldBeStatus) {
                 $recurring->updateSubscription($subscription, [

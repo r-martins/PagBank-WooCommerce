@@ -218,6 +218,8 @@ class Connect
                         'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
                         'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
                         'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
+                        'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
+                        'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
                 ]
             ]
         ];
@@ -461,6 +463,15 @@ class Connect
 
             $wpdb->query($sql);
             update_option('pagbank_db_version', '4.27');
+        }
+
+        if (version_compare($stored_version, '4.28', '<')) {
+            $sql = "ALTER TABLE $recurringTable
+                    ADD COLUMN retry_attempts_remaining int null comment 'Number of billing attempts remaining on suspended subscriptions' AFTER suspended_at;
+                    ";
+
+            $wpdb->query($sql);
+            update_option('pagbank_db_version', '4.28');
         }
     }
 
