@@ -337,11 +337,13 @@ jQuery(document).ready(function ($) {
             }
         }
         
+        let customerName = checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'];
+        customerName = customerName.trim().replace(/\s+/g, ' ');
         let orderData = typeof pagBankOrderDetails !== 'undefined'
             ? pagBankOrderDetails.data //if order-pay page
             : { //if checkout page get from form fields
                 customer: {
-                    name: checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'],
+                    name: customerName,
                     email: checkoutFormDataObj['billing_email'],
                     phones: [
                         {

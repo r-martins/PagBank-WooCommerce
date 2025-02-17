@@ -45,7 +45,7 @@ const Label = ( props ) => {
  */
 const Content = ( props ) => {
     const { eventRegistration, emitResponse, billing } = props;
-    const { onPaymentSetup, onCheckoutBeforeProcessing, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
+    const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
 
     if (settings.paymentUnavailable) {
         useEffect( () => {
@@ -251,7 +251,7 @@ const Content = ( props ) => {
             })
         }
 
-        const unsubscribe = onCheckoutBeforeProcessing(async () => {
+        const unsubscribe = onCheckoutValidation(async () => {
             console.debug('PagBank: submit');
             console.debug('PagBank: encrypting card');
             encryptedCard = encryptCard();
@@ -321,6 +321,7 @@ const Content = ( props ) => {
                     customerName = document.getElementById('billing-first_name').value.replace(/\s/g, '')
                         + ' ' + document.getElementById('billing-last_name').value.replace(/\s/g, '');
                 }
+                customerName = customerName.trim().replace(/\s+/g, ' '); //removing duplicated spaces in the middle
 
                 let customerEmail = billing.billingData.email;
                 customerEmail = customerEmail.trim() === '' ? document.getElementById('email').value : customerEmail;
@@ -394,7 +395,7 @@ const Content = ( props ) => {
         return () => {
             unsubscribe();
         };
-    }, [onCheckoutBeforeProcessing] );
+    }, [onCheckoutValidation] );
 
     useEffect( () => {
         const unsubscribe = onPaymentSetup(() => {
