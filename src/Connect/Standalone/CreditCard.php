@@ -186,21 +186,22 @@ class CreditCard extends WC_Payment_Gateway_CC
             $payment_method = $payment_method . '_token';
         }
 
-        $isCheckoutBlocks = Functions::isCheckoutBlocks();
         switch ($payment_method) {
             case 'cc':
-                $installments = $isCheckoutBlocks ?
-                    filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT):
-                    filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT);
+                //the first is used in non-block checkout
+                $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT)
+                    ?: filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT); 
+                
                 $order->add_meta_data(
                     'pagbank_card_installments',
                     $installments,
                     true
                 );
 
-                $ccNumber = $isCheckoutBlocks ?
-                    filter_var($_POST['rm-pagbank-card-number'], FILTER_SANITIZE_NUMBER_INT):
-                    filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT);
+                //the first is used in non-block checkout
+                $ccNumber = filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT)
+                    ?: filter_var($_POST['rm-pagbank-card-number'], FILTER_SANITIZE_NUMBER_INT);
+                    
                 $order->add_meta_data(
                     'pagbank_card_last4',
                     substr($ccNumber, -4),
