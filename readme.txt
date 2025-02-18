@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.29.2
+Stable tag: 4.29.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -200,6 +200,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.29.3 =
+* Correção: em alguns cenários, ao realizar uma compra parcelada com checkout em blocos(nativo) o valor das parcelas selecionadas não era obtido corretamente, ocasionando erro na finalização do pedido devido ao parametro installments.
+
 = 4.29.2 =
 * Alteração: evento depreciado onCheckoutBeforeProcessing alterado para onCheckoutValidation, evitando problemas futuros para usuários do checkout em blocos (nativo woo).
 * Correção: quando nome do cliente era informado com espaços duplicados um erro na validação 3D Secure poderia acontecer.
@@ -351,56 +354,8 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 * Agora é possível definir período de teste e opções de descontos para assinaturas.
 * APIs: obtenha informações detalhadas dos pagamentos feitos com pagbank nos metadados do pedido via API Rest do próprio WordPress/Woo
 
-= 4.12.0 =
-* Agora é possível remover os botões de Cancelar ou Pausar assinatura na área do cliente
-* Agora o administrador pode alterar o valor de uma assinatura no admin
-
-= 4.11.7 =
-* Melhoria: adicionado NSU e Authorization code aos meta dados do pedido, para facilitar conciliação
-* Melhoria: agora validamos o order_id do pedido quando uma notificação é recebida, evitando que pedidos com mesmo ID sejam atualizados erroneamente e em alguns casos alterando pedidos pagos para cancelados.
-* Correção: símbolo da moeda (R$) aparecia duplicado no formulário de pagamento em vendas recorrentes
-
-= 4.11.6 =
-* Melhoria: agora quando você marca para exibir meios de pagamento separadamente, a opção de selecionar como o titulo sera exibido é omitida, evitando confusão (já que esta opção não terá efeito algum)
-* Corrige erro no tamanho dos ícones quando meios de pagamento eram exibidos individualmente, em alguns checkouts como Porto
-* Mudamos a forma como obtemos o preço do produto na finalização de compra, a fim de corrigir erros de compatibilidade com alguns plugins e tornar o processo mais enxuto e rápido
-
-= 4.11.5 =
-* Pequena melhoria: adicionamos alguns hooks com filters e actions para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis). 
-
-= 4.11.4 =
-* Correção: alguns plugins de terceiros não utilizam filtros corretamente, fazendo com que nosso css não seja inserido e o checkout apresente problemas, como ícones grandes e afins. Contornamos o problema aqui. 
-
-= 4.11.3 =
-* Correção em falha que impedia o EnvioFacil de ser habilitado
-
-= 4.11.2 =
-* Correção: em alguns cenários, o campo de CPF, número do endereço e bairro não eram enviados corretamente ocasionando falha no fechamento do pedido (especialmente em Boletos).
-
-= 4.11.1 = 
-* Correção: nosso validador de chaves pix adicionado na versão anterior apontava para pedidos não-pix
-* Correção: a mensagem de validação do pix não era ignorada em alguns cenários após dispensá-la
-
-= 4.11.0 =
-* Melhoria: agora o plugin exibe uma mensagem de erro no admin caso o código PIX esteja sendo gerado incorretamente por conta de algum problema em sua conta PagBank (geralmente porque você não cadastrou a chave aleatória).
-* Correção: o valor dos produtos era informado de forma incorreta ao PagBank quando múltiplos do mesmo item estavam presentes no pedido (embora o valor cobrado estivesse correto).
-
-= 4.10.2 =
-* Correção em erro no cálculo de parcelas. Em alguns cenários, dependendo das regras de parcelamento, quando o total de parcelas sem juros era = 1, poderia ocasionar erro na pagina de produto (se as parcelas estivessem sendo exibidas la) e no dropdown de parcelamento do checkout.
-* Correções diversas em warnings e notices em versões mais novas do PHP 8.1 e 8.2 que poderiam aparecer no admin, e em algumas etapas do pedido quando modo debug estava ativo. 
-
-= 4.10.1 =
-* Correção de erro "get_cart was called incorrectly" era exibido quando usado em conjunto com alguns outros plugins (como Mercado Pago), em alguns casos quebrando o carrinho.
-* Alteramos a forma como o uso de shortcode de parcelamento é usado. Agora você deve habilitar ele nas configurações. Isso evita que ele seja adicionado em duplicidade.
-* Corrigido falha na compra de produto recorrente quando meios de pagamento eram configurados para ser exibidos de forma separada. A mensagem Método de pagamento inválido era exibida.
-* Melhoramos a descrição de alguns dos campos de configuração de cartão de crédito, a fim de deixar mais claro o que cada um faz e com mais links para documentação.
-
-
-= 4.10.0 =
-* Emails: agora o administrador e cliente só receberão e-mails notificando que um pedido foi criado se o mesmo tiver sido pago.
-* Correção/Mudança: agora pessoas com permissão de gerente de loja e administradores poderão ter acesso ao menu PagBank. Antes somente administradores tinham acesso.
-* Agora é possível usar o shortcode [rm_pagbank_credit_card_installments] para exibir as parcelas de um produto em layouts personalizados.
-* Corrigido Erro na exibição das parcelas quando opção 'Texto com parcela máxima' era selecionado em alguns cenários.
+= Versões mais antigas =
+* Veja [changelog completo](https://github.com/r-martins/PagBank-WooCommerce/releases). 
 
 == Upgrade Notice ==
 Ao atualizar nosso plugin, você se protege contra falhas de funcionamento e segurança e aumenta suas chances de conversão no momento mais importante do ciclo de vendas.
