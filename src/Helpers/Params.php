@@ -356,6 +356,9 @@ class Params
             case 'cc':
                 $discountConfig = self::getCcConfig('cc_discount', 0);
                 break;
+            case 'redirect':
+                $discountConfig = self::getCcConfig('redirect_discount', 0);
+                break;
         }
         $discountType = self::getDiscountType($discountConfig);
         if ( ! $discountType || is_wc_endpoint_url('order-pay')) {
