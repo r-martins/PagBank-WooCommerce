@@ -6,6 +6,7 @@ use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
+use RM_PagBank\Connect\OrderProcessor;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
 use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
@@ -44,6 +45,7 @@ class Connect
         add_action('wp_ajax_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
+        add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
         add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 2);
         add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
@@ -809,6 +811,60 @@ class Connect
         add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);
         add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
         add_action('admin_enqueue_scripts', [MenuPagBank::class, 'adminPagesStyle']);
+    }
+
+    public static function forceOrderUpdate()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(__('Você não tem permissão para acessar esta página.', 'pagbank-connect'));
+        }
+
+        $order_id = filter_input(INPUT_GET, 'order_id', FILTER_SANITIZE_NUMBER_INT);
+        $pagbank_order_id = filter_input(INPUT_GET, 'pagbank_order_id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        
+        if (empty($pagbank_order_id) || empty($order_id)) {
+            wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
+        }
+    
+        // Obter o pedido com base no pagbank_order_id e id
+        $order = wc_get_order($order_id);
+        
+        if (!$order || $order->get_meta('pagbank_order_id') !== $pagbank_order_id) {
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+        }
+
+
+        $edit_order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
+        
+        $api = new Api();
+        $orderData = $api->get('ws/orders/' . $pagbank_order_id, [], 5);
+        $md5 = md5(serialize($orderData));
+        if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
+            $order->add_order_note(
+                __('Pedido atualizado manualmente mas nada mudou desde o último update.', 'pagbank-connect'),
+                false,
+                true
+            );
+            return wp_redirect($edit_order_url);
+        }
+        
+        $order->add_order_note(
+            __('Pedido atualizado manualmente.', 'pagbank-connect'),
+            false,
+            true
+        );
+        $orderProcessor = new OrderProcessor();
+        try {
+            $orderProcessor->updateTransaction($order, $orderData);
+        } catch (\Exception $e) {
+            $order->add_order_note(
+                __('Erro ao atualizar o pedido: ', 'pagbank-connect') . $e->getMessage(),
+                false,
+                true
+            );
+        }
+
+        wp_redirect($edit_order_url);
     }
 
 }

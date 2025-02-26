@@ -12,6 +12,8 @@ if ($order->get_meta('pagbank_payment_method') == ''){
 }
 $charge_id = $order->get_meta('pagbank_charge_id');
 $wpKsesSvg = ['svg'  => ['xmlns'   => [], 'width'   => [], 'height'  => [], 'viewbox' => [], 'version' => [],], 'path' => ['d' => [],],];
+$isRecurringOrder = $order->get_meta('_pagbank_is_recurring') > 0 || $order->get_meta('_recurring_cycle') > 0;
+$pbOrderId = $order->get_meta('pagbank_order_id');
 ?>
 <p class="form-field form-field-wide">
     <img src="<?php echo wp_kses(plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), $wpKsesSvg);?>" style="width: 100px; height: auto; margin-right: 10px; float: left;" alt="PagBank Logo"/>
@@ -22,7 +24,8 @@ $wpKsesSvg = ['svg'  => ['xmlns'   => [], 'width'   => [], 'height'  => [], 'vie
     </span>
     <?php endif;?>
     
-    <?php if($order->get_meta('_pagbank_is_recurring') > 0 || $order->get_meta('_recurring_cycle') > 0):?>
+    <?php 
+    if($isRecurringOrder):?>
     <a href="<?php echo Recurring::getAdminSubscriptionDetailsUrl($order)?>" class="recurring-label">
         <span class="recurring-icon"></span>
         <span class="recurring"><?php echo __('Pedido Recorrente', 'pagbank-connect')?></span>
@@ -79,5 +82,11 @@ $wpKsesSvg = ['svg'  => ['xmlns'   => [], 'width'   => [], 'height'  => [], 'vie
             <?php echo $linkTagHtml;?>
 		</span>
 	<?php endif;?>
+
+    <?php if ($pbOrderId): ?>
+        <span class="form-field form-field-wide ps-pagbank-info">
+            <a href="<?php echo esc_url(get_site_url() . '/?wc-api=pagbank_force_order_update&order_id=' . $order->get_id() . '&pagbank_order_id=' . $pbOrderId)?>" title="Irá buscar mudanças no pedido e processá-las se houver. Use somente se tiver dificuldades em receber as notificações do PagBank por conta de bloqueios ou indisponibilidade.">Forçar atualização PagBank</a><span class="dashicons dashicons-update"></span>
+        </span>
+    <?php endif;?>
 </p>
 

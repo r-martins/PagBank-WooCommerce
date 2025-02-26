@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.29.3
+Stable tag: 4.30.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -200,6 +200,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.30.0 =
+* Melhoria paliativa: alguns lojistas na hostgator têm experimentado problemas com as notificações do PagBank causadas pelo mod_security, e seus pedidos não são atualizados. Enquanto não implementamos a atualização pró-ativa de pedidos, você passa a ter a opção de "Forçar atualização" do pedido junto ao PagBank nos detalhes do pedido.
+
 = 4.29.3 =
 * Correção: em alguns cenários, ao realizar uma compra parcelada com checkout em blocos(nativo) o valor das parcelas selecionadas não era obtido corretamente, ocasionando erro na finalização do pedido devido ao parametro installments.
 

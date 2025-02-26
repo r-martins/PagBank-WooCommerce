@@ -9,7 +9,6 @@ use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use WC_Data_Exception;
 use WC_Order;
-use WP_Error;
 
 trait ProcessPayment
 {
@@ -24,6 +23,13 @@ trait ProcessPayment
      */
     public static function updateTransaction(WC_Order $order, array $order_data): void
     {
+        $md5 = md5(serialize($order_data));
+        if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
+            Functions::log(__('Notificação de atualização ignorada pois o conteúdo é o mesmo da última atualização.', 'pagbank-connect'), 'debug');
+            return; // Do not update if the data is the same
+        }
+        $order->update_meta_data('_pagbank_last_update_md5', $md5);
+        
         $charge = $order_data['charges'][0] ?? [];
         $status = $charge['status'] ?? '';
         $payment_response = $charge['payment_response'] ?? null;
