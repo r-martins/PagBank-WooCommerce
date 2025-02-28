@@ -14,6 +14,8 @@ use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
 use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
+use RM_PagBank\Cron\CancelExpiredPix;
+use RM_PagBank\Cron\ForceOrderUpdate;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -80,7 +82,7 @@ class Connect
         //if pix enabled
         if (Params::getPixConfig('enabled')) {
             //region cron to cancel expired pix non-paid payments
-            add_action('rm_pagbank_cron_cancel_expired_pix', [__CLASS__, 'cancelExpiredPix']);
+            add_action('rm_pagbank_cron_cancel_expired_pix', [CancelExpiredPix::class, 'execute']);
             if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
                 wp_schedule_event(
                     time(),
@@ -89,6 +91,18 @@ class Connect
                 );
             }
             //endregion
+        }
+        
+        //if force order update enabled
+        if (Params::getConfig('force_order_update', false)) {
+            add_action('rm_pagbank_cron_force_order_update', [ForceOrderUpdate::class, 'execute']);
+            if (!wp_next_scheduled('rm_pagbank_cron_force_order_update')) {
+                wp_schedule_event(
+                    time(),
+                    'hourly',
+                    'rm_pagbank_cron_force_order_update'
+                );
+            }
         }
 
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
@@ -528,23 +542,7 @@ class Connect
         }
     }
 
-    public static function cancelExpiredPix()
-    {
-        //list all orders with pix payment method and status pending created longer than configured expiry time
-        $expiredOrders = Functions::getExpiredPixOrders();
-        foreach ($expiredOrders as $order) {
-            //cancel order
-            $order->update_status(
-                'cancelled'
-            );
-
-            //send cancelled order email to customer
-            $order->add_order_note(
-                __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
-                true
-            );
-        }
-    }
+    
 
 //    public static function redirectStandaloneConfigPage()
 //    {
@@ -836,8 +834,7 @@ class Connect
 
         $edit_order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
         
-        $api = new Api();
-        $orderData = $api->get('ws/orders/' . $pagbank_order_id, [], 5);
+        $orderData = Api::getOrderData($pagbank_order_id);
         $md5 = md5(serialize($orderData));
         if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
             $order->add_order_note(
