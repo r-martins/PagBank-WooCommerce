@@ -43,6 +43,15 @@ trait ProcessPayment
         if (isset($charge['payment_response']['reference'])) {
             $order->add_meta_data('pagbank_nsu', $charge['payment_response']['reference']);
         }
+        
+        $redirectStatus = $order_data['status'] ?? null; //redirect checkout status (if expirable)
+        if (!$status && $redirectStatus == 'INACTIVE') {
+            $order->add_order_note('PagBank: Checkout expirou e pagamento não foi efetuado.' . $cronMsg);
+            $order->update_status(
+                'on-hold',
+                'PagBank: Pagamento não realizado durante o período aceito.' . $cronMsg
+            );
+        }
 
         if (isset($charge['payment_response']['raw_data']['authorization_code'])) {
             $order->add_meta_data('pagbank_authorization_code', $charge['payment_response']['raw_data']['authorization_code']);
@@ -205,7 +214,17 @@ trait ProcessPayment
         //force payment method, to avoid problems with standalone methods
         $order->set_payment_method(Connect::DOMAIN);
 
-        $endpoint = $method->code == 'credit_card_token' ? 'ws/tokens/cards' : 'ws/orders';
+        switch ($method->code) {
+            case 'credit_card_token':
+                $endpoint = 'ws/tokens/cards';
+                break;
+            case 'redirect':
+                $endpoint = 'ws/checkouts';
+                break;
+            default:
+                $endpoint = 'ws/orders';
+                break;
+        }
         $api = new Api();
         $resp = $api->post($endpoint, $params);
         if (isset($resp['error_messages'])) {

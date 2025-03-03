@@ -174,7 +174,8 @@ class Redirect extends WC_Payment_Gateway
     public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
         if ($order->get_meta('pagbank_payment_method') === 'redirect' && in_array($email->id, $emailIds)) {
-            $redirectLink = $order->get_meta('pagbank_redirect_link');
+            $redirectLink = $order->get_meta('pagbank_redirect_url');
+            $checkoutExpires = $order->get_meta('pagbank_redirect_expiration');
 
             ob_start();
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/redirect-payment-details.php';
@@ -206,12 +207,21 @@ class Redirect extends WC_Payment_Gateway
      * @return void
      */
     public function maybeSendNewOrderEmail($order, $resp) {
-        $shouldNotify = wc_string_to_bool(Params::getBoletoConfig('redirect_send_new_order_email', 'yes'));
+        $shouldNotify = wc_string_to_bool(Params::getRedirectConfig('redirect_send_new_order_email', 'yes'));
 
         if (!$shouldNotify) {
             return;
         }
 
         $this->sendOrderInvoiceEmail($order);
+    }
+    
+    public static function getOrderReceivedURL($order_received_url, $order)
+    {
+        if ($order->get_payment_method() === Connect::DOMAIN . '-redirect'
+        && $order->get_status() == 'pending' && !empty($order->get_meta('pagbank_redirect_url'))) {
+            $order_received_url = $order->get_meta('pagbank_redirect_url');
+        }
+        return $order_received_url; 
     }
 }

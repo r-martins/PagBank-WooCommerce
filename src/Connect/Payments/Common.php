@@ -295,6 +295,12 @@ class Common
 				$order->add_meta_data('_pagbank_card_3ds_status', $response['charges'][0]['payment_method']['authentication_method']['status'] ?? null);
                 $order->set_props(['payment_method' => 'rm-pagbank-cc']);
 				break;
+            case 'redirect':
+                $order->add_meta_data('pagbank_redirect_url', $response['links'][1]['href'] ?? null, true);
+                $order->add_meta_data('pagbank_redirect_expiration', $response['expiration_date'] ?? null, false);
+                $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
+                break;
+                
         }
 		$order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
 		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);

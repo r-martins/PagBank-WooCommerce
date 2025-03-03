@@ -17,7 +17,7 @@ class Customer implements JsonSerializable
     private string $name;
     private string $email;
     private string $tax_id;
-    private array $phone;
+    private mixed $phone;
 
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
@@ -77,15 +77,15 @@ class Customer implements JsonSerializable
     /**
      * @return array
      */
-    public function getPhone(): array
+    public function getPhone(): mixed
     {
         return $this->phone;
     }
 
     /**
-     * @param array $phone
+     * @param array|Phone $phone When in Redirect mode, it receives the phone object directly
      */
-    public function setPhone(array $phone): void
+    public function setPhone(mixed $phone): void
     {
         $this->phone = $phone;
     }

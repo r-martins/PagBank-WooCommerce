@@ -8,6 +8,7 @@ use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\Boleto as BoletoObj;
 use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Customer;
 use RM_PagBank\Object\Holder;
 use RM_PagBank\Object\InstructionLines;
 use RM_PagBank\Object\PaymentMethod;
@@ -70,12 +71,6 @@ class Redirect extends Common
 
         $paymentMethod = new PaymentMethod();
         $paymentMethod->setType('REDIRECT');
-        $boleto = new BoletoObj();
-        $boleto->setDueDate(gmdate('Y-m-d', strtotime('+' . Params::getBoletoConfig('boleto_expiry_days', 7) . 'day')));
-        $instruction_lines = new InstructionLines();
-        $instruction_lines->setLine1(Params::getBoletoConfig('boleto_line_1', 'Não aceitar após vencimento'));
-        $instruction_lines->setLine2(Params::getBoletoConfig('boleto_line_2', 'Obrigado por sua compra.'));
-        $boleto->setInstructionLines($instruction_lines);
 
         //cpf or cnpj
         $customerData = $this->getCustomerData();
@@ -111,15 +106,12 @@ class Redirect extends Common
         }
 
         $holder->setAddress($holderAddress);
-        $boleto->setHolder($holder);
-        $paymentMethod->setType('BOLETO');
-        $paymentMethod->setBoleto($boleto);
         $charge->setPaymentMethod($paymentMethod);
 
-        $charges = ['charges' => [$charge]];
+        $customerModifiable = ['customer_modifiable' => true];
+        $redirectUrl = ['redirect_url' => $this->order->get_checkout_order_received_url()];
 
-        return array_merge($return, $charges);
-
+        return array_merge($return, $customerModifiable, $redirectUrl);
     }
 
 	/**
@@ -133,6 +125,14 @@ class Redirect extends Common
         $order = new WC_Order($order_id);
         $redirect_link = $order->get_meta('pagbank_redirect_link');
         require_once dirname(__FILE__) . '/../../templates/redirect-instructions.php';
+    }
+    
+    public function getCustomerData(): Customer
+    {
+        $customer = parent::getCustomerData();
+        $phone = $customer->getPhone();
+        $customer->setPhone($phone[0]);
+        return $customer;
     }
 
 }

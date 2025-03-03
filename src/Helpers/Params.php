@@ -140,6 +140,15 @@ class Params
         return get_option('woocommerce_rm-pagbank-' . $key, $default);
     }
 
+    public static function getRedirectConfig($key, string $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-redirect_settings');
+        if (isset($settings[$key])){
+            return $settings[$key];
+        }
+        return $default;
+    }
+
     /**
      * Gets the max allowed installments or false if no limit
 	 *
