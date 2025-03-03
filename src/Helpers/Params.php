@@ -395,7 +395,7 @@ class Params
 
         $isDynamicIcoAccessible = wp_remote_get(
             plugins_url('public/images/payment-icon.php?method=pix', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            ['timeout' => 10]
+            ['timeout' => 10, 'sslverify' => false, 'reject_unsafe_urls' => false]
         );
 
         $result = (wp_remote_retrieve_response_code($isDynamicIcoAccessible) !== 200) ? 0 : 1;

@@ -151,10 +151,8 @@ class Connect
     public static function addGateway(array $gateways): array
     {
         $section = sanitize_text_field($_GET['section'] ?? '');
-        $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
 
-        if ($isStandalone
-            && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
+        if ($section !== self::DOMAIN) {//plugin's config page (then its not standalone)
             $pix = new StandalonePix();
             $gateways[] = $pix;
 
