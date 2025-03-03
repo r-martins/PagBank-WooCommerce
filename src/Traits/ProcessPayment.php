@@ -9,7 +9,6 @@ use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use WC_Data_Exception;
 use WC_Order;
-use WP_Error;
 
 trait ProcessPayment
 {
@@ -24,6 +23,14 @@ trait ProcessPayment
      */
     public static function updateTransaction(WC_Order $order, array $order_data): void
     {
+        $cronMsg = wp_doing_cron() ? __(' (Atualizado via Cron)', 'pagbank-connect') : '';
+        $md5 = md5(serialize($order_data));
+        if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
+            Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect'), $order->get_id()), 'debug');
+            return; // Do not update if the data is the same
+        }
+        $order->update_meta_data('_pagbank_last_update_md5', $md5);
+        
         $charge = $order_data['charges'][0] ?? [];
         $status = $charge['status'] ?? '';
         $payment_response = $charge['payment_response'] ?? null;
@@ -59,35 +66,35 @@ trait ProcessPayment
                 )
             );
         }
-
+        
         switch ($status) {
             case 'AUTHORIZED': // Pre-Authorized but not captured yet
                 $order->add_order_note(
-                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id,
+                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id . $cronMsg,
                 );
                 $order->update_status(
                     'on-hold',
-                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id
+                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id . $cronMsg
                 );
                 break;
             case 'PAID': // Paid and captured
                 //stocks are reduced at this point
                 $order->payment_complete($charge_id);
-                $order->add_order_note('PagBank: Pagamento aprovado e capturado. Charge ID: ' . $charge_id);
+                $order->add_order_note('PagBank: Pagamento aprovado e capturado. Charge ID: ' . $charge_id . $cronMsg);
                 break;
             case 'IN_ANALYSIS': // Paid with Credit Card, and PagBank is analyzing the risk of the transaction
-                $order->update_status('on-hold', 'PagBank: Pagamento em análise.');
+                $order->update_status('on-hold', 'PagBank: Pagamento em análise.' . $cronMsg);
                 break;
             case 'DECLINED': // Declined by PagBank or by the card issuer
-                $order->update_status('failed', 'PagBank: Pagamento recusado.');
+                $order->update_status('failed', 'PagBank: Pagamento recusado.' . $cronMsg);
                 $order->add_order_note(
-                    'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id,
+                    'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id . $cronMsg,
                 );
                 break;
             case 'CANCELED':
                 $order->update_status('cancelled', 'PagBank: Pagamento cancelado.');
                 $order->add_order_note(
-                    'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id,
+                    'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id . $cronMsg,
                 );
                 break;
             default:
@@ -100,7 +107,7 @@ trait ProcessPayment
                 $recurring->processInitialResponse($order);
             } catch (Exception $e) {
                 Functions::log(
-                    'Erro ao processar resposta inicial da assinatura: '.$e->getMessage(),
+                    'Erro ao processar resposta inicial da assinatura: '.$e->getMessage() . $cronMsg,
                     'error',
                     $e->getTrace()
                 );

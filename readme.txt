@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.29.3
+Stable tag: 4.31.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -50,7 +50,8 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
 * Permite definir [**validade** de boletos e código PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
 * [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
-* Atualizações automáticas de **status de pedidos**
+* Atualizações automáticas de **status de pedidos** mesmo que sua loja bloqueie as notificações automáticas do PagBank
+* Opção de forçar atualização de um pedido manualmente
 * [Confirmação imediata de pagamento](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) na tela de sucesso PIX
 * Permite adicionar [código JavaScript ou redirecionar](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento) o cliente após a confirmação de pagamento.
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
@@ -200,6 +201,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.31.0 =
+* Adicionado recurso para forçar atualização de pedidos independente do sucesso no recebimento das notificaçõs PagBank [saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34589281628813)
+
+= 4.30.0 =
+* Melhoria paliativa: alguns lojistas na hostgator têm experimentado problemas com as notificações do PagBank causadas pelo mod_security, e seus pedidos não são atualizados. Enquanto não implementamos a atualização pró-ativa de pedidos, você passa a ter a opção de "Forçar atualização" do pedido junto ao PagBank nos detalhes do pedido.
+
 = 4.29.3 =
 * Correção: em alguns cenários, ao realizar uma compra parcelada com checkout em blocos(nativo) o valor das parcelas selecionadas não era obtido corretamente, ocasionando erro na finalização do pedido devido ao parametro installments.
 

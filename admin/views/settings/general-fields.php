@@ -139,4 +139,18 @@ return array(
             'spellcheck' => 'false',
         ],
     ],
+    'force_order_update' => [
+        'title'       => esc_html(__('Forçar atualização de pedidos automaticamente', 'pagbank-connect')),
+        'label'       => esc_html(__('Habilitar', 'pagbank-connect')),
+        'type'        => 'checkbox',
+        'desc_tip'    => false,
+        'description' => __(
+            'Habilite somente se tiver problemas com atualizações de pedidos por conta de bloqueios ou '
+            .'indisponibilidade de seu site. <br/>Veja <a href="https://ajuda.pbintegracoes.com/hc/pt-br/'
+            .'articles/115002699823-Usu%C3%A1rios-Cloudflare-e-CDN-s">como evitar</a> e <a href="https://'
+            .'ajuda.pbintegracoes.com/hc/pt-br/">como funciona</a>.',
+            'pagbank-connect'
+        ),
+        'default'     => 'no',
+    ],
 );

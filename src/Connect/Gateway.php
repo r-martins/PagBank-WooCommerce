@@ -148,7 +148,7 @@ class Gateway extends WC_Payment_Gateway_CC
         delete_transient('rm_pagbank_dynamic_ico_accessible');
         $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
         if (!$isDynamicIcoAccessible) {
-            WC_Admin_Settings::add_error(__('A personalização da cor dos ícones foi desativada, pois alguma configuração de segurança de sua loja impede ele de ser utilizado.', 'pagbank-connect'));
+            WC_Admin_Settings::add_error(__('A personalização da cor dos ícones foi desativada, pois alguma configuração de sua loja ou ambiente impede ele de ser utilizado/acessado.', 'pagbank-connect'));
             $icon_color = 'gray';
         }
         

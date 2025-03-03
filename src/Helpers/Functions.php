@@ -434,5 +434,71 @@ class Functions
             '{customerEmail}' => $order->get_billing_email(),
         ];
         return apply_filters('pagbank_connect_order_placeholders', strtr($string, $placeholders), $order_id);
-    }    
+    }
+
+    /**
+     * Get the pending orders that are using PagBank as payment method in the last 7 days
+     * @return array
+     * @throws \Automattic\WooCommerce\Internal\DependencyManagement\ContainerException
+     */
+    public static function getPagBankPendingOrders(): array
+    {
+        Functions::addMetaQueryFilter();
+
+        // Check if HPOS is enabled
+        if (wc_get_container()->get(
+            \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
+        )->custom_orders_table_usage_is_enabled()) {
+            $createdAtDate = strtotime(gmdate('Y-m-d H:i:s')) - 3600 * 24 * 7;
+            return wc_get_orders([
+                'limit'        => -1,
+                'status'       => ['wc-pending', 'wc-on-hold'],
+                'date_created' => '>'.$createdAtDate,
+                'orderby'      => 'date',
+                'order'        => 'ASC',
+                'meta_query'   => [
+                    [
+                        'key'     => 'pagbank_payment_method',
+                        'value'   => '',
+                        'compare' => '!='
+                    ]
+                ]
+            ]);
+        }
+        // else, HPOS is disabled
+        $createdAtDate = current_time('timestamp') - 3600 * 24 * 7;
+        $args = array(
+            'post_type'      => 'shop_order',
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'orderby'        => 'date',
+            'order'          => 'ASC',
+            'post_status'    => ['wc-pending', 'wc-on-hold'],
+            'date_query'     => [
+                'after' => date('Y-m-d H:i:s', $createdAtDate),
+            ],
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'pagbank_payment_method',
+                    'value'   => '',
+                    'compare' => '!='
+                ]
+            ],
+        );
+
+        $query = new \WP_Query($args);
+
+        $expiringOrders = [];
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $order_id = get_the_ID();
+                $order = wc_get_order($order_id);
+                $expiringOrders[] = $order;
+            }
+            wp_reset_postdata();
+        }
+        return $expiringOrders;
+    }
 }

@@ -304,4 +304,16 @@ class Api
             __('Reembolso via PagBank pode ter falhado. Veja transação no PagBank.', 'pagbank-connect')
         );
     }
+
+    /**
+     * @param $pagBankOrderId
+     *
+     * @return array
+     * @throws Exception
+     */
+    public static function getOrderData($pagBankOrderId){
+        $api = new Api();
+        $orderData = $api->get('ws/orders/' . $pagBankOrderId, [], 5);
+        return $orderData;
+    }
 }

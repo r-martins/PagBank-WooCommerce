@@ -6,6 +6,7 @@ use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
+use RM_PagBank\Connect\OrderProcessor;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
 use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
@@ -14,6 +15,8 @@ use RM_PagBank\Connect\Standalone\Redirect as StandaloneRedirect;
 use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
+use RM_PagBank\Cron\CancelExpiredPix;
+use RM_PagBank\Cron\ForceOrderUpdate;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -45,6 +48,7 @@ class Connect
         add_action('wp_ajax_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
+        add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
         add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 2);
         add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
@@ -79,7 +83,7 @@ class Connect
         //if pix enabled
         if (Params::getPixConfig('enabled')) {
             //region cron to cancel expired pix non-paid payments
-            add_action('rm_pagbank_cron_cancel_expired_pix', [__CLASS__, 'cancelExpiredPix']);
+            add_action('rm_pagbank_cron_cancel_expired_pix', [CancelExpiredPix::class, 'execute']);
             if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
                 wp_schedule_event(
                     time(),
@@ -88,6 +92,18 @@ class Connect
                 );
             }
             //endregion
+        }
+        
+        //if force order update enabled
+        if (Params::getConfig('force_order_update', false)) {
+            add_action('rm_pagbank_cron_force_order_update', [ForceOrderUpdate::class, 'execute']);
+            if (!wp_next_scheduled('rm_pagbank_cron_force_order_update')) {
+                wp_schedule_event(
+                    time(),
+                    'hourly',
+                    'rm_pagbank_cron_force_order_update'
+                );
+            }
         }
 
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
@@ -136,10 +152,8 @@ class Connect
     public static function addGateway(array $gateways): array
     {
         $section = sanitize_text_field($_GET['section'] ?? '');
-        $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
 
-        if ($isStandalone
-            && $section !== self::DOMAIN) {//plugin's config page (then its not standalone)
+        if ($section !== self::DOMAIN) {//plugin's config page (then its not standalone)
             $pix = new StandalonePix();
             $gateways[] = $pix;
 
@@ -530,23 +544,7 @@ class Connect
         }
     }
 
-    public static function cancelExpiredPix()
-    {
-        //list all orders with pix payment method and status pending created longer than configured expiry time
-        $expiredOrders = Functions::getExpiredPixOrders();
-        foreach ($expiredOrders as $order) {
-            //cancel order
-            $order->update_status(
-                'cancelled'
-            );
-
-            //send cancelled order email to customer
-            $order->add_order_note(
-                __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
-                true
-            );
-        }
-    }
+    
 
 //    public static function redirectStandaloneConfigPage()
 //    {
@@ -813,6 +811,59 @@ class Connect
         add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);
         add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
         add_action('admin_enqueue_scripts', [MenuPagBank::class, 'adminPagesStyle']);
+    }
+
+    public static function forceOrderUpdate()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(__('Você não tem permissão para acessar esta página.', 'pagbank-connect'));
+        }
+
+        $order_id = filter_input(INPUT_GET, 'order_id', FILTER_SANITIZE_NUMBER_INT);
+        $pagbank_order_id = filter_input(INPUT_GET, 'pagbank_order_id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        
+        if (empty($pagbank_order_id) || empty($order_id)) {
+            wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
+        }
+    
+        // Obter o pedido com base no pagbank_order_id e id
+        $order = wc_get_order($order_id);
+        
+        if (!$order || $order->get_meta('pagbank_order_id') !== $pagbank_order_id) {
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+        }
+
+
+        $edit_order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
+        
+        $orderData = Api::getOrderData($pagbank_order_id);
+        $md5 = md5(serialize($orderData));
+        if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
+            $order->add_order_note(
+                __('Pedido atualizado manualmente mas nada mudou desde o último update.', 'pagbank-connect'),
+                false,
+                true
+            );
+            return wp_redirect($edit_order_url);
+        }
+        
+        $order->add_order_note(
+            __('Pedido atualizado manualmente.', 'pagbank-connect'),
+            false,
+            true
+        );
+        $orderProcessor = new OrderProcessor();
+        try {
+            $orderProcessor->updateTransaction($order, $orderData);
+        } catch (\Exception $e) {
+            $order->add_order_note(
+                __('Erro ao atualizar o pedido: ', 'pagbank-connect') . $e->getMessage(),
+                false,
+                true
+            );
+        }
+
+        wp_redirect($edit_order_url);
     }
 
 }
