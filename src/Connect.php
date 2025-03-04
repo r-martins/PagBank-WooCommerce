@@ -575,14 +575,11 @@ class Connect
         $isCartRecurring = $recHelper->isCartRecurring();
         if ($isCartRecurring) {
             add_filter('woocommerce_available_payment_gateways', function ($gateways) {
-                $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
-                if ($isStandalone) {
                     $cc = new StandaloneCc();
                     $cc->id = Connect::DOMAIN . '-cc';
                     return [$cc->id => $cc];
-                }
-                return [Connect::DOMAIN => new Gateway()];
             });
+            return [Connect::DOMAIN => new Gateway()];
         }
     }
 
@@ -590,8 +587,7 @@ class Connect
     {
         $recHelper = new Recurring();
         $isCartRecurring = $recHelper->isCartRecurring();
-        $isStandalone = Params::getConfig('standalone', 'yes') == 'yes';
-        if ($isStandalone && $isCartRecurring) {
+        if ($isCartRecurring) {
             $cc = new StandaloneCc();
             $cc->id = Connect::DOMAIN . '-cc';
             return [$cc->id => $cc];
