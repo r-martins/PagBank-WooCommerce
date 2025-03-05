@@ -215,7 +215,15 @@ class Redirect extends WC_Payment_Gateway
 
         $this->sendOrderInvoiceEmail($order);
     }
-    
+
+
+    /**
+     * Changes success URL for Checkout Pagbank Orders when the order is not paid yet
+     * @param $order_received_url
+     * @param $order
+     *
+     * @return mixed
+     */
     public static function getOrderReceivedURL($order_received_url, $order)
     {
         if ($order->get_payment_method() === Connect::DOMAIN . '-redirect'
@@ -223,5 +231,20 @@ class Redirect extends WC_Payment_Gateway
             $order_received_url = $order->get_meta('pagbank_redirect_url');
         }
         return $order_received_url; 
+    }
+
+    /**
+     * Changes Payment Link for Checkout Pagbank Orders (used in emails and buttons)
+     * @param $pay_url
+     * @param $order
+     *
+     * @return mixed
+     */
+    public static function changePaymentLink($pay_url, $order)
+    {
+        if ($order->get_payment_method() === Connect::DOMAIN . '-redirect') {
+            $pay_url = $order->get_meta('pagbank_redirect_url');
+        }
+        return $pay_url;
     }
 }

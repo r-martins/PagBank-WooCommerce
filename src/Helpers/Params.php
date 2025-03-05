@@ -366,7 +366,7 @@ class Params
                 $discountConfig = self::getCcConfig('cc_discount', 0);
                 break;
             case 'redirect':
-                $discountConfig = self::getCcConfig('redirect_discount', 0);
+                $discountConfig = self::getRedirectConfig('redirect_discount', 0);
                 break;
         }
         $discountType = self::getDiscountType($discountConfig);

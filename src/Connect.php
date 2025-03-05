@@ -14,6 +14,7 @@ use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
 use RM_PagBank\Connect\Standalone\Redirect;
 use RM_PagBank\Connect\Standalone\Redirect as StandaloneRedirect;
 use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
+use RM_PagBank\Connect\Blocks\Redirect as RedirectBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
 use RM_PagBank\Cron\CancelExpiredPix;
@@ -64,6 +65,7 @@ class Connect
         add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 10, 2);
+        add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
 
 
         // Load plugin files
@@ -124,6 +126,7 @@ class Connect
                 $payment_method_registry->register( new BoletoBlock() );
                 $payment_method_registry->register( new PixBlock() );
                 $payment_method_registry->register( new CreditCardBlock() );
+                $payment_method_registry->register( new RedirectBlock() );
             }
         );
     }
@@ -238,6 +241,13 @@ class Connect
                         'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
                         'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
                         'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
+                ],
+                'redirect' => [
+                        'enabled' => Params::getRedirectConfig('enabled', 'no'),
+                        'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
+                        'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
+                        'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
+                        'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods'),
                 ]
             ]
         ];
@@ -322,14 +332,16 @@ class Connect
         $stored_version = get_option('pagbank_db_version');
 
         if (version_compare($stored_version, '4.12', '<')) {
-            $sql = "ALTER TABLE $recurringTable
-                    ADD COLUMN recurring_initial_fee float(8, 2) null comment 'Initial fee to be charged on the first payment' AFTER recurring_amount,
-                    ADD COLUMN recurring_trial_period int null comment 'Number of days to wait before charging the first fee' AFTER recurring_initial_fee,
-                    ADD COLUMN recurring_discount_amount float(8, 2) null comment 'Discount amount to be applied to the recurring amount' AFTER recurring_trial_period,
-                    ADD COLUMN recurring_discount_cycles int null comment 'Number of cycles to apply the discount' AFTER recurring_discount_amount;
-                    ";
-
-            $wpdb->query($sql);
+            if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'recurring_initial_fee'") !== 'recurring_initial_fee') { //if column recurring_initial_fee does not exist
+                $sql = "ALTER TABLE $recurringTable
+                        ADD COLUMN recurring_initial_fee float(8, 2) null comment 'Initial fee to be charged on the first payment' AFTER recurring_amount,
+                        ADD COLUMN recurring_trial_period int null comment 'Number of days to wait before charging the first fee' AFTER recurring_initial_fee,
+                        ADD COLUMN recurring_discount_amount float(8, 2) null comment 'Discount amount to be applied to the recurring amount' AFTER recurring_trial_period,
+                        ADD COLUMN recurring_discount_cycles int null comment 'Number of cycles to apply the discount' AFTER recurring_discount_amount;
+                        ";
+    
+                $wpdb->query($sql);
+            }
             update_option('pagbank_db_version', '4.12');
         }
 
@@ -475,11 +487,11 @@ class Connect
         }
 
         if (version_compare($stored_version, '4.27', '<')) {
-            $sql = "ALTER TABLE $recurringTable
-                    ADD COLUMN recurring_max_cycles int null comment 'Maximum number of billing cycles' AFTER recurring_discount_cycles;
-                    ";
-
-            $wpdb->query($sql);
+            if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'recurring_max_cycles'") !== 'recurring_max_cycles') {
+                $sql = "ALTER TABLE $recurringTable
+                    ADD COLUMN recurring_max_cycles int null comment 'Maximum number of billing cycles' AFTER recurring_discount_cycles;";
+                $wpdb->query($sql);
+            }
             update_option('pagbank_db_version', '4.27');
         }
     }
@@ -545,29 +557,6 @@ class Connect
             wp_remote_get($url);
         }
     }
-
-    
-
-//    public static function redirectStandaloneConfigPage()
-//    {
-//        global $pagenow;
-//        if (isset($_GET['page']) && $_GET['page'] == 'wc-settings' && isset($_GET['tab']) && $_GET['tab'] == 'checkout'
-//            && isset($_GET['section'])) {
-//            switch ($_GET['section']) {
-//                case 'rm-pagbank-cc':
-//                    wp_redirect(
-//                        admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-cc')
-//                    );
-//                    break;
-//                case 'rm-pagbank-pix':
-//                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-pix'));
-//                    break;
-//                case 'rm-pagbank-boleto':
-//                    wp_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-boleto'));
-//                    break;
-//            }
-//        }
-//    }
 
     public static function removeOtherPaymentMethodsWhenRecurring()
     {

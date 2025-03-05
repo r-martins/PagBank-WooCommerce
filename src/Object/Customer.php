@@ -79,7 +79,7 @@ class Customer implements JsonSerializable
      */
     public function getPhone(): mixed
     {
-        return $this->phone;
+        return $this->phone ?? null;
     }
 
     /**

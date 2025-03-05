@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 
 return array(
-	'enabled'      => [
+	'redirect_payment_methods'      => [
 		'title'       => __('Habilitar', 'pagbank-connect'),
 		'label'       => __('Habilitar', 'pagbank-connect'),
 		'type'        => 'checkbox',
@@ -39,7 +39,7 @@ return array(
 	],
     'redirect_discount_excludes_shipping' => [
         'title'       => __('Excluir Frete', 'pagbank-connect'),
-        'label'       => __('Não aplicar ao Frete', 'pagbank-connect'),
+        'label'       => __('Não aplicar desconto ao Frete', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => __(
             'Se marcado, o desconto não será aplicado sobre o valor do frete.',
@@ -47,7 +47,20 @@ return array(
         ),
         'default'     => 'no',
         'desc_tip'    => true,
-    ], 
+    ],
+    'redirect_payment_methods' => [
+        'title'      => __('Métodos de pagamento', 'pagbank-connect'), 
+        'type'       => 'multiselect',
+        'class'      => 'wc-enhanced-select',
+        'options'    => [
+            'CREDIT_CARD' => __('Cartão de Crédito', 'pagbank-connect'),
+            'PIX'         => __('PIX', 'pagbank-connect'),
+            'BOLETO'      => __('Boleto', 'pagbank-connect'),
+        ],
+        'default'    => ['CREDIT_CARD', 'PIX'],
+        'desc_tip'   => false,
+        'description' => __('Selecione os métodos de pagamento que deseja habilitar.<br/>Lembre-se de configurar as opções de parcelamento na aba Cartão de Crédito.', 'pagbank-connect'),
+    ],
     'redirect_send_new_order_email' => [
         'title'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
         'label'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),

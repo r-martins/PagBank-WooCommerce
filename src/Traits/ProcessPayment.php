@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Traits;
 
+use Automattic\WooCommerce\Enums\OrderStatus;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Exception;
 use RM_PagBank\Connect\Recurring;
@@ -38,17 +39,33 @@ trait ProcessPayment
 
         $order->add_meta_data('pagbank_charge_id', $charge_id, true);
         $order->add_meta_data('pagbank_payment_response', $payment_response, true);
-        $order->add_meta_data('pagbank_status', $status, true);
+        $order->add_meta_data('pagbank_order_id', $order_data['id'] ?? null, true);
+        if (isset($charge['charges'][0]['payment_method']['type']) && $charge['charges'][0]['payment_method']['type'] == 'CREDIT_CARD') {
+            $order->update_meta_data('pagbank_tid', $charge['payment_response']['tid']);
+            $order->update_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null);
+            $order->update_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null);
+            $order->update_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null);
+            $order->update_meta_data('_pagbank_card_holder', $response['charges'][0]['payment_method']['card']['holder']['name'] ?? null);
+            $order->update_meta_data('_pagbank_card_exp_month', $response['charges'][0]['payment_method']['card']['exp_month'] ?? null);
+            $order->update_meta_data('_pagbank_card_exp_year', $response['charges'][0]['payment_method']['card']['exp_year'] ?? null);
+            $order->update_meta_data('_pagbank_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null);
+            $order->update_meta_data('_pagbank_card_3ds_status', $response['charges'][0]['payment_method']['authentication_method']['status'] ?? null);
+        }
+
+        //redirect payments will change payment from 'redirect' to the payment actually used
+        if (isset($charge[0]['payment_method']['type'])) {
+            $order->update_meta_data('pagbank_payment_method', $charge[0]['payment_method']['type']);
+        }
 
         if (isset($charge['payment_response']['reference'])) {
             $order->add_meta_data('pagbank_nsu', $charge['payment_response']['reference']);
         }
         
         $redirectStatus = $order_data['status'] ?? null; //redirect checkout status (if expirable)
-        if (!$status && $redirectStatus == 'INACTIVE') {
-            $order->add_order_note('PagBank: Checkout expirou e pagamento não foi efetuado.' . $cronMsg);
+        if (!$status && $redirectStatus == 'EXPIRED') {
+            $status = 'EXPIRED';
             $order->update_status(
-                'on-hold',
+                OrderStatus::CANCELLED,
                 'PagBank: Pagamento não realizado durante o período aceito.' . $cronMsg
             );
         }
@@ -57,6 +74,7 @@ trait ProcessPayment
             $order->add_meta_data('pagbank_authorization_code', $charge['payment_response']['raw_data']['authorization_code']);
         }
 
+        $order->add_meta_data('pagbank_status', $status, true);
         $order->save_meta_data();
 
         do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
@@ -76,6 +94,7 @@ trait ProcessPayment
             );
         }
         
+        // @link https://developer.pagbank.com.br/reference/objeto-charge
         switch ($status) {
             case 'AUTHORIZED': // Pre-Authorized but not captured yet
                 $order->add_order_note(
@@ -100,7 +119,7 @@ trait ProcessPayment
                     'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id . $cronMsg,
                 );
                 break;
-            case 'CANCELED':
+            case 'CANCELED': //this will not be hit if payment method is checkout pagbank (no $charge) and name is CANCELLED (double L)
                 $order->update_status('cancelled', 'PagBank: Pagamento cancelado.');
                 $order->add_order_note(
                     'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id . $cronMsg,
@@ -184,14 +203,22 @@ trait ProcessPayment
             wp_die('Pedido não encontrado', 404);
 
         $order_pagbank_id = $order->get_meta('pagbank_order_id');
-        if ($order_pagbank_id != $id)
-            wp_die('ID do pedido não corresponde', 400);
+        if ($order_pagbank_id != $id) {
+            if ($order->get_payment_method() == 'rm-pagbank-redirect') {
+                // get x-product-id header
+                $checkoutId = $_SERVER['HTTP_X_PRODUCT_ID'] ?? null;
+                if ($order_pagbank_id != $checkoutId)
+                    wp_die('ID do pedido não corresponde ao código de checkout. Verifique header x-product-id.', 400);
+            }else{
+                wp_die('ID do pedido não corresponde', 400);
+            }
+        }
 
         if ($hash != Api::getOrderHash($order))
             wp_die('Hash inválido', 403);
 
-        if (!isset($order_data['charges']))
-            wp_die('Charges não informado. Notificação ignorada.', 200);
+//        if (!isset($order_data['charges']))
+//            wp_die('Charges não informado. Notificação ignorada.', 200);
 
         try{
             self::updateTransaction($order, $order_data);

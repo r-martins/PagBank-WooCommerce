@@ -195,6 +195,31 @@ class Exception extends \Exception
                         Campo com valor inválido. Por favor, verifique a documentação.',
                         'pagbank-connect'
                     );
+                case 'Field cannot be empty.':
+                    return __(
+                        'O campo não pode estar vazio.',
+                        'pagbank-connect'
+                    );
+                case 'The option field or value field are invalids. Please check the documentation.':
+                    return __(
+                        'Os campos de opção ou valor são inválidos. Por favor, verifique a documentação.',
+                        'pagbank-connect'
+                    );
+                case 'The payment method is not valid to be configured.':
+                    return __(
+                        'O método de pagamento não é válido para ser configurado.',
+                        'pagbank-connect'
+                    );
+                case 'Field shipping has an invalid configuration. Please check the documentation.':
+                    return __(
+                        'O campo de frete possui uma configuração inválida. Por favor, verifique a documentação.',
+                        'pagbank-connect'
+                    );
+                case 'There are some syntax errors in the request payload. Please check the documentation.':
+                    return __(
+                        'Há alguns erros de sintaxe na solicitação. Por favor, verifique a documentação e os logs.',
+                        'pagbank-connect'
+                    );
                 default:
                     return $this->errors[$error['code']] ?? $error['description'];
             }

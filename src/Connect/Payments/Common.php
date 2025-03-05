@@ -51,7 +51,7 @@ class Common
             unset($return['items']);
         }
 
-        if ($this->order->has_shipping_address() && Params::getConfig('shipping_param') !== 'never'){
+        if ($this->order->has_shipping_address() && Params::getConfig('shipping_param') !== 'never' && $this->order->get_shipping_method()){
             $address = $this->getShippingAddress();
             $return['shipping']['address'] = $address;
             $helper = new Params();
@@ -98,14 +98,19 @@ class Common
 
         $taxId = Params::removeNonNumeric($taxId);
         
-        $customer->setTaxId($taxId);
+        if (!empty($taxId)) {
+            $customer->setTaxId($taxId);
+        }
         $phone = new Phone();
         $number = Params::extractPhone($this->order);
-        $phone->setArea((int)$number['area']);
-        $phone->setNumber((int)$number['number']);
-        $customer->setPhone([
-            $phone,
-        ]);
+        if (!empty($number['area']) && !empty($number['number'])) {
+            $phone->setCountry($number['country']);
+            $phone->setArea((int)$number['area']);
+            $phone->setNumber((int)$number['number']);
+            $customer->setPhone([
+                $phone,
+            ]);
+        }
         return $customer;
     }
 
@@ -298,11 +303,14 @@ class Common
             case 'redirect':
                 $order->add_meta_data('pagbank_redirect_url', $response['links'][1]['href'] ?? null, true);
                 $order->add_meta_data('pagbank_redirect_expiration', $response['expiration_date'] ?? null, false);
+                $order->add_meta_data('pagbank_checkout_id', $response['id'] ?? null, true);
                 $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
                 break;
                 
         }
-		$order->add_meta_data('pagbank_order_id', $response['id'] ?? null, true);
+        if (isset($response['id']) && substr($response['id'], 0, 4) != 'CHEC'){ //if not a pagbank checkout code
+            $order->add_meta_data('pagbank_order_id', $response['id'], true);
+        }
 		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
