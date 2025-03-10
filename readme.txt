@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.31.0
+Stable tag: 4.32.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -38,8 +38,8 @@ Se você tiver taxas negociadas ou condições negociadas melhores que estas, vo
 Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=taxas).
 
 == ⚡️ RECURSOS PRINCIPAIS ==
-* Suporte a **PIX**, **Cartão de Crédito** e **Boleto**
-* Suporte a [**recorrência** (assinaturas)](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
+* Suporte a **PIX**, **Cartão de Crédito**, **Boleto** ou **Checkout PagBank**(novidade).
+* Venda clubes e assinaturas com [**pagamento recorrente**](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
 * **OnlyFans** - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Saiba mais](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
 * Integração com [**Envio Fácil**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
 * Suporte nativo ao [**checkout em Blocos**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
@@ -202,6 +202,13 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 
 == Changelog ==
 
+= 4.32.0 =
+* Checkout PagBank adicionado. Agora você pode permitir pagar com o checkout PagBank.
+* Melhorias de código diversas
+* Melhoria: pequena melhoria na verificação da disponibilidade de configuração de ícones dinâmicos em ambiente sem HTTPS.
+* Correção: em alguns cenários, lojistas que usavam a opção de exibir meios de pagamento agrupados, após migrarem da versão 4.13.0 para uma mais nova, não conseguiam mais acessar as opções de configuração de cartão, pix e boleto, além de ter problemas na finalização dos pedidos.
+
+
 = 4.31.0 =
 * Adicionado recurso para forçar atualização de pedidos independente do sucesso no recebimento das notificaçõs PagBank [saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34589281628813)
 
@@ -326,41 +333,6 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 = 4.19.0 =
 * Melhoria: agora exibimos que um pedido foi pago ainda na tela de sucesso se ele for pago nos primeiros 10 minutos.
 * Melhoria: atendendo a pedidos, o ícone de Copiar exibido na tela de sucesso de PIX e Boleto passou a ser um botão ao invés de ícone.
-
-= 4.18.1 =
-* Performance: um problema na forma como lidávamos com as configurações e cache do parcelamento na página de produto afetavam significativamente a performance da loja em várias páginas, mesmo que o recurso estivesse desabilitado. Mudamos totalmente a forma como limpávamos o cache (que afetava lojas com muitos produtos) quando uma configuração de parcelamento era realizada e a quantidade de vezes que isso era feito
-* Correção: Chamar o load_text_domain no plugins_loaded ficou depreciado e warnings passarão a ser exibidos.
-
-= 4.18.0 =
-* Correção/Melhoria: em algumas situações onde um erro acontecia no retorno do PagBank no backend, o pedido era finalizado com sucesso. Isso fazia com que pedidos com PIX e Boleto fossem gerados sem QrCode ou QrCode Inválido. O mesmo ocorria em pedidos trial em recorrência e em outros cenários. Agora começamos a tratar os erros e exibi-los para o cliente de forma amigável.
-* Adicionado link para os Logs no menu PagBank (quando em DEBUG mode).
-
-= 4.17.1 =
-* Correção: em alguns cenários onde o ícone dinamico não era acessível, a validacao interna falhava dizendo que era acessivel, fazendo com que o ícone dos pagamentos permanecesse quebrado (imagem invalida).
-
-= 4.17.0 =
-* Melhoria: Se por algum motivo os ícones com cores personalizadas não puderem ser exibidos (ex: plugin de segurança afetando funcionamento), usaremos a imagem estática e exibiremos um aviso no admin ao salvar as configs do pagbank.
-
-= 4.16.0 =
-* Melhoria: agora informações do PIX ou do Boleto também são enviadas no e-mail transacional
-* Melhoria: alguns administradores digitavam o token PagBank (nunca solicitado) no campo da Connect Key. Agora validamos isso e avisamos ele sobre o engano.
-* Melhoria: fazemos validação no último pedido pix a fim de ver se há erro de chave pix inválida causada pela não existência de chaves aleatórias na conta PagBank. Agora fazemos isso com bem menos frequência, ou uma vez só se estiver tudo certo. Isso deve melhorar a performance do plugin na área administrativa.
-* Correção: em lojas com HPOS desabilitado e com WooCommerce 9.2.0 ou superior, um Notice era gravado (ou exibido) dizendo que o método `WC_Order_Data_Store_CPT::query` foi chamado incorretamente.
-
-= 4.15.0 =
-* Melhorias gerais de código, performance, e boas práticas em todo plugin. Trata-se de uma grande mudança na forma como o plugin é estruturado internamente e nos possibilitará evolui-lo com mais segurança e menos bugs.
-* Mudança: descontinuamos a opção de exibir os métodos de pagamento de forma agrupada. Agora eles são exibidos de forma individual, o que é mais amigável e intuitivo para o admin.
-* Correção: na conversão de minutos da expiração do PIX para o usuário (ex: 43200 minutos era exibido como 7 dias)
-
-= 4.14.0 =
-* Melhoria: Mensagem amigável e opção de esconder os meios de pagamento para pedidos inferiores a R$1,00
-* Melhoria: truncamos alguns campos como nome do cliente e alguns campos de endereço a fim de evitar erros na finalização do pedido quando o valor informado é maior que o permitido pelo PagBank.
-* Correção de Uncaught Error: Call to a member function get_edit_order_url() on bool na listagem de assinaturas ativas do admin em alguns cenários
-* Correção: quando desabilitávamos a opção de pausar ou cancelar assinatura (para o usuário), as opções também deixavam de ser exibidas para o administrador em alguns cenários
-
-= 4.13.0 =
-* Agora é possível definir período de teste e opções de descontos para assinaturas.
-* APIs: obtenha informações detalhadas dos pagamentos feitos com pagbank nos metadados do pedido via API Rest do próprio WordPress/Woo
 
 = Versões mais antigas =
 * Veja [changelog completo](https://github.com/r-martins/PagBank-WooCommerce/releases). 

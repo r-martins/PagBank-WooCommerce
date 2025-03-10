@@ -9,7 +9,7 @@ return array(
         'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
-        'default'     => 'no'
+        'default'     => 'yes'
 	],
 	'title'              => [
         'title'       => __( 'Título Principal', 'pagbank-connect' ),
@@ -53,7 +53,7 @@ return array(
 	],
     'pix_discount_excludes_shipping' => [
         'title'       => __('Excluir Frete', 'pagbank-connect'),
-        'label'       => __('Não aplicar ao Frete', 'pagbank-connect'),
+        'label'       => __('Não aplicar desconto ao Frete', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => __(
             'Se marcado, o desconto não será aplicado sobre o valor do frete.',

@@ -456,8 +456,8 @@ class CreditCard extends WC_Payment_Gateway_CC
                     );
                     // add user notice
                     if ($threeDSession === '' && Params::getCcConfig('cc_3ds_allow_continue', 'no') === 'no') {
-                        wc_add_notice(__('Erro ao obter a sessão 3D Secure PagBank. Pagamento com cartão de crédito foi '
-                            .'desativado. Por favor recarregue a página.', 'pagbank-connect'), 'error');
+                        wc_add_notice(__('Erro ao obter a sessão 3D Secure PagBank. Contate o administrador da loja '
+                            .'para verificar Connect Key. Por favor recarregue a página.', 'pagbank-connect'), 'error');
                     }
                 }
 

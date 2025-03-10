@@ -3,7 +3,14 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 
 return array(
-	'enabled'      => [
+    'enabled'            => [
+        'title'       => __( 'Habilitar', 'pagbank-connect'),
+        'label'       => __( 'Habilitar', 'pagbank-connect' ),
+        'type'        => 'checkbox',
+        'description' => '',
+        'default'     => 'yes'
+    ],
+	'redirect_payment_methods'      => [
 		'title'       => __('Habilitar', 'pagbank-connect'),
 		'label'       => __('Habilitar', 'pagbank-connect'),
 		'type'        => 'checkbox',
@@ -14,37 +21,17 @@ return array(
 		'title'       => __('Title', 'pagbank-connect'),
 		'type'        => 'safe_text',
 		'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),
-		'default'     => __('Boleto via PagBank', 'pagbank-connect'),
+		'default'     => __('Pagar no PagBank', 'pagbank-connect'),
 		'desc_tip'    => true,
 	],
-	'boleto_instructions' => [
-		'title'       => __('Instruções', 'pagbank-connect'),
-		'type'        => 'textarea',
-		'description' => __('Instruções que serão adicionadas à sua página de sucesso.', 'pagbank-connect'),
-		'default'     => __(
-			'Imprima ou copie o código de barras de seu boleto para pagar no banco ou casa lotérica antes do vencimento.',
-			'pagbank-connect'
-		),
-		'desc_tip'    => true,
-	],
-	'boleto_expiry_days'  => [
-		'title'       => __('Validade do boleto', 'pagbank-connect'),
+	'redirect_expiry_minutes'  => [
+		'title'       => __('Validade do checkout', 'pagbank-connect'),
 		'type'        => 'number',
-		'description' => __('dias', 'pagbank-connect'),
-		'default'     => 7,
+		'description' => __('minutos', 'pagbank-connect'),
+		'default'     => 120,
 		'desc_tip'    => false,
 	],
-	'boleto_line_1'       => [
-		'title'   => __('Instruções (Linha 1)', 'pagbank-connect'),
-		'type'    => 'text',
-		'default' => 'Sr. Caixa, favor não aceitar após vencimento.',
-	],
-	'boleto_line_2'       => [
-		'title'   => __('Instruções (Linha 2)', 'pagbank-connect'),
-		'type'    => 'text',
-		'default' => 'Obrigado por comprar em nossa loja!',
-	],
-	'boleto_discount'     => [
+	'redirect_discount'     => [
 		'title'       => __('Oferecer Desconto de', 'pagbank-connect'),
 		'type'        => 'text',
 		'description' => __(
@@ -57,7 +44,7 @@ return array(
 		'default'     => 0,
 		'desc_tip'    => false,
 	],
-    'boleto_discount_excludes_shipping' => [
+    'redirect_discount_excludes_shipping' => [
         'title'       => __('Excluir Frete', 'pagbank-connect'),
         'label'       => __('Não aplicar desconto ao Frete', 'pagbank-connect'),
         'type'        => 'checkbox',
@@ -67,8 +54,21 @@ return array(
         ),
         'default'     => 'no',
         'desc_tip'    => true,
-    ], 
-    'boleto_send_new_order_email' => [
+    ],
+    'redirect_payment_methods' => [
+        'title'      => __('Métodos de pagamento', 'pagbank-connect'), 
+        'type'       => 'multiselect',
+        'class'      => 'wc-enhanced-select',
+        'options'    => [
+            'CREDIT_CARD' => __('Cartão de Crédito', 'pagbank-connect'),
+            'PIX'         => __('PIX', 'pagbank-connect'),
+            'BOLETO'      => __('Boleto', 'pagbank-connect'),
+        ],
+        'default'    => ['CREDIT_CARD', 'PIX'],
+        'desc_tip'   => false,
+        'description' => __('Selecione os métodos de pagamento que deseja habilitar.<br/>Lembre-se de configurar as opções de parcelamento na aba Cartão de Crédito.', 'pagbank-connect'),
+    ],
+    'redirect_send_new_order_email' => [
         'title'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
         'label'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
         'type'        => 'checkbox',

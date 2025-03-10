@@ -313,7 +313,32 @@ class Api
      */
     public static function getOrderData($pagBankOrderId){
         $api = new Api();
-        $orderData = $api->get('ws/orders/' . $pagBankOrderId, [], 5);
-        return $orderData;
+        $isCheckoutPagBank = substr($pagBankOrderId, 0, 4) === 'CHEC';
+        if ($isCheckoutPagBank) {
+            $pagBankOrderId = self::getFirstOrderFromCheckout($pagBankOrderId);
+            if (is_array($pagBankOrderId)) {
+                return [];
+            }
+        }
+        
+        return $api->get('ws/orders/' . $pagBankOrderId, [], 5);
+    }
+
+    /**
+     * @param $checkoutId
+     *
+     * @return array|mixed
+     * @throws Exception
+     */
+    public static function getFirstOrderFromCheckout($checkoutId)
+    {
+        $api = new Api();
+        $data = $api->get('ws/checkouts/' . $checkoutId, [], 5);
+
+        if (empty($data['orders']) || isset($data['error_messages'])) {
+            return [];
+        }
+        
+        return $data['orders'][0]['id'] ?? [];
     }
 }

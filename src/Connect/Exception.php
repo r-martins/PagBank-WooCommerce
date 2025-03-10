@@ -38,7 +38,15 @@ class Exception extends \Exception
         foreach ($error_messages as $error) {
             $original_error_messages[] = ($error['code'] ?? '').' - '.($error['description'] ?? '' ).' ('.($error['parameter_name'] ?? '')
                 .')';
-            $msg = array_key_exists(($error['code'] ?? ''), $this->errors) ? $this->getFriendlyMsgWithErrorCode($error) : $this->getFriendlyMessageWithoutErrorCode($error);
+            $msg = array_key_exists(($error['code'] ?? ''), $this->errors) 
+                ? $this->getFriendlyMsgWithErrorCode($error) 
+                : $this->getFriendlyMessageWithoutErrorCode($error);
+
+            if (isset($error['parameter_name'])){
+                $friendlyParamName = $this->getFriendlyParameterName($error['parameter_name']);
+                $msg .= ' (' . $friendlyParamName . ')';
+            }
+
             $message[] = $msg;
         }
 
@@ -77,6 +85,8 @@ class Exception extends \Exception
             return esc_html(__('Telefone', 'pagbank-connect'));
         } elseif ($parameterName === 'customer.email') {
             return esc_html(__('E-mail do Cliente', 'pagbank-connect'));
+        } elseif ($parameterName === 'customer.phone.number') {
+            return esc_html(__('Telefone do Cliente', 'pagbank-connect'));
         }
         
         return $parameterName;
@@ -92,16 +102,15 @@ class Exception extends \Exception
     public function getFriendlyMsgWithErrorCode($error)
     {
         if (isset($this->errors[$error['code']])) {
-            $friendlyParamName = $this->getFriendlyParameterName($error['parameter_name'] ?? '');
-            $parameterName = isset($error['parameter_name']) ? 
-                __(' Parâmetro: ', 'pagbank-connect') . $error['parameter_name'] : '';
-            $friendlyParam = isset($error['parameter_name']) ? ' (' . $friendlyParamName . ')' : '';
             $msg = $this->getFriendlyMsg($error);
-            return $error['code'] . ' - ' . $msg . $parameterName . $friendlyParam;
+            return $error['code'] . ' - ' . $msg;
         }
     }
     public function getFriendlyMessageWithoutErrorCode($error)
     {
+        if (!isset($error['message']) && isset($error['description'])) {
+            return $this->getFriendlyMsg($error);
+        }
         switch ($error['message']) {
             case 'CARD_CANNOT_BE_STORED':
                 return __(
@@ -181,6 +190,36 @@ class Exception extends \Exception
                         'pagbank-connect'
                     );
                     break;
+                case 'Field has an invalid value. Please check the documentation.':
+                    return __('
+                        Campo com valor inválido. Por favor, verifique a documentação.',
+                        'pagbank-connect'
+                    );
+                case 'Field cannot be empty.':
+                    return __(
+                        'O campo não pode estar vazio.',
+                        'pagbank-connect'
+                    );
+                case 'The option field or value field are invalids. Please check the documentation.':
+                    return __(
+                        'Os campos de opção ou valor são inválidos. Por favor, verifique a documentação.',
+                        'pagbank-connect'
+                    );
+                case 'The payment method is not valid to be configured.':
+                    return __(
+                        'O método de pagamento não é válido para ser configurado.',
+                        'pagbank-connect'
+                    );
+                case 'Field shipping has an invalid configuration. Please check the documentation.':
+                    return __(
+                        'O campo de frete possui uma configuração inválida. Por favor, verifique a documentação.',
+                        'pagbank-connect'
+                    );
+                case 'There are some syntax errors in the request payload. Please check the documentation.':
+                    return __(
+                        'Há alguns erros de sintaxe na solicitação. Por favor, verifique a documentação e os logs.',
+                        'pagbank-connect'
+                    );
                 default:
                     return $this->errors[$error['code']] ?? $error['description'];
             }
