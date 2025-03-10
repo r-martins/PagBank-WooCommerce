@@ -3,6 +3,13 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 
 return array(
+    'enabled'            => [
+        'title'       => __( 'Habilitar', 'pagbank-connect'),
+        'label'       => __( 'Habilitar', 'pagbank-connect' ),
+        'type'        => 'checkbox',
+        'description' => '',
+        'default'     => 'yes'
+    ],
 	'redirect_payment_methods'      => [
 		'title'       => __('Habilitar', 'pagbank-connect'),
 		'label'       => __('Habilitar', 'pagbank-connect'),
