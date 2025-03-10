@@ -125,41 +125,6 @@ class Redirect extends Common
             }
         }
 
-        //cpf or cnpj
-        $customerData = $this->getCustomerData();
-//        $taxId = $customerData->getTaxId();
-//        if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
-//            $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
-//        }
-        
-//        $holder = new Holder();
-//        $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
-//        $holder->setTaxId($taxId);
-//        $holder->setEmail($this->order->get_billing_email());
-
-//        $address = $this->getBillingAddress();
-//        $holderAddress = new Address();
-//        $holderAddress->setCountry('BRA');
-//        $holderAddress->setCity(substr($address->getCity(), 0, 60));
-//        $holderAddress->setPostalCode($address->getPostalCode());
-//
-//        $holderAddressStreet = $address->getStreet();
-//        //remove non A-Z 0-9 characters
-//        $holderAddressStreet = preg_replace('/[^A-Za-z0-9\ ]/', '', $holderAddressStreet);
-//        $holderAddress->setStreet(substr($holderAddressStreet, 0, 100));
-//        $holderAddress->setRegionCode($address->getRegionCode());
-//
-//        $holderAddressNumber = !empty($address->getNumber()) ? $address->getNumber() : '...';
-//        $holderAddress->setNumber(substr($holderAddressNumber, 0, 20));
-//        $locality = !empty($address->getLocality()) ? $address->getLocality() : '...';
-//        $holderAddress->setLocality($locality);
-//
-//        if($address->getComplement()) {
-//            $holderAddress->setComplement(substr($address->getComplement(), 0, 40));
-//        }
-//
-//        $holder->setAddress($holderAddress);
-
         $customerModifiable = ['customer_modifiable' => true];
         $expireInMinutes = Params::getRedirectConfig('redirect_expiry_minutes', "120");
         //date iso-8601 + expiry minutes
