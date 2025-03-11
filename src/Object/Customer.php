@@ -17,7 +17,7 @@ class Customer implements JsonSerializable
     private string $name;
     private string $email;
     private string $tax_id;
-    private mixed $phone;
+    private $phone; //type not declared because it can be an array or a Phone object and mixed types are not allowed in PHP 7.4
 
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
@@ -77,7 +77,7 @@ class Customer implements JsonSerializable
     /**
      * @return array
      */
-    public function getPhone(): mixed
+    public function getPhone()
     {
         return $this->phone ?? null;
     }
@@ -85,7 +85,7 @@ class Customer implements JsonSerializable
     /**
      * @param array|Phone $phone When in Redirect mode, it receives the phone object directly
      */
-    public function setPhone(mixed $phone): void
+    public function setPhone($phone): void
     {
         $this->phone = $phone;
     }

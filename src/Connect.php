@@ -64,7 +64,7 @@ class Connect
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
         add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
-        add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 10, 2);
+        add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
         add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
 
 
