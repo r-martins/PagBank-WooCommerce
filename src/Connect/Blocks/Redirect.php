@@ -78,7 +78,7 @@ final class Redirect extends AbstractPaymentMethodType
      */
     public function get_payment_method_data() {
         return array(
-            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Boleto via PagBank',
+            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pagar via PagBank',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
