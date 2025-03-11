@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.32.0
+Stable tag: 4.32.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.32.1 =
+* Ajuste: Checkout PagBank não redirecionava para o PagBank quando usado em conjunto com o plugin NextMove Lite - Thank You Page for WooCommerce
+* Correção: Erro Fatal poderia ocorrer em lojas com PHP 7.4 por conta de tipo de objeto declarado incompatível.
+* Correção: Pagar no PagBank tinha título padrão incorreto (Boleto via PagBank)
 
 = 4.32.0 =
 * Checkout PagBank adicionado. Agora você pode permitir pagar com o checkout PagBank.
