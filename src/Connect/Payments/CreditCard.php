@@ -395,8 +395,16 @@ class CreditCard extends Common
                 if (!$args) {
                     return;
                 }
+
+                //checks if is being called by do_shortcode so don't output the template
+                if ($calledByDoShortcode)
+                    ob_start();
                 
                 load_template($template_path, false, $args);
+                
+                if ($calledByDoShortcode)
+                    return ob_get_clean();
+                
             }
         }
     }
