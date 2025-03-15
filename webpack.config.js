@@ -31,6 +31,7 @@ module.exports = {
 		'frontend/pix': '/public/js/blocks/checkout-blocks-pix.js',
 		'frontend/boleto': '/public/js/blocks/checkout-blocks-boleto.js',
 		'frontend/cc': '/public/js/blocks/checkout-blocks-cc.js',
+		'frontend/redirect': '/public/js/blocks/checkout-blocks-redirect.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'build/js' ),

@@ -140,6 +140,15 @@ class Params
         return get_option('woocommerce_rm-pagbank-' . $key, $default);
     }
 
+    public static function getRedirectConfig($key, string $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-redirect_settings');
+        if (isset($settings[$key])){
+            return $settings[$key];
+        }
+        return $default;
+    }
+
     /**
      * Gets the max allowed installments or false if no limit
 	 *
@@ -356,6 +365,9 @@ class Params
             case 'cc':
                 $discountConfig = self::getCcConfig('cc_discount', 0);
                 break;
+            case 'redirect':
+                $discountConfig = self::getRedirectConfig('redirect_discount', 0);
+                break;
         }
         $discountType = self::getDiscountType($discountConfig);
         if ( ! $discountType || is_wc_endpoint_url('order-pay')) {
@@ -395,7 +407,7 @@ class Params
 
         $isDynamicIcoAccessible = wp_remote_get(
             plugins_url('public/images/payment-icon.php?method=pix', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            ['timeout' => 10]
+            ['timeout' => 10, 'sslverify' => false, 'reject_unsafe_urls' => false]
         );
 
         $result = (wp_remote_retrieve_response_code($isDynamicIcoAccessible) !== 200) ? 0 : 1;

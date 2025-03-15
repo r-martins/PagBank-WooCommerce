@@ -9,7 +9,7 @@ return array(
         'type'  => 'title',
         'desc'  => '<h4>Aceite pagamentos recorrentes e crie um clube de assinaturas</h4>
         <p>Ao ativar a recorrência, você poderá definir as configurações da assinatura em cada produto.</p>
-        <p>Nosso plugin não depende do uso do WooCommerce Subscriptions ou nenhum outro. Consulte a <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura">documentação</a> para mais detalhes.</p>',
+        <p>Nosso plugin não depende do uso do WooCommerce Subscriptions ou nenhum outro. Consulte a <a href="https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura">documentação</a> para mais detalhes.</p>',
         'id'    => 'wc_pagseguro_connect_regurring_general_options',
     ],
 	[

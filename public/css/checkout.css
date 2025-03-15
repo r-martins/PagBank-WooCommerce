@@ -22,7 +22,8 @@ li.payment_method_rm-pagbank label img{
 .wc_payment_method.payment_method_rm-pagbank-boleto > label:nth-child(2) > img:nth-child(1),
 label[for="payment_method_rm-pagbank-cc"] > img:nth-child(1),
 label[for="payment_method_rm-pagbank-pix"] > img:nth-child(1),
-label[for="payment_method_rm-pagbank-boleto"] > img:nth-child(1)
+label[for="payment_method_rm-pagbank-boleto"] > img:nth-child(1),
+label[for="payment_method_rm-pagbank-redirect"] > img:nth-child(1)
 {
     max-height: 35px;
 }
