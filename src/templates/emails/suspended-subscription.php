@@ -23,6 +23,7 @@
 
 /** @var stdClass $subscription */
 /** @var string $email_heading */
+/** @var string $account_link */
 /** @var SuspendedSubscription $email */
 /** @var WC_Order $order */
 
@@ -58,6 +59,21 @@ do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
             $subscription->suspended_reason
         ); ?></p>
     <?php endif;?>
+
+    <p><?php echo sprintf(
+            esc_html(
+                'Uma nova tentativa de cobrança será feita no dia %s.',
+                'pagbank-connect'
+            ),
+            mysql2date('d/m/Y', $subscription->next_bill_at));
+    ?></p>
+    <p>
+        <?php echo __('Recomendamos que atualize o cartão utilizado no pagamento da assinatura.','pagbank-connect'); ?>
+    <br>
+        <a href="<?php echo esc_url( $account_link ); ?>" class="button button-primary" target="_blank">
+            <?php esc_html_e( 'Atualizar cartão', 'pagbank-connect' ); ?>
+        </a>
+    </p>
 <?php
 
 /*

@@ -115,6 +115,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 					'plain_text'         => false,
 					'email'              => $this,
 					'subscription'       => $this->subscription,
+					'account_link'       => wc_get_page_permalink( 'myaccount' ) . 'rm-pagbank-subscriptions-update/'.$this->subscription->id,
 				),
                 $this->template_base,
                 $this->template_base

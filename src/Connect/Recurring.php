@@ -99,6 +99,7 @@ class Recurring
         add_action('pagbank_recurring_subscription_created_notification', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 1);
         add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
         add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
+        add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
     }
 
     public static function recurringSettingsFields($settings, $current_section)
@@ -1432,6 +1433,7 @@ class Recurring
 
         if ($update){
             wc_add_notice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'));
+            do_action('pagbank_recurring_subscription_payment_method_changed', $subscription->id);
             return;
         }
 
@@ -1776,5 +1778,16 @@ class Recurring
         }
     }
 
-    
+    /**
+     * @param $subscriptionId
+     * @return void
+     */
+    public function subscriptionMaybeChargeAndUpdate($subscriptionId)
+    {
+        $subscription = $this->getSubscription($subscriptionId);
+        if ($subscription->status === 'SUSPENDED') {
+            $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
+            $recurringOrder->createRecurringOrderFromSub();
+        }
+    }
 }

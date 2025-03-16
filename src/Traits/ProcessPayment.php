@@ -156,10 +156,10 @@ trait ProcessPayment
                 return;
             }
 
-//            if ($status == 'DECLINED' && $charge["recurring"]["type"] == 'SUBSEQUENT') {
-//                $canRetry = wc_string_to_bool(Params::getRecurringConfig('recurring_retry_charge', 'yes'));
-//                $shouldBeStatus = $canRetry ? 'SUSPENDED' : $shouldBeStatus;
-//            }
+            if ($status == 'DECLINED' && $charge["recurring"]["type"] == 'SUBSEQUENT') {
+                $canRetry = wc_string_to_bool(Params::getRecurringConfig('recurring_retry_charge', 'yes'));
+                $shouldBeStatus = $canRetry ? 'SUSPENDED' : $shouldBeStatus;
+            }
 
             if ($subscription->status != $shouldBeStatus) {
                 $recurring->updateSubscription($subscription, [

@@ -226,10 +226,11 @@ class RecurringOrder
                     );
                 }
 
+                $retryAttemptsRemaining = (int) Params::getRecurringConfig('recurring_retry_attempts', '3') - 1;
                 $recurring->suspendSubscription(
                     $subscription,
                     __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect'),
-                    (int) Params::getRecurringConfig('recurring_retry_attempts', '3')
+                    $retryAttemptsRemaining
                 );
             }
 
