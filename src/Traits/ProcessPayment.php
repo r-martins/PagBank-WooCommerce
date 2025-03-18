@@ -41,16 +41,16 @@ trait ProcessPayment
         $order->add_meta_data('pagbank_charge_id', $charge_id, true);
         $order->add_meta_data('pagbank_payment_response', $payment_response, true);
         $order->add_meta_data('pagbank_order_id', $order_data['id'] ?? null, true);
-        if (isset($charge['charges'][0]['payment_method']['type']) && $charge['charges'][0]['payment_method']['type'] == 'CREDIT_CARD') {
-            $order->update_meta_data('pagbank_tid', $charge['payment_response']['tid']);
-            $order->update_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null);
-            $order->update_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null);
-            $order->update_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null);
-            $order->update_meta_data('_pagbank_card_holder', $response['charges'][0]['payment_method']['card']['holder']['name'] ?? null);
-            $order->update_meta_data('_pagbank_card_exp_month', $response['charges'][0]['payment_method']['card']['exp_month'] ?? null);
-            $order->update_meta_data('_pagbank_card_exp_year', $response['charges'][0]['payment_method']['card']['exp_year'] ?? null);
-            $order->update_meta_data('_pagbank_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null);
-            $order->update_meta_data('_pagbank_card_3ds_status', $response['charges'][0]['payment_method']['authentication_method']['status'] ?? null);
+        if (isset($charge['payment_method']['type']) && $charge['payment_method']['type'] == 'CREDIT_CARD') {
+            $order->update_meta_data('pagbank_tid', $charge['payment_response']['tid'] ?? null);
+            $order->update_meta_data('_pagbank_card_brand', $charge['payment_method']['card']['brand'] ?? null);
+            $order->update_meta_data('_pagbank_card_first_digits', $charge['payment_method']['card']['first_digits'] ?? null);
+            $order->update_meta_data('_pagbank_card_last_digits', $charge['payment_method']['card']['last_digits'] ?? null);
+            $order->update_meta_data('_pagbank_card_holder', $charge['payment_method']['card']['holder']['name'] ?? null);
+            $order->update_meta_data('_pagbank_card_exp_month', $charge['payment_method']['card']['exp_month'] ?? null);
+            $order->update_meta_data('_pagbank_card_exp_year', $charge['payment_method']['card']['exp_year'] ?? null);
+            $order->update_meta_data('_pagbank_card_response_reference', $charge['payment_response']['reference'] ?? null);
+            $order->update_meta_data('_pagbank_card_3ds_status', $charge['payment_method']['authentication_method']['status'] ?? null);
         }
 
         //redirect payments will change payment from 'redirect' to the payment actually used
