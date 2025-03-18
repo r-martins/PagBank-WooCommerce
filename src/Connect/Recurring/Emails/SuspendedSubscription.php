@@ -20,8 +20,9 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
      * @copyright 2023 Magenteiro
      */
     class SuspendedSubscription extends RecurringEmails {
+        public stdClass $subscription;
 
-		/**
+        /**
 		 * Constructor.
 		 */
 		public function __construct() {
@@ -89,7 +90,9 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
             $this->mergePlaceholders($subscription);
             $this->placeholders['{subscription_id}'] = $subscription->id;
             $this->placeholders['{next_bill_at}'] = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
-            $this->placeholders['{canceled_at}'] = gmdate('d/m/Y', strtotime($subscription->canceled_at));
+            if ($subscription->canceled_at)
+                $this->placeholders['{canceled_at}'] = gmdate('d/m/Y', strtotime($subscription->canceled_at));
+            
             $this->subscription = $subscription;
 
 			if ( $this->is_enabled() && $this->get_recipient() ) {
