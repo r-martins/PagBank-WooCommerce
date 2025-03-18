@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.32.1
+Stable tag: 4.33.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.33.0 =
+* Melhoria: agora quando uma cobrança recorrente falha, o plugin tem a opção de tentar realizar a cobrança novamente automaticamente antes de cancelar a assinatura.
+* Correção: ao atualizar um pedido feito com checkout pagbank alguns campos e atributos eram deixados de lado
+* Correção de erros PHP Deprecated que eram logados
+* Pequenos ajustes nos termos e textos dos campos do admin>recorrencia
+* Em alguns cenários, ao inserir o shortcode de parcelamentos ([rm_pagbank_credit_card_installments]) na página do produto, o mesmo era exibido antes do local inserido. (Reportado por Rafael Tasca Design Web)
 
 = 4.32.1 =
 * Ajuste: Checkout PagBank não redirecionava para o PagBank quando usado em conjunto com o plugin NextMove Lite - Thank You Page for WooCommerce
