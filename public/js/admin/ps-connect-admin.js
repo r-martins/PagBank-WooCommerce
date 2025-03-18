@@ -91,6 +91,20 @@ jQuery(document).ready(function($) {
     jQuery(document).on('change', '#woocommerce_rm-pagbank-cc_cc_3ds', hideOrShowRetryWith3dsOption());
     hideOrShowRetryWith3dsOption().call(jQuery('#woocommerce_rm-pagbank-cc_cc_3ds'));
 
+    // display #woocommerce_rm-pagbank-cc_cc_3ds_retry based on #woocommerce_rm-pagbank-cc_cc_3ds == no
+    function hideOrShowRetryAttempts() {
+        return function () {
+            if (jQuery(this).is(':checked')) {
+                jQuery('#woocommerce_rm-pagbank-recurring_retry_attempts').closest('tr').show();
+            } else {
+                jQuery('#woocommerce_rm-pagbank-recurring_retry_attempts').closest('tr').hide();
+            }
+        };
+    }
+
+    jQuery(document).on('change', '#woocommerce_rm-pagbank-recurring_retry_charge', hideOrShowRetryAttempts());
+    hideOrShowRetryAttempts().call(jQuery('#woocommerce_rm-pagbank-recurring_retry_charge'));
+
     //endregion
 
     var value = jQuery('#woocommerce_rm-pagbank_connect_key').val();

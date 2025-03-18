@@ -105,6 +105,13 @@ wc_print_notices();
                 </tr>
             <?php endif;?>
 
+            <?php if ( in_array($subscription->status, ['SUSPENDED']) ): ?>
+                <tr>
+                    <th scope="row"><?php _e('Suspensa em', 'pagbank-connect')?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->suspended_at));?></td>
+                </tr>
+            <?php endif;?>
+
             <?php if ( ! empty($subscription->canceled_reason) ): ?>
                 <tr>
                     <th scope="row"><?php _e('Razão do Cancelamento', 'pagbank-connect')?></th>

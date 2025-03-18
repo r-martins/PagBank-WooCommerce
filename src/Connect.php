@@ -97,7 +97,7 @@ class Connect
             }
             //endregion
         }
-        
+
         //if force order update enabled
         if (Params::getConfig('force_order_update', false)) {
             add_action('rm_pagbank_cron_force_order_update', [ForceOrderUpdate::class, 'execute']);
@@ -167,7 +167,7 @@ class Connect
 
             $boleto = new StandaloneBoleto();
             $gateways[] = $boleto;
-            
+
             $redirect = new StandaloneRedirect();
             $gateways[] = $redirect;
 
@@ -241,6 +241,8 @@ class Connect
                         'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
                         'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
                         'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
+                        'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
+                        'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
                 ],
                 'redirect' => [
                         'enabled' => Params::getRedirectConfig('enabled', 'no'),
@@ -339,7 +341,7 @@ class Connect
                         ADD COLUMN recurring_discount_amount float(8, 2) null comment 'Discount amount to be applied to the recurring amount' AFTER recurring_trial_period,
                         ADD COLUMN recurring_discount_cycles int null comment 'Number of cycles to apply the discount' AFTER recurring_discount_amount;
                         ";
-    
+
                 $wpdb->query($sql);
             }
             update_option('pagbank_db_version', '4.12');
@@ -493,6 +495,15 @@ class Connect
                 $wpdb->query($sql);
             }
             update_option('pagbank_db_version', '4.27');
+        }
+
+        if (version_compare($stored_version, '4.28', '<')) {
+            $sql = "ALTER TABLE $recurringTable
+                    ADD COLUMN retry_attempts_remaining int null comment 'Number of billing attempts remaining on suspended subscriptions' AFTER suspended_at;
+                    ";
+
+            $wpdb->query($sql);
+            update_option('pagbank_db_version', '4.28');
         }
     }
 
@@ -808,21 +819,21 @@ class Connect
 
         $order_id = filter_input(INPUT_GET, 'order_id', FILTER_SANITIZE_NUMBER_INT);
         $pagbank_order_id = filter_input(INPUT_GET, 'pagbank_order_id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
+
         if (empty($pagbank_order_id) || empty($order_id)) {
             wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
         }
-    
+
         // Obter o pedido com base no pagbank_order_id e id
         $order = wc_get_order($order_id);
-        
+
         if (!$order || $order->get_meta('pagbank_order_id') !== $pagbank_order_id) {
             wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
         }
 
 
         $edit_order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
-        
+
         $orderData = Api::getOrderData($pagbank_order_id);
         $md5 = md5(serialize($orderData));
         if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
@@ -833,7 +844,7 @@ class Connect
             );
             return wp_redirect($edit_order_url);
         }
-        
+
         $order->add_order_note(
             __('Pedido atualizado manualmente.', 'pagbank-connect'),
             false,

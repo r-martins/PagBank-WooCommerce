@@ -99,6 +99,7 @@ class Recurring
         add_action('pagbank_recurring_subscription_created_notification', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 1);
         add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
         add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
+        add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
     }
 
     public static function recurringSettingsFields($settings, $current_section)
@@ -581,7 +582,7 @@ class Recurring
         $now = gmdate('Y-m-d H:i:s');
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE ";
         $sql .= $subscription == null 
-            ? "status = 'ACTIVE' AND next_bill_at <= '%s'" 
+            ? "status IN ('ACTIVE', 'SUSPENDED') AND next_bill_at <= '%s'"
             : "id = 0%d";
         $nowOrId = $subscription == null ? $now : $subscription->id;
         $sql = $wpdb->prepare($sql, $nowOrId);
@@ -1104,6 +1105,69 @@ class Recurring
         }
         $this->cancelSubscription($subscription, __('Cancelado pelo cliente', 'pagbank-connect'), 'CUSTOMER');
     }
+
+    /**
+     * Suspends the specified subscription
+     *
+     * @param stdClass $subscription The subscription to be canceled (row from pagbank_recurring table)
+     * @param string $reason The reason for cancellation (will be visible to the customer)
+     * @param int $retryAttempts
+     * @return void
+     * @noinspection PhpUnused
+     */
+    public function suspendSubscription(\stdClass $subscription, string $reason, int $retryAttempts): void
+    {
+        global $wpdb;
+        $recHelper = new RecurringHelper();
+
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            [
+                'suspended_at' => gmdate('Y/m/d H:i:s'),
+                'status' => 'SUSPENDED',
+                'suspended_reason' => $reason,
+                'retry_attempts_remaining' => $retryAttempts,
+                'next_bill_at' => $recHelper->calculateNextBillingDate(
+                    'D',
+                    1
+                )->format('Y-m-d H:i:s')
+            ],
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s', '%s'],
+            ['%d']
+        );
+
+        if ($update) {
+            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'SUSPENDED');
+        }
+
+        if ($update > 0) {
+            do_action('pagbank_recurring_subscription_suspended_by_payment_failure', $subscription);
+            return;
+        }
+    }
+
+    /**
+     * @param stdClass $subscription
+     * @return void
+     * @throws Exception
+     */
+    public function updateSuspendedSubscription(\stdClass $subscription)
+    {
+        $recHelper = new RecurringHelper();
+        $cycle = $subscription->retry_attempts_remaining > 1 ? 1 : 3; // aumenta o intervalo na última tentativa de cobrança para 3 dias
+        $retryAttemptsRemaining = --$subscription->retry_attempts_remaining;
+
+        $this->updateSubscription($subscription, [
+            'status' => 'SUSPENDED',
+            'next_bill_at' => $recHelper->calculateNextBillingDate(
+                'D',
+                $cycle
+            )->format('Y-m-d H:i:s'),
+            'retry_attempts_remaining' => $retryAttemptsRemaining
+        ]);
+
+        do_action('pagbank_recurring_subscription_suspended_by_payment_failure', $subscription);
+    }
     
     /**
      * Cancels the specified subscription
@@ -1217,7 +1281,7 @@ class Recurring
     }
 
     /**
-     * Suspends the specified subscription
+     * Pauses the specified subscription
      *
      * @param stdClass $subscription
      *
@@ -1369,6 +1433,7 @@ class Recurring
 
         if ($update){
             wc_add_notice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'));
+            do_action('pagbank_recurring_subscription_payment_method_changed', $subscription->id);
             return;
         }
 
@@ -1713,5 +1778,16 @@ class Recurring
         }
     }
 
-    
+    /**
+     * @param $subscriptionId
+     * @return void
+     */
+    public function subscriptionMaybeChargeAndUpdate($subscriptionId)
+    {
+        $subscription = $this->getSubscription($subscriptionId);
+        if ($subscription->status === 'SUSPENDED') {
+            $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
+            $recurringOrder->createRecurringOrderFromSub();
+        }
+    }
 }

@@ -76,14 +76,41 @@ return array(
     ],
     [
         'id'          => 'woocommerce_rm-pagbank-recurring_clear_cart',
-        'title'       => __( 'Remover automaticamente outros produtos do carrinho ao adicionar um produto recorrente?', 'pagbank-connect'),
+        'title'       => __( 'Ao adicionar um produto recorrente', 'pagbank-connect'),
         'label'       => __( 'Remover', 'pagbank-connect' ),
-        'desc'        => __( 'Remover', 'pagbank-connect' ),
+        'desc'        => __( 'Remover automaticamente outros produtos do carrinho', 'pagbank-connect' ),
         'type'        => 'checkbox',
         'description' => '',
-        'desc_tip'    => __('Isso evitará que o plugin exiba a mensagem de que produtos recorrentes sejam comprados sozinhos', 'pagbank-connect'),
+        'desc_tip'    => esc_html(__('Isso evitará que o plugin exiba a mensagem de que produtos recorrentes sejam comprados sozinhos', 'pagbank-connect')),
         'default'     => 'no'
     ],
+    [
+        'id'          => 'woocommerce_rm-pagbank-recurring_retry_charge',
+        'title'       => __( 'Tentar novamente?', 'pagbank-connect'),
+        'label'       => __( 'Habilitar', 'pagbank-connect' ),
+        'type'        => 'checkbox',
+        'default'     => 'yes',
+        'desc_tip'    => esc_html(
+            __(
+                'Se o pagamento recorrente falhar, o plugin tentará cobrar novamente.',
+                'pagbank-connect'
+            )),
+    ],
+    [
+		'id'          => 'woocommerce_rm-pagbank-recurring_retry_attempts',
+		'title'       => __( 'Número de tentativas', 'pagbank-connect' ),
+		'type'        => 'number',
+		'default'     => 3,
+		'custom_attributes' => [
+			'min' => 1,
+			'max' => 4,
+		],
+        'desc_tip'    => esc_html(
+            __(
+                'Ocorrem com intervalos de 24 horas, exceto a última que ocorre após 3 dias da última tentativa.',
+                'pagbank-connect'
+            )),
+	],
     [
         'type' => 'sectionend',
         'id' => 'rm-pagbank-recurring-settings'
