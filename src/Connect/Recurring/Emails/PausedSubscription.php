@@ -93,8 +93,12 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 
             $this->subscription = $subscription;
             $this->mergePlaceholders($subscription);
-            $this->placeholders['{next_bill_at}'] = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
-            $this->placeholders['{paused_at}'] = gmdate('d/m/Y', strtotime($subscription->paused_at));
+            
+            if ($subscription->next_bill_at)
+                $this->placeholders['{next_bill_at}'] = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
+            
+            if ($subscription->paused_at) 
+                $this->placeholders['{paused_at}'] = gmdate('d/m/Y', strtotime($subscription->paused_at));
 
 			if ( $this->is_enabled() && $this->get_recipient() ) {
 				$this->send( $this->get_recipient(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
