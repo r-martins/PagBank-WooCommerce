@@ -93,6 +93,16 @@ class Redirect extends Common
             $discountAmount = ['discount_amount' => $discount * 100];
         }
         
+        //coupon discount
+        if ($this->order->get_total_discount() > 0) {
+            $discountToAdd = (int)$this->order->get_total_discount()*100;
+            //add to existing discount if any
+            if (isset($discountAmount['discount_amount'])) {
+                $discountToAdd += $discountAmount['discount_amount'];
+            }
+            $discountAmount = ['discount_amount' => $discountToAdd];
+        }
+        
         $paymentMethodCfg = Params::getRedirectConfig('redirect_payment_methods') ?? ['CREDIT_CARD', 'PIX'];
         foreach ($paymentMethodCfg as $paymentMethod) {
             $paymentMethodObj = new PaymentMethod();
