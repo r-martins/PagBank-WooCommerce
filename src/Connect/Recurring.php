@@ -1768,6 +1768,15 @@ class Recurring
         $usersNeedUpdate = [];
         foreach ($subscriptions as $subscription) {
             $order = wc_get_order($subscription->initial_order_id);
+            if (!$order) {
+                Functions::log(
+                    'Pedido inicial não encontrado para assinatura. Impossível atualizar restrição de conteúdo 
+                    para esta assinatura.',
+                    'error',
+                    ['subscription' => $subscription->id]
+                );
+                continue;
+            }
             $userId = $order->get_customer_id();
             if (!in_array($userId, $usersNeedUpdate)) {
                 $usersNeedUpdate[] = $userId;

@@ -3,7 +3,6 @@
 namespace RM_PagBank\Helpers;
 
 use DateInterval;
-use DateMalformedStringException;
 use DateTime;
 use DateTimeZone;
 use Exception;
@@ -11,6 +10,7 @@ use RM_PagBank\Connect;
 use stdClass;
 use WC_Cart;
 use WC_Order;
+use RM_PagBank\Helpers\Params;
 
 class Recurring
 {
@@ -71,6 +71,12 @@ class Recurring
      */
     public function isCartRecurring(WC_Cart $cart = null): bool
     {
+        //checks if pagbank recurring is enabled
+        $isRecurringEnabled = Params::getRecurringConfig('recurring_enabled', 'no') == 'yes';
+        if (!$isRecurringEnabled) {
+            return false;
+        }
+        
         //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
         if (!did_action('woocommerce_load_cart_from_session')) {
             return false;

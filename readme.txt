@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.33.0
+Stable tag: 4.33.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -51,7 +51,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Permite definir [**validade** de boletos e código PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
 * [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualizações automáticas de **status de pedidos** mesmo que sua loja bloqueie as notificações automáticas do PagBank
-* Opção de forçar atualização de um pedido manualmente
+* Opção de [forçar atualização](https://github.com/r-martins/PagBank-WooCommerce/releases/tag/4.31.0) de um pedido manualmente
 * [Confirmação imediata de pagamento](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) na tela de sucesso PIX
 * Permite adicionar [código JavaScript ou redirecionar](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento) o cliente após a confirmação de pagamento.
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
@@ -201,6 +201,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.33.1 =
+* Correção: ao usar Checkout PagBank(redirecionamento) cupons de desconto eram ignorados. Reportado por Lucas ([Nuvem Automação](https://www.nuvemautomacao.com.br/?utm_source=pagbank-connect&utm_medium=wordpress&utm_campaign=readme)).
+* Correção: am alguns cenários onde um usuário modificou a tabela de recorrencia manualmente, um erro poderia ocorrer ao salvar um produto. Reportado por Alexandre ([X2Design Agência Web](https://www.x2design.com.br/?utm_source=pagbank-connect&utm_medium=wordpress&utm_campaign=readme))
+* Correção: warning de depreciação era logado quando se pausava uma assinatura criada recentemente em lojas com PHP 8 ou superior.
+* Correção: em lojas que um dia tiveram um produto marcado como recorrente pagbank mas desativaram a recorrencia nas configs gerais do modulo, ao adicionar este produto no carrinho, outros meios de pagamento eram omitidos.
+* Correção: uso de DateMalformedStringException de forma desnecessária em uma de nossas classes, poderiam causar alertas em lojas com PHP inferior ao 8.3
 
 = 4.33.0 =
 * Melhoria: agora quando uma cobrança recorrente falha, o plugin tem a opção de tentar realizar a cobrança novamente automaticamente antes de cancelar a assinatura.
