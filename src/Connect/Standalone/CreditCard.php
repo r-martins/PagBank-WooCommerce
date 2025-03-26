@@ -122,6 +122,28 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     /**
+     * @param $key
+     * @param $value
+     *
+     * @return string
+     */
+    public function validate_cc_installment_options_fixed_field($key, $value)
+    {
+        if ($value === "1"){
+            WC_Admin_Settings::add_message(
+                __(
+                    'O número de parcelas sem juros foi alterado para 2. Se quiser oferecer juros por '
+                    .'conta do comprador, selecione a opção "Juros por conta do comprador".',
+                    'pagbank-connect'
+                )
+            );
+            return "2";
+        }
+        
+        return $value;
+    }
+
+    /**
      * Validate frontend fields
      *
      * @return bool

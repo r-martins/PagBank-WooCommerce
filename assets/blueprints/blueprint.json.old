@@ -1,0 +1,25 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "features": {
+    "network": true,
+  },
+  "steps": [
+    {
+      "step": "importWordPressFiles",
+      "wordPressFilesZip": {
+        "resource": "url",
+        "url": "https://www.dropbox.com/scl/fi/exl0buynaelyndy3lkq75/wordpress-playground-s-pagbank.zip?rlkey=5r723w1vdbnhhoenv6hpez7mb&dl=1"
+      }
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "pagbank-connect"
+      },
+      "options": {
+        "activate": true
+      }
+    }
+  ]
+}
