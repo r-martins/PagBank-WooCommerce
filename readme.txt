@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 4.33.1
+Stable tag: 4.33.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.33.2 =
+* Melhoria: agora o botão de Live Preview está disponível na pagina do nosso plugin
+* Correção/Melhoria: nos casos onde a opcao 'Até X parcelas sem juros' é configurado como 1 (Ao invés de escolher a opção 'Juros por conta do comprador') é utilizada, uma mensagem de erro era caregada no cálculo de parcelas (Parameter max_installments_no_interest should be equal 0 or greater than 1.) impossibilitando a compra com cartão.
 
 = 4.33.1 =
 * Correção: ao usar Checkout PagBank(redirecionamento) cupons de desconto eram ignorados. Reportado por Lucas ([Nuvem Automação](https://www.nuvemautomacao.com.br/?utm_source=pagbank-connect&utm_medium=wordpress&utm_campaign=readme)).
