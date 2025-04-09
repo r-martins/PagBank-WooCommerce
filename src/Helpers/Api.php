@@ -131,7 +131,20 @@ class Api
             throw new Exception('Erro na requisição: ' . $response->get_error_message());
         }
 
-		$response = wp_remote_retrieve_body($response);
+        $responseBody = wp_remote_retrieve_body($response);
+        $responseCode = wp_remote_retrieve_response_code($response);
+        $responseMessage = wp_remote_retrieve_response_message($response);
+
+        if (empty($responseBody) && $responseCode >= 400) {
+            Functions::log(
+                'Resposta inválida da API: '.$responseCode . ' - ' . $responseMessage,
+                'error',
+                ['request' => $params, 'endpoint' => $endpoint]
+            );
+            throw new Exception('Resposta inválida da API: ' . $responseCode . ' - ' . $responseMessage);
+        }
+
+        $response = $responseBody;
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
             $response = $response === '' ? __('"Resposta vazia"', 'pagbank-connect') : $response;

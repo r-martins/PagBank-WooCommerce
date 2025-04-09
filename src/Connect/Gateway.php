@@ -134,7 +134,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 $connect_key = '';
             }
         } catch (Exception $e) {
-            WC_Admin_Settings::add_error($e->getMessage());
+            WC_Admin_Settings::add_error('Validação da Connect Key Falhou. ' . $e->getMessage());
             $connect_key = '';
         }
 
