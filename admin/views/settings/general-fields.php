@@ -53,6 +53,21 @@ return array(
         'default' => 'no',
         'id'    => 'wc_pagseguro_connect_together_options',
     ],
+	'hide_items' => [
+        'title' => esc_html(__( 'Ocultar itens do pedido', 'pagbank-connect')),
+        'label' => esc_html(__('Ocultar itens do pedido na requisição de pagamento enviada ao PagBank.', 'pagbank-connect')),
+        'type'  => 'checkbox',
+        'desc_tip' => true,
+        'description' => esc_html(
+            __(
+                'Ocultar itens do pedido na requisição de pagamento enviada ao PagBank.<br><strong>Atenção:</strong> o uso deste recurso pode impactar negativamente a análise de risco do PagBank, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
+                'pagbank-connect'
+            )
+        ),
+        'default' => 'no',
+    ],
+
+
     'skip_processing_virtual' => [
         'title' => esc_html(__( 'Produtos Virtuais', 'pagbank-connect')),
         'label' => esc_html(__('Marcar como Completo após confirmação de pagamento', 'pagbank-connect')),
