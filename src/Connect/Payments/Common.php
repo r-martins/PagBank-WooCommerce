@@ -114,16 +114,54 @@ class Common
         return $customer;
     }
 
+    protected function isHideItems()
+    {
+        return Params::getConfig('hide_items') == 'yes';
+    }
 	/**
 	 * Populates the items array with data from the order
 	 * @return array
 	 */
 	public function getItemsData(): array
 	{
+        return apply_filters('pagbank_connect_items_data',
+            $this->isHideItems() ? $this->getItemDefault(
+                $this->order->get_total() - ($this->order->get_shipping_total() ?? 0)
+            ) : $this->getItems(
+                $this->order->get_items()
+            )
+        );
+    }
+
+    /**
+     * 
+     * @param mixed $amount
+     * @return Item[]
+     */
+    protected function getItemDefault($amount)
+    {
         $items = [];
-        
-        /** @var WC_Order_Item_Product $item */
-        foreach ($this->order->get_items() as $item) {
+        $itemObj = new Item();
+        $itemObj->setReferenceId(1);
+        $itemObj->setName('Compra em ' . get_bloginfo('name') ?? 'PagBank');
+        $itemObj->setQuantity(1);
+        $itemObj->setUnitAmount($amount);
+        $items[] = $itemObj;
+        return $items;
+    }
+
+    /**
+     * Formats order items into Item objects with ID, name, quantity, and unit amount.
+     *
+     * Skips items with zero subtotal and handles recurring product pricing.
+     *
+     * @param array<WC_Order_Item_Product> $get_items
+     * @return Item[]
+     */
+    protected function getItems($get_items)
+    {
+        $items = [];
+         foreach ($get_items as $item) {
             $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
@@ -141,11 +179,10 @@ class Common
             if ($item['line_subtotal'] == 0 && $amount == 0) {
                 continue;
             }
-            
             $items[] = $itemObj;
         }
-        
-        return apply_filters('pagbank_connect_items_data', $items);
+
+        return $items;
     }
 
 	/**
