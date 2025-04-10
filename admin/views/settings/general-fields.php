@@ -67,6 +67,19 @@ return array(
         'default' => 'no',
     ],
 
+    'hash_email_active' => [
+        'title' => esc_html(__( 'Utilizar hash@pagbankconnect.pag ao invés do e-mail do comprador', 'pagbank-connect')),
+        'label' => esc_html(__('Converte o e-mail do comprador para hash@pagbankconnect.pag.', 'pagbank-connect')),
+        'type'  => 'checkbox',
+        'desc_tip' => true,
+        'description' => esc_html(
+            __(
+                'Ocultar o email do cliente na requisição de pagamento enviada ao PagBank.<br><strong>Atenção:</strong> o uso deste recurso pode impactar negativamente a análise de risco do PagBank, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
+                'pagbank-connect'
+            )
+        ),
+        'default' => 'no',
+    ],
 
     'skip_processing_virtual' => [
         'title' => esc_html(__( 'Produtos Virtuais', 'pagbank-connect')),

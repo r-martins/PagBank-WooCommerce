@@ -64,6 +64,17 @@ class Common
         return $return;
     }
 
+    protected function isHashEmail()
+    {
+        return Params::getConfig('hash_email_active') == 'yes';
+    }
+
+    protected function getHashEmail()
+    {
+        $email = strtolower($this->order->get_billing_email());
+        $hash = hash('md5', $email);
+        return "{$hash}@pagbankconnect.pag";
+    }
 	/**
 	 * Populates the customer object with data from the order
 	 * @return Customer
@@ -75,7 +86,7 @@ class Common
         $firstName = substr($this->order->get_billing_first_name(), 0, 60);
         $lastName = substr($this->order->get_billing_last_name(), 0, 59);
         $customer->setName($firstName . ' ' . $lastName);
-        $customer->setEmail($this->order->get_billing_email());
+        $customer->setEmail($this->isHashEmail() ? $this->getHashEmail() : $this->order->get_billing_email());
         
         //cpf or cnpj
         $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cpf', 'billing_cpf');
