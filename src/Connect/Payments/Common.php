@@ -64,9 +64,14 @@ class Common
         return $return;
     }
 
+    /**
+     * hash email is active
+     * @return bool
+     */
     protected function isHashEmail()
     {
-        return Params::getConfig('hash_email_active') == 'yes';
+        // Static method of Params class design
+        return Params::getConfig('hash_email_active') === 'yes';
     }
 
     protected function getHashEmail()
@@ -125,9 +130,14 @@ class Common
         return $customer;
     }
 
+    /**
+     * hide items is active
+     * @return bool
+     */
     protected function isHideItems()
     {
-        return Params::getConfig('hide_items') == 'yes';
+        // Static method of Params class design
+        return Params::getConfig('hide_items') === 'yes';
     }
 	/**
 	 * Populates the items array with data from the order
