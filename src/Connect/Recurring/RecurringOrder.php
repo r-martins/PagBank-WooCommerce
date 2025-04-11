@@ -42,6 +42,13 @@ class RecurringOrder
     {
         $subscription = $this->subscription;
         $initialOrder = wc_get_order($subscription->initial_order_id);
+        
+        if (!$initialOrder) {
+            Functions::log('Pedido inicial não encontrado pra assinatura ' . esc_attr($subscription->id) . '. Recorrência não foi processada.', 'error', [
+                'subscription' => $subscription->id,
+            ]);
+            return;
+        }
 
         $recHelper = new Recurring();
 
