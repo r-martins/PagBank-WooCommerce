@@ -298,6 +298,7 @@ class Recurring
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_pages', true),
                     'custom_attributes' => ['multiple' => 'multiple'],
+                    'class' => 'wc-enhanced-select short'
                 ]);
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_categories',
@@ -308,6 +309,7 @@ class Recurring
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_categories', true),
                     'custom_attributes' => ['multiple' => 'multiple'],
+                    'class' => 'wc-enhanced-select short'
                 ]);
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_unauthorized_page',

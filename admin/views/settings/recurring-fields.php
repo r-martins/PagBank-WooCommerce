@@ -24,7 +24,7 @@ return array(
         'id'          => 'woocommerce_rm-pagbank-recurring_payments',
         'title'       => __( 'Meios de Pagamento Aceitos', 'pagbank-connect' ),
         'type'        => 'multiselect',
-        'class' => 'recurring_attr',
+        'class' => 'recurring_attr wc-enhanced-select',
 		'default' => 'cc',
 		'options'	=> [
 			'cc' => __('Cartão de Crédito', 'pagbank-connect'),
