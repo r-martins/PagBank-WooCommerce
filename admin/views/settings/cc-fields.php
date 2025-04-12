@@ -163,10 +163,10 @@ return array(
         'default'     => 'yes',
     ],
     'cc_billing_phone' => [
-        'title'		=> __('Obter telefone de cobrança de', 'pagbank-connect'),
-        'type'		=> 'select',
+        'title'		  => __('Obter telefone de cobrança de', 'pagbank-connect'),
+        'type'		  => 'select',
         'description' => __('Se você personalizou o checkout e não está usando o campo padrão "billing_phone", informe aqui o identificador correto do campo de telefone. <br> Caso contrário, o plugin pode não funcionar corretamente e gerar erros no pagamento.', 'pagbank-connect'),
-        'default'	=> 'billing_phone',
-        'options'	=> \RM_PagBank\Helpers\Functions::getCheckoutFields('billing'),
+        'default'	  => 'billing_phone',
+        'options'	  => \RM_PagBank\Helpers\Functions::getCheckoutFields('billing'),
     ],
 );
