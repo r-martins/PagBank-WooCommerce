@@ -501,4 +501,19 @@ class Functions
         }
         return $expiringOrders;
     }
+
+    public static function getCheckoutFields($key)
+    {
+        $attrs = WC()->checkout()->get_checkout_fields($key);
+        if(!$attrs){
+            return [
+                'billing_phone' => 'billing_phone | Celular'
+            ];
+        }
+        $options = [];
+        foreach ($attrs as $key => $value) {
+            $options[$key] = $key . ' | ' . $value['label'];
+        }
+        return $options;
+    }
 }
