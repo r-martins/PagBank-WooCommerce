@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro, pagbank, pix, recorrencia, brasil
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.33.4
+Stable tag: 4.34.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.34.0 =
+* Adicionado suporte ao WordPress 6.8
+* Melhoria no seletor de meios de pagamento da recorrencia e no seletor de restrição de páginas e categorias de conteúdo restrito.
 
 = 4.33.4 =
 * Correção: nos casos onde o pedido inicial de uma recorrência era excluido um erro ocorria e impedia outras recorrências de serem cobradas. (Reportado por Ricardo da InfoDoors)
