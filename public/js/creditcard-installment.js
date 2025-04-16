@@ -6,7 +6,7 @@ jQuery(document).ready(function ($) {
         fetch( ajax_obj.rest_installments, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ _price: preco, _product_id: productId, _variation_id: variationId })
+            body: JSON.stringify({ _price: preco, _product_id: productId, _variation_id: variationId, _type: ajax_obj.type })
         })
         .then( res => res.json())
         .then( data => jQuery("#pagbank_load_installment").html(data.data.html))
