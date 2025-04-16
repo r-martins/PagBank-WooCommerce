@@ -16,9 +16,11 @@ if (!defined('ABSPATH')) {
     <h2><?php echo esc_html(__('Parcelamento PagBank', 'pagbank-connect'));?></h2>
     <table class="shop_table shop_table_responsive">
         <tbody id="pagbank_load_installment">
-            <?php if ($args[0] && $args[1]->get_type() !== 'variable') {
-                echo wp_kses_post($args[0]);
-            } ?>
+            <?php 
+                if ($args[0] && $args[1]->get_type() !== 'variable') {
+                    echo wp_kses_post( $args[0] );
+                } 
+            ?>
         </tbody>
     </table>
 </div>

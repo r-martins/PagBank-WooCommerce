@@ -331,10 +331,10 @@ class CreditCard extends Common
         }
     }
 
-    public static function buildInstallment($id, $price)
+    public static function buildInstallment($transient_id, $price)
     {
 
-        delete_transient($id);
+        delete_transient($transient_id);
 
         $ccInstallmentProductPage = Params::getCcConfig('cc_installment_product_page');
         $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
@@ -359,7 +359,7 @@ class CreditCard extends Common
 
                 if (!empty($installmentsData)) {
                     set_transient(
-                        $id,
+                        $transient_id,
                         $installmentsData,
                         YEAR_IN_SECONDS
                     );
@@ -472,13 +472,13 @@ class CreditCard extends Common
         $response = [];
         $param = json_decode(file_get_contents('php://input'), true);  
 
-        $id = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $param['_product_id'], $param['_variation_id']);
+        $transient_id = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $param['_product_id'], $param['_variation_id']);
     
-        $installment_info = get_transient($id);
+        $installment_info = get_transient($transient_id);
 
         if (!$installment_info) {
-            self::buildInstallment($id, $param['_price']);
-            $installment_info = get_transient($id);
+            self::buildInstallment($transient_id, $param['_price']);
+            $installment_info = get_transient($transient_id);
         }
     
         $args = json_decode($installment_info);
