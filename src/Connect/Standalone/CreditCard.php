@@ -455,7 +455,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 wp_localize_script(
                     'pagseguro-connect-creditcard',
                     'ajax_object',
-                    ['ajax_url' => admin_url('admin-ajax.php'), 'cc_billing_phone' => $this->get_option('cc_billing_phone') ?? 'billing_phone']
+                    ['ajax_url' => admin_url('admin-ajax.php'), 'cc_billing_phone' => \RM_PagBank\Helpers\Functions::getCheckoutFields('billing') ?? 'billing_phone']
                 );
                 wp_add_inline_script(
                     'pagseguro-connect-creditcard',

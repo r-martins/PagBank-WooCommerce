@@ -504,16 +504,18 @@ class Functions
 
     public static function getCheckoutFields($key)
     {
-        $attrs = WC()->checkout()->get_checkout_fields($key);
-        if(!$attrs){
-            return [
-                'billing_phone' => 'billing_phone | Celular'
-            ];
+        if (is_checkout() && !is_admin()) {
+            $attrs = WC()->checkout()->get_checkout_fields($key);
+            if(!$attrs){
+                // campo padrão
+                return 'billing_phone';
+            }
+            foreach ($attrs as $key => $value) {
+                // verifica se existe alguns dos campos no checkout
+                if(in_array($key, ['billing_phone', 'billing_cellphone'])){
+                    return $key;
+                }
+            }
         }
-        $options = [];
-        foreach ($attrs as $key => $value) {
-            $options[$key] = $key . ' | ' . $value['label'];
-        }
-        return $options;
     }
 }
