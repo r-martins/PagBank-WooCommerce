@@ -166,7 +166,8 @@ class Common
         $itemObj->setReferenceId(1);
         $itemObj->setName('Compra em ' . get_bloginfo('name') ?? 'PagBank');
         $itemObj->setQuantity(1);
-        $itemObj->setUnitAmount($amount);
+        $unitAmount = number_format($amount, 2, '', '');
+        $itemObj->setUnitAmount($unitAmount);
         $items[] = $itemObj;
         return $items;
     }
