@@ -315,14 +315,32 @@ class CreditCard extends Common
             return;
         }
         
-        delete_transient('rm_pagbank_product_installment_info_' . $product->get_id());
+        $product_id   = $product->get_id();
+        $price        = $product->get_price();
+
+        $parent_id    = get_class($product) == 'WC_Product_Variation' ? $product->get_parent_id() : null;
+
+        // Sempre gerar o cache principal
+        $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d", $parent_id ?: $product_id);
+        self::buildInstallment($main_cache_key, $price);
+
+        // Se for variação, também gera o cache da variação específica
+        if ($parent_id) {
+            $variation_cache_key = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $parent_id, $product_id);
+            self::buildInstallment($variation_cache_key, $price);
+        }
+    }
+
+    public static function buildInstallment($transient_id, $price)
+    {
+
+        delete_transient($transient_id);
 
         $ccInstallmentProductPage = Params::getCcConfig('cc_installment_product_page');
         $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
 
         if ($ccInstallmentProductPage === 'yes' || $ccShortcodeInUse === 'yes') {
-            $default_installments = Params::getInstallments($product->get_price(), '555566');
-
+            $default_installments = Params::getInstallments($price, '555566');
             if ($default_installments && !isset($default_installments['error'])) {
                 $installments = [];
 
@@ -338,14 +356,14 @@ class CreditCard extends Common
                 }
 
                 $installmentsData = wp_json_encode($installments);
-            }
 
-            if (!empty($installmentsData)) {
-                set_transient(
-                    'rm_pagbank_product_installment_info_'.$product->get_id(),
-                    $installmentsData,
-                    YEAR_IN_SECONDS
-                );
+                if (!empty($installmentsData)) {
+                    set_transient(
+                        $transient_id,
+                        $installmentsData,
+                        YEAR_IN_SECONDS
+                    );
+                }
             }
         }
     }
@@ -381,10 +399,11 @@ class CreditCard extends Common
             if ($installment_info) {
                 $type = Params::getCcConfig('cc_installment_product_page_type', 'table');
                 $type = preg_replace("/[^a-z\-]/", "", $type); //safety is paramount
+                self::tableInstallmentsAjax($type);
                 $template_name = "product-installments-$type.php";
                 $template_path = locate_template('pagbank-connect/' . $template_name);
                 $args = json_decode($installment_info);
-                
+
                 if (!$template_path) {
                     $template_path = dirname(__FILE__) . '/../../templates/product/' . $template_name;
                     if (!file_exists($template_path)) {
@@ -396,11 +415,18 @@ class CreditCard extends Common
                     return;
                 }
 
+                if($type == 'table'){
+                    $installmentInfoHtml = self::getInstallmentTable($args);
+                }elseif($type == 'text-installment-free'){
+                    $installmentInfoHtml = self::getInstallmentTextFree($args);
+                }elseif($type == 'text-installment-max'){
+                    $installmentInfoHtml = self::getInstallmentTextMax($args);
+                }
                 //checks if is being called by do_shortcode so don't output the template
                 if ($calledByDoShortcode)
                     ob_start();
                 
-                load_template($template_path, false, $args);
+                load_template($template_path, false, [$installmentInfoHtml, $product]);
                 
                 if ($calledByDoShortcode)
                     return ob_get_clean();
@@ -409,6 +435,165 @@ class CreditCard extends Common
         }
     }
 
+    /**
+     * Add js/creditcard-installment.js page product
+     * @return void
+     */
+    public static function tableInstallmentsAjax($type)
+    {
+        wp_enqueue_script(
+            'pagseguro-connect-creditcard-installment',
+            plugins_url('public/js/creditcard-installment.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['jquery'],
+            WC_PAGSEGURO_CONNECT_VERSION,
+            ['strategy' => 'defer', 'in_footer' => true]
+        );
+         // Passa dados PHP para o JS
+        wp_localize_script('pagseguro-connect-creditcard-installment', 'ajax_obj', 
+            ['rest_installments' => get_rest_url(null, 'pagbank/installments/evento/'), 'type' => $type]
+        );
+    }
+
+    /**
+     * Create route API | Method POST
+     * @return void
+     */
+    public static function restApiTableInstallments()
+    {
+        register_rest_route('pagbank/installments', '/evento/', [
+            'methods'  => 'POST',
+            'callback' => [self::class, 'getProductInstallmentsAjax'],
+            'permission_callback' => '__return_true' // ou lógica de permissão
+        ]);
+    }
+
+    /**
+     * Return Table HTML
+     * 
+     * @return WP_REST_Response|WP_Error
+     */
+    public static function getProductInstallmentsAjax()
+    {
+
+        $response = [];
+        $param = json_decode(file_get_contents('php://input'), true);  
+        $_productId = (int) filter_var($param['_product_id'], FILTER_VALIDATE_INT);
+        $_variationId = (int) filter_var($param['_variation_id'], FILTER_VALIDATE_INT);
+        $_type = (string) filter_var($param['_type'], FILTER_DEFAULT);
+
+        if(!in_array($_type, ['table', 'text-installment-free', 'text-installment-max'])){
+            return rest_ensure_response(new WP_Error(
+                '400',
+                'Erro',
+                [ 'status' => 400 ]
+            ));
+        }
+        
+        $transient_id = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $_productId, $_variationId);
+    
+        $installment_info = get_transient($transient_id);
+
+        if (!$installment_info) {
+            self::buildInstallment($transient_id, $param['_price']);
+            $installment_info = get_transient($transient_id);
+        }
+    
+        $args = json_decode($installment_info);
+        $response['installments'] = $args;
+        
+       if($args){
+            if($_type == 'table'){
+                $installmentInfoHtml = self::getInstallmentTable($args);
+            }elseif($_type == 'text-installment-free'){
+                $installmentInfoHtml = self::getInstallmentTextFree($args);
+            }elseif($_type == 'text-installment-max'){
+                $installmentInfoHtml = self::getInstallmentTextMax($args);
+            }
+            $response['html'] = $installmentInfoHtml;
+       }
+
+        return rest_ensure_response([
+            'status' => 'ok',
+            'data' => $response
+        ]);
+    }
+    
+
+    /**
+     * Summary of getInstallment
+     * @param stdClass $args
+     * @return string
+     */
+    public static function getInstallmentTable($args)
+    {
+        $installments = $args;
+
+        $installmentInfo = '';
+        $iteration = 0;
+
+        foreach ($installments as $installment) {
+            if ($iteration % 2 == 0) {
+                $installmentInfo .= '<tr>';
+            }
+
+            $amount = number_format((float) str_replace(',', '.', str_replace('.', '', $installment->amount)), 2, ',', '.');
+            $total_amount = number_format(
+                (float)str_replace(',', '.', str_replace('.', '', $installment->total_amount)),
+                2,
+                ',',
+                '.'
+            );
+
+            $installmentInfo .= '<td>'.$installment->installments.esc_html(__('x de R$ ', 'pagbank-connect')).$amount
+                .($installment->interest_free ? '<br/><small> '.esc_html(__('Sem juros', 'pagbank-connect')).'</small>'
+                    : '<br/><small> '.esc_html(__('Total: R$ ', 'pagbank-connect')).$total_amount.'</small>').'</td>';
+
+            if ($iteration % 2 != 0 || $iteration == count($installments) - 1) {
+                $installmentInfo .= '</tr>';
+            }
+
+            $iteration++;
+        }
+        
+        return $installmentInfo;
+    }
+
+    public static function getInstallmentTextMax($args)
+    {
+        if (count($args) <= 1) {
+            return;
+        }
+        $installments = $args[count($args)-1];
+        return sprintf(__(
+            'Em até <strong class="installment-x">%sx</strong> de <strong class="installment-amount">'
+            .'R$ %s</strong> no Cartão de Crédito com PagBank.',
+            'pagbank-connect'
+        ),$installments->installments, wc_format_localized_price($installments->amount));
+    }
+
+    public static function getInstallmentTextFree($args)
+    {
+        $maxInterestFree = 0;
+        foreach ($args as $installment) {
+            if ($installment->interest_free === false) {
+                break;
+            }
+            $maxInterestFree++;
+        }
+
+        if (!$maxInterestFree) {
+            return;
+        }
+        $maxInterestFree--;
+
+        return sprintf(
+            __(
+                'Em até <strong class="installment-x">%sx</strong> de <strong class="installment-amount">'
+                .'R$ %s</strong> sem juros no Cartão de Crédito com PagBank.',
+                'pagbank-connect'
+            ),$args[$maxInterestFree]->installments, wc_format_localized_price($args[$maxInterestFree]->amount)
+        );
+    }
     /**
      * Function to delete the installment transients if the configuration has changed
      * @return void

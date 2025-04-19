@@ -8,21 +8,15 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-/** @var stdClass $args */
+/** @var stdClass|array $args */
 
-if (count($args) <= 1) {
-    return;
-}
-$installments = $args[count($args)-1];
+
 ?>
 <div class="woocommerce pagbank-connect-installments">
-    <p><?php echo sprintf(
-        __(
-            'Em até <strong class="installment-x">%sx</strong> de <strong class="installment-amount">'
-            .'R$ %s</strong> no Cartão de Crédito com PagBank',
-            'pagbank-connect'
-        ),
-            $installments->installments,
-        wc_format_localized_price($installments->amount)
-    ); ?>.</p>
+    <div id="pagbank_load_installment"><?php 
+            if ($args[0] && $args[1]->get_type() !== 'variable') {
+                echo wp_kses_post( $args[0] );
+            } 
+        ?>
+    </div>
 </div>
