@@ -64,6 +64,22 @@ class Common
         return $return;
     }
 
+    /**
+     * hash email is active
+     * @return bool
+     */
+    protected function isHashEmail()
+    {
+        // Static method of Params class design
+        return Params::getConfig('hash_email_active') === 'yes';
+    }
+
+    protected function getHashEmail()
+    {
+        $email = strtolower($this->order->get_billing_email());
+        $hash = hash('md5', $email);
+        return "{$hash}@pagbankconnect.pag";
+    }
 	/**
 	 * Populates the customer object with data from the order
 	 * @return Customer
@@ -75,7 +91,7 @@ class Common
         $firstName = substr($this->order->get_billing_first_name(), 0, 60);
         $lastName = substr($this->order->get_billing_last_name(), 0, 59);
         $customer->setName($firstName . ' ' . $lastName);
-        $customer->setEmail($this->order->get_billing_email());
+        $customer->setEmail($this->isHashEmail() ? $this->getHashEmail() : $this->order->get_billing_email());
         
         //cpf or cnpj
         $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cpf', 'billing_cpf');
@@ -114,16 +130,60 @@ class Common
         return $customer;
     }
 
+    /**
+     * hide items is active
+     * @return bool
+     */
+    protected function isHideItems()
+    {
+        // Static method of Params class design
+        return Params::getConfig('hide_items') === 'yes';
+    }
 	/**
 	 * Populates the items array with data from the order
 	 * @return array
 	 */
 	public function getItemsData(): array
 	{
+        return apply_filters('pagbank_connect_items_data',
+            $this->isHideItems() ? $this->getItemDefault(
+                $this->order->get_total() - ($this->order->get_shipping_total() ?? 0)
+            ) : $this->getItems(
+                $this->order->get_items()
+            )
+        );
+    }
+
+    /**
+     * 
+     * @param mixed $amount
+     * @return Item[]
+     */
+    protected function getItemDefault($amount)
+    {
         $items = [];
-        
-        /** @var WC_Order_Item_Product $item */
-        foreach ($this->order->get_items() as $item) {
+        $itemObj = new Item();
+        $itemObj->setReferenceId(1);
+        $itemObj->setName('Compra em ' . get_bloginfo('name') ?? 'PagBank');
+        $itemObj->setQuantity(1);
+        $unitAmount = number_format($amount, 2, '', '');
+        $itemObj->setUnitAmount($unitAmount);
+        $items[] = $itemObj;
+        return $items;
+    }
+
+    /**
+     * Formats order items into Item objects with ID, name, quantity, and unit amount.
+     *
+     * Skips items with zero subtotal and handles recurring product pricing.
+     *
+     * @param array<WC_Order_Item_Product> $get_items
+     * @return Item[]
+     */
+    protected function getItems($get_items)
+    {
+        $items = [];
+         foreach ($get_items as $item) {
             $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
@@ -141,11 +201,10 @@ class Common
             if ($item['line_subtotal'] == 0 && $amount == 0) {
                 continue;
             }
-            
             $items[] = $itemObj;
         }
-        
-        return apply_filters('pagbank_connect_items_data', $items);
+
+        return $items;
     }
 
 	/**
