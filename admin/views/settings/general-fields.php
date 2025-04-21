@@ -169,7 +169,7 @@ return array(
 
     'hash_email_active' => [
         'title' => esc_html(__( 'Ocultar e-mail do comprador', 'pagbank-connect')),
-        'label' => esc_html(__('Converte o e-mail do comprador para hash@pagbankconnect.pag.', 'pagbank-connect')),
+        'label' => esc_html(__('Envia o e-mail do comprador como hash@pagbankconnect.pag para o PagBank.', 'pagbank-connect')),
         'type'  => 'checkbox',
         'desc_tip' => true,
         'description' => esc_html(
