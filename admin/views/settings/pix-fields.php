@@ -8,7 +8,8 @@ return array(
         'title'       => __( 'Habilitar', 'pagbank-connect'),
         'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
-        'description' => '',
+        'description' =>  __('ℹ️ Lembre-se de <a href="https://minhaconta.pagbank.com.br/conta-digital/pix" target="_blank">gerar uma chave aleatória PIX no painel PagBank</a>, ou os códigos PIX gerados serão inválidos.
+        <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido" target="_blank">Saiba mais.</a>'),
         'default'     => 'yes'
 	],
 	'title'              => [
