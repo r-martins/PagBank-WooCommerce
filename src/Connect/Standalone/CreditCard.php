@@ -396,6 +396,7 @@ class CreditCard extends WC_Payment_Gateway_CC
      * @return void
      */
     public function addScripts($force=false) {
+        
         // If the method has already been called, return early
         if (self::$addedScripts) {
             return;
@@ -455,7 +456,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 wp_localize_script(
                     'pagseguro-connect-creditcard',
                     'ajax_object',
-                    ['ajax_url' => admin_url('admin-ajax.php'), 'cc_billing_phone' => \RM_PagBank\Helpers\Functions::getCheckoutFields('billing') ?? 'billing_phone']
+                    ['ajax_url' => admin_url('admin-ajax.php')]
                 );
                 wp_add_inline_script(
                     'pagseguro-connect-creditcard',
