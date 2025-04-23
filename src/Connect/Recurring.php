@@ -1390,11 +1390,11 @@ class Recurring
     {
         $recurringAmount = sanitize_text_field($_POST['recurring_amount']);
         $recurringAmount = preg_replace('/[^0-9,.]/', '', $recurringAmount);
-        $recurringAmount = str_replace(",",".",$recurringAmount);
+        $recurringAmount = str_replace(['.', ','], ['', '.'], $recurringAmount);
+        $recurringAmount = floatval(number_format((float) $recurringAmount, 2, '.', ''));
         $update = $this->updateSubscription($subscription, [
-            'recurring_amount' => floatval(number_format($recurringAmount,2,'.','')),
+            'recurring_amount' => $recurringAmount,
         ]);
-
         if ($update){
             \wc_add_notice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'));
             return;
