@@ -227,13 +227,11 @@ class Pix extends WC_Payment_Gateway
      * @return void
      */
     public function maybeSendNewOrderEmail($order, $resp) {
+        $this->sendNewOrder($order);
         $shouldNotify = wc_string_to_bool(Params::getPixConfig('pix_send_new_order_email', 'yes'));
-
         if (!$shouldNotify) {
             return;
         }
-
-        $this->sendNewOrder($order);
         $this->sendOrderInvoiceEmail($order);
     }
 }
