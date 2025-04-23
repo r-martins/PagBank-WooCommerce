@@ -217,13 +217,13 @@ class Boleto extends WC_Payment_Gateway
      * @return void
      */
     public function maybeSendNewOrderEmail($order, $resp) {
+        $this->sendNewOrder($order);
         $shouldNotify = wc_string_to_bool(Params::getBoletoConfig('boleto_send_new_order_email', 'yes'));
 
         if (!$shouldNotify) {
             return;
         }
 
-        $this->sendNewOrder($order);
         $this->sendOrderInvoiceEmail($order);
     }
 }
