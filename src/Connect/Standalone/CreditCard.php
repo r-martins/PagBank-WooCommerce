@@ -396,7 +396,7 @@ class CreditCard extends WC_Payment_Gateway_CC
      * @return void
      */
     public function addScripts($force=false) {
-        
+
         // If the method has already been called, return early
         if (self::$addedScripts) {
             return;
