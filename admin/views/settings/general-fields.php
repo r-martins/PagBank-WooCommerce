@@ -153,4 +153,31 @@ return array(
         ),
         'default'     => 'no',
     ],
+    'hide_items' => [
+        'title' => esc_html(__( 'Ocultar itens do pedido', 'pagbank-connect')),
+        'label' => esc_html(__('Ocultar itens do pedido na requisição de pagamento enviada ao PagBank.', 'pagbank-connect')),
+        'type'  => 'checkbox',
+        'desc_tip' => true,
+        'description' => esc_html(
+            __(
+                'O uso deste recurso pode impactar negativamente a análise de risco do PagBank, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
+                'pagbank-connect'
+            )
+        ),
+        'default' => 'no',
+    ],
+
+    'hash_email_active' => [
+        'title' => esc_html(__( 'Ocultar e-mail do comprador', 'pagbank-connect')),
+        'label' => esc_html(__('Envia o e-mail do comprador como hash@pagbankconnect.pag para o PagBank.', 'pagbank-connect')),
+        'type'  => 'checkbox',
+        'desc_tip' => true,
+        'description' => esc_html(
+            __(
+                'O uso deste recurso pode impactar negativamente a análise de risco do PagBank, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
+                'pagbank-connect'
+            )
+        ),
+        'default' => 'no',
+    ],
 );

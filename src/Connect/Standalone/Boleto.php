@@ -128,11 +128,6 @@ class Boleto extends WC_Payment_Gateway
         $shouldNotify = $order->get_status('edit') !== 'pending';
         $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
 
-        // sends the new order email
-        if ($shouldNotify) {
-            $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
-            $newOrderEmail->trigger($order->get_id());
-        }
 
         $woocommerce->cart->empty_cart();
         return array(
@@ -222,6 +217,7 @@ class Boleto extends WC_Payment_Gateway
      * @return void
      */
     public function maybeSendNewOrderEmail($order, $resp) {
+        $this->sendNewOrder($order);
         $shouldNotify = wc_string_to_bool(Params::getBoletoConfig('boleto_send_new_order_email', 'yes'));
 
         if (!$shouldNotify) {
