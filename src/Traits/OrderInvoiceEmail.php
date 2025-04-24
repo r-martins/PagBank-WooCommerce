@@ -22,4 +22,21 @@ trait OrderInvoiceEmail
             $order->add_order_note('PagBank: Erro ao enviar email do pedido: ' . $e->getMessage());
         }
     }
+
+    public function sendNewOrder($order)
+    {
+        try {
+            $emailHasBeenSent = wc_string_to_bool($order->get_meta('pagbank_email_new_order_sent'));
+
+            if ($emailHasBeenSent) {
+                return;
+            }
+
+            $customerInvoiceEmail = WC()->mailer()->emails['WC_Email_New_Order'];
+            $customerInvoiceEmail->trigger($order->get_id());
+            $order->add_meta_data('pagbank_email_new_order_sent', 'yes', true);
+        } catch (\Exception $e) {
+            $order->add_order_note('PagBank: Erro ao enviar email de novo pedido: ' . $e->getMessage());
+        }
+    }
 }
