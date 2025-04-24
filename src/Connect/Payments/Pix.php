@@ -81,4 +81,52 @@ class Pix extends Common
         require_once dirname(__FILE__) . '/../../templates/pix-instructions.php';
         parent::getThankyouInstructions($order_id);
     }
+
+    /**
+     * Show the discount on the product page
+     * @param mixed $price
+     * @param mixed $product
+     */
+    public static function showPriceDiscountPixProduct($price, $product) {
+
+        $enable_show_discount = Params::getPixConfig('pix_show_price_discount', 'no') == 'yes';
+        // Pega o percentual de desconto do Pix
+        $discount = Params::getPixConfig('pix_discount', 0);
+        
+        $page = is_product() ? 'product' : (is_shop() || is_product_category() ? 'category' : '');
+        $where = Params::getPixConfig('pix_show_price_locations');
+        $showPage = is_array($where) && in_array($page, $where);
+
+        if (!$enable_show_discount || !$discount || !$showPage) {
+            return $price;
+        }
+
+        // Evita exibir o desconto em produtos variáveis na página do produto
+        if ($product->is_type('variable') && is_product()) {
+            return $price;
+        }
+
+        // Define o template
+        $template_name = 'product-discount-pix.php';
+        // Verifica se o template existe no tema
+        $template_path = locate_template('pagbank-connect/' . $template_name);
+
+        // Se o template não existir no tema, tenta carregar o template do plugin
+        if (!$template_path) {
+            $template_path = plugin_dir_path(__FILE__) . '../../templates/product/' . $template_name;
+            if (!file_exists($template_path)) {
+                return $price;
+            }
+        }
+
+        ob_start();
+        load_template($template_path, false, [
+            'discount' => $discount,
+            'product' => $product,
+        ]);
+
+        $pix_discount_html = ob_get_clean();
+
+        return $pix_discount_html . $price;
+    }
 }

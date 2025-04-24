@@ -8,6 +8,7 @@ use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
 use RM_PagBank\Connect\OrderProcessor;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
 use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
 use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
@@ -66,6 +67,7 @@ class Connect
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
         add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
+        add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
 
 
         // Load plugin files
