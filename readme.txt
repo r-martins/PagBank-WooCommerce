@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.34.0
+Stable tag: 4.35.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.35.0 =
+* Agora é possível ocultar o e-mail do comprador e os produtos comprados enviados ao PagBank. Isso dá mais privacidade para o consumidor e evita e-mails indesejados enviados pelo PagBank ao seu cliente (mas pode prejudicar seu score de risco, especialmente em casos de chargebacks).
+* Em alguns cenários e configurações, o admin da loja não recebia e-mails de novo pedido, especialmente em pedidos via Boleto.
+* Adicionamos um pequeno lembrete sobre a necessidade das chaves aleatórias na tela de configuração do PIX para evitar a geração de códigos pix inválidos para usuários novos do PagBank.
+* Ao editar o valor de uma assinatura ativa no admin, um erro fatal poderia ocorrer devido à formatação do número/valor.
 
 = 4.34.0 =
 * Adicionado suporte ao WordPress 6.8
