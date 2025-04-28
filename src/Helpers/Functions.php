@@ -502,6 +502,12 @@ class Functions
         return $expiringOrders;
     }
 
+    /**
+     * Removes special characters from a string and convert accents to their base characters
+     * @param $string
+     *
+     * @return array|string|string[]|null
+     */
     public static function stringClear($string)
     {
         $table = [
