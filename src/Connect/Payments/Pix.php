@@ -81,4 +81,60 @@ class Pix extends Common
         require_once dirname(__FILE__) . '/../../templates/pix-instructions.php';
         parent::getThankyouInstructions($order_id);
     }
+
+    /**
+      * Show the discount on the product page
+      * @param mixed $price
+      * @param mixed $product
+      */
+      public static function showPriceDiscountPixProduct($price, $product) {
+        
+        // Check if the product is a subscription or if the user is in the admin area
+        if (!$product || $product->get_meta('_recurring_enabled') == 'yes' || is_admin()) {
+            return $price;
+        }
+        
+        $enable_show_discount = Params::getPixConfig('pix_show_price_discount', 'no') == 'yes';
+        // Get the discount value from the settings
+        $discount = Params::getPixConfig('pix_discount', 0);
+        $discountType = Params::getDiscountType($discount);
+
+        $page = is_product() ? 'product' : (is_shop() || is_product_category() ? 'category' : '');
+        $where = Params::getPixConfig('pix_show_price_locations');
+        $showPage = is_array($where) && in_array($page, $where);
+
+        if (!$enable_show_discount || !$discount || !$showPage) {
+            return $price;
+        }
+
+        // Check if the product is a variable product and if we are on the product page
+        if ($product->is_type('variable') && is_product()) {
+            return $price;
+        }
+
+        // Define the template name
+        $template_name = 'product-discount-pix.php';
+        // Check if the template exists in the theme
+        $template_path = locate_template('pagbank-connect/' . $template_name);
+
+        // If the template doesn't exist in the theme, use the default template from the plugin
+        if (!$template_path) {
+            $template_path = plugin_dir_path(__FILE__) . '../../templates/product/' . $template_name;
+            if (!file_exists($template_path)) {
+                return $price;
+            }
+        }
+
+        ob_start();
+        load_template($template_path, false, [
+            'discount' => $discount,
+            'discount_type' => $discountType,
+            'product' => $product,
+        ]);
+
+        $pix_discount_html = ob_get_clean();
+
+        return $pix_discount_html . $price;
+    }
+
 }
