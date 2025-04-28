@@ -89,9 +89,15 @@ class Pix extends Common
      */
     public static function showPriceDiscountPixProduct($price, $product) {
 
+        // Check if the product is a subscription or if the user is in the admin area
+        if (!$product || $product->get_meta('_recurring_enabled') == 'yes' || is_admin()) {
+            return $price;
+        }
+
         $enable_show_discount = Params::getPixConfig('pix_show_price_discount', 'no') == 'yes';
-        // Pega o percentual de desconto do Pix
+        // get discount value from settings
         $discount = Params::getPixConfig('pix_discount', 0);
+        $discountType = Params::getDiscountType($discount);
         
         $page = is_product() ? 'product' : (is_shop() || is_product_category() ? 'category' : '');
         $where = Params::getPixConfig('pix_show_price_locations');
@@ -101,17 +107,16 @@ class Pix extends Common
             return $price;
         }
 
-        // Evita exibir o desconto em produtos variáveis na página do produto
+        // Check if the product is variable and the price is not set
         if ($product->is_type('variable') && is_product()) {
             return $price;
         }
 
-        // Define o template
         $template_name = 'product-discount-pix.php';
-        // Verifica se o template existe no tema
+        // check if the template exists in the theme
         $template_path = locate_template('pagbank-connect/' . $template_name);
 
-        // Se o template não existir no tema, tenta carregar o template do plugin
+        // if the template does not exist in the theme, use the default template
         if (!$template_path) {
             $template_path = plugin_dir_path(__FILE__) . '../../templates/product/' . $template_name;
             if (!file_exists($template_path)) {
@@ -122,6 +127,7 @@ class Pix extends Common
         ob_start();
         load_template($template_path, false, [
             'discount' => $discount,
+            'discount_type' => $discountType,
             'product' => $product,
         ]);
 

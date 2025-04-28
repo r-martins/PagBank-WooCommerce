@@ -15,15 +15,16 @@ $data = $args;
 
 $product = $data['product'] ?? null;
 $discount_config = $data['discount'] ?? 0;
+$discount_type = $data['discount_type'] ?? null;
 
-if (!$product || !$discount_config) {
+if (!$product || !$discount_config || !$discount_type) {
     return;
 }
 
 // Prepara os dados
 $original_price = (float) $product->get_price();
-$discount = (float) $discount_config / 100.0;  
-$price_with_discount = $original_price - $discount * $original_price;
+$discountTotal = $discount_type == 'PERCENT' ? $original_price * (floatval($discount_config) / 100) : floatval($discount_config);
+$price_with_discount = $original_price - $discountTotal;
 $price_with_discount_formatted = '<b>' . wc_price($price_with_discount) . '</b>';
 $html_discount = sprintf(__('À vista no Pix: %s', 'pagbank-connect'), $price_with_discount_formatted);
 ?>
