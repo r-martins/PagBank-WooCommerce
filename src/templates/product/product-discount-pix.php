@@ -22,7 +22,7 @@ if (!$product || !$discount_config || !$discount_type) {
     return;
 }
 
-// Prepara os dados
+// Prepare discount data
 $original_price = (float) $product->get_price();
 $discountTotal = $discount_type == 'PERCENT' ? $original_price * (floatval($discount_config) / 100) : floatval($discount_config);
 $price_with_discount = $original_price - $discountTotal;
