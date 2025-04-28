@@ -4,6 +4,7 @@ namespace RM_PagBank\Connect\Payments;
 
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\Boleto as BoletoObj;
@@ -97,7 +98,7 @@ class Boleto extends Common
 
         $holderAddressStreet = $address->getStreet();
         //remove non A-Z 0-9 characters
-        $holderAddressStreet = preg_replace('/[^A-Za-z0-9\ ]/', '', $holderAddressStreet);
+        $holderAddressStreet =  Functions::stringClear($holderAddressStreet);
         $holderAddress->setStreet(substr($holderAddressStreet, 0, 100));
         $holderAddress->setRegionCode($address->getRegionCode());
 

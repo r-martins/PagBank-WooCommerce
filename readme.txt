@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.35.0
+Stable tag: 4.35.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -202,6 +202,9 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 
 == Changelog ==
 
+= 4.35.1 =
+* Correção: boletos tinham caracteres com acento omitidos em produção. Reportado por Elias da [Situati.com](https://situati.com).
+
 = 4.35.0 =
 * Agora é possível ocultar o e-mail do comprador e os produtos comprados enviados ao PagBank. Isso dá mais privacidade para o consumidor e evita e-mails indesejados enviados pelo PagBank ao seu cliente (mas pode prejudicar seu score de risco, especialmente em casos de chargebacks).
 * Em alguns cenários e configurações, o admin da loja não recebia e-mails de novo pedido, especialmente em pedidos via Boleto.
@@ -394,3 +397,4 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 8. Pedidos Recorrentes (assinaturas)
 9. Parcelamento na Página de Produto
 10. Suporte a Checkout em Blocos do WooCommerce
+11. Conteúdo para assinantes
