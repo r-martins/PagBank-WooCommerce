@@ -24,8 +24,6 @@ if (!$product || !$discount_config || !$discount_type) {
 
 // Prepara os dados
 $original_price = (float) $product->get_price();
-$discount = (float) $discount_config / 100.0;
-$price_with_discount = $original_price - $discount * $original_price;
 $discountTotal = $discount_type == 'PERCENT' ? $original_price * (floatval($discount_config) / 100) : floatval($discount_config);
 $price_with_discount = $original_price - $discountTotal;
 $price_with_discount_formatted = '<b>' . wc_price($price_with_discount) . '</b>';
