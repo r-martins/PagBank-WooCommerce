@@ -307,7 +307,7 @@ class CreditCard extends Common
      */
     public static function updateProductInstallmentsTransient($product, $updatedProps)
     {
-        if (!array_intersect(['regular_price', 'sale_price', 'product_page'], $updatedProps)) {
+        if (!array_intersect(['regular_price', 'sale_price', 'product_page', 'variation_page'], $updatedProps)) {
             return;
         }
         
@@ -319,15 +319,30 @@ class CreditCard extends Common
         $price        = $product->get_price();
         $parent_id    = get_class($product) == 'WC_Product_Variation' ? $product->get_parent_id() : null;
 
-        // Sempre gerar o cache principal
+        // Permanent cache key for the product
         $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d", $parent_id ?: $product_id);
         self::buildTransactionData($main_cache_key, $price);
 
-        // Se for variação, também gera o cache da variação específica
+        // If the product is a variation, we need to create a cache key for the parent product
         if ($parent_id) {
             $variation_cache_key = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $parent_id, $product_id);
             self::buildTransactionData($variation_cache_key, $price);
         }
+    }
+
+
+    /**
+     * Function to update the transient when the product variation is updated
+     * @param int $product_id
+     * @param object $product
+     * @return void
+     */
+    public static function updateProductVariationTransient($product_id, $product)
+    {
+        if (!$product_id || !$product) {
+            return;
+        }
+        self::updateProductInstallmentsTransient($product, ['variation_page']);
     }
 
     public static function buildTransactionData($transientId, $price)
@@ -477,11 +492,10 @@ class CreditCard extends Common
         $_price = (float) $_GET['_price'] ?? 0;
         
         if(!$_productId || !$_variationId || !$_price) {
-            return rest_ensure_response(new WP_Error(
-                '400',
-                'Erro',
-                ['status' => 400]
-            ));
+            return rest_ensure_response([
+                'status' => 'error',
+                'html' => __('Invalid product or variation ID', 'pagbank-connect'),
+            ]);
         }
      
         $ccEnabledInstallments = Params::getCcConfig('cc_installment_product_page');
