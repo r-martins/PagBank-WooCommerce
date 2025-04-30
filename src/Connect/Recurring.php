@@ -100,8 +100,23 @@ class Recurring
         add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
         add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
         add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
+        self::showMessegesTransient();
     }
 
+    public static function showMessegesTransient()
+    {
+        if ($mensagem = get_transient('pagbank_recurring_message')) {
+            wp_admin_notice(
+                esc_html($mensagem),
+                array(
+                    'id'                 => 'message',
+                    'additional_classes' => array('updated'),
+                    'dismissible'        => true,
+                )
+            );
+            delete_transient('pagbank_recurring_message');
+        }
+    }
     public static function recurringSettingsFields($settings, $current_section)
     {
         if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
@@ -1395,7 +1410,7 @@ class Recurring
         $update = $this->updateSubscription($subscription, [
             'recurring_amount' => floatval(number_format($recurringAmount,2,'.','')),
         ]);
-        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
+        $fromAdmin = 'ADMIN'; //phpcs:ignore WordPress.Security.NonceVerification
         if ($update){
             $this->addNotice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
             return;
@@ -1805,14 +1820,7 @@ class Recurring
     public function addNotice($message, $reasonType, $class = null){
 
         if( $reasonType == 'ADMIN' ){
-            wp_admin_notice(
-                $message,
-                array(
-                    'id'                 => 'message',
-                    'additional_classes' => is_array($class) ? $class : array( 'updated' ),
-                    'dismissible'        => true,
-                )
-            );
+            set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
             return;
         }
 

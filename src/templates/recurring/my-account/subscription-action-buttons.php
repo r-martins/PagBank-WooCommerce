@@ -45,7 +45,7 @@ $actions = apply_filters('rm_pagbank_account_recurring_actions', [
     ],
     'edit' => [
         'name' => __('Editar Assinatura', 'pagbank-connect'),
-        'url' => admin_url('admin.php?page=rm-pagbank-subscriptions-edit&action=edit&id=' . $subscription->id),
+        'url' => admin_url('admin.php?page=rm-pagbank-subscriptions-edit&_action=edit&id=' . $subscription->id) . '&fromAdmin=1',
         'class' => 'subscription-button edit',
     ],
     'update' => [
