@@ -83,11 +83,11 @@ class Pix extends Common
     }
 
     /**
-      * Show the discount on the product page
-      * @param mixed $price
-      * @param mixed $product
-      */
-      public static function showPriceDiscountPixProduct($price, $product) {
+    * Show the discount on the product page
+    * @param mixed $price
+    * @param mixed $product
+    */
+    public static function showPriceDiscountPixProduct($price, $product) {
         
         // Check if the product is a subscription or if the user is in the admin area
         if (!$product || $product->get_meta('_recurring_enabled') == 'yes' || is_admin()) {
@@ -111,6 +111,14 @@ class Pix extends Common
         if ($product->is_type('variable') && is_product()) {
             return $price;
         }
+
+        // Add the CSS for the discount
+        wp_enqueue_style(
+            'pagseguro-connect-product-discount-pix', 
+            plugins_url('public/css/product-discount-pix.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            false, 
+            WC_PAGSEGURO_CONNECT_VERSION
+        );
 
         // Define the template name
         $template_name = 'product-discount-pix.php';

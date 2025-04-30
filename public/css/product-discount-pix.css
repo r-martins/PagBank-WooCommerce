@@ -1,0 +1,14 @@
+.rm-pagbank-price {
+    display: inline-block;
+    background-color: #e6f7ec;
+    color: #1a7f37;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-family: sans-serif;
+    margin-bottom: 5px;
+}
+.rm-pagbank-price b {
+    font-weight: 600;
+    color: inherit;
+}
