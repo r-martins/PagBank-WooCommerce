@@ -120,13 +120,14 @@ jQuery(document).ready(function($) {
 	//endregion
 
     jQuery(".icon-color-picker").wpColorPicker({defaultColor: 'gray'});
-        // show or hide the pix discount options based on the selected option
-        function handleShowPixDiscount() {
-            jQuery('#woocommerce_rm-pagbank-pix_pix_show_price_locations').closest('tr').hide();
-            if(jQuery('#woocommerce_rm-pagbank-pix_pix_show_price_discount').is(':checked')){
-                jQuery('#woocommerce_rm-pagbank-pix_pix_show_price_locations').closest('tr').show();
-            }
+    //region show or hide the pix discount options based on the selected option
+    function handleShowPixDiscount() {
+        jQuery('#woocommerce_rm-pagbank-pix_pix_show_price_locations').closest('tr').hide();
+        if(jQuery('#woocommerce_rm-pagbank-pix_pix_show_price_discount').is(':checked')){
+            jQuery('#woocommerce_rm-pagbank-pix_pix_show_price_locations').closest('tr').show();
         }
-        jQuery(document).on('change', handleShowPixDiscount);
-        handleShowPixDiscount();
+    }
+    jQuery(document).on('change', handleShowPixDiscount);
+    handleShowPixDiscount();
+    //endregion
 });
