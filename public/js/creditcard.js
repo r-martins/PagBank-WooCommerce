@@ -341,7 +341,7 @@ jQuery(document).ready(function ($) {
         let customerName = checkoutFormDataObj['billing_first_name'] + ' ' + checkoutFormDataObj['billing_last_name'];
         customerName = customerName.trim().replace(/\s+/g, ' '); //removing duplicated spaces in the middle
         customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
-        var billing_phone = typeof(checkoutFormDataObj['billing_phone']) !== 'undefined' ? checkoutFormDataObj['billing_phone'] : checkoutFormDataObj['billing_cellphone']; 
+        var billing_phone = checkoutFormDataObj['billing_cellphone']?.length ? checkoutFormDataObj['billing_cellphone'] : checkoutFormDataObj['billing_phone'] ?? null;
 
         let orderData = typeof pagBankOrderDetails !== 'undefined'
             ? pagBankOrderDetails.data //if order-pay page
