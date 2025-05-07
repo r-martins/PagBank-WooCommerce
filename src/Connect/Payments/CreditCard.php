@@ -307,7 +307,7 @@ class CreditCard extends Common
      */
     public static function updateProductInstallmentsTransient($product, $updatedProps)
     {
-        if (!array_intersect(['regular_price', 'sale_price', 'product_page', 'variation_page'], $updatedProps)) {
+        if (!array_intersect(['regular_price', 'sale_price', 'product_page'], $updatedProps)) {
             return;
         }
         
@@ -319,20 +319,35 @@ class CreditCard extends Common
         $price        = $product->get_price();
         $parent_id    = get_class($product) == 'WC_Product_Variation' ? $product->get_parent_id() : null;
 
-        // Permanent cache key for the product
-        $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d", $parent_id ?: $product_id);
-        self::buildTransactionData($main_cache_key, $price);
-
         // If the product is a variation, we need to create a cache key for the parent product
         if ($parent_id) {
             $variation_cache_key = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $parent_id, $product_id);
             self::buildTransactionData($variation_cache_key, $price);
+            return; // break
         }
+        // Permanent cache key for the product
+        $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d", $parent_id ?: $product_id);
+        self::buildTransactionData($main_cache_key, $price);
     }
 
-
     /**
-     * Function to update the transient when the product variation is updated
+     * Function to update the transient when the product is updated or created
+     * @param  $product       
+     * @param  $updated_props 
+     * @return void
+     */
+    public static function updateProductTransient($product, $updatedProps)
+    {
+        if($product->get_type() == "variable"){
+            // configurable products do not have a price,
+            // but the hook for updateProductVariationTransient will be triggered next
+            return; 
+        }
+
+        self::updateProductInstallmentsTransient($product, $updatedProps);
+    }
+    /**
+     * Function to update the transient when the product variation is updated or created
      * @param int $product_id
      * @param object $product
      * @return void
@@ -342,7 +357,7 @@ class CreditCard extends Common
         if (!$product_id || !$product) {
             return;
         }
-        self::updateProductInstallmentsTransient($product, ['variation_page']);
+        self::updateProductInstallmentsTransient($product, $product->get_changes());
     }
 
     public static function buildTransactionData($transientId, $price)
