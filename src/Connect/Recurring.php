@@ -117,7 +117,7 @@ class Recurring
             delete_transient('pagbank_recurring_message');
         }
     }
-    public function recurringSettingsFields($settings, $current_section)
+    public static function recurringSettingsFields($settings, $current_section)
     {
         if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
             return $settings;
