@@ -392,6 +392,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 
     /**
      * Add js files for checkout and success page
+     * @param bool $force
      * @return void
      */
     public function addScripts($force=false) {
