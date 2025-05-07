@@ -114,7 +114,7 @@ class Pix extends Common
 
         $css_file = "product-discount-pix.css";
         $css_file_path = locate_template('pagbank-connect/' . $css_file);
-        $css_file_default = plugins_url('public/css/product-discount-pix.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+        $css_file_default = plugins_url('public/css/' . $css_file, WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
         // If the css doesn't exist in the theme, use the default template from the plugin
         $css_file_path = $css_file_path && file_exists($css_file_path) ? get_stylesheet_directory_uri() . '/pagbank-connect/' . $css_file
             : $css_file_default;
