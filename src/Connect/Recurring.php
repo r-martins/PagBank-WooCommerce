@@ -313,6 +313,7 @@ class Recurring
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_pages', true),
                     'custom_attributes' => ['multiple' => 'multiple'],
+                    'class' => 'wc-enhanced-select short'
                 ]);
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_categories',
@@ -323,6 +324,7 @@ class Recurring
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_categories', true),
                     'custom_attributes' => ['multiple' => 'multiple'],
+                    'class' => 'wc-enhanced-select short'
                 ]);
                 woocommerce_wp_select([
                     'id' => '_recurring_restricted_unauthorized_page',
@@ -1406,9 +1408,10 @@ class Recurring
     {
         $recurringAmount = sanitize_text_field($_POST['recurring_amount']);
         $recurringAmount = preg_replace('/[^0-9,.]/', '', $recurringAmount);
-        $recurringAmount = str_replace(",",".",$recurringAmount);
+        $recurringAmount = str_replace(['.', ','], ['', '.'], $recurringAmount);
+        $recurringAmount = floatval(number_format((float) $recurringAmount, 2, '.', ''));
         $update = $this->updateSubscription($subscription, [
-            'recurring_amount' => floatval(number_format($recurringAmount,2,'.','')),
+            'recurring_amount' => $recurringAmount,
         ]);
         $fromAdmin = 'ADMIN'; //phpcs:ignore WordPress.Security.NonceVerification
         if ($update){

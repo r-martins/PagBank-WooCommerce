@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro, pagbank, pix, recorrencia, brasil
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.33.2
+Stable tag: 4.35.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -202,6 +202,27 @@ Você deve fazer isso através de Pull Requests ao [repositório oficial no gith
 
 == Changelog ==
 
+= 4.35.1 =
+* Correção: boletos tinham caracteres com acento omitidos em produção. Reportado por Elias da [Situati.com](https://situati.com).
+
+= 4.35.0 =
+* Agora é possível ocultar o e-mail do comprador e os produtos comprados enviados ao PagBank. Isso dá mais privacidade para o consumidor e evita e-mails indesejados enviados pelo PagBank ao seu cliente (mas pode prejudicar seu score de risco, especialmente em casos de chargebacks).
+* Em alguns cenários e configurações, o admin da loja não recebia e-mails de novo pedido, especialmente em pedidos via Boleto.
+* Adicionamos um pequeno lembrete sobre a necessidade das chaves aleatórias na tela de configuração do PIX para evitar a geração de códigos pix inválidos para usuários novos do PagBank.
+* Ao editar o valor de uma assinatura ativa no admin, um erro fatal poderia ocorrer devido à formatação do número/valor.
+
+= 4.34.0 =
+* Adicionado suporte ao WordPress 6.8
+* Melhoria no seletor de meios de pagamento da recorrencia e no seletor de restrição de páginas e categorias de conteúdo restrito.
+
+= 4.33.4 =
+* Correção: nos casos onde o pedido inicial de uma recorrência era excluido um erro ocorria e impedia outras recorrências de serem cobradas. (Reportado por Ricardo da InfoDoors)
+
+= 4.33.3 =
+* Correção/melhoria: ao digitar uma connect key inválida, a validação dizia "Resposta API Vazia" ao invés de dizer que a chave está incorreta
+* Correção: Quando assinaturas tem descontos na primeira cobrança, o frete era excluido nas cobranças seguintes. (Reportado por Ricardo da InfoDoors)
+* Correção: nos casos onde o pedido inicial de uma recorrência era excluido um erro ocorria e impedia outras recorrências de serem cobradas. (Reportado por Ricardo da InfoDoors)
+
 = 4.33.2 =
 * Melhoria: agora o botão de Live Preview está disponível na pagina do nosso plugin
 * Correção/Melhoria: nos casos onde a opcao 'Até X parcelas sem juros' é configurado como 1 (Ao invés de escolher a opção 'Juros por conta do comprador') é utilizada, uma mensagem de erro era caregada no cálculo de parcelas (Parameter max_installments_no_interest should be equal 0 or greater than 1.) impossibilitando a compra com cartão.
@@ -376,3 +397,4 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 8. Pedidos Recorrentes (assinaturas)
 9. Parcelamento na Página de Produto
 10. Suporte a Checkout em Blocos do WooCommerce
+11. Conteúdo para assinantes

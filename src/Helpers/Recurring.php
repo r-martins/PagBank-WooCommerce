@@ -291,7 +291,7 @@ class Recurring
         $hasTrial = $this->getCartRecurringTrial($cart);
         $hasDiscount = $this->hasDiscount($product);
         if ($hasTrial || $hasDiscount) {
-            $total = 0;
+            $total = $cart->get_shipping_total('edit') ?? 0;
             foreach ($cart->get_cart() as $cartItem) {
                 $product = $cartItem['data'];
                 $total += $product->get_data()['price'];
@@ -388,13 +388,14 @@ class Recurring
     public function getRecurringAmountFromOrderItems(WC_Order $order): float
     {
         $total = 0;
+        $shipping_total = $order->get_shipping_total() ?? 0;
         foreach ($order->get_items() as $item){
             $product = $item->get_product();
             if ($product->get_meta('_recurring_enabled') == 'yes'){
                 $total += $product->get_price();
             }
         }
-        return $total;
+        return $total + $shipping_total;
     }
 
     public function hasSubscriptionChargeRemaining($subscription): bool
