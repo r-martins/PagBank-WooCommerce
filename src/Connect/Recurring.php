@@ -100,7 +100,7 @@ class Recurring
         add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
         add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
         add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
-        self::showMessegesTransient();
+        add_action('admin_notices', [$this,'showMessegesTransient'], 10, 2);
     }
 
     public static function showMessegesTransient()
@@ -117,7 +117,7 @@ class Recurring
             delete_transient('pagbank_recurring_message');
         }
     }
-    public static function recurringSettingsFields($settings, $current_section)
+    public function recurringSettingsFields($settings, $current_section)
     {
         if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
             return $settings;
