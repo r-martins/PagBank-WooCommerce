@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.35.1
+Stable tag: 4.35.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.35.2 =
+* Melhoria: agora ficou mais fácil obter sua connect key. As informações do formulário já virão pré-preenchidas e a connect key será adicionada automaticamente evitando erros.
+* Melhoria/correção: dependendo das configurações do plugin Extra Checkout Fields for Brazil, o campo de telefone poderia não ser enviado na autenticação 3D, impedindo finalização do pedido.
+* Correção: em alguns casos quando um admin executava uma ação em uma assinatura a mensagem de erro ou sucesso nem sempre era exibida no backend.
 
 = 4.35.1 =
 * Correção: boletos tinham caracteres com acento omitidos em produção. Reportado por Elias da [Situati.com](https://situati.com).

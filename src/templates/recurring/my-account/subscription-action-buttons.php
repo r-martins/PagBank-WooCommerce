@@ -21,33 +21,31 @@ do_action('rm_pagbank_before_account_recurring_action_buttons', $subscription);
 if ( ! isset($subscription->id) || ! $subscription->id ) {
     return;
 }
-$isAdminEndpoint = is_admin() && ! defined( 'DOING_AJAX' );
-$cancelURL = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=cancel&id=' . $subscription->id;
-$cancelURL .= $isAdminEndpoint ? '&fromAdmin=1' : '';
+
 $actions = apply_filters('rm_pagbank_account_recurring_actions', [
     'cancel' => [
         'name' => __('Cancelar Assinatura', 'pagbank-connect'),
-        'url' => $cancelURL,
+        'url' => subscriptionActionButtonsUrl('cancel', $subscription),
         'class' => 'subscription-button cancel',
     ],
     'uncancel' => [
         'name' => __('Suspender Cancelamento', 'pagbank-connect'),
-        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=uncancel&id=' . $subscription->id,
+        'url' => subscriptionActionButtonsUrl('uncancel', $subscription),
         'class' => 'subscription-button uncancel',
     ],
     'pause' => [
         'name' => __('Pausar Assinatura', 'pagbank-connect'),
-        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pause&id=' . $subscription->id,
+        'url' => subscriptionActionButtonsUrl('pause', $subscription),
         'class' => 'subscription-button suspend',
     ],
     'unpause' => [
         'name' => __('Resumir Assinatura', 'pagbank-connect'),
-        'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id,
+        'url' => subscriptionActionButtonsUrl('unpause', $subscription),
         'class' => 'subscription-button suspend',
     ],
     'edit' => [
         'name' => __('Editar Assinatura', 'pagbank-connect'),
-        'url' => admin_url('admin.php?page=rm-pagbank-subscriptions-edit&action=edit&id=' . $subscription->id),
+        'url' => admin_url('admin.php?page=rm-pagbank-subscriptions-edit&_action=edit&id=' . $subscription->id) . '&fromAdmin=1',
         'class' => 'subscription-button edit',
     ],
     'update' => [
@@ -61,3 +59,17 @@ if ( ! empty( $actions ) ) {
         echo '<a href="' . esc_url( $action['url'] ) . '" class="woocommerce-button ' . esc_attr( $action['class'] ) . ' button ' . sanitize_html_class( $key ) . '">' . esc_html( $action['name'] ) . '</a>';
     }
 }
+
+function subscriptionActionButtonsUrl($endpoint, $subscription){
+
+    if ( ! $subscription || ! isset($subscription->id) ) {
+        return false;
+    }
+
+    $isAdmin = is_admin() && ! defined( 'DOING_AJAX' );
+    $url = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=' . $endpoint . '&id=' . $subscription->id;
+    $url .= $isAdmin ? '&fromAdmin=1' : '';
+    return $url;
+
+}
+
