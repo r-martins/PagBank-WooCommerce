@@ -29,7 +29,8 @@ $price_with_discount = $original_price - $discountTotal;
 $price_with_discount_formatted = '<b>' . wc_price($price_with_discount) . '</b>';
 $html_discount = sprintf(__('À vista no Pix: %s', 'pagbank-connect'), $price_with_discount_formatted);
 ?>
-<span class="rm-pagbank-price">
-   <div class="icon-pix"></div> <?php echo $html_discount ?>
-</span>
+<div class="rm-pagbank-price">
+   <div class="icon-pix"></div>
+   <?php echo $html_discount ?>
+</div>
 <br />
