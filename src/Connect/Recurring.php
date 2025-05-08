@@ -100,8 +100,23 @@ class Recurring
         add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
         add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
         add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
+        add_action('admin_notices', [$this,'showMessegesTransient'], 10, 2);
     }
 
+    public static function showMessegesTransient()
+    {
+        if ($mensagem = get_transient('pagbank_recurring_message')) {
+            wp_admin_notice(
+                esc_html($mensagem),
+                array(
+                    'id'                 => 'message',
+                    'additional_classes' => array('updated'),
+                    'dismissible'        => true,
+                )
+            );
+            delete_transient('pagbank_recurring_message');
+        }
+    }
     public static function recurringSettingsFields($settings, $current_section)
     {
         if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
@@ -1235,7 +1250,7 @@ class Recurring
                 Functions::log('Assinatura cancelada com sucesso.', 'info', ['subscription id' => $subscription->id]);
                 return;
             }
-            \wc_add_notice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'));
+            $this->addNotice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'), $reasonType, 'success');
             return;            
         }
         
@@ -1243,14 +1258,15 @@ class Recurring
             Functions::log('Não foi possível cancelar a assinatura.', 'error', ['subscription id' => $subscription->id]);
             return;
         }
-        
-        \wc_add_notice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'), 'error');
+
+        $this->addNotice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'), $reasonType, 'error');
     }
 
     /** @noinspection PhpUnused */
     public function uncancelSubscriptionAction(\stdClass $subscription): void
     {
         global $wpdb;
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         $initialOrder = wc_get_order($subscription->initial_order_id);
         if ($subscription->status != 'PENDING_CANCEL') {
             \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
@@ -1275,11 +1291,10 @@ class Recurring
         }
         
         if ($update > 0) {
-            \wc_add_notice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'));
+            $this->addNotice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'), $fromAdmin, 'success');
             return;
         }
-        
-        \wc_add_notice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'), 'error');
+        $this->addNotice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'), $fromAdmin, 'error');
     }
 
     /**
@@ -1294,6 +1309,7 @@ class Recurring
     {
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
             \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
@@ -1313,10 +1329,10 @@ class Recurring
             do_action('pagbank_recurring_subscription_status_changed', $subscription, 'PAUSED');
         }
         if ($update > 0){
-            \wc_add_notice(__('Assinatura pausada com sucesso.', 'pagbank-connect'));
+            $this->addNotice(__('Assinatura pausada com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
             return;
         }
-        \wc_add_notice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'), 'error');
+        $this->addNotice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'), $fromAdmin, 'error');
     }
 
     /** @noinspection PhpUnused */
@@ -1325,9 +1341,9 @@ class Recurring
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         $status = 'ACTIVE';
-
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         if ($subscription->status != 'PAUSED') {
-            \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
+            $this->addNotice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), $fromAdmin, 'error');
             return;
         }
         //if next_bill_at < current date, update the next_bill_at with current time
@@ -1347,7 +1363,7 @@ class Recurring
 
         if ($update > 0)
         {
-            \wc_add_notice(__('Assinatura resumida com sucesso.', 'pagbank-connect'));
+            $this->addNotice(__('Assinatura resumida com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
             do_action(
                 'pagbank_recurring_subscription_unpaused_notification',
                 $subscription,
@@ -1357,12 +1373,12 @@ class Recurring
             
             if ($isDueNow) {
                 $this->processRecurringPayments($subscription);
-                \wc_add_notice(__('Um pagamento devido foi processado.', 'pagbank-connect'));
+                $this->addNotice(__('Um pagamento devido foi processado.', 'pagbank-connect'), $fromAdmin, 'success');
             }
             return;
         }
-        
-        \wc_add_notice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), 'error');
+
+        $this->addNotice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), $fromAdmin, 'error');
     }
 
     /**
@@ -1397,15 +1413,17 @@ class Recurring
         $update = $this->updateSubscription($subscription, [
             'recurring_amount' => $recurringAmount,
         ]);
+        $fromAdmin = 'ADMIN'; //phpcs:ignore WordPress.Security.NonceVerification
         if ($update){
-            \wc_add_notice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'));
+            $this->addNotice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
             return;
         }
-        \wc_add_notice(__('Não foi possível atualizar a assinatura.', 'pagbank-connect'), 'error');
+        $this->addNotice('Não foi possível atualizar a assinatura.', $fromAdmin, 'error');
     }
 
     public function changePaymentMethodSubscriptionAction(\stdClass $subscription): void
     {
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         $order = wc_get_order($subscription->initial_order_id);
         $order->add_meta_data(
             '_pagbank_card_encrypted',
@@ -1424,7 +1442,7 @@ class Recurring
             $method->process_response($order, $resp);
         } catch (Exception $e) {
             $message = sprintf(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'), $e->getMessage());
-            wc_add_notice($message, 'error');
+            $this->addNotice($message, $fromAdmin, 'error');
             return;
         }
         $order->update_meta_data('pagbank_payment_method', $method->code);
@@ -1434,12 +1452,12 @@ class Recurring
         ]);
 
         if ($update){
-            wc_add_notice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'));
+            $this->addNotice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
             do_action('pagbank_recurring_subscription_payment_method_changed', $subscription->id);
             return;
         }
-
-        wc_add_notice(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'), 'error');
+        
+        $this->addNotice(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'), $fromAdmin, 'error');
     }
 
     // endregion
@@ -1800,5 +1818,15 @@ class Recurring
             $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
             $recurringOrder->createRecurringOrderFromSub();
         }
+    }
+
+    public function addNotice($message, $reasonType, $class = null){
+
+        if( $reasonType == 'ADMIN' ){
+            set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+            return;
+        }
+
+        \wc_add_notice($message, $class);
     }
 }
