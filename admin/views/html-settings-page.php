@@ -35,9 +35,52 @@ use RM_PagBank\Connect\Gateway;
     <?php if ($this->id === 'rm-pagbank'): ?>
         <h3><?php esc_html_e('Credenciais', 'pagbank-connect') ?></h3>
         <p><?php esc_html_e('Para utilizar o PagBank Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', 'pagbank-connect') ?></p>
-        <a href="https://pbintegracoes.com/connect/autorizar/?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key', 'pagbank-connect') ?></a>
-        <a href="https://pbintegracoes.com/connect/sandbox/?utm_source=wordpressadmin" target="_blank" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
+        <a href="https://pbintegracoes.com/connect/autorizar/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key', 'pagbank-connect') ?></a>
+        <a href="https://pbintegracoes.com/connect/sandbox/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
         <a href="https://ajuda.pbintegracoes.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php esc_html_e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', 'pagbank-connect');?>"><?php esc_html_e('Obter ajuda', 'pagbank-connect') ?></a>
     <?php endif; ?>
     <?php echo '<table class="form-table">' . $this->generate_settings_html( $this->get_form_fields(), false ) . '</table>'; // WPCS: XSS ok. ?>
 </fieldset>
+
+<?php
+//current user first name and last name
+try{
+    $adminName = wp_get_current_user()->first_name . ' ' . wp_get_current_user()->last_name;
+    $adminEmail = wp_get_current_user()->user_email;
+    $siteUrl = get_site_url();
+    ?>
+    <script type="text/javascript">
+        // Listen for messages from the new window so we may help you to pre-fill the form
+        window.addEventListener('message', (event) => {
+            // Returns admin data to the new window
+            if (event.data === 'requestAdminData' && event.origin.indexOf('pbintegracoes.com') !== -1) {
+                event.source.postMessage(
+                    {
+                        adminName: '<?php echo esc_js($adminName); ?>',
+                        adminEmail: '<?php echo esc_js($adminEmail); ?>',
+                        siteUrl: '<?php echo esc_js($siteUrl); ?>'
+                    },
+                    event.origin // Use the origin of the request
+                );
+            }
+            
+            // Fill connect key
+            if (event.data && event.data.connectKey && event.origin.indexOf('pbintegracoes.com') !== -1) {
+                const connectKeyField = document.querySelector('input[name="woocommerce_rm-pagbank_connect_key"]');
+                if (connectKeyField) {
+                    // connectKeyField.value = event.data.connectKey;
+                    connectKeyField.setAttribute('value', event.data.connectKey);
+                    jQuery(connectKeyField).trigger("change");
+                    connectKeyField.focus();
+                    window.focus();
+                    if(confirm('Já preenchemos a Connect Key pra você. Deseja salvar agora?')){
+                        document.querySelector('button[name="save"]').click();
+                    }
+                }
+            }
+        });
+    </script>
+<?php
+} catch (Exception $e) {
+    // nothing to do here
+}
