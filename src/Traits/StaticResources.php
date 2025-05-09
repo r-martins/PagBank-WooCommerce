@@ -113,11 +113,12 @@ trait StaticResources
             ['jquery'],
             WC_PAGSEGURO_CONNECT_VERSION,
         );
+        $woo_hold_stock_min = get_option( 'woocommerce_hold_stock_minutes');
         $scriptData = array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'action' => 'pagbank_dismiss_pix_order_keys_notice',
-            'woocommerce_hold_stock_pix_validation' => intval(get_option( 'woocommerce_hold_stock_minutes')) <= intval(Params::getPixConfig('pix_expiry_minutes')),
-            'woocommerce_hold_stock_boleto_validation' => intval(get_option( 'woocommerce_hold_stock_minutes')) <= (intval(Params::getBoletoConfig('boleto_expiry_days')) * 24 * 60)
+            'woocommerce_hold_stock_pix_validation' => !empty($woo_hold_stock_min) && intval($woo_hold_stock_min) <=  intval(Params::getPixConfig('pix_expiry_minutes')),
+            'woocommerce_hold_stock_boleto_validation' => !empty($woo_hold_stock_min) && intval($woo_hold_stock_min) <= (intval(Params::getBoletoConfig('boleto_expiry_days')) * 24 * 60)
         );
         wp_localize_script('pagseguro-connect-admin-pix-notice', 'script_data', $scriptData);
         wp_enqueue_script('pagseguro-connect-admin-pix-notice');
