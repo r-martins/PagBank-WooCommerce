@@ -314,14 +314,61 @@ class CreditCard extends Common
         if (!$product) {
             return;
         }
-        
-        delete_transient('rm_pagbank_product_installment_info_' . $product->get_id());
+
+        $product_id   = $product->get_id();
+        $price        = $product->get_price();
+        $parent_id    = get_class($product) == 'WC_Product_Variation' ? $product->get_parent_id() : null;
+
+        // If the product is a variation, we need to create a cache key for the parent product
+        if ($parent_id) {
+            $variation_cache_key = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $parent_id, $product_id);
+            self::buildTransactionData($variation_cache_key, $price);
+            return; // break
+        }
+        // Permanent cache key for the product
+        $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d", $parent_id ?: $product_id);
+        self::buildTransactionData($main_cache_key, $price);
+    }
+
+    /**
+     * Function to update the transient when the product is updated or created
+     * @param  $product       
+     * @param  $updated_props 
+     * @return void
+     */
+    public static function updateProductTransient($product, $updatedProps)
+    {
+        if($product->get_type() == "variable"){
+            // configurable products do not have a price,
+            // but the hook for updateProductVariationTransient will be triggered next
+            return; 
+        }
+
+        self::updateProductInstallmentsTransient($product, $updatedProps);
+    }
+    /**
+     * Function to update the transient when the product variation is updated or created
+     * @param int $product_id
+     * @param object $product
+     * @return void
+     */
+    public static function updateProductVariationTransient($product_id, $product)
+    {
+        if (!$product_id || !$product) {
+            return;
+        }
+        self::updateProductInstallmentsTransient($product, $product->get_changes());
+    }
+
+    public static function buildTransactionData($transientId, $price)
+    {
+        delete_transient($transientId);
 
         $ccInstallmentProductPage = Params::getCcConfig('cc_installment_product_page');
         $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
 
         if ($ccInstallmentProductPage === 'yes' || $ccShortcodeInUse === 'yes') {
-            $default_installments = Params::getInstallments($product->get_price(), '555566');
+            $default_installments = Params::getInstallments($price, '555566');
 
             if ($default_installments && !isset($default_installments['error'])) {
                 $installments = [];
@@ -342,7 +389,7 @@ class CreditCard extends Common
 
             if (!empty($installmentsData)) {
                 set_transient(
-                    'rm_pagbank_product_installment_info_'.$product->get_id(),
+                    $transientId,
                     $installmentsData,
                     YEAR_IN_SECONDS
                 );
@@ -396,6 +443,9 @@ class CreditCard extends Common
                     return;
                 }
 
+                if($product->get_type() == 'variable') {
+                    self::addScriptProductVariableInstallments();
+                }
                 //checks if is being called by do_shortcode so don't output the template
                 if ($calledByDoShortcode)
                     ob_start();
@@ -409,6 +459,94 @@ class CreditCard extends Common
         }
     }
 
+    /**
+     * Add the script to the product variable page
+     * 
+     * @param string $type
+     * @return void
+     */
+    public static function addScriptProductVariableInstallments()
+    {
+        if(is_admin()){
+            return;
+        }
+
+        wp_enqueue_script(
+            'pagseguro-connect-product-variable',
+            plugins_url('public/js/product-variable.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['jquery', 'jquery-payment'],
+            WC_PAGSEGURO_CONNECT_VERSION,
+            ['strategy' => 'defer', 'in_footer' => true]
+        );
+
+        wp_localize_script(
+            'pagseguro-connect-product-variable',
+            'ajax_object',
+            ['rest_installments' => get_rest_url(null, 'pagbank/installments/event/')]
+        );
+    }
+
+    public static function restApiInstallments()
+    {
+        register_rest_route('pagbank/installments', '/event/', [
+            'methods'  => 'GET',
+            'callback' => [static::class, 'getProductVariableInstallmentsAjax'],
+            'permission_callback' => '__return_true' // ou lógica de permissão
+        ]);
+    }
+
+    /**
+     * Return Table HTML
+     * 
+     * @return WP_REST_Response|WP_Error
+     */
+    public static function getProductVariableInstallmentsAjax(){
+
+        $_productId = (int) $_GET['_product_id'] ?? 0;
+        $_variationId = (int) $_GET['_variation_id'] ?? 0;
+        $_price = (float) $_GET['_price'] ?? 0;
+        
+        if(!$_productId || !$_variationId || !$_price) {
+            return rest_ensure_response([
+                'status' => 'error',
+                'html' => __('Invalid product or variation ID', 'pagbank-connect'),
+            ]);
+        }
+     
+        $ccEnabledInstallments = Params::getCcConfig('cc_installment_product_page');
+        $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
+
+        if ($ccEnabledInstallments === 'yes' || $ccShortcodeInUse === 'yes') {
+            $transient_id = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $_productId, $_variationId);
+            $installment_info = get_transient($transient_id);
+            if (!$installment_info) {
+                self::buildTransactionData($transient_id, $_price);
+                $installment_info = get_transient($transient_id);
+            }
+            if ($installment_info) {
+                $type = Params::getCcConfig('cc_installment_product_page_type', 'table');
+                $type = preg_replace("/[^a-z\-]/", "", $type); //safety is paramount
+                $template_name = "product-installments-$type.php";
+                $template_path = locate_template('pagbank-connect/' . $template_name);
+                $args = json_decode($installment_info);
+                
+                if (!$template_path) {
+                    $template_path = dirname(__FILE__) . '/../../templates/product/' . $template_name;
+                }
+        
+                ob_start();
+                    load_template($template_path, false, $args); 
+                $html = ob_get_clean();
+
+            }  
+        }
+
+        return rest_ensure_response([
+            'status' => 'ok',
+            'html' => $html ?? '',
+            'installments' => $installment_info ?? [],
+        ]);
+    }
     /**
      * Function to delete the installment transients if the configuration has changed
      * @return void
