@@ -52,6 +52,28 @@ return array(
         'default'     => 0,
         'desc_tip'    => false,
 	],
+    'pix_show_price_discount' => [
+        'title'       => __('Exibir desconto', 'pagbank-connect'),
+        'label'       => __('Exibir desconto no produto', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => __(
+            'Se marcado, o desconto do Pix será exibido de acordo com a configuração abaixo.',
+            'pagbank-connect'
+        ),
+        'default'     => 'no',
+        'desc_tip'    => false,
+    ],
+    'pix_show_price_locations' => [
+        'title'       => __('Onde exibir o preço com desconto', 'pagbank-connect'),
+        'type'       => 'multiselect',
+        'class'      => 'wc-enhanced-select',
+        'description' => __('Escolha onde exibir o desconto do Pix.', 'pagbank-connect'),
+        'default'     => ['product', 'category'],
+        'options'     => [
+            'product'   => __('Página do produto', 'pagbank-connect'),
+            'category' => __('Página de categoria', 'pagbank-connect'),
+        ],
+    ],
     'pix_discount_excludes_shipping' => [
         'title'       => __('Excluir Frete', 'pagbank-connect'),
         'label'       => __('Não aplicar desconto ao Frete', 'pagbank-connect'),
