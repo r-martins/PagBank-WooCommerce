@@ -8,6 +8,7 @@ use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
 use RM_PagBank\Connect\OrderProcessor;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
 use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
 use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
@@ -52,7 +53,8 @@ class Connect
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
-        add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductInstallmentsTransient'], 10, 2);
+        add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductTransient'], 10, 2);
+        add_action('woocommerce_update_product_variation', [CreditCard::class, 'updateProductVariationTransient'], 10, 2);
         add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
         add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
         add_action('update_option', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged'], 10, 3);
@@ -66,7 +68,8 @@ class Connect
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
         add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
-
+        add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
+        add_action('rest_api_init', [CreditCard::class,'restApiInstallments']);
 
         // Load plugin files
         self::includes();

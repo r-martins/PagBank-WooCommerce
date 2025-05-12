@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.35.2
+Stable tag: 4.36.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.36.0 =
+* Melhoria: agora é possível exibir desconto para pagamento via PIX na tela do produto ou categoria
+* Agora também é possível exibir a estimativa de parcelamento PagBank em produtos configuráveis
+* Correção: quando o campo de retenção de estoque não era preenchido com valor algum, exibíamos um aviso de que a retenção de estoque estava configurada com um prazo menor abaixo da validade de pix e boleto, no admin (Reportado por Rodrigo Millano)
 
 = 4.35.2 =
 * Melhoria: agora ficou mais fácil obter sua connect key. As informações do formulário já virão pré-preenchidas e a connect key será adicionada automaticamente evitando erros.
