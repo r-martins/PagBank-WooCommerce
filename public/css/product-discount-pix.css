@@ -1,13 +1,43 @@
+/*
+ * ⚠️ DO NOT modify this file directly.
+ * If you need to make changes, copy it to: wp-content/YOUR_THEME/pagbank-connect/
+ * and edit the copied version.
+ *
+ * ⚠️ NÃO modifique este arquivo diretamente.
+ * Se precisar fazer alterações, copie-o para: wp-content/SEU_TEMA/pagbank-connect/
+ * e edite a versão copiada.
+ */
 .rm-pagbank-price {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background-color: #e6f7ec;
     color: #1a7f37;
     padding: 8px 16px;
     border-radius: 8px;
     font-weight: 500;
     font-family: sans-serif;
+    font-size: 0.8em;
     margin-bottom: 5px;
 }
+
+/*
+ * If this file has been extended to a custom theme, the icon may not work
+ * unless you also copy and update the `background-image: url(...)` path accordingly.
+ *
+ * Se este arquivo foi estendido para um tema personalizado, o ícone pode não funcionar
+ * a menos que você também copie e atualize o caminho de `background-image: url(...)` corretamente.
+ */
+.rm-pagbank-price .icon-pix {
+    width: 20px;
+    height: 20px;
+    background-image: url(../images/pix-photo.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    flex-shrink: 0;
+}
+
 .rm-pagbank-price b {
     font-weight: 600;
     color: inherit;
