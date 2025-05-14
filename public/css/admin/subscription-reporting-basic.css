@@ -42,7 +42,6 @@
     color: #222;
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
     .report-card {
         flex: 1 1 calc(100% / 2 - 50px);
