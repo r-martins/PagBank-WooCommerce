@@ -170,7 +170,7 @@ class Api
         } catch (Exception $e) {
             return [
                 'error' => true,
-                'message' => $e->getMessage(),
+                'status' => 'ERROR',
             ];
         }
     }
