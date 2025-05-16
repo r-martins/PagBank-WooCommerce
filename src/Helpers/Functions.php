@@ -423,9 +423,11 @@ class Functions
      *
      * @return mixed|null
      */
-    public static function applyOrderPlaceholders($string, $order_id)
+    public static function applyOrderPlaceholders($string, $order_id, $order = null)
     {
-        $order = new WC_Order($order_id);
+        if(!$order || !$order instanceof WC_Order){
+            $order = new WC_Order($order_id);
+        }
         $placeholders = [
             '{paymentMethod}' => $order->get_payment_method(),
             '{orderTotal}' => $order->get_total(),
