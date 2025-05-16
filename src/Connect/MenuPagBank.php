@@ -5,6 +5,7 @@ use RM_PagBank\Connect\Recurring\Admin\Subscriptions\Details\OrdersList;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionDetails;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionEdit;
 use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionList;
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionReportingSummary;
 
 /**
  * Adds the PagBank menu and some of its submenus.
@@ -102,6 +103,9 @@ SVG;
     {
         $subscriptionsListTable = new SubscriptionList();
         $subscriptionsListTable->prepare_items();
+
+        $SubscriptionReportingSummary = new SubscriptionReportingSummary();
+        $SubscriptionReportingSummary->renderPagbankReportingBasic();
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html(__('Assinaturas PagBank', 'pagbank-connect')) . '</h1>';
