@@ -113,7 +113,57 @@ jQuery(document).ready(function($) {
 		//create p element
 		var e_div = document.createElement('div');
 		e_div.innerHTML = connect_key_status;
+        e_div.setAttribute('id', 'pagbank-connect-key-info')
 		jQuery(e_div).insertAfter('#woocommerce_rm-pagbank_connect_key');
+
+        const infoIcon = document.querySelector('#pagbank-connect-key-info .dashicons-info');
+        if (infoIcon) {
+          // Get tooltip content from data-tip attribute
+          const tooltipContent = infoIcon.getAttribute("data-tip");
+
+          // Create tooltip element
+          const tooltip = document.createElement("div");
+          tooltip.className = "pagbank-tooltip";
+          tooltip.innerHTML = tooltipContent;
+          document.body.appendChild(tooltip);
+
+          // Show tooltip on hover
+          infoIcon.addEventListener("mouseenter", function (e) {
+            const rect = infoIcon.getBoundingClientRect();
+            tooltip.style.left =
+              rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + "px";
+            tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + "px";
+            tooltip.classList.add("visible");
+          });
+
+          // Hide tooltip when mouse leaves
+          infoIcon.addEventListener("mouseleave", function () {
+            tooltip.classList.remove("visible");
+          });
+
+          // Add subtle animation to refresh button
+          const refreshButton = document.querySelector(
+            ".rm-pagbank-refresh-button"
+          );
+          if (refreshButton) {
+            refreshButton.addEventListener("click", function (e) {
+              const icon = this.querySelector(".dashicons");
+              icon.style.transition = "transform 0.5s ease";
+              icon.style.transform = "rotate(360deg)";
+
+              // Reset rotation after animation completes
+              setTimeout(() => {
+                icon.style.transition = "none";
+                icon.style.transform = "rotate(0deg)";
+
+                // Re-enable transition after reset
+                setTimeout(() => {
+                  icon.style.transition = "transform 0.5s ease";
+                }, 50);
+              }, 500);
+            });
+          }
+        }
 	}
 	//endregion
 

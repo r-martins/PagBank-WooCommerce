@@ -244,9 +244,12 @@ class Gateway extends WC_Payment_Gateway_CC
         $email    = esc_html($info['authorizerEmail'] ?? 'N/A');
         $expires  = esc_html($info['expiresAt'] ?? '-');
         $sandbox  = !empty($info['isSandbox']) ? 'Sim' : 'Não';
-
+        $message  = "Conta PagBank: $email <br>";
+        $message .= !$sandbox ? "Expira em: $expires <br>" : null;
+        $message .= "Sandbox: $sandbox <br>";
+        $message .= !$sandbox ? "* renova automaticamente" : null;
         // Tooltip with detailed connect information
-        $tooltip = esc_attr("Conta PagBank: $email <br>Expira em: $expires <br> Sandbox: $sandbox<br>* renova automaticamente");
+        $tooltip = esc_attr($message);
 
         // Generate status badge based on the current status
         switch ($status) {
@@ -267,18 +270,30 @@ class Gateway extends WC_Payment_Gateway_CC
                 break;
         }
 
+        $this->setStyleConnectKeyInfo();
         // Generate final HTML with badge, refresh button, and tooltip
-        $html = '<div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">';
+        $html = '<div class="rm-pagbank-status-container">';
         $html .= $btn;
-        $html .= '<a href="' . esc_url(add_query_arg('refresh_connect_info', 1)) . '" title="Atualizar" style="display: inline-block; background: #f1f1f1; padding: 8px; border-radius: 8px;">
-                <span class="dashicons dashicons-update-alt"></span>
-            </a>';
-        $html .= '<span class="woocommerce-help-tip" data-tip="' . $tooltip . '" style="font-size: 25px;margin: 0px;padding: 4px;"></span>';
+        $html .= '<a href="' . esc_url(add_query_arg('refresh_connect_info', 1)) . '" title="Atualizar" class="rm-pagbank-refresh-button">';
+        $html .=  '<span class="dashicons dashicons-update-alt"></span>';
+        $html .= '</a>';
+        $html .= '<span class="dashicons dashicons-info" data-tip="' . $tooltip . '"></span>';
         $html .= '</div>';
-
         return $html;
     }
-
+    /**
+     * Adds custom styles for the Connect Key info badge in the admin area.
+     * @return void
+     */
+    public function setStyleConnectKeyInfo()
+    {
+        wp_enqueue_style(
+            'rm-pagbank-admin-connect-key-info', 
+            plugins_url('public/css/admin/connect-key-info.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            false, 
+            WC_PAGSEGURO_CONNECT_VERSION
+        );
+    }
     /**
      * Helper to build a styled status badge.
      *
@@ -290,9 +305,12 @@ class Gateway extends WC_Payment_Gateway_CC
     private function buildStatusBadge($color, $icon_class, $label)
     {
         return sprintf(
-            '<div style="background: %s; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold; display: flex; align-items: center;">
-            <span class="dashicons %s" style="margin-right: 6px;"></span> %s
-        </div>',
+            '<div class="rm-pagbank-status-badge learn-more">
+                    <span class="circle" aria-hidden="true" style="background: %s;">
+                        <span class="dashicons %s"></span>
+                    </span>
+                    <span class="button-text"> %s</span>
+            </div>',
             esc_attr($color),
             esc_attr($icon_class),
             esc_html($label)
