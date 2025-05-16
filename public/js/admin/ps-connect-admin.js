@@ -118,51 +118,64 @@ jQuery(document).ready(function($) {
 
         const infoIcon = document.querySelector('#pagbank-connect-key-info .dashicons-info');
         if (infoIcon) {
-          // Get tooltip content from data-tip attribute
-          const tooltipContent = infoIcon.getAttribute("data-tip");
+            // Get tooltip content from data-tip attribute
+            const tooltipContent = infoIcon.getAttribute("data-tip")
 
-          // Create tooltip element
-          const tooltip = document.createElement("div");
-          tooltip.className = "pagbank-tooltip";
-          tooltip.innerHTML = tooltipContent;
-          document.body.appendChild(tooltip);
+            // Create tooltip element
+            const tooltip = document.createElement("div")
+            tooltip.className = "pagbank-tooltip"
+            tooltip.innerHTML = tooltipContent
+            document.body.appendChild(tooltip)
 
-          // Show tooltip on hover
-          infoIcon.addEventListener("mouseenter", function (e) {
-            const rect = infoIcon.getBoundingClientRect();
-            tooltip.style.left =
-              rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + "px";
-            tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + "px";
-            tooltip.classList.add("visible");
-          });
+            // Function to update tooltip position
+            function updateTooltipPosition() {
+                if (!tooltip.classList.contains("visible")) return
 
-          // Hide tooltip when mouse leaves
-          infoIcon.addEventListener("mouseleave", function () {
-            tooltip.classList.remove("visible");
-          });
+                const rect = infoIcon.getBoundingClientRect()
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
 
-          // Add subtle animation to refresh button
-          const refreshButton = document.querySelector(
-            ".rm-pagbank-refresh-button"
-          );
-          if (refreshButton) {
-            refreshButton.addEventListener("click", function (e) {
-              const icon = this.querySelector(".dashicons");
-              icon.style.transition = "transform 0.5s ease";
-              icon.style.transform = "rotate(360deg)";
+                tooltip.style.left = rect.left + scrollLeft + rect.width / 2 - tooltip.offsetWidth / 2 + "px"
+                tooltip.style.top = rect.top + scrollTop - tooltip.offsetHeight - 10 + "px"
+            }
 
-              // Reset rotation after animation completes
-              setTimeout(() => {
-                icon.style.transition = "none";
-                icon.style.transform = "rotate(0deg)";
+            // Show tooltip on hover
+            infoIcon.addEventListener("mouseenter", (e) => {
+                tooltip.classList.add("visible")
+                updateTooltipPosition()
+            })
 
-                // Re-enable transition after reset
+            // Hide tooltip when mouse leaves
+            infoIcon.addEventListener("mouseleave", () => {
+                tooltip.classList.remove("visible")
+            })
+
+            // Update tooltip position on scroll
+            window.addEventListener("scroll", updateTooltipPosition, { passive: true })
+
+            // Update tooltip position on resize
+            window.addEventListener("resize", updateTooltipPosition, { passive: true })
+
+            // Add subtle animation to refresh button
+            const refreshButton = document.querySelector(".rm-pagbank-refresh-button")
+            if (refreshButton) {
+                refreshButton.addEventListener("click", function (e) {
+                const icon = this.querySelector(".dashicons")
+                icon.style.transition = "transform 0.5s ease"
+                icon.style.transform = "rotate(360deg)"
+
+                // Reset rotation after animation completes
                 setTimeout(() => {
-                  icon.style.transition = "transform 0.5s ease";
-                }, 50);
-              }, 500);
-            });
-          }
+                    icon.style.transition = "none"
+                    icon.style.transform = "rotate(0deg)"
+
+                    // Re-enable transition after reset
+                    setTimeout(() => {
+                    icon.style.transition = "transform 0.5s ease"
+                    }, 50)
+                }, 500)
+                })
+            }
         }
 	}
 	//endregion

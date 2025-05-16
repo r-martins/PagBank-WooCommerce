@@ -243,11 +243,12 @@ class Gateway extends WC_Payment_Gateway_CC
         $status   = strtoupper($info['status'] ?? 'UNKNOWN');
         $email    = esc_html($info['authorizerEmail'] ?? 'N/A');
         $expires  = esc_html($info['expiresAt'] ?? '-');
-        $sandbox  = !empty($info['isSandbox']) ? 'Sim' : 'Não';
+        $isSandbox = !empty($info['isSandbox']);
+        $sandbox  = $isSandbox ? 'Sim' : 'Não';
         $message  = "Conta PagBank: $email <br>";
-        $message .= !$sandbox ? "Expira em: $expires <br>" : null;
+        $message .= !$isSandbox ? "Expira em: $expires <br>" : null;
         $message .= "Sandbox: $sandbox <br>";
-        $message .= !$sandbox ? "* renova automaticamente" : null;
+        $message .= !$isSandbox ? "* renova automaticamente" : null;
         // Tooltip with detailed connect information
         $tooltip = esc_attr($message);
 
