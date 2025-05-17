@@ -126,6 +126,10 @@ class Boleto extends WC_Payment_Gateway
 
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
+        if ($shouldNotify) {
+            $newOrderEmail = WC()->mailer()->emails['WC_Email_New_Order'];
+            $newOrderEmail->trigger($order->get_id());
+        }
         $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
 
 
