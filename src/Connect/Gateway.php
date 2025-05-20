@@ -240,9 +240,10 @@ class Gateway extends WC_Payment_Gateway_CC
         }
 
         // Extract and sanitize connect status info
+        $dateFormat = get_option('date_format');
         $status   = strtoupper($info['status'] ?? 'UNKNOWN');
         $email    = esc_html($info['authorizerEmail'] ?? 'N/A');
-        $expires  = esc_html($info['expiresAt'] ?? '-');
+        $expires  = esc_html($info['expiresAt'] ? date_i18n($dateFormat,  strtotime($info['expiresAt'])) : '-');
         $isSandbox = !empty($info['isSandbox']);
         $sandbox  = $isSandbox ? 'Sim' : 'Não';
         $message  = "Conta PagBank: $email <br>";

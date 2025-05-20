@@ -166,7 +166,7 @@ class Api
     public function getConnectInfo(): array
     {
         try {
-            return $this->get('connectInfo');
+            return $this->get('connectInfo', [], 60);
         } catch (Exception $e) {
             return [
                 'error' => true,
