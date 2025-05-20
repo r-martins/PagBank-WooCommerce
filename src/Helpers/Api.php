@@ -163,6 +163,18 @@ class Api
         return $decoded_response;
     }
 
+    public function getConnectInfo(): array
+    {
+        try {
+            return $this->get('connectInfo', [], 60);
+        } catch (Exception $e) {
+            return [
+                'error' => true,
+                'status' => 'ERROR',
+            ];
+        }
+    }
+
     /**
      * Returns the 3D Secure session string to be used in the JS or empty string if not available/fails
      * @return string

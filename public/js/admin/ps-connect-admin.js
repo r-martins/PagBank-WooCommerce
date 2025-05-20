@@ -109,13 +109,74 @@ jQuery(document).ready(function($) {
 
     var value = jQuery('#woocommerce_rm-pagbank_connect_key').val();
     //region Showing that you are using test mode (when using a CONSANDBOX key)
-    if (value && value.indexOf('CONSANDBOX') === 0){
+    if (value && typeof connect_key_status !== 'underfine'){
 		//create p element
-		var p = document.createElement('p');
-		p.innerHTML = '⚠️ Você está usando o <strong>modo de testes</strong>. Veja <a href="https://dev.pagbank.uol.com.br/reference/simulador" target="_blank">documentação</a>.<br/>Para usar o modo de produção, altere suas credenciais.<br/>Lembre-se: pagamentos em Sandbox não aparecerão no PagBank, mesmo no ambiente Sandbox.';
-		p.style.color = '#f30649';
-		//insert under connect_key
-		jQuery(p).insertAfter('#woocommerce_rm-pagbank_connect_key');
+		var e_div = document.createElement('div');
+		e_div.innerHTML = connect_key_status;
+        e_div.setAttribute('id', 'pagbank-connect-key-info')
+		jQuery(e_div).insertAfter('#woocommerce_rm-pagbank_connect_key');
+
+        const infoIcon = document.querySelector('#pagbank-connect-key-info .dashicons-info');
+        if (infoIcon) {
+            // Get tooltip content from data-tip attribute
+            const tooltipContent = infoIcon.getAttribute("data-tip")
+
+            // Create tooltip element
+            const tooltip = document.createElement("div")
+            tooltip.className = "pagbank-tooltip"
+            tooltip.innerHTML = tooltipContent
+            document.body.appendChild(tooltip)
+
+            // Function to update tooltip position
+            function updateTooltipPosition() {
+                if (!tooltip.classList.contains("visible")) return
+
+                const rect = infoIcon.getBoundingClientRect()
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+
+                tooltip.style.left = rect.left + scrollLeft + rect.width / 2 - tooltip.offsetWidth / 2 + "px"
+                tooltip.style.top = rect.top + scrollTop - tooltip.offsetHeight - 10 + "px"
+            }
+
+            // Show tooltip on hover
+            infoIcon.addEventListener("mouseenter", (e) => {
+                tooltip.classList.add("visible")
+                updateTooltipPosition()
+            })
+
+            // Hide tooltip when mouse leaves
+            infoIcon.addEventListener("mouseleave", () => {
+                tooltip.classList.remove("visible")
+            })
+
+            // Update tooltip position on scroll
+            window.addEventListener("scroll", updateTooltipPosition, { passive: true })
+
+            // Update tooltip position on resize
+            window.addEventListener("resize", updateTooltipPosition, { passive: true })
+
+            // Add subtle animation to refresh button
+            const refreshButton = document.querySelector(".rm-pagbank-refresh-button")
+            if (refreshButton) {
+                refreshButton.addEventListener("click", function (e) {
+                const icon = this.querySelector(".dashicons")
+                icon.style.transition = "transform 0.5s ease"
+                icon.style.transform = "rotate(360deg)"
+
+                // Reset rotation after animation completes
+                setTimeout(() => {
+                    icon.style.transition = "none"
+                    icon.style.transform = "rotate(0deg)"
+
+                    // Re-enable transition after reset
+                    setTimeout(() => {
+                    icon.style.transition = "transform 0.5s ease"
+                    }, 50)
+                }, 500)
+                })
+            }
+        }
 	}
 	//endregion
 

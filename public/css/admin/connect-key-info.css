@@ -1,0 +1,118 @@
+/* Modern styling for PagBank connection status */
+.rm-pagbank-status-container {
+  display: flex;
+  width: fit-content;
+  max-width: none; /* Se quiser garantir que não há limite */
+  align-items: center;
+  gap: 12px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 0 7px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 7px 0 0 0;
+  transition: all 0.2s ease;
+}
+
+
+
+.rm-pagbank-status-container:hover {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.rm-pagbank-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.rm-pagbank-status-badge .circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background-color: #10b981;
+  border-radius: 50%;
+  color: white;
+}
+
+.rm-pagbank-status-badge .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.rm-pagbank-status-badge .button-text {
+  color: #374151;
+}
+
+.rm-pagbank-refresh-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background-color: #e5e7eb;
+  color: #4b5563;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin: 2px 0;
+}
+
+.rm-pagbank-refresh-button:hover {
+  background-color: #d1d5db;
+  color: #1f2937;
+}
+
+.rm-pagbank-refresh-button .dashicons {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.dashicons-info {
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.dashicons-info:hover {
+  color: #4b5563;
+}
+
+/* Tooltip styling */
+.pagbank-tooltip {
+  position: absolute;
+  background-color: #1f2937;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 280px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.pagbank-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.pagbank-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}

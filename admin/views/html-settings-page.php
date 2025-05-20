@@ -23,7 +23,7 @@ use RM_PagBank\Connect\Gateway;
     <div class="ps-subtitle">
         <?php echo '<h4>' . esc_html( $this->get_method_description() ) . '</h4>'; ?>
     </div>
-<!--    navigation tabs-->
+    <!-- navigation tabs-->
     <nav class="nav-tab-wrapper ">
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank' ) ?>#tab-general" class="nav-tab <?php echo $this->id === 'rm-pagbank' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Geral', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-cc' ) ?>#tab-credit-card" class="nav-tab <?php echo $this->id === 'rm-pagbank-cc' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Cartão de Crédito', 'pagbank-connect') ?></a>
@@ -80,6 +80,11 @@ try{
             }
         });
     </script>
+    <?php if ($this->id === 'rm-pagbank'): ?>
+        <script>
+         const connect_key_status =  `<?php echo $this->connectKeyStatus() ?>`
+        </script>
+    <?php endif; ?>
 <?php
 } catch (Exception $e) {
     // nothing to do here
