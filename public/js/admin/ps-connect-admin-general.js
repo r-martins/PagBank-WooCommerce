@@ -26,12 +26,12 @@ jQuery(document).ready(function($) {
     function handleSuccessBehaviorChange(element) {
         jQuery('#woocommerce_rm-pagbank_success_behavior_url').closest('tr').hide();
         jQuery('#woocommerce_rm-pagbank_success_behavior_js').closest('tr').hide();
-        if (element.target.value === 'redirect') {
+        if (element?.target?.value === 'redirect') {
             jQuery('#woocommerce_rm-pagbank_success_behavior_url').closest('tr').show();
             jQuery('#woocommerce_rm-pagbank_success_behavior_js').closest('tr').hide();
         }
 
-        if (element.target.value === 'js') {
+        if (element?.target?.value === 'js') {
             jQuery('#woocommerce_rm-pagbank_success_behavior_js').closest('tr').show();
             jQuery('#woocommerce_rm-pagbank_success_behavior_url').closest('tr').hide();
         }
