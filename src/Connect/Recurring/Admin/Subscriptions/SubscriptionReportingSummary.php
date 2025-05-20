@@ -15,9 +15,9 @@ class SubscriptionReportingSummary
             "SELECT
                     SUM(CASE WHEN created_at >= %s THEN 1 ELSE 0 END) AS news,
                     SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) AS enables,
-                    SUM(CASE WHEN status = 'PENDING_CANCEL' AND updated_at >= %s THEN 1 ELSE 0 END) AS pending_cancel,
-                    SUM(CASE WHEN status = 'PAUSED' AND updated_at >= %s THEN 1 ELSE 0 END) AS pause,
-                    SUM(CASE WHEN status = 'CANCELED' AND updated_at >= %s THEN 1 ELSE 0 END) AS canceleds
+                    SUM(CASE WHEN status = 'PENDING_CANCEL' AND canceled_at >= %s THEN 1 ELSE 0 END) AS pending_cancel,
+                    SUM(CASE WHEN status = 'PAUSED' AND paused_at >= %s THEN 1 ELSE 0 END) AS pause,
+                    SUM(CASE WHEN status = 'CANCELED' AND canceled_at >= %s THEN 1 ELSE 0 END) AS canceleds
             FROM $table",
             $date_30_days,
             $date_30_days,
