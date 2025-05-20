@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.36.1
+Stable tag: 4.37.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.37.0 =
+* Agora você pode ver o status da sua connect key e à qual conta pagbank ela pertence.
+* Admins agora podem cancelar pedidos recorrentes que possuem limite máximo ciclos de cobrança.
+* Corrigido pequeno erro JS que ocorria ao editar um produto no admin (ainda que sem nenhum impacto).
 
 = 4.36.1 =
 * Correção: ícone do desconto do PIX não era exibido como esperado
