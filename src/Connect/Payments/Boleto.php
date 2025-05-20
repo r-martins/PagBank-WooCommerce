@@ -77,14 +77,12 @@ class Boleto extends Common
         $instruction_lines->setLine1(
             Functions::applyOrderPlaceholders(
                 Params::getBoletoConfig('boleto_line_1', 'Não aceitar após vencimento'),
-                $this->order->get_id(),
                 $this->order,
             )
         );
         $instruction_lines->setLine2(
             Functions::applyOrderPlaceholders(
                 Params::getBoletoConfig('boleto_line_2', 'Obrigado por sua compra.'),
-                $this->order->get_id(),
                 $this->order,
             )
         );

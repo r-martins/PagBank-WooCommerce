@@ -38,13 +38,13 @@ return array(
 		'title'   => __('Instruções (Linha 1)', 'pagbank-connect'),
 		'type'    => 'text',
 		'default' => 'Sr. Caixa, favor não aceitar após vencimento.',
-		'description'=> __('Placeholders {orderId} e {customerEmail}  disponíveis.', 'pagbank-connect'),
+		'description'=> __('Máx. 75 caracteres. Veja os <a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto">Placeholders disponíveis.</a>', 'pagbank-connect'),
 	],
 	'boleto_line_2'       => [
 		'title'   => __('Instruções (Linha 2)', 'pagbank-connect'),
 		'type'    => 'text',
 		'default' => 'Obrigado por comprar em nossa loja!',
-		'description'=> __('Placeholders {orderId} e {customerEmail}  disponíveis.', 'pagbank-connect'),
+		'description'=> __('Máx. 75 caracteres. Veja os <a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto">Placeholders disponíveis.</a>', 'pagbank-connect'),
 	],
 	'boleto_discount'     => [
 		'title'       => __('Oferecer Desconto de', 'pagbank-connect'),
