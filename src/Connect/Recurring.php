@@ -970,7 +970,7 @@ class Recurring
     
     public function filterAllowedActions($actions, $subscription)
     {
-        if ($subscription->recurring_max_cycles > 0) {
+        if ($subscription->recurring_max_cycles > 0 && !is_admin()) {
             unset($actions['cancel']);
             unset($actions['uncancel']);
             unset($actions['pause']);

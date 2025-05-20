@@ -179,4 +179,143 @@ class Gateway extends WC_Payment_Gateway_CC
         }
         return $styles;
     }
+
+    /**
+     * Retrieves cached Connect info or fetches fresh data from the API.
+     *
+     * @param bool $force_refresh Whether to force refresh the cached data.
+     * @return array|null The connect information or null if unavailable.
+     */
+    public function getCachedConnectInfo($transient_key, $force_refresh = false)
+    {
+        // Return cached data if not forcing refresh
+        if (! $force_refresh ) {
+            $cached = get_transient($transient_key);
+            if ($cached !== false) {
+                return $cached;
+            }
+        }
+
+        // Fetch fresh data from the API
+        $api = new Api();
+        $info = $api->getConnectInfo();
+
+        // Cache the result if it's valid
+        if (! empty($info) && empty($info['error_messages'])) {
+            set_transient($transient_key, $info, DAY_IN_SECONDS);
+        }
+
+        return $info;
+    }
+
+    /**
+     * Generates the connection status HTML badge based on the current Connect key info.
+     *
+     * @return string|null HTML output of the status badge or null if not applicable.
+     */
+    public function connectKeyStatus()
+    {
+        // Retrieve plugin settings
+        $settings = get_option('woocommerce_' . $this->id . '_settings');
+        $connect_key = $settings['connect_key'] ?? '';
+        $last_four = strlen($connect_key) == 40 ? substr($connect_key, -4) : null;
+
+        if (empty($connect_key) || !$last_four) {
+            return null;
+        }
+
+        $transient_key = sprintf('pagbank_connect_key_info_%s', $last_four);
+   
+        $force_refresh = isset($_GET['refresh_connect_info']);
+        // Force refresh if requested via URL
+        if ($force_refresh) {
+            delete_transient($transient_key);
+        }
+
+        // Get cached or fresh Connect info
+        $info = $this->getCachedConnectInfo($transient_key, $force_refresh);
+
+        if (!$info) {
+            return null;
+        }
+
+        // Extract and sanitize connect status info
+        $dateFormat = get_option('date_format');
+        $status   = strtoupper($info['status'] ?? 'UNKNOWN');
+        $email    = esc_html($info['authorizerEmail'] ?? 'N/A');
+        $expires  = esc_html($info['expiresAt'] ? date_i18n($dateFormat,  strtotime($info['expiresAt'])) : '-');
+        $isSandbox = !empty($info['isSandbox']);
+        $sandbox  = $isSandbox ? 'Sim' : 'Não';
+        $message  = "Conta PagBank: $email <br>";
+        $message .= !$isSandbox ? "Expira em: $expires <br>" : null;
+        $message .= "Sandbox: $sandbox <br>";
+        $message .= !$isSandbox ? "* renova automaticamente" : null;
+        // Tooltip with detailed connect information
+        $tooltip = esc_attr($message);
+
+        // Generate status badge based on the current status
+        switch ($status) {
+            case "VALID":
+                $btn = $this->buildStatusBadge('#4caf50', 'dashicons-yes', 'Conectado');
+                break;
+            case "INVALID":
+                $btn = $this->buildStatusBadge('#f44336', 'dashicons-dismiss', 'Chave inválida');
+                break;
+            case "UNAUTHORIZED":
+                $btn = $this->buildStatusBadge('#ff9800', 'dashicons-lock', 'Não autorizado');
+                break;
+            case "UNKNOWN":
+                $btn = $this->buildStatusBadge('#9e9e9e', 'dashicons-info-outline', 'Desconhecido');
+                break;
+            default:
+                $btn = $this->buildStatusBadge('#888', 'dashicons-info-outline', 'Erro ao obter informação');
+                break;
+        }
+
+        $this->setStyleConnectKeyInfo();
+        // Generate final HTML with badge, refresh button, and tooltip
+        $html = '<div class="rm-pagbank-status-container">';
+        $html .= $btn;
+        $html .= '<a href="' . esc_url(add_query_arg('refresh_connect_info', 1)) . '" title="Atualizar" class="rm-pagbank-refresh-button">';
+        $html .=  '<span class="dashicons dashicons-update-alt"></span>';
+        $html .= '</a>';
+        $html .= '<span class="dashicons dashicons-info" data-tip="' . $tooltip . '"></span>';
+        $html .= '</div>';
+        return $html;
+    }
+    /**
+     * Adds custom styles for the Connect Key info badge in the admin area.
+     * @return void
+     */
+    public function setStyleConnectKeyInfo()
+    {
+        wp_enqueue_style(
+            'rm-pagbank-admin-connect-key-info', 
+            plugins_url('public/css/admin/connect-key-info.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            false, 
+            WC_PAGSEGURO_CONNECT_VERSION
+        );
+    }
+    /**
+     * Helper to build a styled status badge.
+     *
+     * @param string $color       Background color of the badge.
+     * @param string $icon_class  Dashicon class to use.
+     * @param string $label       Text label of the badge.
+     * @return string             HTML of the badge.
+     */
+    private function buildStatusBadge($color, $icon_class, $label)
+    {
+        return sprintf(
+            '<div class="rm-pagbank-status-badge learn-more">
+                    <span class="circle" aria-hidden="true" style="background: %s;">
+                        <span class="dashicons %s"></span>
+                    </span>
+                    <span class="button-text"> %s</span>
+            </div>',
+            esc_attr($color),
+            esc_attr($icon_class),
+            esc_html($label)
+        );
+    }
 }
