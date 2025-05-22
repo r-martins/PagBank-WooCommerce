@@ -9,7 +9,7 @@ class SubscriptionReportingSummary
     {
         global $wpdb;
         $table = $wpdb->prefix . 'pagbank_recurring';
-        $date_30_days = date('Y-m-d H:i:s', strtotime('-30 days'));
+        $date_30_days = gmdate('Y-m-d H:i:s', strtotime('-30 days'));
 
         $query = $wpdb->prepare(
             "SELECT

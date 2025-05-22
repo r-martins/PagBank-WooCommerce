@@ -29,13 +29,13 @@ class SubscriptionList extends WP_List_Table
         return [
             'id'                 => __('ID', 'rm-pagbank'),
             'initial_order_id'   => __('Pedido Inicial', 'rm-pagbank'),
+            'view'                 => __('Visualizar', 'rm-pagbank'),
             'recurring_amount'   => __('Valor Recorrente', 'rm-pagbank'),
             'status'             => __('Status', 'rm-pagbank'),
             'recurring_type'     => __('Tipo Recorrente', 'rm-pagbank'),
             'created_at'         => __('Criado em', 'rm-pagbank'),
             'updated_at'         => __('Atualizado em', 'rm-pagbank'),
             'next_bill_at'       => __('Próxima Cobrança', 'rm-pagbank'),
-            'view'                 => __('Visualizar', 'rm-pagbank'),
         ];
     }
 
