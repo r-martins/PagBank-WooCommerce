@@ -419,21 +419,23 @@ class Functions
     /**
      * Applies placeholders to a string based on the order data
      * @param $string
-     * @param $order_id
+     * @param WC_Order $order
      *
      * @return mixed|null
      */
-    public static function applyOrderPlaceholders($string, $order_id)
+    public static function applyOrderPlaceholders($string, $order)
     {
-        $order = new WC_Order($order_id);
+        if(!$order instanceof WC_Order){
+            return $string;
+        }
         $placeholders = [
             '{paymentMethod}' => $order->get_payment_method(),
             '{orderTotal}' => $order->get_total(),
-            '{orderId}' => $order_id,
+            '{orderId}' => $order->get_id(),
             '{customerName}' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
             '{customerEmail}' => $order->get_billing_email(),
         ];
-        return apply_filters('pagbank_connect_order_placeholders', strtr($string, $placeholders), $order_id);
+        return apply_filters('pagbank_connect_order_placeholders', strtr($string, $placeholders), $order->get_id());
     }
 
     /**

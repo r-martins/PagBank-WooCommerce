@@ -399,10 +399,13 @@ class Common
                 'successBehavior'    => Params::getConfig('success_behavior', ''),
                 'successBehaviorUrl' => Functions::applyOrderPlaceholders(
                     Params::getConfig('success_behavior_url', wc_get_page_permalink('myaccount')),
-                    $order_id
+                    $order
                 ),
                 'successBehaviorJs'  => json_encode(
-                    Functions::applyOrderPlaceholders(Params::getConfig('success_behavior_js', ''), $order_id)
+                    Functions::applyOrderPlaceholders(
+                    Params::getConfig('success_behavior_js', ''), 
+                    $order
+                    )
                 ),
             );
 
