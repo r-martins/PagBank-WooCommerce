@@ -271,6 +271,9 @@ class Params
                 ];
             }
         }
+        if (function_exists('apply_filters')) {
+            $return = apply_filters('pagbank_get_installments', $return, $orderTotal, $bin);
+        }
         return $return;
     }
 
