@@ -1,4 +1,14 @@
 <?php
+/**
+ * Template Name: Boleto Instructions
+ * Template Version: 1.0.0
+ * DO NOT modify this file directly. If you want to make changes, copy it to wp-content/themes/YOUR_THEME/pagbank-connect/boleto-instructions.php and edit it there.
+ * DO NOT remove the "Template Name" and "Template Version" lines, as they are required for proper template identification and updates.
+ *
+ * NÃO MODIFIQUE este arquivo diretamente. Se você deseja fazer alterações, copie-o para wp-content/themes/SEU_TEMA/pagbank-connect/boleto-instructions.php e edite-o lá.
+ * NÃO remova as linhas "Template Name" e "Template Version", pois elas são necessárias para a identificação e atualização correta do template.
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var string $boleto_barcode */
 /** @var string $boleto_barcode_formatted */

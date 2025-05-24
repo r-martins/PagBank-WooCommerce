@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\QrCode;
@@ -78,8 +79,38 @@ class Pix extends Common
         $qr_code = $order->get_meta('pagbank_pix_qrcode');
         $qr_code_text = $order->get_meta('pagbank_pix_qrcode_text');
         $qr_code_exp = $order->get_meta('pagbank_pix_qrcode_expiration');
-        require_once dirname(__FILE__) . '/../../templates/pix-instructions.php';
+        
+        $template_name = 'pix-instructions.php';
+        $default_template = plugin_dir_path(__FILE__) . '../../templates/' . $template_name;
+        $theme_template = locate_template('pagbank-connect/' . $template_name);
+
+        $template_path = $theme_template ?: $default_template;
+
+        // Verify version
+        $default_version = $this->get_template_version($default_template);
+        $theme_version   = $theme_template ? $this->get_template_version($theme_template) : null;
+
+        if ($theme_version && version_compare($theme_version, $default_version, '<')) {
+           // Log, warning in admin, version mismatch
+           Functions::log("O template sobrescrito '$template_name' está desatualizado (versão $theme_version, esperado $default_version).", 'warning', [
+                'context' => 'pagbank-connect',
+                'type'    => 'template_version_mismatch',
+                'template' => $template_name,
+                'version'  => $theme_version,
+                'expected' => $default_version,
+            ]);
+        }
+
+        require_once $template_path;
         parent::getThankyouInstructions($order_id);
+    }
+
+    private function get_template_version($file_path) {
+        $default_headers = [
+            'Template Version' => 'Template Version',
+        ];
+        $file_data = get_file_data($file_path, $default_headers);
+        return $file_data['Template Version'] ?? null;
     }
 
     /**

@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template Name: Pix Instructions
+ * Template Version: 1.0.0
+ * DO NOT modify this file directly. If you want to make changes, copy it to wp-content/themes/YOUR_THEME/pagbank-connect/pix-instructions.php and edit it there.
+ * DO NOT remove the "Template Name" and "Template Version" lines, as they are required for proper template identification and updates.
+ *
+ * NÃO MODIFIQUE este arquivo diretamente. Se você deseja fazer alterações, copie-o para wp-content/themes/SEU_TEMA/pagbank-connect/pix-instructions.php e edite-o lá.
+ * NÃO remova as linhas "Template Name" e "Template Version", pois elas são necessárias para a identificação e atualização correta do template.
+ */
 if ( ! defined( 'ABSPATH' ) ) exit;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
