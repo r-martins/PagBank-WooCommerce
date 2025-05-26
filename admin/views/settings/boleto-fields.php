@@ -38,13 +38,19 @@ return array(
 		'title'   => __('Instruções (Linha 1)', 'pagbank-connect'),
 		'type'    => 'text',
 		'default' => 'Sr. Caixa, favor não aceitar após vencimento.',
-		'description'=> __('Máx. 75 caracteres. Veja os <a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto">Placeholders disponíveis.</a>', 'pagbank-connect'),
+		'description'=> __('<a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto">Placeholders disponíveis.</a> Max. 75 caracteres incluindo valores dos placeholders.', 'pagbank-connect'),
+        'custom_attributes' => [
+            'maxlength' => 75,
+        ],
 	],
 	'boleto_line_2'       => [
 		'title'   => __('Instruções (Linha 2)', 'pagbank-connect'),
 		'type'    => 'text',
 		'default' => 'Obrigado por comprar em nossa loja!',
-		'description'=> __('Máx. 75 caracteres. Veja os <a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto">Placeholders disponíveis.</a>', 'pagbank-connect'),
+		'description'=> __('<a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto">Placeholders disponíveis.</a> Max. 75 caracteres incluindo valores dos placeholders.', 'pagbank-connect'),
+        'custom_attributes' => [
+            'maxlength' => 75,
+        ],
 	],
 	'boleto_discount'     => [
 		'title'       => __('Oferecer Desconto de', 'pagbank-connect'),
