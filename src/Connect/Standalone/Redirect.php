@@ -42,7 +42,7 @@ class Redirect extends WC_Payment_Gateway
             __('Pagar no PagBank', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Pague no Checkout PagBank',
+            'O Checkout PagBank permite que clientes sejam redirecionados para o PagBank para realizar o pagamento e informem menos dados em sua loja.',
             'pagbank-connect'
         );
 
