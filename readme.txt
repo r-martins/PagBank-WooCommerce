@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.38.0
+Stable tag: 4.39.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.39.0 =
+* Agora você tem [placeholders disponíveis](https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto) para as instruções de boleto disponíveis nas configurações do plugin.
+* Re-adicionamos os links para documentações e avisos da Sandbox a fim de ajudar quem está usando uma chave de testes.
+* Melhoramos o texto que explica o que é o Checkout PagBank nas configurações do plugin
 
 = 4.38.0 =
 * Relatórios da Recorrência: adicionamos informações básicas das suas assinaturas acima da listagem delas.
