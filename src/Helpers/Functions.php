@@ -585,4 +585,49 @@ class Functions
         $result = preg_replace('/[^A-Za-z0-9\ ]/', '', $result);
         return $result;
     }
+
+    /**
+     * Get the template file path for a given template name
+     *
+     * @param string $template_name
+     * @return string
+     */
+    public static function get_template($template_name) 
+    {
+        $default_template = plugin_dir_path(__FILE__) . '../templates/' . $template_name;
+        $theme_template = locate_template('pagbank-connect/' . $template_name);
+
+        $template_path = $theme_template ?: $default_template;
+
+        // Verify version
+        $default_version = self::get_template_version($default_template);
+        $theme_version   = $theme_template ? self::get_template_version($theme_template) : null;
+
+        if ($theme_version && version_compare($theme_version, $default_version, '<')) {
+            // Log, warning in admin, version mismatch
+            Functions::log("O template sobrescrito '$template_name' está desatualizado (versão $theme_version, esperado $default_version).", 'warning', [
+                'context' => 'pagbank-connect',
+                'type'    => 'template_version_mismatch',
+                'template' => $template_name,
+                'version'  => $theme_version,
+                'expected' => $default_version,
+            ]);
+        }
+
+        return $template_path;
+    }
+
+    /**
+     * Get the version of a template file based on its header
+     *
+     * @param string $file_path
+     * @return string|null
+     */
+    public static function get_template_version($file_path) {
+        $default_headers = [
+            'Template Version' => 'Template Version',
+        ];
+        $file_data = get_file_data($file_path, $default_headers);
+        return $file_data['Template Version'] ?? null;
+    }
 }
