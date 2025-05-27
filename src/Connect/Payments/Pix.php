@@ -80,7 +80,7 @@ class Pix extends Common
         $qr_code_text = $order->get_meta('pagbank_pix_qrcode_text');
         $qr_code_exp = $order->get_meta('pagbank_pix_qrcode_expiration');
         
-        $template_path = Functions::get_template('boleto-instructions.php');
+        $template_path = Functions::getTemplate('pix-instructions.php');
 
         require_once $template_path;
         parent::getThankyouInstructions($order_id);

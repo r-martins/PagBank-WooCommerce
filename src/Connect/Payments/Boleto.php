@@ -137,7 +137,7 @@ class Boleto extends Common
         $boleto_due_date = $order->get_meta('pagbank_boleto_due_date');
         $boleto_pdf = $order->get_meta('pagbank_boleto_pdf');
         $boleto_png = $order->get_meta('pagbank_boleto_png');
-        $template_path = Functions::get_template('boleto-instructions.php');
+        $template_path = Functions::getTemplate('boleto-instructions.php');
         require_once $template_path;
     }
 

@@ -592,16 +592,17 @@ class Functions
      * @param string $template_name
      * @return string
      */
-    public static function get_template($template_name) 
+    public static function getTemplate($template_name) 
     {
+        // path default template /pagbank-connect/src/templates/template-name.php
         $default_template = plugin_dir_path(__FILE__) . '../templates/' . $template_name;
         $theme_template = locate_template('pagbank-connect/' . $template_name);
 
         $template_path = $theme_template ?: $default_template;
 
         // Verify version
-        $default_version = self::get_template_version($default_template);
-        $theme_version   = $theme_template ? self::get_template_version($theme_template) : null;
+        $default_version = self::getTemplateVersion($default_template);
+        $theme_version   = $theme_template ? self::getTemplateVersion($theme_template) : null;
 
         if ($theme_version && version_compare($theme_version, $default_version, '<')) {
             // Log, warning in admin, version mismatch
@@ -623,7 +624,7 @@ class Functions
      * @param string $file_path
      * @return string|null
      */
-    public static function get_template_version($file_path) {
+    public static function getTemplateVersion($file_path) {
         $default_headers = [
             'Template Version' => 'Template Version',
         ];
