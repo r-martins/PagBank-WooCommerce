@@ -116,3 +116,31 @@
   border-style: solid;
   border-color: #1f2937 transparent transparent transparent;
 }
+
+.rm-pagbank-connect-key-info {
+    margin-top: 10px;
+    color: #d63638;
+    font-size: 13px;
+}
+
+.rm-pagbank-connect-key-info .dashicons-warning {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.rm-pagbank-doc-link {
+    display: inline-block;
+    margin-top: 5px;
+    color: #0073aa;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.rm-pagbank-doc-link .dashicons {
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.rm-pagbank-doc-link:hover {
+    text-decoration: underline;
+}

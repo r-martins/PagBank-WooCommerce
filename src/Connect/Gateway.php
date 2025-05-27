@@ -281,6 +281,25 @@ class Gateway extends WC_Payment_Gateway_CC
         $html .= '</a>';
         $html .= '<span class="dashicons dashicons-info" data-tip="' . $tooltip . '"></span>';
         $html .= '</div>';
+
+       if ($isSandbox) {
+            $html .= '<div class="rm-pagbank-connect-key-info">';
+            $html .= '<span class="dashicons dashicons-warning"></span>';
+            $html .= '<strong>' . __('Sandbox ativo', 'pagbank-connect') . ': </strong> '
+                . __('você está testando o PagBank. Pedidos feitos neste ambiente não aparecerão no PagBank.', 'pagbank-connect')
+                . '<br>';
+
+            $html .= '<a href="' . esc_url('https://developer.pagbank.com.br/docs/simulador') . '" target="_blank" class="rm-pagbank-doc-link">';
+            $html .= __('Documentação do Simulador', 'pagbank-connect');
+            $html .= '</a><br>';
+
+            $html .= '<a href="' . esc_url('https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375426666253-Cart%C3%B5es-de-Cr%C3%A9dito-para-Testes-PagBank') . '" target="_blank" class="rm-pagbank-doc-link">';
+            $html .= __('Cartões de Teste', 'pagbank-connect');
+            $html .= '</a>';
+
+            $html .= '</div>';
+        }
+       
         return $html;
     }
     /**
