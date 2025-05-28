@@ -215,7 +215,6 @@ class Recurring
             <?php
             woocommerce_wp_checkbox( array(
                 'id'            => '_recurring_enabled',
-                //'wrapper_class' => 'show_if_simple',
                 'label'         => __( 'Habilitar recorrência', 'pagbank-connect' ),
                 'description'   => __( 'Habilitar', 'pagbank-connect'),
                 'default'  		=> '0',
