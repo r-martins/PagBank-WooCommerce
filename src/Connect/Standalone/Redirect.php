@@ -167,6 +167,9 @@ class Redirect extends WC_Payment_Gateway
     }
 
     public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
+        if (in_array($order->get_status(), ['processing', 'completed'])) {
+            return;
+        }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
         if ($order->get_meta('pagbank_payment_method') === 'redirect' && in_array($email->id, $emailIds)) {
             $redirectLink = $order->get_meta('pagbank_redirect_url');
