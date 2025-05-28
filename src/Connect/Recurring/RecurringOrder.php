@@ -67,8 +67,9 @@ class RecurringOrder
         
         /** @var WC_Order_Item_Product $item */
         foreach ($initialOrder->get_items() as $item){
-            /** @var WC_Order_Item_Product $itemObj */
-            $itemObj = wc_get_product($item->get_product_id());
+            /** @var WC_Product|null|false $itemObj */
+            $product_id = $item->get_variation_id() ?: $item->get_product_id();
+            $itemObj = wc_get_product($product_id);
             $itemObj->update_meta_data('_frequency', $initialOrder->get_meta('_recurring_frequency'));
             $itemObj->update_meta_data('_cycle', $initialOrder->get_meta('_recurring_cycle'));
 
