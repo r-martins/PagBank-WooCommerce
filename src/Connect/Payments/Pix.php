@@ -90,7 +90,14 @@ class Pix extends Common
     public static function showPriceDiscountPixProduct($price, $product) {
         
         // Check if the product is a subscription or if the user is in the admin area
-        if (!$product || $product->get_meta('_recurring_enabled') == 'yes' || is_admin()) {
+        if(!$product || is_admin()){
+            return $price;
+        }
+
+        $product_id = $product->get_parent_id() ?: $product->get_id();
+        $recurring_enabled = get_post_meta($product_id, '_recurring_enabled', true);
+
+        if ($recurring_enabled === 'yes') {
             return $price;
         }
         
