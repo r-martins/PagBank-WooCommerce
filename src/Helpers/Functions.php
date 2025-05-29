@@ -587,9 +587,4 @@ class Functions
         $result = preg_replace('/[^A-Za-z0-9\ ]/', '', $result);
         return $result;
     }
-
-    public static function isPaid($status)
-    {
-        return in_array($status, ['processing', 'completed']);
-    }
 }

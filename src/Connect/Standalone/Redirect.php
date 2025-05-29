@@ -167,7 +167,7 @@ class Redirect extends WC_Payment_Gateway
     }
 
     public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
-        if (Functions::isPaid($order->get_status())) {
+        if ($order && $order->is_paid()) {
             return;
         }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
