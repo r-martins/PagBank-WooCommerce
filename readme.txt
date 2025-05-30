@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.39.0
+Stable tag: 4.40.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -201,6 +201,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+= 4.40.0 =
+* Agora é possível sobrescrever instruções de pix e boleto na tela de sucesso com [uso de templates](https://ajuda.pbintegracoes.com/hc/pt-br/articles/36986277070349-Como-alterar-ou-customizar-a-tela-de-pagamento-PIX-ou-Boleto). Sugerido por Marcelo Lima (13 Treze Design)
+* Removemos as instruções de pagamento de Boleto e PIX (incluindo QrCode) que era enviado no e-mail para o cliente mesmo quando o pedido já tinha sido pago, causando confusão.
+* Correção: botão de Cancelar Assinatura não era exibido para assinaturas Suspensas.
 
 = 4.39.0 =
 * Agora você tem [placeholders disponíveis](https://ajuda.pbintegracoes.com/hc/pt-br/articles/36743551280013-Placeholders-dispon%C3%ADveis-para-Boleto) para as instruções de boleto disponíveis nas configurações do plugin.
