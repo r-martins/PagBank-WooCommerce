@@ -1002,7 +1002,6 @@ class Recurring
                 unset($actions['update']);
                 break;
             case 'SUSPENDED':
-                unset($actions['cancel']);
                 unset($actions['uncancel']);
                 unset($actions['pause']);
                 unset($actions['unpause']);

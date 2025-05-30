@@ -180,6 +180,9 @@ class Boleto extends WC_Payment_Gateway
     }
 
     public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
+        if ($order && $order->is_paid()) {
+            return;
+        }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
         if ($order->get_meta('pagbank_payment_method') === 'boleto' && in_array($email->id, $emailIds)) {
             $boletoBarcode = $order->get_meta('pagbank_boleto_barcode_formatted');
