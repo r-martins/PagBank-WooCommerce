@@ -92,9 +92,13 @@ class Recurring
         
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
-            if ($product->get_meta('_recurring_enabled') == 'yes') {
-                return true;
+            $is_recurring = $product->get_meta('_recurring_enabled') == 'yes';
+            if ($parentId = $product->get_parent_id()) {
+                //if the product is a variation, we need to check the parent product
+                $product_variable = wc_get_product($parentId);
+                $is_recurring = $product_variable->get_meta('_recurring_enabled') == 'yes';
             }
+            return $is_recurring;
         }
         
         return false;
