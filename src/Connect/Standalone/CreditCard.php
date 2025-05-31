@@ -29,6 +29,8 @@ class CreditCard extends WC_Payment_Gateway_CC
 
     public string $code = '';
 
+    private static $injectedScripts = [];
+
     public function __construct()
     {
         $this->code = 'cc';
@@ -396,7 +398,7 @@ class CreditCard extends WC_Payment_Gateway_CC
      * @return void
      */
     public function addScripts($force=false) {
-
+        $force = (bool) $force;
         // If the method has already been called, return early
         if (self::$addedScripts) {
             return;
@@ -506,15 +508,16 @@ class CreditCard extends WC_Payment_Gateway_CC
                 );
             }
             self::$addedScripts = true;
-            return;
         }
-
-        $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
-        wp_add_inline_script(
-            'pagseguro-connect-checkout',
-            "const pagseguro_connect_change_card_page = {$isUpdatePage};",
-            'before'
-        );
+        if (!in_array('change_card_page', self::$injectedScripts, true)) {
+            $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
+            wp_add_inline_script(
+                'pagseguro-connect-checkout',
+                "const pagseguro_connect_change_card_page = {$isUpdatePage};",
+                'before'
+            );
+            self::$injectedScripts[] = 'change_card_page';
+        }
     }
 
     /**
