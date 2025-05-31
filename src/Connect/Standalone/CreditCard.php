@@ -506,6 +506,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 );
             }
             self::$addedScripts = true;
+            return;
         }
 
         $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
