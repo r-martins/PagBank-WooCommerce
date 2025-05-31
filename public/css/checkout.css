@@ -156,6 +156,6 @@ li.payment_method_rm-pagbank label img {
 .woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-pix img,
 .woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-boleto img,
 .woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-redirect img {
-    max-height: 24px !important;
+    max-height: 24px;
 }
 
