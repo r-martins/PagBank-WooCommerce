@@ -151,3 +151,11 @@ li.payment_method_rm-pagbank label img {
 .rm-pagbank-retry-select .rm-pagbank-checkbox {
     margin-right: 8px;
 }
+
+.woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-cc img,
+.woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-pix img,
+.woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-boleto img,
+.woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-redirect img {
+    max-height: 24px;
+}
+
