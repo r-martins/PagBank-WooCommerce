@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.40.0
+Stable tag: 4.40.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -38,21 +38,21 @@ Se você tiver taxas negociadas ou condições negociadas melhores que estas, vo
 Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=taxas).
 
 == ⚡️ RECURSOS PRINCIPAIS ==
-* Suporte a **PIX**, **Cartão de Crédito**, **Boleto** ou **Checkout PagBank**(novidade).
+* Pagamentos sem sair da loja com **PIX**, **Cartão de Crédito**, **Boleto** ou **Checkout PagBank** (redirect/link).
 * Venda clubes e assinaturas com [**pagamento recorrente**](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins
 * **OnlyFans** - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Saiba mais](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
 * Integração com [**Envio Fácil**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
-* Suporte nativo ao [**checkout em Blocos**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes)
-* Suporte a [**autenticação 3D** Secure](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) (reduza chargebacks e aumente suas aprovações)
+* Suporte nativo ao [**checkout em Blocos**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) do WooCommerce (sem gambiarras com iframes), Checkout Legado, Fluid Checkout e muitos outros.
+* [**Autenticação 3D**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback) para acabar com chargebacks e aumentar aprovação. Pode ser configurado somente para pagamentos negados na primeira tentativa.
+* [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
+* Atualização de pedidos automática, inclusive com [confirmação de pagamento instantâneo PIX]((https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) com [comportamento configurável](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
+* Infinitas [opções de **parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
 
 == ⚡️ RECURSOS ADICIONAIS ==
-* Diversas [opções de **parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
 * Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
 * Permite definir [**validade** de boletos e código PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
-* [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualizações automáticas de **status de pedidos** mesmo que sua loja bloqueie as notificações automáticas do PagBank
-* Opção de [forçar atualização](https://github.com/r-martins/PagBank-WooCommerce/releases/tag/4.31.0) de um pedido manualmente
-* [Confirmação imediata de pagamento](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) na tela de sucesso PIX
+* Opção de [forçar atualização](https://github.com/r-martins/PagBank-WooCommerce/releases/tag/4.31.0) de um pedido manualmente ou automaticamente
 * Permite adicionar [código JavaScript ou redirecionar](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento) o cliente após a confirmação de pagamento.
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://ajuda.pbintegracoes.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
@@ -60,6 +60,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
 * **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
 * Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
+* Use a mesma conta PagBank e a mesma Connect Key para integrar **várias lojas** WooCommerce, sem precisar de uma Connect Key para cada loja.
 
 
 https://www.youtube.com/watch?v=a8rkT8IyIYo
@@ -201,6 +202,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.40.1 =
+* Correções de bugs diversos no Fluid Checkout que poderiam impedir finalização de compra.
+* Correção CSS onde Ícones do PagBank apareciam muito grande em alguns temas como twentytwentyfive.
+* Correção em formatação da data de expiração do link de pagamento enviado por e-mail para o cliente. Agora está amigável.
+
 = 4.40.0 =
 * Agora é possível sobrescrever instruções de pix e boleto na tela de sucesso com [uso de templates](https://ajuda.pbintegracoes.com/hc/pt-br/articles/36986277070349-Como-alterar-ou-customizar-a-tela-de-pagamento-PIX-ou-Boleto). Sugerido por Marcelo Lima (13 Treze Design)
 * Removemos as instruções de pagamento de Boleto e PIX (incluindo QrCode) que era enviado no e-mail para o cliente mesmo quando o pedido já tinha sido pago, causando confusão.
