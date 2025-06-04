@@ -614,7 +614,7 @@ class Connect
         $isPixEnabled = Params::getPixConfig('enabled') == 'yes';
         
         //yes, we coul've used transient, but litespeed cache can mess with it if not properly configured
-        $alreadyChecked = get_option('pagbank_pix_lastorder_checked', time()) > (time() - 3600); // 60 minutes
+        $alreadyChecked = get_option('pagbank_pix_lastorder_checked', 0) > (time() - 3600); // 60 minutes
         
         // Check if the notice has been dismissed for this user
         if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true) || $alreadyChecked) {
