@@ -299,7 +299,7 @@ class Recurring
                 ]);
                 ?>
                 </div>
-                <h2><?php echo __('Restringir conteúdo', 'pagbank-connect');?> (beta)<span class="woocommerce-help-tip" tabindex="0" aria-label="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>" data-tip="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>"></span></h2>
+                <h2><?php echo __('Restringir conteúdo', 'pagbank-connect');?><span class="woocommerce-help-tip" tabindex="0" aria-label="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>" data-tip="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>"></span></h2>
                 
                 <div class="options_group">
                 <?php
