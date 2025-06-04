@@ -253,8 +253,13 @@ class Connect
                         'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
                         'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
                         'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods'),
-                ]
-            ]
+                ],
+            ],
+            'extra' => [
+                'hpos_enabled' => wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled() ? 'yes' : 'no',
+                'litespeed_cache' => is_plugin_active('litespeed-cache/litespeed-cache.php') ? 'yes' : 'no',
+                'wordfence_active' => is_plugin_active('wordfence/wordfence.php') ? 'yes' : 'no',
+            ],
         ];
 
         try{
