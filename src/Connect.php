@@ -253,8 +253,13 @@ class Connect
                         'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
                         'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
                         'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods'),
-                ]
-            ]
+                ],
+            ],
+            'extra' => [
+                'hpos_enabled' => wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled() ? 'yes' : 'no',
+                'litespeed_cache' => is_plugin_active('litespeed-cache/litespeed-cache.php') ? 'yes' : 'no',
+                'wordfence_active' => is_plugin_active('wordfence/wordfence.php') ? 'yes' : 'no',
+            ],
         ];
 
         try{
@@ -612,7 +617,9 @@ class Connect
     {
         $userId = get_current_user_id();
         $isPixEnabled = Params::getPixConfig('enabled') == 'yes';
-        $alreadyChecked = get_transient('pagbank_pix_lastorder_checked');
+        
+        //yes, we coul've used transient, but litespeed cache can mess with it if not properly configured
+        $alreadyChecked = get_option('pagbank_pix_lastorder_checked', 0) > (time() - 3600); // 60 minutes
         
         // Check if the notice has been dismissed for this user
         if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true) || $alreadyChecked) {
@@ -624,6 +631,10 @@ class Connect
         //enable meta query filter
         Functions::addMetaQueryFilter();
 
+        //workaround for the global $post variable not being affected by WP_Query (see #PB-829)
+        global $post;
+        $original_post = $post;
+        
         //get the pix key from the last pix order
         // Check if HPOS is enabled
         if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
@@ -678,12 +689,13 @@ class Connect
                     $lastPixOrder[] = $order;
                 }
                 wp_reset_postdata();
+                $post = $original_post; // Reset the global post data 
             }
         }
 
         if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
             // Update the transient to prevent checking again for 30 minutes
-            set_transient('pagbank_pix_lastorder_checked', true, 1800 );
+            update_option('pagbank_pix_lastorder_checked', time() );
             return;
         }
 
@@ -712,8 +724,8 @@ class Connect
             <?php
         }
 
-        // Update the transient to prevent checking again for 30 days
-        set_transient('pagbank_pix_lastorder_checked', true, 2592000 );
+        // Update the transient to prevent checking again
+        update_option('pagbank_pix_lastorder_checked', time());
     }
 
     /**

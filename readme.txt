@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.40.1
+Stable tag: 4.41.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -202,6 +202,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.41.0 =
+* Produtos Variáveis / Configuráveis agora podem ser vendidos com [recorrência PagBank](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22906222668685-Aceitando-pagamentos-recorrentes-com-WooCommerce-Vis%C3%A3o-Geral).
+* Alteramos a ordem padrão de exibição das assinaturas. Agora assinaturas novas vem primeiro.
+* [Restrição de conteúdo para assinantes](https://ajuda.pbintegracoes.com/hc/pt-br/articles/32371612227853-Restri%C3%A7%C3%A3o-de-Conte%C3%BAdo-no-Woo-somente-para-assinantes) deixa de ser beta.
+* Corrigimos um problema de performance em lojas com LiteSpeed Cache ativado e HPOS desativado.
+* Correção de bug onde no cenário acima, não era possível editar ou adicionar produtos.
 
 = 4.40.1 =
 * Correções de bugs diversos no Fluid Checkout que poderiam impedir finalização de compra.
