@@ -343,6 +343,11 @@ jQuery(document).ready(function ($) {
         customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
         var billing_phone = checkoutFormDataObj['billing_cellphone']?.length ? checkoutFormDataObj['billing_cellphone'] : checkoutFormDataObj['billing_phone'] ?? null;
 
+        if (!billing_phone) {
+            alert('Por favor, preencha o campo Telefone ou Celular para continuar com o pagamento.');
+            return false;
+        }
+        
         let orderData = typeof pagBankOrderDetails !== 'undefined'
             ? pagBankOrderDetails.data //if order-pay page
             : { //if checkout page get from form fields
