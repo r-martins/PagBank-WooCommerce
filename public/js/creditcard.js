@@ -344,11 +344,10 @@ jQuery(document).ready(function ($) {
         var billing_phone = checkoutFormDataObj['billing_cellphone']?.length ? checkoutFormDataObj['billing_cellphone'] : checkoutFormDataObj['billing_phone'] ?? null;
 
         if (!billing_phone) {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            alert('Por favor, preencha o campo Telefone ou Celular para continuar com o pagamento.');
+            return false;
         }
+        
         let orderData = typeof pagBankOrderDetails !== 'undefined'
             ? pagBankOrderDetails.data //if order-pay page
             : { //if checkout page get from form fields
