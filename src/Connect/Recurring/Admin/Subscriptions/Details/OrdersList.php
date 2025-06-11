@@ -35,9 +35,14 @@ class OrdersList extends WP_List_Table
         ];
     }
 
+    /**
+     * Handles the display of default column values for the orders list table.
+     * @param array|object $item
+     * @param mixed $column_name
+     */
     public function column_default($item, $column_name)
     {
-        $editOrderUrl = method_exists('get_edit_order_url', $item) ? $item->get_edit_order_url() : '';
+        $editOrderUrl = method_exists( $item, 'get_edit_order_url') ? $item->get_edit_order_url() : '';
         if (!$editOrderUrl) {
             $parentOrderId = $item->get_parent_id();
             $parentOrder = wc_get_order($parentOrderId);
