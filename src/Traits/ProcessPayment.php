@@ -173,6 +173,7 @@ trait ProcessPayment
                         $frequency,
                         $cycle
                     )->format('Y-m-d H:i:s'),
+                    'retry_attempts_remaining' => null
                 ]);
             }
         }
