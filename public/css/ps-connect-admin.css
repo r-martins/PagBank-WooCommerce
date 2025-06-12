@@ -62,3 +62,44 @@ a.recurring-label{
     background-size: contain;
     margin-right: 5px;
 }
+
+.rm-sandbox-warning-box {
+    background-color: #fff8e1;
+    border-left: 4px solid #ffc107;
+    padding: 16px;
+    margin-top: 12px;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    color: #444;
+}
+
+.rm-sandbox-warning-box p {
+    margin: 0 0 10px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.rm-sandbox-clear-btn {
+    display: inline-block;
+    background-color: #d32f2f;
+    color: #fff;
+    padding: 10px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.rm-sandbox-clear-btn:hover {
+    background-color: #b71c1c;
+}
+
+a.rm-sandbox-clear-btn {padding: 5px;line-height: 10px;}
+
+a.rm-sandbox-clear-btn span {
+    line-height: 10px;
+}
+a.rm-sandbox-clear-btn:hover, a.rm-sandbox-clear-btn span:hover{
+    color: #FFF;
+}
