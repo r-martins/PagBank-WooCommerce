@@ -1827,4 +1827,131 @@ class Recurring
 
         \wc_add_notice($message, $class);
     }
+    /**
+     * @return bool Returns true on success, false on failure.
+     */
+    public static function subscriptionSandboxClear()
+    {
+
+        $orders = self::getOrderInitialSandbox();
+
+        $exists = count($orders) > 0;     
+        $force_clear = isset($_GET['clear_recurring']);
+        // Force refresh if requested via URL
+        if ($force_clear && $exists) {
+            try {
+                $removed = self::removeSubscriptionSandbox($orders);
+                if ($removed) {
+                    $message = sprintf(__('Assinaturas sandbox removidas com sucesso: %d', 'pagbank-connect'), $removed);
+                    set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+                }
+            } catch (\Throwable $th) {
+                $message = __('Nenhuma assinatura sandbox foi removida.', 'pagbank-connect');
+                set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+            }
+            // Reload the page to show the admin notice
+            echo '<script>window.location.reload();</script>';
+            exit;
+        }
+        return $exists;
+    }
+
+    /**
+     * Removes all sandbox subscriptions and marks them as removed.
+     * @param mixed $orders
+     * @return false|integer
+     */
+    public static function removeSubscriptionSandbox($orders)
+    {
+        global $wpdb;
+
+        if(!$orders || count($orders) <= 0) return false;
+        
+        $count = 0;
+        foreach ($orders as $order) {
+            if($order->get_meta('pagbank_is_sandbox') !== "1"){
+                continue;
+            }
+
+            // Add meta_data to mark as removed
+            $order->add_meta_data('_pagbank_recurring_removed', 1, true);
+            $order->save();
+
+            // Delete subscription from pagbank_recurring table
+            $deleted = $wpdb->delete(
+            $wpdb->prefix . 'pagbank_recurring',
+            ['initial_order_id' => $order->get_id()],
+            ['%d']
+            );
+            if($deleted) $count++;
+            
+        }
+        return $count;
+    }
+
+    public static function getOrderInitialSandbox()
+    {
+        if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
+            return wc_get_orders([
+            'limit'        => -1,
+            'relation' => 'AND',
+            'meta_query'   => [
+                [
+                    'key'     => '_pagbank_recurring_initial',
+                    'value'   => '1',
+                ],
+                [
+                    'key'     => 'pagbank_is_sandbox',
+                    'value'   => '1',
+                ],
+                [
+                    'key'     => '_pagbank_recurring_removed',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ]
+            ]);
+        }
+
+
+        // else, HPOS is disabled
+        $args = array(
+            'post_type'      => 'shop_order',
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => '_pagbank_recurring_initial',
+                    'value'   => '1',
+                    'compare' => '='
+                ],
+                [
+                    'key'     => 'pagbank_is_sandbox',
+                    'value'   => '1',
+                    'compare' => '=' // ou 'LIKE' se não funcionar
+                ],
+                [
+                    'key'     => '_pagbank_recurring_removed',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ],
+        );
+
+        $query = new \WP_Query($args);
+
+        $recurringOrders = [];
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $order_id = get_the_ID();
+                $order = wc_get_order($order_id);
+                $recurringOrders[] = $order;
+            }
+            wp_reset_postdata();
+        }
+
+        return $recurringOrders;
+    }
 }

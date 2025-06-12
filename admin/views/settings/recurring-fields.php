@@ -12,6 +12,24 @@ return array(
         <p>Nosso plugin não depende do uso do WooCommerce Subscriptions ou nenhum outro. Consulte a <a href="https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura">documentação</a> para mais detalhes.</p>',
         'id'    => 'wc_pagseguro_connect_regurring_general_options',
     ],
+    [
+        'type'  => RM_PagBank\Connect\Recurring::subscriptionSandboxClear() ? 'title' : 'hidden',
+        'desc'  => sprintf(
+            '<div class="rm-sandbox-warning-box">
+                <p><strong>%s</strong> %s</p>
+                <p>%s</p>
+                <a href="%s" class="rm-sandbox-clear-btn">
+                    <span class="dashicons dashicons-trash"></span> %s
+                </a>
+            </div>',
+            esc_html__('Atenção:', 'pagbank-connect'),
+            esc_html__('Esta ação irá apagar todas as assinaturas de teste (sandbox).', 'pagbank-connect'),
+            esc_html__('Use este recurso apenas se tiver certeza de que não precisa mais das assinaturas de teste.', 'pagbank-connect'),
+            esc_url(add_query_arg('clear_recurring', 1)),
+            esc_html__('Limpar Assinaturas Sandbox', 'pagbank-connect')
+        ),
+        'id'    => 'woocommerce_rm-pagbank-recurring_sandbox_section',
+    ],
 	[
         'id'          => 'woocommerce_rm-pagbank-recurring_enabled',
         'title'       => __( 'Habilitar Recorrência', 'pagbank-connect'),
