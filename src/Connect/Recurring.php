@@ -1849,8 +1849,8 @@ class Recurring
                 $message = __('Nenhuma assinatura sandbox foi removida.', 'pagbank-connect');
                 set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
             }
-            // Reload the page to show the admin notice
-            echo '<script>window.location.reload();</script>';
+            $redirect_url = remove_query_arg('clear_recurring', $_SERVER['REQUEST_URI']);
+            wp_safe_redirect($redirect_url);
             exit;
         }
         return $exists;
