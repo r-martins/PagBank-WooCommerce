@@ -13,7 +13,7 @@ return array(
         'id'    => 'wc_pagseguro_connect_regurring_general_options',
     ],
     [
-        'type'  => RM_PagBank\Connect\Recurring::subscriptionSandboxClear() ? 'title' : 'hidden',
+        'type'  => RM_PagBank\Connect\Recurring::removeSandboxSubscriptions() ? 'title' : 'hidden',
         'desc'  => sprintf(
             '<div class="rm-sandbox-warning-box">
                 <p><strong>%s</strong> %s</p>
@@ -25,8 +25,8 @@ return array(
             esc_html__('Atenção:', 'pagbank-connect'),
             esc_html__('Esta ação irá apagar todas as assinaturas de teste (sandbox).', 'pagbank-connect'),
             esc_html__('Use este recurso apenas se tiver certeza de que não precisa mais das assinaturas de teste.', 'pagbank-connect'),
-            esc_url(add_query_arg('clear_recurring', 1)),
-            esc_html__('Limpar Assinaturas Sandbox', 'pagbank-connect')
+            esc_url(add_query_arg('remove_sandbox_recurring', 1)),
+            esc_html__('Excluir Assinaturas Sandbox', 'pagbank-connect')
         ),
         'id'    => 'woocommerce_rm-pagbank-recurring_sandbox_section',
     ],

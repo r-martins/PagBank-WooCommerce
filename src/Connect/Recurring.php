@@ -1,6 +1,7 @@
 <?php
 namespace RM_PagBank\Connect;
 
+use Automattic\WooCommerce\Internal\DependencyManagement\ContainerException;
 use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Payments\CreditCardToken;
@@ -1830,13 +1831,13 @@ class Recurring
     /**
      * @return bool Returns true on success, false on failure.
      */
-    public static function subscriptionSandboxClear()
+    public static function removeSandboxSubscriptions()
     {
 
-        $orders = self::getOrderInitialSandbox();
+        $orders = self::getSandboxInitialOrders();
 
         $exists = count($orders) > 0;     
-        $force_clear = isset($_GET['clear_recurring']);
+        $force_clear = isset($_GET['remove_sandbox_recurring']);
         // Force refresh if requested via URL
         if ($force_clear && $exists) {
             try {
@@ -1849,7 +1850,7 @@ class Recurring
                 $message = __('Nenhuma assinatura sandbox foi removida.', 'pagbank-connect');
                 set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
             }
-            $redirect_url = remove_query_arg('clear_recurring', $_SERVER['REQUEST_URI']);
+            $redirect_url = remove_query_arg('remove_sandbox_recurring', $_SERVER['REQUEST_URI']);
             wp_safe_redirect($redirect_url);
             exit;
         }
@@ -1889,7 +1890,12 @@ class Recurring
         return $count;
     }
 
-    public static function getOrderInitialSandbox()
+    /**
+     * get orders that are marked as sandbox initial orders
+     * @return array|stdClass|WC_Order[]
+     * @throws ContainerException
+     */
+    public static function getSandboxInitialOrders()
     {
         if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
             return wc_get_orders([
