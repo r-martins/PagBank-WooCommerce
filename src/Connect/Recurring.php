@@ -1733,6 +1733,14 @@ class Recurring
             }
             foreach($order->get_items() as $item) {
                 $originalItem = wc_get_product($item->get_product_id());
+                if (!$originalItem) {
+                    Functions::log(
+                        'Produto original não encontrado para assinatura. Impossível atualizar restrições de conteúdo.',
+                        'error',
+                        ['subscription' => $subscription->id, 'item' => $item->get_id() ?: '']
+                    );
+                    continue;
+                }
                 if ($originalItem->get_meta('_recurring_enabled') != 'yes') {
                     continue;
                 }
