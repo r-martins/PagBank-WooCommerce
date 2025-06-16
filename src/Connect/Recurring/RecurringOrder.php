@@ -70,6 +70,13 @@ class RecurringOrder
             /** @var WC_Product|null|false $itemObj */
             $product_id = $item->get_variation_id() ?: $item->get_product_id();
             $itemObj = wc_get_product($product_id);
+            if (!$itemObj) {
+                Functions::log('Produto de pedido recorrente não encontrado. Recorrência não foi processada.', 'error', [
+                    'subscription' => $subscription->id,
+                    'item' => $item->get_id() ?: '',
+                ]);
+                continue;
+            }
             $itemObj->update_meta_data('_frequency', $initialOrder->get_meta('_recurring_frequency'));
             $itemObj->update_meta_data('_cycle', $initialOrder->get_meta('_recurring_cycle'));
 

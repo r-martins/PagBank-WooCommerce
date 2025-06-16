@@ -55,7 +55,8 @@ $pbOrderId = $order->get_meta('pagbank_order_id');
 			<?php endif;?>
 			<?php if($order->get_meta('_pagbank_card_brand')):
 				$brand_url = Functions::getCcFlagUrl($order->get_meta('_pagbank_card_brand'));
-				$brand = mb_strtoupper($order->get_meta('_pagbank_card_brand')) . ' - ';
+                $brand = wc_strtoupper($order->get_meta('_pagbank_card_brand'));
+				$brand .= ' - ';
                 $firstDigits = $order->get_meta('_pagbank_card_first_digits');
                 $firstDigits = substr_replace($firstDigits, ' ', 4, 0);
 				if ($brand_url) {

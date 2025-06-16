@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.41.0
+Stable tag: 4.42.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -202,6 +202,15 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.42.0 =
+* Agora é possível excluir assinaturas de teste (em PagBank > Configurações > Recorrência). Sugerido por Thalisson Henrique.
+* Correção de problema na validação do campo telefone quando validação 3d está ativa que poderia impedir a finalização do pedido de forma silenciosa.
+* Um erro na chamada mb_strtoupper poderia ocorrer em lojas que não possuem a extensão mbstring habilitada no php. Embora comum, contornamos o problema.
+* Correção: em alguns cenários onde o pagamento manual de uma assinatura suspensa era feito, ela poderia ser cobrada novamente durante a retentativa de cobrança.
+* Correção: o ID e link dos pedidos associados à uma assinatura eram sempre os mesmos no admin e apontavam pro pedido inicial.
+* Correção onde erro crítico ocorria ao tentar processar uma assinatura cujo produto original não existia mais.
+
 
 = 4.41.0 =
 * Produtos Variáveis / Configuráveis agora podem ser vendidos com [recorrência PagBank](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22906222668685-Aceitando-pagamentos-recorrentes-com-WooCommerce-Vis%C3%A3o-Geral).

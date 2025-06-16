@@ -1,6 +1,7 @@
 <?php
 namespace RM_PagBank\Connect;
 
+use Automattic\WooCommerce\Internal\DependencyManagement\ContainerException;
 use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Payments\CreditCardToken;
@@ -1732,6 +1733,14 @@ class Recurring
             }
             foreach($order->get_items() as $item) {
                 $originalItem = wc_get_product($item->get_product_id());
+                if (!$originalItem) {
+                    Functions::log(
+                        'Produto original não encontrado para assinatura. Impossível atualizar restrições de conteúdo.',
+                        'error',
+                        ['subscription' => $subscription->id, 'item' => $item->get_id() ?: '']
+                    );
+                    continue;
+                }
                 if ($originalItem->get_meta('_recurring_enabled') != 'yes') {
                     continue;
                 }
@@ -1826,5 +1835,137 @@ class Recurring
         }
 
         \wc_add_notice($message, $class);
+    }
+    /**
+     * @return bool Returns true on success, false on failure.
+     */
+    public static function removeSandboxSubscriptions()
+    {
+
+        $orders = self::getSandboxInitialOrders();
+
+        $exists = count($orders) > 0;     
+        $force_clear = isset($_GET['remove_sandbox_recurring']);
+        // Force refresh if requested via URL
+        if ($force_clear && $exists) {
+            try {
+                $removed = self::removeSubscriptionSandbox($orders);
+                if ($removed) {
+                    $message = sprintf(__('Assinaturas sandbox removidas com sucesso: %d', 'pagbank-connect'), $removed);
+                    set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+                }
+            } catch (\Throwable $th) {
+                $message = __('Nenhuma assinatura sandbox foi removida.', 'pagbank-connect');
+                set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+            }
+            $redirect_url = remove_query_arg('remove_sandbox_recurring', $_SERVER['REQUEST_URI']);
+            wp_safe_redirect($redirect_url);
+            exit;
+        }
+        return $exists;
+    }
+
+    /**
+     * Removes all sandbox subscriptions and marks them as removed.
+     * @param mixed $orders
+     * @return false|integer
+     */
+    public static function removeSubscriptionSandbox($orders)
+    {
+        global $wpdb;
+
+        if(!$orders || count($orders) <= 0) return false;
+        
+        $count = 0;
+        foreach ($orders as $order) {
+            if($order->get_meta('pagbank_is_sandbox') !== "1"){
+                continue;
+            }
+
+            // Add meta_data to mark as removed
+            $order->add_meta_data('_pagbank_recurring_removed', 1, true);
+            $order->save();
+
+            // Delete subscription from pagbank_recurring table
+            $deleted = $wpdb->delete(
+            $wpdb->prefix . 'pagbank_recurring',
+            ['initial_order_id' => $order->get_id()],
+            ['%d']
+            );
+            if($deleted) $count++;
+            
+        }
+        return $count;
+    }
+
+    /**
+     * get orders that are marked as sandbox initial orders
+     * @return array|stdClass|WC_Order[]
+     * @throws ContainerException
+     */
+    public static function getSandboxInitialOrders()
+    {
+        if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
+            return wc_get_orders([
+            'limit'        => -1,
+            'relation' => 'AND',
+            'meta_query'   => [
+                [
+                    'key'     => '_pagbank_recurring_initial',
+                    'value'   => '1',
+                ],
+                [
+                    'key'     => 'pagbank_is_sandbox',
+                    'value'   => '1',
+                ],
+                [
+                    'key'     => '_pagbank_recurring_removed',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ]
+            ]);
+        }
+
+
+        // else, HPOS is disabled
+        $args = array(
+            'post_type'      => 'shop_order',
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => '_pagbank_recurring_initial',
+                    'value'   => '1',
+                    'compare' => '='
+                ],
+                [
+                    'key'     => 'pagbank_is_sandbox',
+                    'value'   => '1',
+                    'compare' => '=' // ou 'LIKE' se não funcionar
+                ],
+                [
+                    'key'     => '_pagbank_recurring_removed',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ],
+        );
+
+        $query = new \WP_Query($args);
+
+        $recurringOrders = [];
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $order_id = get_the_ID();
+                $order = wc_get_order($order_id);
+                $recurringOrders[] = $order;
+            }
+            wp_reset_postdata();
+        }
+
+        return $recurringOrders;
     }
 }
