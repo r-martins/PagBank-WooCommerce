@@ -23,7 +23,7 @@ class SubscriptionEdit extends SubscriptionDetails
         $this->display_tablenav( 'top' );
 
         $this->screen->render_screen_reader_content( 'heading_list' );
-        $action = Recurring::subscriptionActionUrl('action', $this->subscription)
+        $action = Recurring::subscriptionActionUrl('edit', $this->subscription)
         ?>
         <form method="post" action="<?php echo $action ?>">
             <table class="wp-list-table <?php echo esc_attr(implode(' ', $this->get_table_classes())); ?>">

@@ -497,7 +497,12 @@ class Recurring
      */
     public function isSubscriptionUpdatePage(): bool
     {
-        global $wp;
+        global $wp, $wp_rewrite;
+        // Default permalinks: check query string
+        if (! $wp_rewrite->using_permalinks()) {
+            return isset($_GET['rm-pagbank-subscriptions-update']) && is_account_page();
+        }
+        // Friendly permalinks
         $endpoint = $wp->request;
         return stripos($endpoint, 'rm-pagbank-subscriptions-update') !== false;
     }
