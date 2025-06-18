@@ -129,7 +129,7 @@ wc_print_notices();
             <?php if ( ! empty($subscription->suspended_reason) ): ?>
                 <tr>
                     <th scope="row"><?php _e('Razão da Suspensão', 'pagbank-connect')?></th>
-                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->suspended_reason));?></td>
+                    <td><?php echo $subscription->suspended_reason;?></td>
                 </tr>
             <?php endif;?>
         
