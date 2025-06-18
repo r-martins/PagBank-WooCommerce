@@ -44,8 +44,9 @@ class SubscriptionList extends WP_List_Table
         switch ($column_name) {
             case 'created_at':
             case 'updated_at':
-            case 'next_bill_at':
                 return date_i18n(get_option('date_format'), strtotime($item[$column_name]));
+            case 'next_bill_at':
+                return in_array($item['status'], ['ACTIVE', 'PENDING', 'SUSPENDED']) ? date_i18n(get_option('date_format'), strtotime($item[$column_name])) : "N/A";
             case 'recurring_type':
                 $recHelper = new Recurring();
                 return $recHelper->translateFrequency($item[$column_name]);
