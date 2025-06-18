@@ -501,4 +501,15 @@ class Recurring
         $endpoint = $wp->request;
         return stripos($endpoint, 'rm-pagbank-subscriptions-update') !== false;
     }
+
+    public static function subscriptionActionUrl($endpoint, $subscription)
+    {
+        global $wp_rewrite;
+        $action_param = "?";
+        if (! $wp_rewrite->using_permalinks()) {
+            $action_param = '&';
+        }
+        // Friendly permalinks
+        return WC()->api_request_url('rm-pagbank-subscription-edit') . $action_param . 'action=' . $endpoint . '&id=' . $subscription->id;
+    }
 }

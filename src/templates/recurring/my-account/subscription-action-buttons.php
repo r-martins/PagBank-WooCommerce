@@ -67,7 +67,7 @@ function subscriptionActionButtonsUrl($endpoint, $subscription){
     }
 
     $isAdmin = is_admin() && ! defined( 'DOING_AJAX' );
-    $url = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=' . $endpoint . '&id=' . $subscription->id;
+    $url = \RM_PagBank\Helpers\Recurring::subscriptionActionUrl($endpoint, $subscription);
     $url .= $isAdmin ? '&fromAdmin=1' : '';
     return $url;
 
@@ -76,14 +76,13 @@ function subscriptionActionButtonsUrl($endpoint, $subscription){
 function pagbank_subscription_update_url($subscription_id) {
     global $wp_rewrite;
     if (! $wp_rewrite->using_permalinks()) {
-        // Permalinks padrão: usa query string
+        // Default permalinks: use query string
         $account_page_id = wc_get_page_id('myaccount');
         $url = get_permalink($account_page_id);
         $url = add_query_arg('rm-pagbank-subscriptions-update', $subscription_id, $url);
         return $url;
-    } else {
-        // Permalinks amigáveis
-        return wc_get_account_endpoint_url('rm-pagbank-subscriptions-update/' . $subscription_id);
-    }
+    } 
+    //else
+    return wc_get_account_endpoint_url('rm-pagbank-subscriptions-update/' . $subscription_id);   
 }
 
