@@ -114,6 +114,8 @@ class SubscriptionDetails extends WP_List_Table
         $this->items[] = ['name' => 'Tipo Recorrente', 'value' => $type];
         $this->items[] = ['name' => 'Criado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->created_at))];
         $this->items[] = ['name' => 'Atualizado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->updated_at))];
-        $this->items[] = ['name' => 'Próxima Cobrança', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->next_bill_at))];
+        if ( in_array($this->subscription->status, ['ACTIVE', 'PENDING', 'SUSPENDED']) ):
+            $this->items[] = ['name' => 'Próxima Cobrança', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->next_bill_at))];
+        endif;
     }
 }
