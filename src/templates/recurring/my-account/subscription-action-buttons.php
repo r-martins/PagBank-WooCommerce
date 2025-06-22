@@ -50,7 +50,7 @@ $actions = apply_filters('rm_pagbank_account_recurring_actions', [
     ],
     'update' => [
         'name' => __('Atualizar Cartão', 'pagbank-connect'),
-        'url' => wc_get_account_endpoint_url('rm-pagbank-subscriptions-update/' . $subscription->id),
+        'url' => pagbank_subscription_update_url($subscription->id),
         'class' => 'subscription-button update',
     ]
 ], $subscription);
@@ -67,9 +67,22 @@ function subscriptionActionButtonsUrl($endpoint, $subscription){
     }
 
     $isAdmin = is_admin() && ! defined( 'DOING_AJAX' );
-    $url = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=' . $endpoint . '&id=' . $subscription->id;
+    $url = \RM_PagBank\Helpers\Recurring::subscriptionActionUrl($endpoint, $subscription);
     $url .= $isAdmin ? '&fromAdmin=1' : '';
     return $url;
 
+}
+
+function pagbank_subscription_update_url($subscription_id) {
+    global $wp_rewrite;
+    if (! $wp_rewrite->using_permalinks()) {
+        // Default permalinks: use query string
+        $account_page_id = wc_get_page_id('myaccount');
+        $url = get_permalink($account_page_id);
+        $url = add_query_arg('rm-pagbank-subscriptions-update', $subscription_id, $url);
+        return $url;
+    } 
+    //else
+    return wc_get_account_endpoint_url('rm-pagbank-subscriptions-update/' . $subscription_id);   
 }
 

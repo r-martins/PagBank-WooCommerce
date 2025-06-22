@@ -23,7 +23,7 @@ class SubscriptionEdit extends SubscriptionDetails
         $this->display_tablenav( 'top' );
 
         $this->screen->render_screen_reader_content( 'heading_list' );
-        $action = WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=edit&id=' . $this->subscription->id;
+        $action = Recurring::subscriptionActionUrl('edit', $this->subscription)
         ?>
         <form method="post" action="<?php echo $action ?>">
             <table class="wp-list-table <?php echo esc_attr(implode(' ', $this->get_table_classes())); ?>">

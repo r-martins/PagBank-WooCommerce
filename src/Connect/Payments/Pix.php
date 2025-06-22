@@ -120,7 +120,10 @@ class Pix extends Common
 
         // Check if the product is a variable product and if we are on the product page
         if ($product->is_type('variable') && is_product()) {
-            return $price;
+            $min_price = $product->get_variation_price( 'min' );
+            $max_price = $product->get_variation_price( 'max' );
+            $price_variation = $min_price == $max_price;
+            if(!$price_variation) return $price;
         }
 
         $css_file = "product-discount-pix.css";

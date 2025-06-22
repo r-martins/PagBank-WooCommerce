@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.42.0
+Stable tag: 4.42.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -202,6 +202,13 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.42.1 =
+* Desconto PIX não era exibido na página de produto em alguns temas quando determinada variação de preço ocorria.
+* Em lojas cuja config de links permanentes era a padrão (sem url's amigáveis), alguns links de ações de assinaturas, como cancelar e atualizar cartão não eram exibidos corretamente, resultando em 404 (Não encontrado).
+* Motivo da suspensão de uma assinatura era exibido como data (01/jan/1970) em alguns cenários
+* Ocultamos o campo "Data da Próxima" cobrança em assinaturas que não estão mais ativas a fim de evitar confusão.
+* Quando um produto vendido em uma assinatura era excluído do sistema, uma exceção não tratada ocorria ao processar a cobrança recorrente. Agora a assinatura será cancelada como esperado.
 
 = 4.42.0 =
 * Agora é possível excluir assinaturas de teste (em PagBank > Configurações > Recorrência). Sugerido por Thalisson Henrique.

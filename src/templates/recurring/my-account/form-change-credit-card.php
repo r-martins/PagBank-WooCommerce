@@ -31,7 +31,7 @@ $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
 $gateway = array_key_exists('rm-pagbank-cc',$available_gateways) ? $available_gateways['rm-pagbank-cc'] : null;
 ?>
 <?php if ( $payment->method == 'credit_card' && $gateway) :?>
-    <form id="order_update" class="wc-credit-card-form payment_methods" action="<?php echo WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=changePaymentMethod&id=' . $subscription->id ?>" method="post">
+    <form id="order_update" class="wc-credit-card-form payment_methods" action="<?php echo \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('changePaymentMethod', $subscription); ?>" method="post">
         <div class="payment_box wc_payment_method payment_method_<?php echo esc_attr( $gateway->id ); ?>">
             <?php
             $default_fields = [
