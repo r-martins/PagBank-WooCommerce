@@ -83,13 +83,13 @@ class RecurringDashboard
             case 'PAUSED':
                 $actions['unpause'] = [
                     'name' => __('Resumir', 'pagbank-connect'),
-                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=unpause&id=' . $subscription->id
+                    'url' => \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('unpause', $subscription)
                 ];
                 break;
             case 'PENDING_CANCEL':
                 $actions['cancel'] = [
                     'name' => __('Suspender Cancelamento', 'pagbank-connect'),
-                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=uncancel&id=' . $subscription->id
+                    'url' =>  \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('uncancel', $subscription)
                 ];
                 break;
             case 'SUSPENDED':
@@ -97,7 +97,7 @@ class RecurringDashboard
                 // coming soon
 //                $actions['pay'] = [
 //                    'name' => __('Pagar', 'pagbank-connect'),
-//                    'url' => WC()->api_request_url('rm-pagbank-subscription-edit'). '?action=pay&id=' . $subscription->id
+//                    'url' => \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('pay', $subscription)
 //                ];
                 break;
             case 'CANCELED':
