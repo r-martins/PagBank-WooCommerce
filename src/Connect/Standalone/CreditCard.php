@@ -329,6 +329,14 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'message' => $message
                 ];
             }
+
+            // region If payment method is credit card and charge was approved, check if it is a subscription
+            if(isset($_POST['rm-pagbank-card-set-default']) && $_POST['rm-pagbank-card-set-default'] == '1') {
+                $orderParent = $order->get_parent_id() ? wc_get_order($order->get_parent_id()) : $order;
+                $recurring = new \RM_PagBank\Connect\Recurring();
+                $subscription = $recurring->getSubscriptionFromOrder($orderParent);
+                $recurring->changePaymentMethodSubscriptionAction($subscription);
+            }
         }
         // endregion
 

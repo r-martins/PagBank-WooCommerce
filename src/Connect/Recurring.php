@@ -1759,7 +1759,7 @@ class Recurring
     }
 
     /**
-     * @param $uscerId
+     * @param $userId
      * @param $restrictedPages
      * @param $restrictedCategories
      *

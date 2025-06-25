@@ -92,13 +92,8 @@ class Recurring
         
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
-            $is_recurring = $product->get_meta('_recurring_enabled') == 'yes';
-            if ($parentId = $product->get_parent_id()) {
-                //if the product is a variation, we need to check the parent product
-                $product_variable = wc_get_product($parentId);
-                $is_recurring = $product_variable->get_meta('_recurring_enabled') == 'yes';
-            }
-            return $is_recurring;
+            //if the product is a variation, we need to check the parent product
+            return $this->isProductRecurring($product);
         }
         
         return false;
@@ -516,5 +511,25 @@ class Recurring
         }
         // Friendly permalinks
         return WC()->api_request_url('rm-pagbank-subscription-edit') . $action_param . 'action=' . $endpoint . '&id=' . $subscription->id;
+    }
+
+    /**
+     * Checks if a product or its parent is recurring
+     * @param WC_Product|null $product
+     * @return bool
+     */
+    public function isProductRecurring($product): bool
+    {
+        if(!$product || !is_a($product, 'WC_Product')) {
+            return false;
+        }
+        
+        $is_recurring = $product->get_meta('_recurring_enabled') == 'yes';
+        if ($parentId = $product->get_parent_id()) {
+            //if the product is a variation, we need to check the parent product
+            $product_variable = wc_get_product($parentId);
+            $is_recurring = $product_variable->get_meta('_recurring_enabled') == 'yes';
+        }
+        return $is_recurring;
     }
 }

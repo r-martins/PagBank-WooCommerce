@@ -52,6 +52,24 @@ if ($default_installments){
     }
 }
 
+if (is_wc_endpoint_url('order-pay')) {
+    $order_id = absint(get_query_var('order-pay'));
+    $order = wc_get_order($order_id);
+
+    if ($order) {
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+            if ($recHelper->isProductRecurring($product)) {
+                $default_fields['card-set-default'] = '<p class="form-row form-row-wide">
+                    <label for="' . esc_attr(Connect::DOMAIN) . '-card-set-default">' . esc_html__('Salvar este cartão para futuras cobranças', 'pagbank-connect') . '</label>
+                    <input type="checkbox" id="' . esc_attr(Connect::DOMAIN) . '-card-set-default" class="input-checkbox" ' . $this->field_name('card-set-default') . ' value="1"/>
+                </p>';
+                break;
+            }
+        }
+    }
+}
+
 $default_fields['card-installments'] = str_replace('{{installment_options}}', $installment_options, $default_fields['card-installments']);
 
 
