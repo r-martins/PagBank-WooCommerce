@@ -344,8 +344,20 @@ jQuery(document).ready(function ($) {
         var billing_phone = checkoutFormDataObj['billing_cellphone']?.length ? checkoutFormDataObj['billing_cellphone'] : checkoutFormDataObj['billing_phone'] ?? null;
 
         if (!billing_phone) {
-            alert('Por favor, preencha o campo Telefone ou Celular para continuar com o pagamento.');
+          const phones = typeof pagBankOrderDetails !== 'undefined' ? pagBankOrderDetails?.data?.customer?.phones : [];
+          // If no phone is provided in the form, try to get it from the order details
+          if (Array.isArray(phones) && phones.length > 0) {
+            // ordem manual (pay_for_order)
+            const { area, number } = phones[0];
+            billing_phone = area + number;
+          }
+
+          if (!billing_phone) {
+            alert(
+              "Por favor, preencha o campo Telefone ou Celular para continuar com o pagamento."
+            );
             return false;
+          }
         }
         
         let orderData = typeof pagBankOrderDetails !== 'undefined'

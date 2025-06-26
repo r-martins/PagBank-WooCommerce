@@ -265,7 +265,7 @@ class CreditCard extends Common
         $billingNeighborhood = !empty($order->get_meta('_billing_neighborhood')) ? $order->get_meta(
             '_billing_neighborhood'
         ) : 'n/d';
-        
+        $phone = !empty($order->get_meta('billing_cellphone')) ? $order->get_meta('billing_cellphone') : $order->get_billing_phone();
         $orderDetails = [
             'data' => [
                 'customer' => [
@@ -274,8 +274,8 @@ class CreditCard extends Common
                     'phones'         => [
                         [
                             'country' => '55',
-                            'area'    => substr(Params::removeNonNumeric($order->get_billing_phone()), 0, 2),
-                            'number'  => substr(Params::removeNonNumeric($order->get_billing_phone()), 2),
+                            'area'    => substr(Params::removeNonNumeric($phone), 0, 2),
+                            'number'  => substr(Params::removeNonNumeric($phone), 2),
                             'type'    => 'MOBILE'
                         ]
                     ],
