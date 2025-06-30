@@ -61,7 +61,7 @@ if (is_wc_endpoint_url('order-pay')) {
             $product = $item->get_product();
             if ($recHelper->isProductRecurring($product)) {
                 $default_fields['card-set-default'] = '<p class="form-row form-row-wide">
-                    <label for="' . esc_attr(Connect::DOMAIN) . '-card-set-default">' . esc_html__('Salvar este cartão para futuras cobranças', 'pagbank-connect') . '</label>
+                    <label for="' . esc_attr(Connect::DOMAIN) . '-card-set-default">' . esc_html__('Usar este cartão em futuras cobranças', 'pagbank-connect') . '</label>
                     <input type="checkbox" id="' . esc_attr(Connect::DOMAIN) . '-card-set-default" class="input-checkbox" ' . $this->field_name('card-set-default') . ' value="1"/>
                 </p>';
                 break;
