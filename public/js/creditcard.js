@@ -581,10 +581,11 @@ jQuery(document).ready(function ($) {
                 }
                 window.ps_cc_installments = response;
 
-                // Seleciona a opção anterior, se existir, senão a última
+                // if previously selected installment is found, select it
                 if (found) {
                     select.val(previouslySelected);
-                } else if (response.length > 0) {
+                } else if (response?.length > 0 && typeof window.ps_cc_selected_installment !== 'undefined') {
+                    // If the previously selected installment is not found, select the last one
                     select.val(response[response.length-1].installments);
                 }
             },
