@@ -69,8 +69,6 @@ const PaymentInstructions = () => {
 				console.info('WooCommerce > Status > Logs para mais detalhes.');
 			}
 		});
-
-        console.debug('Parcelas atualizadas:', installments);
 	};
 
 	// When the credit card number changes
