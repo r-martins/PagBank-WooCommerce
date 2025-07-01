@@ -4,6 +4,8 @@ import { __ } from '@wordpress/i18n';
 import { getSetting } from '@woocommerce/settings';
 import MaskedInput from './MaskedInput';
 import InstallmentsOptions from './InstallmentsOptions';
+const { useSelect } = window.wp.data;
+const { checkoutStore } = window.wc.wcBlocksData;
 const PaymentInstructions = () => {
     const settings = getSetting('rm-pagbank-cc_data', {});
     const defaultInstallments = settings.defaultInstallments || [];
@@ -14,87 +16,78 @@ const PaymentInstructions = () => {
     const [installments, setInstallments] = useState(defaultInstallments);
     window.ps_cc_installments = installments;
 
-    useEffect(() => {
-        prevCcBinRef.current = ccBin;
-    }, [ccBin]);
+	const isCalculating = useSelect((select) => select(checkoutStore).isCalculating());
+	const detectCardBrand = (number) => {
+		const patterns = {
+			visa: /^4[0-9]{0,}$/,
+			mastercard: /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$/,
+			amex: /^3([47]\d*)?$/,
+			diners: /^(3(0[0-5]|095|6|[8-9]))\d*$/,
+			jcb: /^(?:2131|1800|35\d{3})\d{0,}$/,
+			aura: /^5078\d*$/,
+			hipercard: /^((606282)|(637095)|(637568)|(637599)|(637609)|(637612))\d*$/,
+			elo: new RegExp(
+				'^((451416)|(509091)|(636368)|(636297)|(504175)|(438935)|(40117[8-9])|(45763[1-2])|' +
+				'(457393)|(431274)|(50990[0-2])|(5099[7-9][0-9])|(50996[4-9])|(509[1-8][0-9][0-9])|' +
+				'(5090(0[0-2]|0[4-9]|1[2-9]|[24589][0-9]|3[1-9]|6[0-46-9]|7[0-24-9]))|' +
+				'(5067(0[0-24-8]|1[0-24-9]|2[014-9]|3[0-379]|4[0-9]|5[0-3]|6[0-5]|7[0-8]))|' +
+				'(6504(0[5-9]|1[0-9]|2[0-9]|3[0-9]))|' +
+				'(6504(8[5-9]|9[0-9])|6505(0[0-9]|1[0-9]|2[0-9]|3[0-8]))|' +
+				'(6505(4[1-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-8]))|' +
+				'(6507(0[0-9]|1[0-8]))|(65072[0-7])|(6509(0[1-9]|1[0-9]|20))|' +
+				'(6516(5[2-9]|6[0-9]|7[0-9]))|(6550(0[0-9]|1[0-9]))|' +
+				'(6550(2[1-9]|3[0-9]|4[0-9]|5[0-8])))\\d*$'
+			),
+		};
+		for (const brand in patterns) {
+			if (patterns[brand].test(number)) return brand;
+		}
+		return '';
+	};
 
-    const prevCcBin = prevCcBinRef.current;
+	const fetchInstallments = (bin, force = false) => {
+		if (bin.length < 6 || (prevCcBinRef.current === bin && !force)) return;
 
-    useEffect( () => {
-        // Detect card brand
-        const detectCardBrand = (number) => {
-            const visaRegex = /^4[0-9]{0,}$/;
-            const mastercardRegex = /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$/;
-            const amexRegex = /^3([47]\d*)?$/;
-            const dinersRegex = /^(3(0[0-5]|095|6|[8-9]))\d*$/;
-            const jcbRegex = /^(?:2131|1800|35\d{3})\d{0,}$/;
-            const auraRegex = /^5078\d*$/;
-            const hiperRegex = /^((606282)|(637095)|(637568)|(637599)|(637609)|(637612))\d*$/;
-            const eloRegex = new RegExp(
-                '^((451416)|(509091)|(636368)|(636297)|(504175)|(438935)|(40117[8-9])|(45763[1-2])|' +
-                '(457393)|(431274)|(50990[0-2])|(5099[7-9][0-9])|(50996[4-9])|(509[1-8][0-9][0-9])|' +
-                '(5090(0[0-2]|0[4-9]|1[2-9]|[24589][0-9]|3[1-9]|6[0-46-9]|7[0-24-9]))|' +
-                '(5067(0[0-24-8]|1[0-24-9]|2[014-9]|3[0-379]|4[0-9]|5[0-3]|6[0-5]|7[0-8]))|' +
-                '(6504(0[5-9]|1[0-9]|2[0-9]|3[0-9]))|' +
-                '(6504(8[5-9]|9[0-9])|6505(0[0-9]|1[0-9]|2[0-9]|3[0-8]))|' +
-                '(6505(4[1-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-8]))|' +
-                '(6507(0[0-9]|1[0-8]))|(65072[0-7])|(6509(0[1-9]|1[0-9]|20))|' +
-                '(6516(5[2-9]|6[0-9]|7[0-9]))|(6550(0[0-9]|1[0-9]))|' +
-                '(6550(2[1-9]|3[0-9]|4[0-9]|5[0-8])))\\d*$'
-            );
+		if (settings.isCartRecurring === true) return;
 
-            if (mastercardRegex.test(number)) return 'mastercard';
-            if (amexRegex.test(number)) return 'amex';
-            if (dinersRegex.test(number)) return 'diners';
-            if (jcbRegex.test(number)) return 'jcb';
-            if (auraRegex.test(number)) return 'aura';
-            if (hiperRegex.test(number)) return 'hipercard';
-            if (eloRegex.test(number)) return 'elo';
-            if (visaRegex.test(number)) return 'visa';
-            
-            return '';
-        };
+		prevCcBinRef.current = bin;
 
-        setCardBrand(detectCardBrand(creditCardNumber.replace(/\D/g, '')));
+		jQuery.ajax({
+			url: settings.ajax_url,
+			method: 'POST',
+			data: {
+				cc_bin: bin,
+				nonce: settings.rm_pagbank_nonce,
+				action: 'ps_get_installments',
+			},
+			success: (response) => {
+				window.ps_cc_installments = response;
+				setInstallments(response);
+			},
+			error: () => {
+				alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
+				console.info('WooCommerce > Status > Logs para mais detalhes.');
+			}
+		});
 
-        if (settings.isCartRecurring === true) {
-            return;
-        }
+        console.debug('Parcelas atualizadas:', installments);
+	};
 
-        if (creditCardNumber.replace(/\D/g, '').length < 6) {
-            return;
-        }
+	// When the credit card number changes
+	useEffect(() => {
+		const digits = creditCardNumber.replace(/\D/g, '');
+		if (digits.length >= 6) {
+			setCardBrand(detectCardBrand(digits));
+			setCcBin(digits.substring(0, 6));
+		}
+	}, [creditCardNumber]);
 
-        let ccBinNew = creditCardNumber.replace(/\D/g, '').substring(0, 6);
-        if (ccBinNew === prevCcBin) {
-            return;
-        }
-
-        setCcBin(ccBinNew);
-
-        let url = settings.ajax_url;
-
-        jQuery.ajax({
-            url: url,
-            method: 'POST',
-            data: {
-                cc_bin: ccBinNew,
-                nonce: settings.rm_pagbank_nonce,
-                action: 'ps_get_installments',
-            },
-            success: (response)=>{
-                window.ps_cc_installments = response;
-                setInstallments(response);
-            },
-            error: (response)=>{
-                alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
-                console.info('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
-                    'para ver os possíveis problemas na obtenção das parcelas. Note que cartões de teste falharão ' +
-                    'na maioria dos casos.');
-            }
-        });
-
-    }, [creditCardNumber] );
+	// When the bin changes or total recalculates
+	useEffect(() => {
+		if (!isCalculating && ccBin) {
+			fetchInstallments(ccBin, true);
+		}
+	}, [ccBin, isCalculating]);
 
     return (
         <div>
