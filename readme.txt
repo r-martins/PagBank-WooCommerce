@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.42.1
+Stable tag: 4.42.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -202,6 +202,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.42.2 =
+* Correção: Em alguns cenários onde o form de cartão era atualizado (ex: alteração de algum dado de frete) a parcela selecionada era perdida.
+* No admin, ao habilitar o Checkout PagBank (redirect), era possível não marcar nenhum meio de pagamento e isso causaria erro posterior. Agora validamos isso antes de salvar.
+* Correção: em lojas com 3D ativado, clientes tinham dificuldade em concluir um pagamento de um pedido em aberto finalizado anteriormente, pois na página de pagamento avulso o telefone do cliente não está disponível.
 
 = 4.42.1 =
 * Desconto PIX não era exibido na página de produto em alguns temas quando determinada variação de preço ocorria.

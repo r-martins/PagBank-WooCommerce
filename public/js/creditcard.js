@@ -344,8 +344,20 @@ jQuery(document).ready(function ($) {
         var billing_phone = checkoutFormDataObj['billing_cellphone']?.length ? checkoutFormDataObj['billing_cellphone'] : checkoutFormDataObj['billing_phone'] ?? null;
 
         if (!billing_phone) {
-            alert('Por favor, preencha o campo Telefone ou Celular para continuar com o pagamento.');
+          const phones = typeof pagBankOrderDetails !== 'undefined' ? pagBankOrderDetails?.data?.customer?.phones : [];
+          // If no phone is provided in the form, try to get it from the order details
+          if (Array.isArray(phones) && phones.length > 0) {
+            // ordem manual (pay_for_order)
+            const { area, number } = phones[0];
+            billing_phone = area + number;
+          }
+
+          if (!billing_phone) {
+            alert(
+              "Por favor, preencha o campo Telefone ou Celular para continuar com o pagamento."
+            );
             return false;
+          }
         }
         
         let orderData = typeof pagBankOrderDetails !== 'undefined'
@@ -563,6 +575,8 @@ jQuery(document).ready(function ($) {
             success: (response)=>{
                 let select = jQuery('#rm-pagbank-card-installments');
                 select.empty();
+                let found = false;
+                let previouslySelected = window.ps_cc_selected_installment || jQuery('#rm-pagbank-card-installments').val();
                 for (let i = 0; i < response.length; i++) {
                     let option = jQuery('<option></option>');
                     option.attr('value', response[i].installments);
@@ -573,8 +587,19 @@ jQuery(document).ready(function ($) {
     
                     option.text(text + additional_text);
                     select.append(option);
+                    if (previouslySelected == response[i].installments) {
+                        found = true;
+                    }
                 }
                 window.ps_cc_installments = response;
+
+                // if previously selected installment is found, select it
+                if (found) {
+                    select.val(previouslySelected);
+                } else if (response?.length > 0 && typeof window.ps_cc_selected_installment !== 'undefined') {
+                    // If the previously selected installment is not found, select the last one
+                    select.val(response[response.length-1].installments);
+                }
             },
             error: (response)=>{
                 alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
@@ -601,4 +626,8 @@ jQuery(document.body).on('checkout_error', function(event, error_data) {
 
         rmPagbankCcForm.prepend(retry3dsInput);
     }
+});
+
+jQuery(document).on("change", "#rm-pagbank-card-installments", function () {
+  window.ps_cc_selected_installment = jQuery(this).val();
 });

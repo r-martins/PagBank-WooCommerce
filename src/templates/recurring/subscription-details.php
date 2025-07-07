@@ -126,7 +126,7 @@ wc_print_notices();
                 </tr>
             <?php endif;?>
 
-            <?php if ( ! empty($subscription->suspended_reason) ): ?>
+            <?php if ( ! empty($subscription->suspended_reason) && !in_array($subscription->status, ['ACTIVE', 'PENDING', 'PAUSED'])): ?>
                 <tr>
                     <th scope="row"><?php _e('Razão da Suspensão', 'pagbank-connect')?></th>
                     <td><?php echo esc_html($subscription->suspended_reason);?></td>
