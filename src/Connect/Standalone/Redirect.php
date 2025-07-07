@@ -62,6 +62,7 @@ class Redirect extends WC_Payment_Gateway
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
+        add_action('admin_enqueue_scripts', [$this, 'addScriptRedirectSettings'], 20, 1);
     }
 
     public function init_form_fields()
@@ -245,5 +246,17 @@ class Redirect extends WC_Payment_Gateway
             $pay_url = $order->get_meta('pagbank_redirect_url');
         }
         return $pay_url;
+    }
+
+    public function addScriptRedirectSettings($hook) {
+        if ($hook === 'woocommerce_page_wc-settings') {
+            wp_enqueue_script(
+                'pagbank-redirect-admin',
+                plugins_url('public/js/admin/ps-redirect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery'],
+                WC_PAGSEGURO_CONNECT_VERSION,
+                true
+            );
+        }
     }
 }
