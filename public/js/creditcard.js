@@ -575,6 +575,8 @@ jQuery(document).ready(function ($) {
             success: (response)=>{
                 let select = jQuery('#rm-pagbank-card-installments');
                 select.empty();
+                let found = false;
+                let previouslySelected = window.ps_cc_selected_installment || jQuery('#rm-pagbank-card-installments').val();
                 for (let i = 0; i < response.length; i++) {
                     let option = jQuery('<option></option>');
                     option.attr('value', response[i].installments);
@@ -585,8 +587,19 @@ jQuery(document).ready(function ($) {
     
                     option.text(text + additional_text);
                     select.append(option);
+                    if (previouslySelected == response[i].installments) {
+                        found = true;
+                    }
                 }
                 window.ps_cc_installments = response;
+
+                // if previously selected installment is found, select it
+                if (found) {
+                    select.val(previouslySelected);
+                } else if (response?.length > 0 && typeof window.ps_cc_selected_installment !== 'undefined') {
+                    // If the previously selected installment is not found, select the last one
+                    select.val(response[response.length-1].installments);
+                }
             },
             error: (response)=>{
                 alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
@@ -613,4 +626,8 @@ jQuery(document.body).on('checkout_error', function(event, error_data) {
 
         rmPagbankCcForm.prepend(retry3dsInput);
     }
+});
+
+jQuery(document).on("change", "#rm-pagbank-card-installments", function () {
+  window.ps_cc_selected_installment = jQuery(this).val();
 });
