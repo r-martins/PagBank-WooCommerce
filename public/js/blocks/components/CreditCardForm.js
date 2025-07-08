@@ -9,7 +9,7 @@ const { checkoutStore } = window.wc.wcBlocksData;
 const PaymentInstructions = () => {
     const settings = getSetting('rm-pagbank-cc_data', {});
     const defaultInstallments = settings.defaultInstallments || [];
-    const [creditCardNumber, setCreditCardNumber] = useState('');
+    const [creditCardNumber, setCreditCardNumber] = useState('555566');
     const [ccBin, setCcBin] = useState('');
     const [cardBrand, setCardBrand] = useState('');
     const prevCcBinRef = useRef();
