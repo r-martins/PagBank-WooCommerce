@@ -231,6 +231,13 @@ jQuery(document).ready(function ($) {
         if (isSubmitting) {
             return true;
         }
+
+        // const selectedToken = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
+        // if (selectedToken !== 'new') {
+        //     console.debug('PagBank: cartão salvo selecionado, não criptografar.');
+        //     return true;
+        // }
+
         e.preventDefault();
         e.stopImmediatePropagation();
 

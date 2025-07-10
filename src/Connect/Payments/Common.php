@@ -93,8 +93,17 @@ class Common
         $customer->setName($firstName . ' ' . $lastName);
         $customer->setEmail($this->isHashEmail() ? $this->getHashEmail() : $this->order->get_billing_email());
         
-        //cpf or cnpj
-        $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cpf', 'billing_cpf');
+        $taxId = null;
+        
+        if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
+            $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
+        }
+
+        if(empty($taxId)){
+            //cpf or cnpj
+            $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cpf', 'billing_cpf');
+        }
+        
         if (empty($taxId)) {
             $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cnpj', 'billing_cnpj');
         }
@@ -108,9 +117,6 @@ class Common
             }
         }
 
-        if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
-            $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
-        }
 
         $taxId = Params::removeNonNumeric($taxId);
         

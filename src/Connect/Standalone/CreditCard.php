@@ -16,6 +16,7 @@ use Exception;
 use WC_Admin_Settings;
 use WC_Data_Exception;
 use WC_Order;
+use WC_Payment_Token_CC;
 use WP_Error;
 
 /** Standalone Credit Card */
@@ -53,7 +54,7 @@ class CreditCard extends WC_Payment_Gateway_CC
             'products',
             'refunds',
             'default_credit_card_form',
-//            'tokenization' //TODO: implement tokenization
+            'tokenization', //TODO: implement tokenization
         ];
 
         // Load the settings
@@ -69,6 +70,20 @@ class CreditCard extends WC_Payment_Gateway_CC
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
     }
+    /**
+	 * Builds our payment fields area - including tokenization fields for logged
+	 * in users, and the actual payment fields.
+	 *
+	 * @since 2.6.0
+	 */
+	public function payment_fields() {
+		parent::payment_fields();
+        $display_tokenization = $this->supports( 'tokenization' ) && is_checkout();
+        
+        if ( $display_tokenization ) {
+			$this->tokenization_script();
+		}
+	}
 
     public function init_form_fields()
     {
@@ -298,6 +313,9 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'redirect' => '',
                 );
         }
+        if ( isset( $_POST['wc-rm-pagbank-cc-new-payment-method'] ) && wc_bool_to_string($_POST['wc-rm-pagbank-cc-new-payment-method']) == 'yes' ) {
+            $this->saveCcToken($order);
+        }
 
         $resp = $this->makeRequest($order, $params, $method);
 
@@ -357,6 +375,31 @@ class CreditCard extends WC_Payment_Gateway_CC
         );
     }
 
+    public function saveCcToken($order)
+    {
+        $api = new Api();
+        $ccToken = new CreditCardToken($order);
+        $params = $ccToken->prepare();
+
+        $resp = $api->post('ws/tokens/cards', $params);
+        if (isset($resp['error_messages'])) {
+            throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
+        }
+        
+        $token = new WC_Payment_Token_CC();
+        $token->set_token( $resp['id'] );
+        $token->set_gateway_id( $this->id );
+        $token->set_user_id( get_current_user_id() );
+        $token->set_card_type( $resp['brand'] );
+        $token->set_last4( $resp['last_digits']);
+        $token->set_expiry_month( $resp['exp_month'] );
+        $token->set_expiry_year( (int) $resp['exp_year'] );
+        $token->save();
+        // Associa ao pedido
+        $order->add_payment_token( $token );
+        return $order;
+    }
+
     /**
      * Get the default installments for the credit card payment method using VISA as the default BIN
      * @return array
@@ -369,7 +412,7 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     public function field_name( $name ) {
-        return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
+        return ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }
 
     /**
