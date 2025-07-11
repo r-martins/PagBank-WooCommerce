@@ -114,6 +114,7 @@ class Connect
         }
 
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
+        add_filter('woocommerce_admin_reports', [\RM_PagBank\Connect\Recurring\Admin\Reports\RecurringsReport::class, 'reportsFilter']);
     }
 
     public static function gatewayBlockSupport() {
