@@ -231,13 +231,6 @@ jQuery(document).ready(function ($) {
         if (isSubmitting) {
             return true;
         }
-
-        // const selectedToken = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
-        // if (selectedToken !== 'new') {
-        //     console.debug('PagBank: cartão salvo selecionado, não criptografar.');
-        //     return true;
-        // }
-
         e.preventDefault();
         e.stopImmediatePropagation();
 
@@ -245,6 +238,15 @@ jQuery(document).ready(function ($) {
             jQuery('#payment_method_rm-pagbank').is(':checked') === false) &&
             jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc') //when using standalone methods 
         {
+            isSubmitting = true;
+            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            jQuery(checkoutFormIdentifiers).trigger('submit');
+            return true;
+        }
+
+        const selectedToken = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
+        if (selectedToken !== 'new' || typeof cc_payment_token !== 'undefined') {
+            console.debug('PagBank: cartão salvo selecionado, não criptografar.');
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
@@ -481,10 +483,12 @@ jQuery(document).ready(function ($) {
     jQuery(checkoutFormIdentifiers).off('checkout_place_order').on('checkout_place_order', async function (e) {
         console.debug('PagBank: checkout_place_order');
         
+        const cc_payment_token = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
         //if not pagseguro connect or not credit card, return
         if ((jQuery('#ps-connect-payment-cc').attr('disabled') !== undefined ||
             jQuery('#payment_method_rm-pagbank').is(':checked') === false) &&
-            jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc') //when using standalone methods 
+            jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc' ||
+            (cc_payment_token !== 'new' || typeof cc_payment_token !== 'undefined')) //when using standalone methods 
         {
             return true;
         }
@@ -638,3 +642,13 @@ jQuery(document.body).on('checkout_error', function(event, error_data) {
 jQuery(document).on("change", "#rm-pagbank-card-installments", function () {
   window.ps_cc_selected_installment = jQuery(this).val();
 });
+
+jQuery(function($){
+    function togglePagBankFields() {
+        var selected = $('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
+        return selected && selected !== 'new' ?  $('#installments-token').show() : $('#installments-token').hide();
+    }
+    $(document).on('change', 'input[name="wc-rm-pagbank-cc-payment-token"]', togglePagBankFields);
+    togglePagBankFields(); // Executa ao carregar
+});
+

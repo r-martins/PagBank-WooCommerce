@@ -83,6 +83,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         if ( $display_tokenization ) {
 			$this->tokenization_script();
 		}
+        echo $this->render_installments_field();
 	}
 
     public function init_form_fields()
@@ -252,6 +253,15 @@ class CreditCard extends WC_Payment_Gateway_CC
                     true
                 );
 
+                $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
+                if(null != $token_id && 'new' !== $token_id){
+                    $order->add_meta_data(
+                        '_pagbank_card_token_id',
+                        $token_id,
+                        true
+                    );
+                }
+
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
                     htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
@@ -375,6 +385,11 @@ class CreditCard extends WC_Payment_Gateway_CC
         );
     }
 
+    /**
+     * Token ID PagBank|Woo
+     * @param WC_Order $order
+     * @throws \RM_PagBank\Connect\Exception
+     */
     public function saveCcToken($order)
     {
         $api = new Api();
@@ -395,7 +410,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         $token->set_expiry_month( $resp['exp_month'] );
         $token->set_expiry_year( (int) $resp['exp_year'] );
         $token->save();
-        // Associa ao pedido
+        // Assoc with order
         $order->add_payment_token( $token );
         return $order;
     }
@@ -603,4 +618,12 @@ class CreditCard extends WC_Payment_Gateway_CC
 
         return in_array($code, $allowedCodes);
     }
+
+    public function render_installments_field() {
+        ob_start();
+        include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard/installment_options.php';
+        $html = ob_get_clean();
+        return $html;
+    }
+
 }
