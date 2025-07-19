@@ -7,6 +7,8 @@ use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Helpers\Recurring;
 
 wp_enqueue_script( 'wc-credit-card-form' );
+$default_installments = $this->getDefaultInstallments();
+$installment_options = '<option value="">' . esc_html__( 'Informe um número de cartão', 'pagbank-connect' ) . '</option>';
 $recHelper = new Recurring();
 $isCartRecurring = $recHelper->isCartRecurring();
 $fields = array();
@@ -30,7 +32,26 @@ $default_fields = [
 				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocapitalize="off" spellcheck="false" type="tel" placeholder="' . esc_attr__( 'MM / YY', 'woocommerce' ) . '" ' . $this->field_name( 'card-expiry' ) . ' maxlength="7" />
 			</p>',
     'card-cvc-field' => $cvc_field,
+    'card-installments' => '<p class="form-row form-row-full">
+                    <label for="' . esc_attr( Connect::DOMAIN ) . '-card-installments">' . esc_html__( 'Parcelas', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
+                    <select id="' . esc_attr( Connect::DOMAIN ) . '-card-installments" class="input-text wc-credit-card-form-card-installments"  ' . $this->field_name( 'card-installments' ) . ' >
+                        {{installment_options}}
+                    </select>
+                </p>',
 ];
+
+if ($default_installments){
+    $installment_options = '';
+    foreach ($default_installments as $installment){
+		if (is_string($installment)) {
+			$installment_options .= '<option value="">' . $installment . '</option>'; //error message
+			break;
+		}
+        $installment_options .= '<option value="'.$installment['installments'].'">'.$installment['installments'].'x de R$ '. $installment['installment_amount'] . ' (';
+        $installment_options .= $installment['interest_free'] ? 'sem juros)' : 'Total: R$ ' . $installment['total_amount'] . ')';
+    }
+}
+
 if (is_wc_endpoint_url('order-pay')) {
     $order_id = absint(get_query_var('order-pay'));
     $order = wc_get_order($order_id);
@@ -49,6 +70,7 @@ if (is_wc_endpoint_url('order-pay')) {
     }
 }
 
+$default_fields['card-installments'] = str_replace('{{installment_options}}', $installment_options, $default_fields['card-installments']);
 
 
 //if ( ! $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
