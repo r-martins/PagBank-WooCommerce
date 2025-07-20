@@ -215,6 +215,12 @@ class CreditCard extends Common
         $token_id = $this->order->get_meta('_pagbank_card_token_id');
         if($token_id && !empty($token_id) && 'new' !== $token_id){
             $tokenCc = $this->getCcToken($token_id);
+            $this->order->add_meta_data(
+                'pagbank_card_last4',
+                $tokenCc->get_last4(),
+                true
+            );
+            $this->order->add_meta_data('_pagbank_card_first_digits', $tokenCc->get_meta( 'cc_bin' ), true);
             $card->setId($tokenCc->get_token() ?: '');
             return $card;
         }
@@ -505,7 +511,7 @@ class CreditCard extends Common
     /**
      * Return Table HTML
      * 
-     * @return WP_REST_Response|WP_Error
+     * @return WP_REST_Response|WP_Error|WP_HTTP_Response|mixed
      */
     public static function getProductVariableInstallmentsAjax(){
 

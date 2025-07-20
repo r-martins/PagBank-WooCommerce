@@ -77,13 +77,18 @@ class CreditCard extends WC_Payment_Gateway_CC
 	 * @since 2.6.0
 	 */
 	public function payment_fields() {
-		parent::payment_fields();
+
         $display_tokenization = $this->supports( 'tokenization' ) && is_checkout();
         
         if ( $display_tokenization ) {
 			$this->tokenization_script();
-		}
-        echo $this->render_installments_field();
+			$this->saved_payment_methods();
+			$this->form();
+			$this->save_payment_method_checkbox();
+            echo $this->render_installments_field();
+		}else{
+            $this->form();
+        }
 	}
 
     public function init_form_fields()
@@ -231,7 +236,16 @@ class CreditCard extends WC_Payment_Gateway_CC
                 //the first is used in non-block checkout
                 $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT)
                     ?: filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT); 
-                
+                $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
+                if(null != $token_id && 'new' !== $token_id){
+                    $order->add_meta_data(
+                        '_pagbank_card_token_id',
+                        $token_id,
+                        true
+                    );
+                    $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments-token', FILTER_SANITIZE_NUMBER_INT)
+                    ?: filter_var($_POST['rm-pagbank-card-installments-token'], FILTER_SANITIZE_NUMBER_INT); 
+                }
                 $order->add_meta_data(
                     'pagbank_card_installments',
                     $installments,
@@ -253,14 +267,6 @@ class CreditCard extends WC_Payment_Gateway_CC
                     true
                 );
 
-                $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
-                if(null != $token_id && 'new' !== $token_id){
-                    $order->add_meta_data(
-                        '_pagbank_card_token_id',
-                        $token_id,
-                        true
-                    );
-                }
 
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
@@ -409,6 +415,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         $token->set_last4( $resp['last_digits']);
         $token->set_expiry_month( $resp['exp_month'] );
         $token->set_expiry_year( (int) $resp['exp_year'] );
+        $token->update_meta_data( 'cc_bin', $resp['first_digits'] );
         $token->save();
         // Assoc with order
         $order->add_payment_token( $token );
@@ -626,4 +633,36 @@ class CreditCard extends WC_Payment_Gateway_CC
         return $html;
     }
 
+    /**
+	 * Gets saved payment method HTML from a token.
+	 *
+	 * @since 2.6.0
+	 * @param  WC_Payment_Token $token Payment Token.
+	 * @return string Generated payment method HTML
+	 */
+	public function get_saved_payment_method_option_html( $token ) {
+
+        $bin = $token->get_meta( 'cc_bin' ) ?: '555566'; // WooCommerce >=3.0 usa get_meta()
+		$html = sprintf(
+            '<li class="woocommerce-SavedPaymentMethods-token">
+                <input 
+                    id="wc-%1$s-payment-token-%2$s" 
+                    type="radio" 
+                    name="wc-%1$s-payment-token" 
+                    value="%2$s" 
+                    data-cc-bin="%5$s"
+                    style="width:auto;" 
+                    class="woocommerce-SavedPaymentMethods-tokenInput" 
+                    %4$s 
+                />
+                <label for="wc-%1$s-payment-token-%2$s">%3$s</label>
+            </li>',
+            esc_attr( $this->id ),
+            esc_attr( $token->get_id() ),
+            esc_html( $token->get_display_name() ),
+            checked( $token->is_default(), true, false ),
+            esc_attr( $bin ) // data-bin
+        );
+		return apply_filters( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', $html, $token, $this );
+	}
 }

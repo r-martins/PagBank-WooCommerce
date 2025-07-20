@@ -244,8 +244,8 @@ jQuery(document).ready(function ($) {
             return true;
         }
 
-        const selectedToken = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
-        if (selectedToken !== 'new' || typeof cc_payment_token !== 'undefined') {
+        const cc_payment_token = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
+        if (cc_payment_token && cc_payment_token !== 'new') {
             console.debug('PagBank: cartão salvo selecionado, não criptografar.');
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
@@ -488,7 +488,7 @@ jQuery(document).ready(function ($) {
         if ((jQuery('#ps-connect-payment-cc').attr('disabled') !== undefined ||
             jQuery('#payment_method_rm-pagbank').is(':checked') === false) &&
             jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc' ||
-            (cc_payment_token !== 'new' || typeof cc_payment_token !== 'undefined')) //when using standalone methods 
+            (cc_payment_token && cc_payment_token !== 'new')) //when using standalone methods
         {
             return true;
         }
@@ -548,7 +548,7 @@ jQuery(document).ready(function ($) {
     });
 // });
 
-    jQuery(document.body).on('update_installments', ()=> {
+    jQuery(document.body).on('update_installments', (event, selector_installments = '#rm-pagbank-card-installments')=> {
         //if success, update the installments select with the response
         //if error, show error message
         let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
@@ -566,7 +566,7 @@ jQuery(document).ready(function ($) {
         //convert to cents
         let orderTotal = parseFloat(total).toFixed(2) * 100;
         if (orderTotal < 100) {
-            let select = jQuery('#rm-pagbank-card-installments');
+            let select = jQuery(selector_installments);
             select.parent().hide();
             return;
         }
@@ -584,10 +584,10 @@ jQuery(document).ready(function ($) {
                 order_id: encryptedOrderId,
             },
             success: (response)=>{
-                let select = jQuery('#rm-pagbank-card-installments');
+                let select = jQuery(selector_installments);
                 select.empty();
                 let found = false;
-                let previouslySelected = window.ps_cc_selected_installment || jQuery('#rm-pagbank-card-installments').val();
+                let previouslySelected = window.ps_cc_selected_installment || jQuery(selector_installments).val();
                 for (let i = 0; i < response.length; i++) {
                     let option = jQuery('<option></option>');
                     option.attr('value', response[i].installments);
@@ -639,16 +639,22 @@ jQuery(document.body).on('checkout_error', function(event, error_data) {
     }
 });
 
-jQuery(document).on("change", "#rm-pagbank-card-installments", function () {
+jQuery(document).on("change", "#rm-pagbank-card-installments, #rm-pagbank-card-installments-token", function () {
   window.ps_cc_selected_installment = jQuery(this).val();
 });
 
 jQuery(function($){
     function togglePagBankFields() {
         var selected = $('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
-        return selected && selected !== 'new' ?  $('#installments-token').show() : $('#installments-token').hide();
+        if (selected !== 'new') {
+            var bin = jQuery(this).data('cc-bin');
+            if (bin) {
+                window.ps_cc_bin = bin.toString();
+                jQuery(document.body).trigger('update_installments', '#rm-pagbank-card-installments-token');
+            }
+        }
+        return selected && selected !== 'new' ?  $('#rm-pagbank-installments-token').show() : $('#rm-pagbank-installments-token').hide();
     }
     $(document).on('change', 'input[name="wc-rm-pagbank-cc-payment-token"]', togglePagBankFields);
-    togglePagBankFields(); // Executa ao carregar
+    togglePagBankFields();
 });
-
