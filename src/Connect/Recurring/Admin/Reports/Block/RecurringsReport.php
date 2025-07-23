@@ -66,29 +66,54 @@ class RecurringsReport extends WC_Admin_Report
             LIMIT 10
         ", $date_filter));
 
-        $sql = "SELECT 
-            r.*,
-            p.post_date,
-            pm.meta_value as customer_email,
-            pm2.meta_value as billing_first_name,
-            pm3.meta_value as billing_last_name,
-            pm4.meta_value as order_total
-        FROM {$table} r
-        LEFT JOIN {$wpdb->posts} p ON r.initial_order_id = p.ID
-        LEFT JOIN {$wpdb->postmeta} pm ON r.initial_order_id = pm.post_id AND pm.meta_key = '_billing_email'
-        LEFT JOIN {$wpdb->postmeta} pm2 ON r.initial_order_id = pm2.post_id AND pm2.meta_key = '_billing_first_name'
-        LEFT JOIN {$wpdb->postmeta} pm3 ON r.initial_order_id = pm3.post_id AND pm3.meta_key = '_billing_last_name'
-        LEFT JOIN {$wpdb->postmeta} pm4 ON r.initial_order_id = pm4.post_id AND pm4.meta_key = '_order_total'
-        WHERE r.created_at >= %s";
+        // Detect HPOS
+        $is_hpos = class_exists('WC_Order_Storage') && method_exists('WC_Order_Storage', 'get_order_type') && wc_get_container()->get('order.store')::class === 'Automattic\WooCommerce\Internal\Order\Storage';
 
-        // add filter status only if is defined
-        if (!is_null($status_filter) && !empty($status_filter)) {
-            $sql .= " AND r.status = %s";
-            $sql .= " ORDER BY r.created_at DESC LIMIT 50";
-            $orders = $wpdb->get_results($wpdb->prepare($sql, $date_filter, $status_filter));
+        if ($is_hpos) {
+            // HPOS: fetch data from wp_wc_orders and wp_wc_order_addresses
+            $orders_sql = "SELECT 
+                r.*,
+                o.date_created_gmt as post_date,
+                oa.email as customer_email,
+                oa.first_name as billing_first_name,
+                oa.last_name as billing_last_name,
+                o.total as order_total
+            FROM {$table} r
+            LEFT JOIN {$wpdb->prefix}wc_orders o ON r.initial_order_id = o.id
+            LEFT JOIN {$wpdb->prefix}wc_order_addresses oa ON o.id = oa.order_id AND oa.address_type = 'billing'
+            WHERE r.created_at >= %s";
+            if (!is_null($status_filter) && !empty($status_filter)) {
+                $orders_sql .= " AND r.status = %s";
+                $orders_sql .= " ORDER BY r.created_at DESC LIMIT 50";
+                $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $date_filter, $status_filter));
+            } else {
+                $orders_sql .= " ORDER BY r.created_at DESC LIMIT 50";
+                $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $date_filter));
+            }
         } else {
-            $sql .= " ORDER BY r.created_at DESC LIMIT 50";
-            $orders = $wpdb->get_results($wpdb->prepare($sql, $date_filter));
+            // Classic: fetch data from wp_posts and wp_postmeta
+            $sql = "SELECT 
+                r.*,
+                p.post_date,
+                pm.meta_value as customer_email,
+                pm2.meta_value as billing_first_name,
+                pm3.meta_value as billing_last_name,
+                pm4.meta_value as order_total
+            FROM {$table} r
+            LEFT JOIN {$wpdb->posts} p ON r.initial_order_id = p.ID
+            LEFT JOIN {$wpdb->postmeta} pm ON r.initial_order_id = pm.post_id AND pm.meta_key = '_billing_email'
+            LEFT JOIN {$wpdb->postmeta} pm2 ON r.initial_order_id = pm2.post_id AND pm2.meta_key = '_billing_first_name'
+            LEFT JOIN {$wpdb->postmeta} pm3 ON r.initial_order_id = pm3.post_id AND pm3.meta_key = '_billing_last_name'
+            LEFT JOIN {$wpdb->postmeta} pm4 ON r.initial_order_id = pm4.post_id AND pm4.meta_key = '_order_total'
+            WHERE r.created_at >= %s";
+            if (!is_null($status_filter) && !empty($status_filter)) {
+                $sql .= " AND r.status = %s";
+                $sql .= " ORDER BY r.created_at DESC LIMIT 50";
+                $orders = $wpdb->get_results($wpdb->prepare($sql, $date_filter, $status_filter));
+            } else {
+                $sql .= " ORDER BY r.created_at DESC LIMIT 50";
+                $orders = $wpdb->get_results($wpdb->prepare($sql, $date_filter));
+            }
         }
 
         self::render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range);
@@ -149,7 +174,6 @@ class RecurringsReport extends WC_Admin_Report
                             <th><?php esc_html_e('Valor', 'pagbank-connect'); ?></th>
                             <th><?php esc_html_e('Próxima Cobrança', 'pagbank-connect'); ?></th>
                             <th><?php esc_html_e('Data Criação', 'pagbank-connect'); ?></th>
-                            <th><?php esc_html_e('Ações', 'pagbank-connect'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -163,13 +187,27 @@ class RecurringsReport extends WC_Admin_Report
                                 <td>
                                     <?php
                                     $customer_name = trim(($row->billing_first_name ?? '') . ' ' . ($row->billing_last_name ?? ''));
-                                    echo esc_html($customer_name ?: $row->customer_email ?: 'Cliente não identificado');
+                                    if ($customer_name) {
+                                        echo esc_html($customer_name);
+                                        if ($row->customer_email) {
+                                            echo '<br><small>' . esc_html($row->customer_email) . '</small>';
+                                        }
+                                    } elseif ($row->customer_email) {
+                                        echo esc_html($row->customer_email);
+                                    } else {
+                                        echo esc_html('Cliente não identificado');
+                                    }
                                     ?>
-                                    <?php if ($row->customer_email): ?>
-                                        <br><small><?php echo esc_html($row->customer_email); ?></small>
+                                </td>
+                                <td>
+                                    <?php if (!empty($row->id)): ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $row->id)); ?>">
+                                            <code><?php echo esc_html($row->id); ?></code>
+                                        </a>
+                                    <?php else: ?>
+                                        <code>-</code>
                                     <?php endif; ?>
                                 </td>
-                                <td><code><?php echo esc_html($row->id ?? '-'); ?></code></td>
                                 <td><?php echo self::render_status_badge($row->status ?? 'UNKNOWN'); ?></td>
                                 <td><strong>R$ <?php echo number_format($row->recurring_amount ?? 0, 2, ',', '.'); ?></strong></td>
                                 <td>
@@ -182,15 +220,6 @@ class RecurringsReport extends WC_Admin_Report
                                     ?>
                                 </td>
                                 <td><?php echo esc_html(date('d/m/Y H:i', strtotime($row->created_at))); ?></td>
-                                <td >
-                                    <div class="row-actions">
-                                        <span class="view">
-                                            <a href="<?php echo esc_url(admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $row->id)); ?>">
-                                                <?php esc_html_e('Ver assinatura', 'pagbank-connect'); ?>
-                                            </a>
-                                        </span>
-                                    </div>
-                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -202,7 +231,7 @@ class RecurringsReport extends WC_Admin_Report
                 <?php
                 self::render_card('Total de Assinaturas', $summary->total ?? 0, 'dashicons-admin-users');
                 self::render_card('Ativas', $summary->active ?? 0, 'dashicons-yes-alt', '#46b450');
-                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=ACTIVE'));
+                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter'));
                 self::render_card('Pausadas (' . $current_range . ' dias)', $summary->paused ?? 0, 'dashicons-controls-pause', '#ffb900', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=PAUSED'));
                 self::render_card('Canceladas (' . $current_range . ' dias)', $summary->canceled ?? 0, 'dashicons-no-alt', '#dc3232', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=CANCELED'));
                 ?>
@@ -263,10 +292,26 @@ class RecurringsReport extends WC_Admin_Report
                 box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
             }
 
-            .rm-pagbank-report-cards .card.onclick:hover {
-                border: 1px solid #0295f8ff;
-                box-shadow: 2px 2px 2px rgba(6, 160, 244, 0.04);
+            .rm-pagbank-report-cards .card.onclick {
+                transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
                 cursor: pointer !important;
+                position: relative;
+            }
+            .rm-pagbank-report-cards .card.onclick:hover {
+                border-color: #0295f8ff;
+                box-shadow: 0 4px 16px rgba(6, 160, 244, 0.12);
+                transform: translateY(-2px) scale(1.01);
+            }
+            .rm-pagbank-report-cards .card.onclick::after {
+                content: '';
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                width: 18px;
+                height: 18px;
+                background: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%230295f8" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14M12 5l7 7-7 7"/></svg>') no-repeat center center;
+                opacity: 0.7;
+                pointer-events: none;
             }
 
             .rm-pagbank-report-cards .card .dashicons {
