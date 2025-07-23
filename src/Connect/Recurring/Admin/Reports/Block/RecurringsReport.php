@@ -136,61 +136,6 @@ class RecurringsReport extends WC_Admin_Report
             
             </div>
 
-            <!-- Report Cards -->
-            <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <?php
-                self::render_card('Total de Assinaturas', $summary->total ?? 0, 'dashicons-admin-users');
-                self::render_card('Ativas', $summary->active ?? 0, 'dashicons-yes-alt', '#46b450');
-                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2');
-                self::render_card('Pausadas (' . $current_range . ' dias)', $summary->paused ?? 0, 'dashicons-controls-pause', '#ffb900');
-                self::render_card('Canceladas (' . $current_range . ' dias)', $summary->canceled ?? 0, 'dashicons-no-alt', '#dc3232');
-                ?>
-            </div>
-
-            <!-- Revenue Cards -->
-            <div class="rm-pagbank-revenue-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <?php
-                self::render_revenue_card(
-                    'Receita Recorrente Ativa',
-                    'R$ ' . number_format($summary->active_revenue ?? 0, 2, ',', '.'),
-                    'Valor total das assinaturas ativas'
-                );
-                self::render_revenue_card(
-                    'Ticket Médio',
-                    'R$ ' . number_format($summary->avg_ticket ?? 0, 2, ',', '.'),
-                    'Valor médio por assinatura'
-                );
-                ?>
-            </div>
-
-
-            <!-- Top Products -->
-            <?php if (!empty($top_products)): ?>
-                <div class="rm-pagbank-top-products" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; margin-bottom: 30px;">
-                    <h3><?php esc_html_e('Produtos Mais Assinados', 'pagbank-connect'); ?></h3>
-                    <table class="widefat striped">
-                        <thead>
-                            <tr>
-                                <th><?php esc_html_e('Produto', 'pagbank-connect'); ?></th>
-                                <th><?php esc_html_e('Assinaturas', 'pagbank-connect'); ?></th>
-                                <th><?php esc_html_e('Receita Total', 'pagbank-connect'); ?></th>
-                                <th><?php esc_html_e('Valor Médio', 'pagbank-connect'); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($top_products as $product): ?>
-                                <tr>
-                                    <td><strong><?php echo esc_html($product->product_name ?: 'Produto não encontrado'); ?></strong></td>
-                                    <td><?php echo intval($product->subscription_count); ?></td>
-                                    <td>R$ <?php echo number_format($product->total_revenue, 2, ',', '.'); ?></td>
-                                    <td>R$ <?php echo number_format($product->avg_amount, 2, ',', '.'); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-
             <!-- Table Recurrings -->
             <div class="rm-pagbank-subscriptions-table" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
                 <h3><?php esc_html_e('Assinaturas Recentes', 'pagbank-connect'); ?></h3>
@@ -251,6 +196,61 @@ class RecurringsReport extends WC_Admin_Report
                     </tbody>
                 </table>
             </div>
+
+            <!-- Report Cards -->
+            <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <?php
+                self::render_card('Total de Assinaturas', $summary->total ?? 0, 'dashicons-admin-users');
+                self::render_card('Ativas', $summary->active ?? 0, 'dashicons-yes-alt', '#46b450');
+                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=ACTIVE'));
+                self::render_card('Pausadas (' . $current_range . ' dias)', $summary->paused ?? 0, 'dashicons-controls-pause', '#ffb900', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=PAUSED'));
+                self::render_card('Canceladas (' . $current_range . ' dias)', $summary->canceled ?? 0, 'dashicons-no-alt', '#dc3232', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=CANCELED'));
+                ?>
+            </div>
+
+            <!-- Revenue Cards -->
+            <div class="rm-pagbank-revenue-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <?php
+                self::render_revenue_card(
+                    'Receita Recorrente Ativa',
+                    'R$ ' . number_format($summary->active_revenue ?? 0, 2, ',', '.'),
+                    'Valor total das assinaturas ativas'
+                );
+                self::render_revenue_card(
+                    'Ticket Médio',
+                    'R$ ' . number_format($summary->avg_ticket ?? 0, 2, ',', '.'),
+                    'Valor médio por assinatura'
+                );
+                ?>
+            </div>
+
+
+            <!-- Top Products -->
+            <?php if (!empty($top_products)): ?>
+                <div class="rm-pagbank-top-products" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; margin-bottom: 30px;">
+                    <h3><?php esc_html_e('Produtos Mais Assinados', 'pagbank-connect'); ?></h3>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e('Produto', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Assinaturas', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Receita Total', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Valor Médio', 'pagbank-connect'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($top_products as $product): ?>
+                                <tr>
+                                    <td><strong><?php echo esc_html($product->product_name ?: 'Produto não encontrado'); ?></strong></td>
+                                    <td><?php echo intval($product->subscription_count); ?></td>
+                                    <td>R$ <?php echo number_format($product->total_revenue, 2, ',', '.'); ?></td>
+                                    <td>R$ <?php echo number_format($product->avg_amount, 2, ',', '.'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
 
         <style>
@@ -261,6 +261,12 @@ class RecurringsReport extends WC_Admin_Report
                 text-align: center;
                 border-radius: 4px;
                 box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+            }
+
+            .rm-pagbank-report-cards .card.onclick:hover {
+                border: 1px solid #0295f8ff;
+                box-shadow: 2px 2px 2px rgba(6, 160, 244, 0.04);
+                cursor: pointer !important;
             }
 
             .rm-pagbank-report-cards .card .dashicons {
@@ -313,10 +319,10 @@ class RecurringsReport extends WC_Admin_Report
     <?php
     }
 
-    protected static function render_card($label, $value, $icon = 'dashicons-chart-bar', $color = '#0073aa')
+    protected static function render_card($label, $value, $icon = 'dashicons-chart-bar', $color = '#0073aa', $href = null, $target = '_self')
     {
     ?>
-        <div class="card">
+        <div class="card <?php echo null !== $href ? 'onclick' : '' ?>" <?php echo $href !== null ? 'onclick="window.location.href=\'' . esc_url($href) . '\'"' : ''; ?>>
             <div class="dashicons <?php echo esc_attr($icon); ?>" style="color: <?php echo esc_attr($color); ?>;"></div>
             <div class="number" style="color: <?php echo esc_attr($color); ?>;"><?php echo intval($value); ?></div>
             <div class="label"><?php echo esc_html($label); ?></div>
