@@ -122,6 +122,7 @@ class Common
         
         if (!empty($taxId)) {
             $customer->setTaxId($taxId);
+            $this->order->add_meta_data('_rm_pagbank_customer_document', $taxId, true);
         }
         $phone = new Phone();
         $number = Params::extractPhone($this->order);

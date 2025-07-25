@@ -416,6 +416,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         $token->set_expiry_month( $resp['exp_month'] );
         $token->set_expiry_year( (int) $resp['exp_year'] );
         $token->update_meta_data( 'cc_bin', $resp['first_digits'] );
+        $token->update_meta_data( 'customer_document', $order->get_meta('_rm_pagbank_customer_document') );
         $token->save();
         // Assoc with order
         $order->add_payment_token( $token );
