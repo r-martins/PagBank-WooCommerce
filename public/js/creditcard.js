@@ -209,7 +209,7 @@ jQuery(document).ready(function ($) {
 
     //region 3ds authentication
     let isSubmitting = false;
-    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review, .wc-block-components-form, .wc-block-checkout__form, form#order_update';
+    let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review, .wc-block-components-form, .wc-block-checkout__form, form#order_update, form#add_payment_method';
     if (!jQuery(checkoutFormIdentifiers).length) {
         console.debug('PagBank: checkout form not found');
         return true;
@@ -217,7 +217,7 @@ jQuery(document).ready(function ($) {
     let originalSubmitHandler = () => {};
     // get the original submit handler for checkout or order-pay page
     if (jQuery._data(jQuery(checkoutFormIdentifiers)[0], "events") !== undefined) {
-        let formCheckout = jQuery('form.woocommerce-checkout, form#order_review, form#order_update')[0];
+        let formCheckout = jQuery('form.woocommerce-checkout, form#order_review, form#order_update, form#add_payment_method')[0];
         let formEvents = jQuery._data(formCheckout, "events");
         
         if (formEvents && formEvents.submit) {
@@ -545,6 +545,22 @@ jQuery(document).ready(function ($) {
     });
     jQuery(document).on('input change paste', '#rm-pagbank-card-holder-name', (e)=>{
         jQuery(e.target).val(jQuery(e.target).val().toUpperCase());
+    });
+    
+    // CPF/CNPJ formatting
+    jQuery(document).on('input change paste', '#rm-pagbank-card-cpf-cnpj', (e)=>{
+        let value = jQuery(e.target).val().replace(/[^0-9]/g, '');
+        let formattedValue = '';
+        
+        if (value.length <= 11) {
+            // CPF format: 000.000.000-00
+            formattedValue = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        } else {
+            // CNPJ format: 00.000.000/0000-00
+            formattedValue = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+        }
+        
+        jQuery(e.target).val(formattedValue);
     });
 // });
 

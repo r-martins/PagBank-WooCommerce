@@ -32,15 +32,27 @@ $default_fields = [
 				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocapitalize="off" spellcheck="false" type="tel" placeholder="' . esc_attr__( 'MM / YY', 'woocommerce' ) . '" ' . $this->field_name( 'card-expiry' ) . ' maxlength="7" />
 			</p>',
     'card-cvc-field' => $cvc_field,
-    'card-installments' => '<p class="form-row form-row-full">
+];
+
+// Only add installments field if not on add-payment-method page
+if (!is_wc_endpoint_url('add-payment-method')) {
+    $default_fields['card-installments'] = '<p class="form-row form-row-full">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-installments">' . esc_html__( 'Parcelas', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
                     <select id="' . esc_attr( Connect::DOMAIN ) . '-card-installments" class="input-text wc-credit-card-form-card-installments"  ' . $this->field_name( 'card-installments' ) . ' >
                         {{installment_options}}
                     </select>
-                </p>',
-];
+                </p>';
+}
 
-if ($default_installments){
+// Add CPF/CNPJ field only on add-payment-method page
+if (is_wc_endpoint_url('add-payment-method')) {
+    $default_fields['card-cpf-cnpj'] = '<p class="form-row form-row-wide">
+                    <label for="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj">' . esc_html__( 'CPF/CNPJ', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
+                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj" class="input-text wc-credit-card-form-card-cpf-cnpj" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="tel" maxlength="18" placeholder="' . esc_attr__( 'documento do pagador', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-cpf-cnpj' ) . ' />
+                </p>';
+}
+
+if ($default_installments && !is_wc_endpoint_url('add-payment-method')){
     $installment_options = '';
     foreach ($default_installments as $installment){
 		if (is_string($installment)) {
@@ -70,7 +82,9 @@ if (is_wc_endpoint_url('order-pay')) {
     }
 }
 
-$default_fields['card-installments'] = str_replace('{{installment_options}}', $installment_options, $default_fields['card-installments']);
+if (isset($default_fields['card-installments'])) {
+    $default_fields['card-installments'] = str_replace('{{installment_options}}', $installment_options, $default_fields['card-installments']);
+}
 
 
 //if ( ! $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {

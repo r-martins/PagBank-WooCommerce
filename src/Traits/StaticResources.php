@@ -32,7 +32,7 @@ trait StaticResources
 
         $alreadyEnqueued = wp_style_is('pagseguro-connect-checkout');
         $recHelper = new RecurringHelper();
-        if ((is_checkout() || $recHelper->isSubscriptionUpdatePage() ) && !$alreadyEnqueued) {
+        if ((is_checkout() || $recHelper->isSubscriptionUpdatePage() || is_wc_endpoint_url('add-payment-method')) && !$alreadyEnqueued) {
             $styles['pagseguro-connect-checkout'] = [
                 'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 'deps'    => [],
