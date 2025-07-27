@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -617,16 +618,27 @@ class CreditCard extends Common
 
     /**
      * Get Token Cc Woo/PagBank
+     *
      * @param mixed $token_id
+     *
      * @return \WC_Payment_Token|null
+     * @throws Exception
      */
     public function getCcToken($token_id)
     {
         if ($token_id && $token_id !== 'new') {
             $token = WC_Payment_Tokens::get($token_id);
-            if ($token && $token->get_user_id() === get_current_user_id()) {
-                return $token;
+            if (!$token instanceof \WC_Payment_Token_CC) {
+                throw new \Exception(__('Token do cartão salvo não encontrado.', 'pagbank-connect'));
             }
+            
+            if ($token->get_user_id() !== get_current_user_id()) {
+                throw new \Exception(
+                    __('Token do cartão salvo é inválido ou não pertence ao usuário atual.', 'pagbank-connect')
+                );
+            }
+
+            return $token;
         }
         return null;
     }
