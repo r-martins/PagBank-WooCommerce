@@ -71,6 +71,8 @@ class CreditCard extends WC_Payment_Gateway_CC
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
+        // disable tokenization in blocks
+        add_filter('woocommerce_get_customer_payment_tokens', [$this, 'filter_customer_tokens_for_blocks'], 10, 3);
     }
     /**
 	 * Builds our payment fields area - including tokenization fields for logged
@@ -795,5 +797,23 @@ class CreditCard extends WC_Payment_Gateway_CC
                 'redirect' => wc_get_endpoint_url('add-payment-method')
             ];
         }
+    }
+
+    /**
+     * Filter customer payment tokens to hide them in blocks context
+     *
+     * @param array $tokens
+     * @param int $customer_id
+     * @param string $gateway_id
+     * @return array
+     */
+    public function filter_customer_tokens_for_blocks($tokens, $customer_id, $gateway_id) {
+        if (!empty($tokens) && Functions::isCheckoutBlocks()) {
+            // Remove only tokens for this gateway
+            $tokens = array_filter($tokens, function($token) {
+                return $token->get_gateway_id() !== $this->id;
+            });
+        }
+        return $tokens;
     }
 }
