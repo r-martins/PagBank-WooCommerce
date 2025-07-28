@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.42.2
+Stable tag: 4.43.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -47,6 +47,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * [**Reembolso** parcial ou total](https://ajuda.pbintegracoes.com/hc/pt-br/articles/30882664582541-Reembolso-total-ou-Parcial) direto do painel do WooCommerce
 * Atualização de pedidos automática, inclusive com [confirmação de pagamento instantâneo PIX]((https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) com [comportamento configurável](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
 * Infinitas [opções de **parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento)
+* Salvar Cartão - Permite que seus clientes salvem o token do cartão de crédito para compras futuras, sem precisar digitar os dados novamente.
 
 == ⚡️ RECURSOS ADICIONAIS ==
 * Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
@@ -202,6 +203,11 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.43.0 = 
+* Agora é possível salvar o cartão para uso posterior
+* Correção: no checkout em blocos as parcelas nem sempre eram atualizadas quando o pedido tinha seu total alterado (ex: alteração de frete)
+* Recorrência: melhoramos o tratamento de um problema que poderia impedir o processamento da recorrência se um dos produtos de uma recorrência fosse excluído totalmente.
 
 = 4.42.2 =
 * Correção: Em alguns cenários onde o form de cartão era atualizado (ex: alteração de algum dado de frete) a parcela selecionada era perdida.
