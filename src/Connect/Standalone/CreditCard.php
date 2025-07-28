@@ -16,6 +16,8 @@ use Exception;
 use WC_Admin_Settings;
 use WC_Data_Exception;
 use WC_Order;
+use WC_Payment_Token_CC;
+use WC_Payment_Tokens;
 use WP_Error;
 
 /** Standalone Credit Card */
@@ -53,7 +55,8 @@ class CreditCard extends WC_Payment_Gateway_CC
             'products',
             'refunds',
             'default_credit_card_form',
-//            'tokenization' //TODO: implement tokenization
+            'tokenization',
+            'add_payment_method',
         ];
 
         // Load the settings
@@ -68,7 +71,31 @@ class CreditCard extends WC_Payment_Gateway_CC
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
+        // disable tokenization in blocks
+        add_filter('woocommerce_get_customer_payment_tokens', [$this, 'filter_customer_tokens_for_blocks'], 10, 3);
     }
+    /**
+	 * Builds our payment fields area - including tokenization fields for logged
+	 * in users, and the actual payment fields.
+	 *
+	 * @since 2.6.0
+	 */
+	public function payment_fields() {
+
+        // Check if it's checkout blocks at runtime to avoid tokenization display
+        $isCheckoutBlocks = Functions::isCheckoutBlocks();
+        $display_tokenization = $this->supports( 'tokenization' ) && is_checkout() && !$isCheckoutBlocks;
+        
+        if ( $display_tokenization ) {
+			$this->tokenization_script();
+			$this->saved_payment_methods();
+			$this->form();
+			$this->save_payment_method_checkbox();
+            echo $this->render_installments_field();
+		}else{
+            $this->form();
+        }
+	}
 
     public function init_form_fields()
     {
@@ -215,7 +242,16 @@ class CreditCard extends WC_Payment_Gateway_CC
                 //the first is used in non-block checkout
                 $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT)
                     ?: filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT); 
-                
+                $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
+                if(null != $token_id && 'new' !== $token_id){
+                    $order->add_meta_data(
+                        '_pagbank_card_token_id',
+                        $token_id,
+                        true
+                    );
+                    $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments-token', FILTER_SANITIZE_NUMBER_INT)
+                    ?: filter_var($_POST['rm-pagbank-card-installments-token'], FILTER_SANITIZE_NUMBER_INT); 
+                }
                 $order->add_meta_data(
                     'pagbank_card_installments',
                     $installments,
@@ -236,6 +272,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                     substr($ccNumber, 0, 6),
                     true
                 );
+
 
                 $order->add_meta_data(
                     '_pagbank_card_encrypted',
@@ -298,6 +335,9 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'redirect' => '',
                 );
         }
+        if ( isset( $_POST['wc-rm-pagbank-cc-new-payment-method'] ) && wc_bool_to_string($_POST['wc-rm-pagbank-cc-new-payment-method']) == 'yes' ) {
+            $this->saveCcToken($order);
+        }
 
         $resp = $this->makeRequest($order, $params, $method);
 
@@ -358,6 +398,38 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     /**
+     * Token ID PagBank|Woo
+     * @param WC_Order $order
+     * @throws \RM_PagBank\Connect\Exception
+     */
+    public function saveCcToken($order)
+    {
+        $api = new Api();
+        $ccToken = new CreditCardToken($order);
+        $params = $ccToken->prepare();
+
+        $resp = $api->post('ws/tokens/cards', $params);
+        if (isset($resp['error_messages'])) {
+            throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
+        }
+        
+        $token = new WC_Payment_Token_CC();
+        $token->set_token( $resp['id'] );
+        $token->set_gateway_id( $this->id );
+        $token->set_user_id( get_current_user_id() );
+        $token->set_card_type( $resp['brand'] );
+        $token->set_last4( $resp['last_digits']);
+        $token->set_expiry_month( $resp['exp_month'] );
+        $token->set_expiry_year( (int) $resp['exp_year'] );
+        $token->update_meta_data( 'cc_bin', $resp['first_digits'] );
+        $token->update_meta_data( 'customer_document', $order->get_meta('_rm_pagbank_customer_document') );
+        $token->save();
+        // Assoc with order
+        $order->add_payment_token( $token );
+        return $order;
+    }
+
+    /**
      * Get the default installments for the credit card payment method using VISA as the default BIN
      * @return array
      */
@@ -369,7 +441,7 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     public function field_name( $name ) {
-        return $this->supports( 'tokenization' ) ? '' : ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
+        return ' name="' . esc_attr( Connect::DOMAIN . '-' . $name ) . '" ';
     }
 
     /**
@@ -423,7 +495,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 
         $recHelper = new \RM_PagBank\Helpers\Recurring();
         $alreadyEnqueued = wp_script_is('pagseguro-checkout-sdk');
-        if ($force || (is_checkout() && !is_order_received_page()) || $recHelper->isSubscriptionUpdatePage() ) {
+        if ($force || (is_checkout() && !is_order_received_page()) || $recHelper->isSubscriptionUpdatePage() || is_wc_endpoint_url('add-payment-method')) {
             if ( !$alreadyEnqueued ) {
                 wp_enqueue_script(
                     'pagseguro-checkout-sdk',
@@ -436,7 +508,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         $isCheckoutBlocks = Functions::isCheckoutBlocks();
-        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) || $recHelper->isSubscriptionUpdatePage() ) {
+        if ($force || (is_checkout() && !is_order_received_page() && !$isCheckoutBlocks) || $recHelper->isSubscriptionUpdatePage() || is_wc_endpoint_url('add-payment-method')) {
             $alreadyEnqueued = wp_script_is('pagseguro-connect-checkout');
             if (!$alreadyEnqueued) {
                 wp_enqueue_script(
@@ -475,7 +547,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 );
 
                 if ( (wc_string_to_bool($this->get_option('cc_3ds')) || wc_string_to_bool($this->get_option('cc_3ds_retry')))
-                    && !$recHelper->isSubscriptionUpdatePage()) {
+                    && !$recHelper->isSubscriptionUpdatePage() && !is_wc_endpoint_url('add-payment-method')) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
                         'pagseguro-connect-creditcard',
@@ -518,7 +590,7 @@ class CreditCard extends WC_Payment_Gateway_CC
             self::$addedScripts = true;
         }
         if (!in_array('change_card_page', self::$injectedScripts, true)) {
-            $isUpdatePage = $recHelper->isSubscriptionUpdatePage() ? 'true' : 'false';
+            $isUpdatePage = $recHelper->isSubscriptionUpdatePage() || is_wc_endpoint_url('add-payment-method') ? 'true' : 'false';
             wp_add_inline_script(
                 'pagseguro-connect-checkout',
                 "const pagseguro_connect_change_card_page = {$isUpdatePage};",
@@ -559,5 +631,189 @@ class CreditCard extends WC_Payment_Gateway_CC
         ];
 
         return in_array($code, $allowedCodes);
+    }
+
+    public function render_installments_field() {
+        ob_start();
+        include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard/installment_options.php';
+        $html = ob_get_clean();
+        return $html;
+    }
+
+    /**
+	 * Gets saved payment method HTML from a token.
+	 *
+	 * @since 2.6.0
+	 * @param  WC_Payment_Token $token Payment Token.
+	 * @return string Generated payment method HTML
+	 */
+	public function get_saved_payment_method_option_html( $token ) {
+
+        $bin = $token->get_meta( 'cc_bin' ) ?: '555566'; // WooCommerce >=3.0 usa get_meta()
+		$html = sprintf(
+            '<li class="woocommerce-SavedPaymentMethods-token">
+                <input 
+                    id="wc-%1$s-payment-token-%2$s" 
+                    type="radio" 
+                    name="wc-%1$s-payment-token" 
+                    value="%2$s" 
+                    data-cc-bin="%5$s"
+                    style="width:auto;" 
+                    class="woocommerce-SavedPaymentMethods-tokenInput" 
+                    %4$s 
+                />
+                <label for="wc-%1$s-payment-token-%2$s">%3$s</label>
+            </li>',
+            esc_attr( $this->id ),
+            esc_attr( $token->get_id() ),
+            esc_html( $token->get_display_name() ),
+            checked( $token->is_default(), true, false ),
+            esc_attr( $bin ) // data-bin
+        );
+		return apply_filters( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', $html, $token, $this );
+    }
+
+    /**
+     * Add payment method for tokenization
+     *
+     * @return array
+     */
+    public function add_payment_method()
+    {
+        try {
+            // Validate required fields
+            if (empty($_POST['rm-pagbank-card-encrypted'])) {
+                wc_add_notice(__('Card data is required.', 'pagbank-connect'), 'error');
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            if (empty($_POST['rm-pagbank-card-holder-name'])) {
+                wc_add_notice(__('O nome do titular do cartão é obrigatório.', 'pagbank-connect'), 'error');
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            // Clean and validate holder name
+            $holderName = htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8');
+            $holderName = preg_replace('/\s+/', ' ', trim($holderName));
+            $holderName = preg_replace('/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/', '', $holderName);
+
+            if (empty($holderName)) {
+                wc_add_notice(__('Nome do titular do cartão inválido.', 'pagbank-connect'), 'error');
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            // Validate CPF/CNPJ field
+            if (empty($_POST['rm-pagbank-card-cpf-cnpj'])) {
+                wc_add_notice(__('CPF/CNPJ é obrigatório.', 'pagbank-connect'), 'error');
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            // Clean and validate CPF/CNPJ
+            $cpfCnpj = htmlspecialchars($_POST['rm-pagbank-card-cpf-cnpj'], ENT_QUOTES, 'UTF-8');
+            $cpfCnpj = preg_replace('/[^0-9]/', '', $cpfCnpj); // Remove all non-numeric characters
+
+            // Validate CPF/CNPJ format
+            if (strlen($cpfCnpj) != 11 && strlen($cpfCnpj) != 14) {
+                wc_add_notice(__('CPF/CNPJ inválido.', 'pagbank-connect'), 'error');
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            // Get encrypted card data
+            $encryptedCard = htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8');
+
+            // Call PagBank API to create token using the API class
+            $api = new Api();
+            $params = [
+                'encrypted' => $encryptedCard
+            ];
+
+            $resp = $api->post('ws/tokens/cards', $params);
+
+            if (isset($resp['error_messages'])) {
+                throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
+            }
+
+            if (empty($resp['id'])) {
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            // Create WooCommerce payment token
+            $token = new WC_Payment_Token_CC();
+            $token->set_gateway_id($this->id);
+            $token->set_user_id(get_current_user_id());
+            $token->set_token($resp['id']);
+            $token->set_card_type(strtolower($resp['brand'] ?? 'card'));
+            $token->set_last4($resp['last_digits'] ?? '****');
+            $token->set_expiry_month($resp['exp_month'] ?? '');
+            $token->set_expiry_year($resp['exp_year'] ?? '');
+            $token->update_meta_data( 'cc_bin', $resp['first_digits'] );
+            $token->update_meta_data(
+                'customer_document',
+                $cpfCnpj,
+                true
+            );
+            // Set as default if it's the first token for this user
+            $existing_tokens = WC_Payment_Tokens::get_customer_tokens(get_current_user_id(), $this->id);
+            if (empty($existing_tokens)) {
+                $token->set_default(true);
+            }
+
+            // Save the token
+            if ($token->save()) {
+                return [
+                    'result' => 'success',
+                    'redirect' => wc_get_endpoint_url('payment-methods')
+                ];
+            }
+
+            wc_add_notice(__('Falha ao salvar o método de pagamento.', 'pagbank-connect'), 'error');
+            return [
+                'result' => 'failure',
+                'redirect' => wc_get_endpoint_url('add-payment-method')
+            ];
+
+        } catch (Exception $e) {
+            wc_add_notice(__('Ocorreu um erro ao adicionar o método de pagamento.', 'pagbank-connect'), 'error');
+            return [
+                'result' => 'failure',
+                'redirect' => wc_get_endpoint_url('add-payment-method')
+            ];
+        }
+    }
+
+    /**
+     * Filter customer payment tokens to hide them in blocks context
+     *
+     * @param array $tokens
+     * @param int $customer_id
+     * @param string $gateway_id
+     * @return array
+     */
+    public function filter_customer_tokens_for_blocks($tokens, $customer_id, $gateway_id) {
+        if (!empty($tokens) && Functions::isCheckoutBlocks()) {
+            // Remove only tokens for this gateway
+            $tokens = array_filter($tokens, function($token) {
+                return $token->get_gateway_id() !== $this->id;
+            });
+        }
+        return $tokens;
     }
 }

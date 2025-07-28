@@ -2,6 +2,7 @@
 
 namespace RM_PagBank\Connect\Payments;
 
+use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
@@ -16,6 +17,7 @@ use RM_PagBank\Object\Interest;
 use RM_PagBank\Object\PaymentMethod;
 use RM_PagBank\Object\Recurring;
 use WC_Order;
+use WC_Payment_Tokens;
 
 /**
  * Class CreditCard
@@ -208,11 +210,23 @@ class CreditCard extends Common
             return $card;
         }
         
-        //non recurring...
-        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
         $holder = new Holder();
         $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
         $card->setHolder($holder);
+        $token_id = $this->order->get_meta('_pagbank_card_token_id');
+        if($token_id && !empty($token_id) && 'new' !== $token_id){
+            $tokenCc = $this->getCcToken($token_id);
+            $this->order->add_meta_data(
+                'pagbank_card_last4',
+                $tokenCc->get_last4(),
+                true
+            );
+            $this->order->add_meta_data('_pagbank_card_first_digits', $tokenCc->get_meta( 'cc_bin' ), true);
+            $card->setId($tokenCc->get_token() ?: '');
+            return $card;
+        }
+        //non recurring...
+        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
 
         return $card;
     }
@@ -498,7 +512,7 @@ class CreditCard extends Common
     /**
      * Return Table HTML
      * 
-     * @return WP_REST_Response|WP_Error
+     * @return WP_REST_Response|WP_Error|WP_HTTP_Response|mixed
      */
     public static function getProductVariableInstallmentsAjax(){
 
@@ -600,5 +614,32 @@ class CreditCard extends Common
         );
         
         set_transient('pagbank_product_installment_options', $installment_options, YEAR_IN_SECONDS);
+    }
+
+    /**
+     * Get Token Cc Woo/PagBank
+     *
+     * @param mixed $token_id
+     *
+     * @return \WC_Payment_Token|null
+     * @throws Exception
+     */
+    public function getCcToken($token_id)
+    {
+        if ($token_id && $token_id !== 'new') {
+            $token = WC_Payment_Tokens::get($token_id);
+            if (!$token instanceof \WC_Payment_Token_CC) {
+                throw new \Exception(__('Token do cartão salvo não encontrado.', 'pagbank-connect'));
+            }
+            
+            if ($token->get_user_id() !== get_current_user_id()) {
+                throw new \Exception(
+                    __('Token do cartão salvo é inválido ou não pertence ao usuário atual.', 'pagbank-connect')
+                );
+            }
+
+            return $token;
+        }
+        return null;
     }
 }

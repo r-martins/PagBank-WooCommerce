@@ -70,7 +70,7 @@ class RecurringOrder
             /** @var WC_Product|null|false $itemObj */
             $product_id = $item->get_variation_id() ?: $item->get_product_id();
             $itemObj = wc_get_product($product_id);
-            if (!$itemObj) {
+            if (!$itemObj || !is_object($itemObj) || !$itemObj->exists()) {
                 Functions::log('Produto de pedido recorrente não encontrado. Recorrência não foi processada.', 'error', [
                     'subscription' => $subscription->id,
                     'item' => $item->get_id() ?: '',

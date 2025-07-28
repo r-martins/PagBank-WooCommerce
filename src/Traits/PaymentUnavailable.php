@@ -55,7 +55,7 @@ trait PaymentUnavailable
         }
 
         $recHelper = new RecurringHelper();
-        if ($recHelper->isCartRecurring()) {
+        if ($recHelper->isCartRecurring() || is_wc_endpoint_url('add-payment-method')) {
             return false;
         }
 

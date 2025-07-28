@@ -1,6 +1,6 @@
 import {registerPaymentMethod} from '@woocommerce/blocks-registry';
 import {getSetting} from '@woocommerce/settings';
-import {useEffect} from '@wordpress/element';
+import {useEffect, useRef} from '@wordpress/element';
 import {decodeEntities} from '@wordpress/html-entities';
 import {__} from '@wordpress/i18n';
 
@@ -9,7 +9,8 @@ import CreditCardForm from "./components/CreditCardForm";
 import CustomerDocumentField from './components/CustomerDocumentField';
 import RecurringInfo from './components/RecurringInfo';
 import RetryInput from './components/RetryInput';
-
+const { useSelect } = window.wp.data;
+const { checkoutStore } = window.wc.wcBlocksData;
 const settings = getSetting('rm-pagbank-cc_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Cartão de Crédito', 'rm-pagbank-pix' );
 let showRetryInput = false;
@@ -46,7 +47,8 @@ const Label = ( props ) => {
 const Content = ( props ) => {
     const { eventRegistration, emitResponse, billing } = props;
     const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
-
+    const isCalculating = useSelect((select) => select(checkoutStore).isCalculating());
+    const cartTotalRef = useRef(billing.cartTotal.value ?? 0);
     if (settings.paymentUnavailable) {
         useEffect( () => {
             const unsubscribe = onPaymentSetup(() => {
@@ -284,17 +286,15 @@ const Content = ( props ) => {
                     selectedInstallments = 1;
                 }
 
-                let cartTotal = billing.cartTotal.value;
-
                 //if cart total is less than 100, don't continue with 3ds
-                if (cartTotal < 100) {
+                if (cartTotalRef.current < 100) {
                     canContinue = true;
                     card3d = false;
                     return true;
                 }
 
                 if (selectedInstallments > 1) {
-                    cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount_raw;
+                    cartTotalRef.current = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount_raw;
                 }
 
                 let request = {
@@ -359,7 +359,7 @@ const Content = ( props ) => {
                             }]
                     },
                     amount: {
-                        value: cartTotal,
+                        value: cartTotalRef.current,
                         currency: 'BRL'
                     },
                     billingAddress: {
@@ -446,6 +446,13 @@ const Content = ( props ) => {
             unsubscribe();
         };
     }, [onPaymentSetup] );
+
+    // When the bin changes or total recalculates
+    useEffect(() => {
+        if (!isCalculating) {
+            cartTotalRef.current = billing.cartTotal.value;
+        }
+    }, [isCalculating]);
 
     return (
         <div className="rm-pagbank-cc">
