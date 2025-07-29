@@ -16,6 +16,11 @@ class RecurringsReport extends WC_Admin_Report
         $current_range = isset($_GET['range']) ? sanitize_text_field($_GET['range']) : '30';
         $date_filter = gmdate('Y-m-d H:i:s', strtotime("-{$current_range} days"));
         $status_filter = isset($_GET['status_filter']) ? sanitize_text_field($_GET['status_filter']) : null;
+        
+        // Pagination
+        $per_page = isset($_GET['per_page']) ? sanitize_text_field($_GET['per_page']) : '12';
+        $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+        $offset = ($current_page - 1) * ($per_page === 'all' ? 0 : intval($per_page));
         // Build summary query - Cards show statistics for the selected period, regardless of status filter
         $summary = $wpdb->get_row($wpdb->prepare("
             SELECT 
@@ -110,7 +115,42 @@ class RecurringsReport extends WC_Admin_Report
                 $orders_params[] = $date_filter;
             }
             
-            $orders_sql .= " ORDER BY r.created_at DESC LIMIT 50";
+            // Count total records for pagination (sem JOINs, só filtros)
+            $count_sql = "SELECT COUNT(*) FROM {$table} WHERE 1=1";
+            $count_params = array();
+            if (!is_null($status_filter) && !empty($status_filter)) {
+                $count_sql .= " AND status = %s";
+                $count_params[] = $status_filter;
+                switch ($status_filter) {
+                    case 'CANCELED':
+                        $count_sql .= " AND canceled_at >= %s";
+                        break;
+                    case 'PAUSED':
+                        $count_sql .= " AND paused_at >= %s";
+                        break;
+                    case 'PENDING_CANCEL':
+                        $count_sql .= " AND canceled_at >= %s";
+                        break;
+                    default:
+                        $count_sql .= " AND created_at >= %s";
+                        break;
+                }
+                $count_params[] = $date_filter;
+            } else {
+                $count_sql .= " AND created_at >= %s";
+                $count_params[] = $date_filter;
+            }
+            $total_records = $wpdb->get_var($wpdb->prepare($count_sql, $count_params));
+
+            $orders_sql .= " ORDER BY r.created_at DESC";
+
+            // Add pagination
+            if ($per_page !== 'all') {
+                $orders_sql .= " LIMIT %d OFFSET %d";
+                $orders_params[] = intval($per_page);
+                $orders_params[] = $offset;
+            }
+
             $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $orders_params));
         } else {
             // Classic: fetch data from wp_posts and wp_postmeta
@@ -158,14 +198,49 @@ class RecurringsReport extends WC_Admin_Report
                 $orders_params[] = $date_filter;
             }
             
-            $sql .= " ORDER BY r.created_at DESC LIMIT 50";
+            // Count total records for pagination (sem JOINs, só filtros)
+            $count_sql = "SELECT COUNT(*) FROM {$table} WHERE 1=1";
+            $count_params = array();
+            if (!is_null($status_filter) && !empty($status_filter)) {
+                $count_sql .= " AND status = %s";
+                $count_params[] = $status_filter;
+                switch ($status_filter) {
+                    case 'CANCELED':
+                        $count_sql .= " AND canceled_at >= %s";
+                        break;
+                    case 'PAUSED':
+                        $count_sql .= " AND paused_at >= %s";
+                        break;
+                    case 'PENDING_CANCEL':
+                        $count_sql .= " AND canceled_at >= %s";
+                        break;
+                    default:
+                        $count_sql .= " AND created_at >= %s";
+                        break;
+                }
+                $count_params[] = $date_filter;
+            } else {
+                $count_sql .= " AND created_at >= %s";
+                $count_params[] = $date_filter;
+            }
+            $total_records = $wpdb->get_var($wpdb->prepare($count_sql, $count_params));
+
+            $sql .= " ORDER BY r.created_at DESC";
+
+            // Add pagination
+            if ($per_page !== 'all') {
+                $sql .= " LIMIT %d OFFSET %d";
+                $orders_params[] = intval($per_page);
+                $orders_params[] = $offset;
+            }
+
             $orders = $wpdb->get_results($wpdb->prepare($sql, $orders_params));
         }
 
-        self::render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range);
+        self::render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range, $total_records, $per_page, $current_page);
     }
 
-    protected static function render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range)
+    protected static function render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range, $total_records = 0, $per_page = '12', $current_page = 1)
     {
 ?>
         <div class="wrap">
@@ -197,6 +272,16 @@ class RecurringsReport extends WC_Admin_Report
                             <option value="SUSPENDED" <?php selected($_GET['status_filter'] ?? '', 'SUSPENDED'); ?>>Suspensa</option>
                             <option value="PENDING" <?php selected($_GET['status_filter'] ?? '', 'PENDING'); ?>>Pendente</option>
                             <option value="PENDING_CANCEL" <?php selected($_GET['status_filter'] ?? '', 'PENDING_CANCEL'); ?>>Cancelamento Pendente</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="per_page"><?php esc_html_e('Exibir:', 'pagbank-connect'); ?></label>
+                        <select name="per_page" id="per_page">
+                            <option value="12" <?php selected($per_page, '12'); ?>>12 registros</option>
+                            <option value="24" <?php selected($per_page, '24'); ?>>24 registros</option>
+                            <option value="32" <?php selected($per_page, '32'); ?>>32 registros</option>
+                            <option value="all" <?php selected($per_page, 'all'); ?>>Todos</option>
                         </select>
                     </div>
                     
@@ -281,6 +366,85 @@ class RecurringsReport extends WC_Admin_Report
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                
+                <?php 
+                // Only show pagination if we have more records than what fits on one page
+                // AND we actually have results to show
+                if ($per_page !== 'all' && $total_records > intval($per_page) && !empty($orders)): ?>
+                    <?php
+                    $total_pages = ceil($total_records / intval($per_page));
+                    // Only show pagination controls if there are actually multiple pages worth of data
+                    if ($total_pages > 1):
+                    ?>
+                        <div class="rm-pagbank-pagination" style="margin-top: 20px; text-align: center;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <span style="color: #666;">
+                                    <?php 
+                                    $showing_start = (($current_page - 1) * intval($per_page)) + 1;
+                                    $showing_end = min($current_page * intval($per_page), $total_records);
+                                    printf(
+                                        esc_html__('Exibindo %d-%d de %d registros', 'pagbank-connect'),
+                                        $showing_start,
+                                        $showing_end,
+                                        $total_records
+                                    ); 
+                                    ?>
+                                </span>
+                                <span style="color: #666;">
+                                    <?php printf(esc_html__('Página %d de %d', 'pagbank-connect'), $current_page, $total_pages); ?>
+                                </span>
+                            </div>
+                            
+                            <div class="pagination-links" style="display: flex; justify-content: center; gap: 5px;">
+                                <?php
+                                $current_url = remove_query_arg('paged');
+                                
+                                // Previous page
+                                if ($current_page > 1): ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged', $current_page - 1, $current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;">‹ <?php esc_html_e('Anterior', 'pagbank-connect'); ?></a>
+                                <?php endif; ?>
+                                
+                                <?php
+                                // Page numbers
+                                $start_page = max(1, $current_page - 2);
+                                $end_page = min($total_pages, $current_page + 2);
+                                
+                                if ($start_page > 1): ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged', 1, $current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;">1</a>
+                                    <?php if ($start_page > 2): ?>
+                                        <span style="margin: 0 5px;">...</span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                                    <?php if ($i == $current_page): ?>
+                                        <span class="button button-primary" style="margin: 0 2px;"><?php echo $i; ?></span>
+                                    <?php else: ?>
+                                        <a href="<?php echo esc_url(add_query_arg('paged', $i, $current_url)); ?>" 
+                                           class="button" style="margin: 0 2px;"><?php echo $i; ?></a>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
+                                
+                                <?php if ($end_page < $total_pages): ?>
+                                    <?php if ($end_page < $total_pages - 1): ?>
+                                        <span style="margin: 0 5px;">...</span>
+                                    <?php endif; ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged', $total_pages, $current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;"><?php echo $total_pages; ?></a>
+                                <?php endif; ?>
+                                
+                                <?php
+                                // Next page
+                                if ($current_page < $total_pages): ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged', $current_page + 1, $current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;"><?php esc_html_e('Próxima', 'pagbank-connect'); ?> ›</a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
 
 
@@ -406,6 +570,24 @@ class RecurringsReport extends WC_Admin_Report
             .status-pending-cancel {
                 background: #f56e28;
                 color: white;
+            }
+
+            .rm-pagbank-pagination .pagination-links .button {
+                min-width: 40px;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 3px;
+                padding: 6px 12px;
+            }
+
+            .rm-pagbank-pagination .pagination-links .button:hover:not(.button-primary) {
+                background: #f0f0f1;
+                border-color: #0073aa;
+                color: #0073aa;
+            }
+
+            .rm-pagbank-pagination .pagination-links .button.button-primary {
+                cursor: default;
             }
         </style>
     <?php
