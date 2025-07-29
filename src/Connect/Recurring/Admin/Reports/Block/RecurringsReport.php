@@ -11,14 +11,12 @@ class RecurringsReport extends WC_Admin_Report
         global $wpdb;
 
         $table = $wpdb->prefix . 'pagbank_recurring';
-        $date_30 = gmdate('Y-m-d H:i:s', strtotime('-30 days'));
-        $date_90 = gmdate('Y-m-d H:i:s', strtotime('-90 days'));
 
         // Filter data
         $current_range = isset($_GET['range']) ? sanitize_text_field($_GET['range']) : '30';
         $date_filter = gmdate('Y-m-d H:i:s', strtotime("-{$current_range} days"));
         $status_filter = isset($_GET['status_filter']) ? sanitize_text_field($_GET['status_filter']) : null;
-        // get revunue from status
+        // Build summary query - Cards show statistics for the selected period, regardless of status filter
         $summary = $wpdb->get_row($wpdb->prepare("
             SELECT 
                 COUNT(*) as total,
@@ -30,7 +28,7 @@ class RecurringsReport extends WC_Admin_Report
                 SUM(CASE WHEN status = 'ACTIVE' THEN recurring_amount ELSE 0 END) AS active_revenue,
                 AVG(CASE WHEN status = 'ACTIVE' THEN recurring_amount ELSE NULL END) AS avg_ticket
             FROM {$table}
-        ", $date_filter, $date_30, $date_30, $date_30));
+        ", $date_filter, $date_filter, $date_filter, $date_filter));
 
         // Data to graph month
         $monthly_data = $wpdb->get_results($wpdb->prepare("
@@ -81,15 +79,39 @@ class RecurringsReport extends WC_Admin_Report
             FROM {$table} r
             LEFT JOIN {$wpdb->prefix}wc_orders o ON r.initial_order_id = o.id
             LEFT JOIN {$wpdb->prefix}wc_order_addresses oa ON o.id = oa.order_id AND oa.address_type = 'billing'
-            WHERE r.created_at >= %s";
+            WHERE 1=1";
+            
+            $orders_params = array();
+            
             if (!is_null($status_filter) && !empty($status_filter)) {
                 $orders_sql .= " AND r.status = %s";
-                $orders_sql .= " ORDER BY r.created_at DESC LIMIT 50";
-                $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $date_filter, $status_filter));
+                $orders_params[] = $status_filter;
+                
+                // Filter by the correct date field based on status
+                switch ($status_filter) {
+                    case 'CANCELED':
+                        $orders_sql .= " AND r.canceled_at >= %s";
+                        break;
+                    case 'PAUSED':
+                        $orders_sql .= " AND r.paused_at >= %s";
+                        break;
+                    case 'PENDING_CANCEL':
+                        $orders_sql .= " AND r.canceled_at >= %s";
+                        break;
+                    default:
+                        // For ACTIVE, PENDING, SUSPENDED, etc., use created_at
+                        $orders_sql .= " AND r.created_at >= %s";
+                        break;
+                }
+                $orders_params[] = $date_filter;
             } else {
-                $orders_sql .= " ORDER BY r.created_at DESC LIMIT 50";
-                $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $date_filter));
+                // No status filter, just filter by creation date
+                $orders_sql .= " AND r.created_at >= %s";
+                $orders_params[] = $date_filter;
             }
+            
+            $orders_sql .= " ORDER BY r.created_at DESC LIMIT 50";
+            $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $orders_params));
         } else {
             // Classic: fetch data from wp_posts and wp_postmeta
             $sql = "SELECT 
@@ -105,15 +127,39 @@ class RecurringsReport extends WC_Admin_Report
             LEFT JOIN {$wpdb->postmeta} pm2 ON r.initial_order_id = pm2.post_id AND pm2.meta_key = '_billing_first_name'
             LEFT JOIN {$wpdb->postmeta} pm3 ON r.initial_order_id = pm3.post_id AND pm3.meta_key = '_billing_last_name'
             LEFT JOIN {$wpdb->postmeta} pm4 ON r.initial_order_id = pm4.post_id AND pm4.meta_key = '_order_total'
-            WHERE r.created_at >= %s";
+            WHERE 1=1";
+            
+            $orders_params = array();
+            
             if (!is_null($status_filter) && !empty($status_filter)) {
                 $sql .= " AND r.status = %s";
-                $sql .= " ORDER BY r.created_at DESC LIMIT 50";
-                $orders = $wpdb->get_results($wpdb->prepare($sql, $date_filter, $status_filter));
+                $orders_params[] = $status_filter;
+                
+                // Filter by the correct date field based on status
+                switch ($status_filter) {
+                    case 'CANCELED':
+                        $sql .= " AND r.canceled_at >= %s";
+                        break;
+                    case 'PAUSED':
+                        $sql .= " AND r.paused_at >= %s";
+                        break;
+                    case 'PENDING_CANCEL':
+                        $sql .= " AND r.canceled_at >= %s";
+                        break;
+                    default:
+                        // For ACTIVE, PENDING, SUSPENDED, etc., use created_at
+                        $sql .= " AND r.created_at >= %s";
+                        break;
+                }
+                $orders_params[] = $date_filter;
             } else {
-                $sql .= " ORDER BY r.created_at DESC LIMIT 50";
-                $orders = $wpdb->get_results($wpdb->prepare($sql, $date_filter));
+                // No status filter, just filter by creation date
+                $sql .= " AND r.created_at >= %s";
+                $orders_params[] = $date_filter;
             }
+            
+            $sql .= " ORDER BY r.created_at DESC LIMIT 50";
+            $orders = $wpdb->get_results($wpdb->prepare($sql, $orders_params));
         }
 
         self::render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range);
@@ -161,8 +207,19 @@ class RecurringsReport extends WC_Admin_Report
             
             </div>
 
+            <!-- Report Cards -->
+            <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <?php
+                self::render_card('Total de Assinaturas', $summary->total ?? 0, 'dashicons-admin-users');
+                self::render_card('Ativas', $summary->active ?? 0, 'dashicons-yes-alt', '#46b450');
+                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter#rm-pagbank-subscriptions-table'));
+                self::render_card('Pausadas (' . $current_range . ' dias)', $summary->paused ?? 0, 'dashicons-controls-pause', '#ffb900', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=PAUSED#rm-pagbank-subscriptions-table'));
+                self::render_card('Canceladas (' . $current_range . ' dias)', $summary->canceled ?? 0, 'dashicons-no-alt', '#dc3232', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=CANCELED#rm-pagbank-subscriptions-table'));
+                ?>
+            </div>
+
             <!-- Table Recurrings -->
-            <div class="rm-pagbank-subscriptions-table" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
+            <div id="rm-pagbank-subscriptions-table" class="rm-pagbank-subscriptions-table" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
                 <h3><?php esc_html_e('Assinaturas Recentes', 'pagbank-connect'); ?></h3>
                 <table class="widefat striped">
                     <thead>
@@ -226,16 +283,6 @@ class RecurringsReport extends WC_Admin_Report
                 </table>
             </div>
 
-            <!-- Report Cards -->
-            <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <?php
-                self::render_card('Total de Assinaturas', $summary->total ?? 0, 'dashicons-admin-users');
-                self::render_card('Ativas', $summary->active ?? 0, 'dashicons-yes-alt', '#46b450');
-                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter'));
-                self::render_card('Pausadas (' . $current_range . ' dias)', $summary->paused ?? 0, 'dashicons-controls-pause', '#ffb900', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=PAUSED'));
-                self::render_card('Canceladas (' . $current_range . ' dias)', $summary->canceled ?? 0, 'dashicons-no-alt', '#dc3232', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=CANCELED'));
-                ?>
-            </div>
 
             <!-- Revenue Cards -->
             <div class="rm-pagbank-revenue-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
