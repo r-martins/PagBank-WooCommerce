@@ -123,9 +123,11 @@ final class CreditCard extends AbstractPaymentMethodType
         foreach ($customer_tokens as $token) {
             if ($token->get_gateway_id() === $this->name) {
                 $cc_bin = $token->get_meta('cc_bin') ?: '555566';
+                $customer_document = $token->get_meta('customer_document') ?: '';
                 $tokens[] = [
                     'id' => $token->get_id(),
                     'cc_bin' => $cc_bin,
+                    'customer_document' => $customer_document,
                     'display_name' => $token->get_display_name()
                 ];
             }

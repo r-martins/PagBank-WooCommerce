@@ -37,6 +37,13 @@ const SavedCardInstallments = (props) => {
         return tokenData ? tokenData.cc_bin : '555566'; // fallback to default BIN
     };
 
+    // Function to get the customer document for a specific token
+    const getTokenCustomerDocument = (tokenId) => {
+        const savedTokens = window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).savedTokens || [];
+        const tokenData = savedTokens.find(t => t.id == tokenId);
+        return tokenData ? tokenData.customer_document : '';
+    };
+
     useEffect(() => {
         // When selecting the token, fetch installments using the token's BIN and total checkout amount
         const total = billing?.cartTotal?.value || 0;
@@ -49,17 +56,26 @@ const SavedCardInstallments = (props) => {
         if (!eventRegistration || !emitResponse) return;
 
             const unsubscribe = onPaymentSetup(() => { 
+            const customerDocument = getTokenCustomerDocument(token);
+            
+            const paymentMethodData = {
+                'rm-pagbank-card-installments-token': selectedInstallment,
+                'token': token,
+                'payment_method': token,
+                'payment_method': 'rm-pagbank-cc',
+                'wc-rm-pagbank-cc-payment-token': token,
+                'isSavedToken': true,
+            };
+
+            // Add customer document if available
+            if (customerDocument) {
+                paymentMethodData['rm-pagbank-customer-document'] = customerDocument;
+            }
+
             return {
                 type: emitResponse.responseTypes.SUCCESS,
                 meta: {
-                    paymentMethodData: {
-                        'rm-pagbank-card-installments-token': selectedInstallment,
-                        'token': token,
-                        'payment_method': token,
-                        'payment_method': 'rm-pagbank-cc',
-                        'wc-rm-pagbank-cc-payment-token': token,
-                        'isSavedToken': true,
-                    },
+                    paymentMethodData: paymentMethodData,
                 },
             };
         } );
