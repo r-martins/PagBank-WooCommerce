@@ -101,7 +101,36 @@ final class CreditCard extends AbstractPaymentMethodType
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
             'defaultInstallments' => is_checkout() && !is_order_received_page() && !$recHelper->isCartRecurring() ? $this->gateway->getDefaultInstallments() : null,
             'ajax_url' => admin_url('admin-ajax.php'),
-            'rm_pagbank_nonce' => wp_create_nonce('rm_pagbank_nonce')
+            'rm_pagbank_nonce' => wp_create_nonce('rm_pagbank_nonce'),
+            'savedTokens' => $this->getSavedTokensWithBin()
         );
+    }
+
+    /**
+     * Get saved tokens with their CC BIN for the current user
+     * 
+     * @return array
+     */
+    private function getSavedTokensWithBin() {
+        $tokens = [];
+        
+        if (!is_user_logged_in()) {
+            return $tokens;
+        }
+
+        $customer_tokens = \WC_Payment_Tokens::get_customer_tokens(get_current_user_id(), $this->name);
+        
+        foreach ($customer_tokens as $token) {
+            if ($token->get_gateway_id() === $this->name) {
+                $cc_bin = $token->get_meta('cc_bin') ?: '555566';
+                $tokens[] = [
+                    'id' => $token->get_id(),
+                    'cc_bin' => $cc_bin,
+                    'display_name' => $token->get_display_name()
+                ];
+            }
+        }
+        
+        return $tokens;
     }
 }

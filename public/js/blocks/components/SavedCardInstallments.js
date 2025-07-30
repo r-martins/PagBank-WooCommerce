@@ -30,10 +30,18 @@ const SavedCardInstallments = (props) => {
         });
     };
 
+    // Function to get the CC BIN for a specific token
+    const getTokenBin = (tokenId) => {
+        const savedTokens = window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).savedTokens || [];
+        const tokenData = savedTokens.find(t => t.id == tokenId);
+        return tokenData ? tokenData.cc_bin : '555566'; // fallback to default BIN
+    };
+
     useEffect(() => {
-        // When selecting the token, fetch installments using the default BIN and total checkout amount
+        // When selecting the token, fetch installments using the token's BIN and total checkout amount
         const total = billing?.cartTotal?.value || 0;
-        fetchInstallments('555566', total);
+        const tokenBin = getTokenBin(token);
+        fetchInstallments(tokenBin, total);
     }, [token, billing?.cartTotal?.value]);
 
     // Integrate with checkout blocks to send the selected installment
