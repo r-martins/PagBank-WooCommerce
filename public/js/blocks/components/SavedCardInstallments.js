@@ -51,7 +51,6 @@ const SavedCardInstallments = (props) => {
                         'payment_method': 'rm-pagbank-cc',
                         'wc-rm-pagbank-cc-payment-token': token,
                         'isSavedToken': true,
-                        'wc-rm-pagbank-cc-new-payment-method': false,
                     },
                 },
             };
@@ -61,7 +60,7 @@ const SavedCardInstallments = (props) => {
             unsubscribe();
         }
         
-    }, [selectedInstallment, token, eventRegistration, emitResponse]);
+    }, [selectedInstallment, token, onPaymentSetup]);
 
     return (
         <div style={{ marginTop: '1em' }}>

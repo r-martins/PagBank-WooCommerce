@@ -10,6 +10,7 @@ import CustomerDocumentField from './components/CustomerDocumentField';
 import RecurringInfo from './components/RecurringInfo';
 import RetryInput from './components/RetryInput';
 import SavedCardInstallments from './components/SavedCardInstallments';
+import SavedCreditCardToken from './components/SavedCreditCardToken';
 const { useSelect } = window.wp.data;
 const { checkoutStore } = window.wc.wcBlocksData;
 const settings = getSetting('rm-pagbank-cc_data', {});
@@ -425,6 +426,7 @@ const Content = ( props ) => {
             const ccNumber = document.getElementById('rm-pagbank-card-number').value;
             const ccHolderName = document.getElementById('rm-pagbank-card-holder-name').value;
             const card3dRetry = document.getElementById('rm-pagbank-card-retry-with-3ds');
+            const newPaymentMethod = document.getElementById('rm-pagbank-cc-new-payment-method-in-block');
 
             return {
                 type: emitResponse.responseTypes.SUCCESS,
@@ -437,7 +439,8 @@ const Content = ( props ) => {
                         'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),
                         'rm-pagbank-card-holder-name': ccHolderName,
                         'rm-pagbank-card-3d': card3d,
-                        'rm-pagbank-card-retry-with-3ds': card3dRetry?.checked
+                        'rm-pagbank-card-retry-with-3ds': card3dRetry?.checked,
+                        'rm-pagbank-cc-new-payment-method-in-block': newPaymentMethod?.checked,
                     },
                 },
             };
@@ -459,6 +462,7 @@ const Content = ( props ) => {
         <div className="rm-pagbank-cc">
             {showRetryInput ? <RetryInput /> : null}
             <CreditCardForm />
+            <SavedCreditCardToken />
             <CustomerDocumentField />
             {settings.isCartRecurring ? <RecurringInfo /> : null}
         </div>

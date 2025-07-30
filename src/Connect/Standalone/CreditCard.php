@@ -299,7 +299,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 
                 $order->add_meta_data(
                     '_rm_pagbank_checkout_blocks',
-                    wc_bool_to_string(isset($_POST['wc-rm-pagbank-cc-new-payment-method'])),
+                    wc_bool_to_string(isset($_POST['rm-pagbank-cc-new-payment-method-in-block']) || isset($_POST['wc-rm-pagbank-cc-new-payment-method'])),
                     true
                 );
 
@@ -332,7 +332,14 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'redirect' => '',
                 );
         }
+        $shouldSaveToken = false;
         if ( isset( $_POST['wc-rm-pagbank-cc-new-payment-method'] ) && wc_bool_to_string($_POST['wc-rm-pagbank-cc-new-payment-method']) == 'yes' ) {
+            $shouldSaveToken = true;
+        }
+        if ( isset( $_POST['rm-pagbank-cc-new-payment-method-in-block'] ) && wc_bool_to_string($_POST['rm-pagbank-cc-new-payment-method-in-block']) === 'yes' ) {
+            $shouldSaveToken = true;
+        }
+        if ( $shouldSaveToken ) {
             $this->saveCcToken($order);
         }
 
