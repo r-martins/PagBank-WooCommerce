@@ -9,6 +9,7 @@ import CreditCardForm from "./components/CreditCardForm";
 import CustomerDocumentField from './components/CustomerDocumentField';
 import RecurringInfo from './components/RecurringInfo';
 import RetryInput from './components/RetryInput';
+import SavedCardInstallments from './components/SavedCardInstallments';
 const { useSelect } = window.wp.data;
 const { checkoutStore } = window.wc.wcBlocksData;
 const settings = getSetting('rm-pagbank-cc_data', {});
@@ -474,6 +475,7 @@ const Rm_Pagbank_Cc_Block_Gateway = {
     supports: {
         features: settings?.supports ?? [],
     },
+    savedTokenComponent: <SavedCardInstallments />,
 };
 
 registerPaymentMethod( Rm_Pagbank_Cc_Block_Gateway );
