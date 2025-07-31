@@ -460,13 +460,13 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 
 == Screenshots ==
 1. Cartão de Crédito na visão do cliente
-2. PIX - Tela de Sucesso
+2. PIX - Tela de Sucesso com confirmação instantânea
 3. Configurações de cartão de crédito
 4. PIX e Boleto - Configurações
 5. Admin - Tela do Pedido
 6. Envio Fácil
 7. Autenticação 3D Secure
-8. Pedidos Recorrentes (assinaturas)
+8. Pedidos Recorrentes (assinaturas) com relatórios
 9. Parcelamento na Página de Produto
 10. Suporte a Checkout em Blocos do WooCommerce
 11. Conteúdo para assinantes
