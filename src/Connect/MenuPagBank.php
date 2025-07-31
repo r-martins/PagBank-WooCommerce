@@ -66,6 +66,18 @@ SVG;
             [MenuPagBank::class, 'renderPagbankSubscriptionsListPage']
         );
         
+        add_submenu_page(
+            'rm-pagbank',
+            __('Relatórios', 'pagbank-connect'),
+            __('Relatórios', 'pagbank-connect'),
+            'manage_woocommerce',
+            'rm-pagbank-logs',
+            function () {
+                wp_safe_redirect(admin_url('admin.php?page=wc-reports&tab=pagbank'));
+                exit;
+            }
+        );
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             add_submenu_page(
                 'rm-pagbank',
