@@ -244,53 +244,7 @@ class RecurringsReport extends WC_Admin_Report
     {
 ?>
         <div class="wrap">
-            <h1><?php echo esc_html__('Dashboard - Assinaturas PagBank', 'pagbank-connect'); ?></h1>
-
-            <div class="rm-pagbank-filters" style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4;">
-                <form method="get" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                    <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page']); ?>" />
-                    <input type="hidden" name="tab" value="<?php echo esc_attr($_GET['tab'] ?? ''); ?>" />
-                    <input type="hidden" name="section" value="<?php echo esc_attr($_GET['section'] ?? ''); ?>" />
-                    
-                    <div>
-                        <label for="range"><?php esc_html_e('Período:', 'pagbank-connect'); ?></label>
-                        <select name="range" id="range">
-                            <option value="7" <?php selected($current_range, '7'); ?>>Últimos 7 dias</option>
-                            <option value="30" <?php selected($current_range, '30'); ?>>Últimos 30 dias</option>
-                            <option value="90" <?php selected($current_range, '90'); ?>>Últimos 90 dias</option>
-                            <option value="365" <?php selected($current_range, '365'); ?>>Último ano</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="status_filter"><?php esc_html_e('Status:', 'pagbank-connect'); ?></label>
-                        <select name="status_filter" id="status_filter">
-                            <option value=""><?php esc_html_e('Todos', 'pagbank-connect'); ?></option>
-                            <option value="ACTIVE" <?php selected($_GET['status_filter'] ?? '', 'ACTIVE'); ?>>Ativas</option>
-                            <option value="PAUSED" <?php selected($_GET['status_filter'] ?? '', 'PAUSED'); ?>>Pausadas</option>
-                            <option value="CANCELED" <?php selected($_GET['status_filter'] ?? '', 'CANCELED'); ?>>Canceladas</option>
-                            <option value="SUSPENDED" <?php selected($_GET['status_filter'] ?? '', 'SUSPENDED'); ?>>Suspensa</option>
-                            <option value="PENDING" <?php selected($_GET['status_filter'] ?? '', 'PENDING'); ?>>Pendente</option>
-                            <option value="PENDING_CANCEL" <?php selected($_GET['status_filter'] ?? '', 'PENDING_CANCEL'); ?>>Cancelamento Pendente</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="per_page"><?php esc_html_e('Exibir:', 'pagbank-connect'); ?></label>
-                        <select name="per_page" id="per_page">
-                            <option value="12" <?php selected($per_page, '12'); ?>>12 registros</option>
-                            <option value="24" <?php selected($per_page, '24'); ?>>24 registros</option>
-                            <option value="32" <?php selected($per_page, '32'); ?>>32 registros</option>
-                            <option value="all" <?php selected($per_page, 'all'); ?>>Todos</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="button button-primary">
-                        <?php esc_html_e('Filtrar', 'pagbank-connect'); ?>
-                    </button>
-                </form>
-            
-            </div>
+            <h1><?php echo esc_html__('Relatórios - Assinaturas PagBank', 'pagbank-connect'); ?></h1>
 
             <!-- Report Cards -->
             <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
@@ -303,6 +257,69 @@ class RecurringsReport extends WC_Admin_Report
                 ?>
             </div>
 
+            <!-- Revenue Cards -->
+            <div class="rm-pagbank-revenue-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <?php
+                self::render_revenue_card(
+                    'Receita Recorrente Ativa',
+                    'R$ ' . number_format($summary->active_revenue ?? 0, 2, ',', '.'),
+                    'Valor total das assinaturas ativas'
+                );
+                self::render_revenue_card(
+                    'Ticket Médio',
+                    'R$ ' . number_format($summary->avg_ticket ?? 0, 2, ',', '.'),
+                    'Valor médio por assinatura'
+                );
+                ?>
+            </div>
+
+            <!-- Filters-->
+            <div class="rm-pagbank-filters" style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4;">
+                <form method="get" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page']); ?>" />
+                    <input type="hidden" name="tab" value="<?php echo esc_attr($_GET['tab'] ?? ''); ?>" />
+                    <input type="hidden" name="section" value="<?php echo esc_attr($_GET['section'] ?? ''); ?>" />
+
+                    <div>
+                        <label for="range"><?php esc_html_e('Período:', 'pagbank-connect'); ?></label>
+                        <select name="range" id="range">
+                            <option value="7" <?php selected($current_range, '7'); ?>>Últimos 7 dias</option>
+                            <option value="30" <?php selected($current_range, '30'); ?>>Últimos 30 dias</option>
+                            <option value="90" <?php selected($current_range, '90'); ?>>Últimos 90 dias</option>
+                            <option value="365" <?php selected($current_range, '365'); ?>>Último ano</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="status_filter"><?php esc_html_e('Status:', 'pagbank-connect'); ?></label>
+                        <select name="status_filter" id="status_filter">
+                            <option value=""><?php esc_html_e('Todos', 'pagbank-connect'); ?></option>
+                            <option value="ACTIVE" <?php selected($_GET['status_filter'] ?? '', 'ACTIVE'); ?>>Ativas</option>
+                            <option value="PAUSED" <?php selected($_GET['status_filter'] ?? '', 'PAUSED'); ?>>Pausadas</option>
+                            <option value="CANCELED" <?php selected($_GET['status_filter'] ?? '', 'CANCELED'); ?>>Canceladas</option>
+                            <option value="SUSPENDED" <?php selected($_GET['status_filter'] ?? '', 'SUSPENDED'); ?>>Suspensa</option>
+                            <option value="PENDING" <?php selected($_GET['status_filter'] ?? '', 'PENDING'); ?>>Pendente</option>
+                            <option value="PENDING_CANCEL" <?php selected($_GET['status_filter'] ?? '', 'PENDING_CANCEL'); ?>>Cancelamento Pendente</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="per_page"><?php esc_html_e('Exibir:', 'pagbank-connect'); ?></label>
+                        <select name="per_page" id="per_page">
+                            <option value="12" <?php selected($per_page, '12'); ?>>12 registros</option>
+                            <option value="24" <?php selected($per_page, '24'); ?>>24 registros</option>
+                            <option value="32" <?php selected($per_page, '32'); ?>>32 registros</option>
+                            <option value="all" <?php selected($per_page, 'all'); ?>>Todos</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="button button-primary">
+                        <?php esc_html_e('Filtrar', 'pagbank-connect'); ?>
+                    </button>
+                </form>
+
+            </div>
+            
             <!-- Table Recurrings -->
             <div id="rm-pagbank-subscriptions-table" class="rm-pagbank-subscriptions-table" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
                 <h3><?php esc_html_e('Assinaturas Recentes', 'pagbank-connect'); ?></h3>
@@ -310,8 +327,8 @@ class RecurringsReport extends WC_Admin_Report
                     <thead>
                         <tr>
                             <th><?php esc_html_e('Pedido', 'pagbank-connect'); ?></th>
-                            <th><?php esc_html_e('Cliente', 'pagbank-connect'); ?></th>
                             <th><?php esc_html_e('Assinatura ID', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Cliente', 'pagbank-connect'); ?></th>
                             <th><?php esc_html_e('Status', 'pagbank-connect'); ?></th>
                             <th><?php esc_html_e('Valor', 'pagbank-connect'); ?></th>
                             <th><?php esc_html_e('Próxima Cobrança', 'pagbank-connect'); ?></th>
@@ -327,6 +344,15 @@ class RecurringsReport extends WC_Admin_Report
                                     </a>
                                 </td>
                                 <td>
+                                    <?php if (!empty($row->id)): ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $row->id)); ?>">
+                                            <code><?php echo esc_html($row->id); ?></code>
+                                        </a>
+                                    <?php else: ?>
+                                        <code>-</code>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <?php
                                     $customer_name = trim(($row->billing_first_name ?? '') . ' ' . ($row->billing_last_name ?? ''));
                                     if ($customer_name) {
@@ -340,15 +366,6 @@ class RecurringsReport extends WC_Admin_Report
                                         echo esc_html('Cliente não identificado');
                                     }
                                     ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($row->id)): ?>
-                                        <a href="<?php echo esc_url(admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $row->id)); ?>">
-                                            <code><?php echo esc_html($row->id); ?></code>
-                                        </a>
-                                    <?php else: ?>
-                                        <code>-</code>
-                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo self::render_status_badge($row->status ?? 'UNKNOWN'); ?></td>
                                 <td><strong>R$ <?php echo number_format($row->recurring_amount ?? 0, 2, ',', '.'); ?></strong></td>
@@ -445,23 +462,6 @@ class RecurringsReport extends WC_Admin_Report
                         </div>
                     <?php endif; ?>
                 <?php endif; ?>
-            </div>
-
-
-            <!-- Revenue Cards -->
-            <div class="rm-pagbank-revenue-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <?php
-                self::render_revenue_card(
-                    'Receita Recorrente Ativa',
-                    'R$ ' . number_format($summary->active_revenue ?? 0, 2, ',', '.'),
-                    'Valor total das assinaturas ativas'
-                );
-                self::render_revenue_card(
-                    'Ticket Médio',
-                    'R$ ' . number_format($summary->avg_ticket ?? 0, 2, ',', '.'),
-                    'Valor médio por assinatura'
-                );
-                ?>
             </div>
 
 
