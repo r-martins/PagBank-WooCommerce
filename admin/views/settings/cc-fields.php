@@ -24,7 +24,7 @@ return array(
         'title'       => __('Opções de Parcelamento', 'pagbank-connect'),
         'type'        => 'select',
         'description' => __(
-            '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173-'
+            '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-'
             .'Op%C3%A7%C3%B5es-de-Parcelamento" target="_blank">Saiba mais</a>',
             'pagbank-connect'
         ),
@@ -66,7 +66,7 @@ return array(
         'title'       => __('Limitar parcelas?', 'pagbank-connect'),
         'type'        => 'select',
         'description' => __(
-            '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945359660173'
+            '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173'
             .'-Op%C3%A7%C3%B5es-de-Parcelamento#limitar-parcelas" target="_blank">Saiba mais</a>',
             'pagbank-connect'
         ),
@@ -89,7 +89,7 @@ return array(
         'title'       => __('Informações de Parcelamento', 'pagbank-connect'),
         'label'       => __('Exibir informações de parcelamento na tela do produto?', 'pagbank-connect'),
         'type'        => 'checkbox',
-        'description' => 'Veja <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br'
+        'description' => 'Veja <a href="https://ajuda.pbintegracoes.com/hc/pt-br'
             .'/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produt'
             .'o" target="_blank">como funciona</a>.',
         'default'     => 'no',
@@ -98,7 +98,7 @@ return array(
         'title'       => __('Shortcode de parcelamento', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
-        'description' => 'Veja <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br'
+        'description' => 'Veja <a href="https://ajuda.pbintegracoes.com/hc/pt-br'
             .'/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produt'
             .'o#shortcode" target="_blank">como usar</a>.',
         'default'     => 'no',
@@ -107,7 +107,7 @@ return array(
         'title'       => __('Formato das informações de parcelamento', 'pagbank-connect'),
         'type'        => 'select',
         'description' => __(
-            '<a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/26223028355597'
+            '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597'
             .'-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto" target="_blank"'
             .'>Saiba mais </a>',
             'pagbank-connect'
@@ -124,7 +124,7 @@ return array(
         'default'           => 'CompraViaPagBank',
         'description'       => __(
             'Nome que será exibido na fatura do Cliente. <a href="https://'
-            .'pagsegurotransparente.zendesk.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura" '
+            .'ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura" '
             .'target="_blank">Veja algumas dicas</a>.',
             'pagbank-connect'
         ),
@@ -137,7 +137,7 @@ return array(
         'title'       => __('Autenticação 3D', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
-        'description' => 'Habilita a autenticação <a href="https://pagsegurotransparente.zendesk.com/hc/pt-br/a'
+        'description' => 'Habilita a autenticação <a href="https://ajuda.pbintegracoes.com/hc/pt-br/a'
             .'rticles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback" '
             .'target="_blank">3D Secure</a> para compras com cartão de crédito. <br/>'
             .'A autenticação 3D Secure é um protocolo de segurança que adiciona uma camada extra de proteção '

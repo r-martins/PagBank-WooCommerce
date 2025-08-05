@@ -20,7 +20,7 @@ use WP_Error;
 class Api
 {
     // Saiba mais em https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/18183910009869
-    const WS_URL = 'https://ws.ricardomartins.net.br/pspro/v7/connect/';
+    const WS_URL = 'https://ws.pbintegracoes.com/pspro/v7/connect/';
 
     public string $connect_key;
 

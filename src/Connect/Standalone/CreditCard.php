@@ -71,8 +71,6 @@ class CreditCard extends WC_Payment_Gateway_CC
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
-        // disable tokenization in blocks
-        add_filter('woocommerce_get_customer_payment_tokens', [$this, 'filter_customer_tokens_for_blocks'], 10, 3);
     }
     /**
 	 * Builds our payment fields area - including tokenization fields for logged
@@ -83,8 +81,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 	public function payment_fields() {
 
         // Check if it's checkout blocks at runtime to avoid tokenization display
-        $isCheckoutBlocks = Functions::isCheckoutBlocks();
-        $display_tokenization = $this->supports( 'tokenization' ) && is_checkout() && !$isCheckoutBlocks;
+        $display_tokenization = $this->supports( 'tokenization' ) && is_checkout();
         
         if ( $display_tokenization ) {
 			$this->tokenization_script();
@@ -302,7 +299,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 
                 $order->add_meta_data(
                     '_rm_pagbank_checkout_blocks',
-                    wc_bool_to_string(isset($_POST['wc-rm-pagbank-cc-new-payment-method'])),
+                    wc_bool_to_string(isset($_POST['rm-pagbank-cc-new-payment-method-in-block']) || isset($_POST['wc-rm-pagbank-cc-new-payment-method'])),
                     true
                 );
 
@@ -335,7 +332,14 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'redirect' => '',
                 );
         }
+        $shouldSaveToken = false;
         if ( isset( $_POST['wc-rm-pagbank-cc-new-payment-method'] ) && wc_bool_to_string($_POST['wc-rm-pagbank-cc-new-payment-method']) == 'yes' ) {
+            $shouldSaveToken = true;
+        }
+        if ( isset( $_POST['rm-pagbank-cc-new-payment-method-in-block'] ) && wc_bool_to_string($_POST['rm-pagbank-cc-new-payment-method-in-block']) === 'yes' ) {
+            $shouldSaveToken = true;
+        }
+        if ( $shouldSaveToken ) {
             $this->saveCcToken($order);
         }
 
@@ -634,6 +638,16 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     public function render_installments_field() {
+        // Check if user has saved tokens before rendering the installments field
+        if (!is_user_logged_in()) {
+            return '';
+        }
+
+        $customer_tokens = WC_Payment_Tokens::get_customer_tokens(get_current_user_id(), $this->id);
+        if (empty($customer_tokens)) {
+            return '';
+        }
+
         ob_start();
         include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard/installment_options.php';
         $html = ob_get_clean();
@@ -799,21 +813,4 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
     }
 
-    /**
-     * Filter customer payment tokens to hide them in blocks context
-     *
-     * @param array $tokens
-     * @param int $customer_id
-     * @param string $gateway_id
-     * @return array
-     */
-    public function filter_customer_tokens_for_blocks($tokens, $customer_id, $gateway_id) {
-        if (!empty($tokens) && Functions::isCheckoutBlocks()) {
-            // Remove only tokens for this gateway
-            $tokens = array_filter($tokens, function($token) {
-                return $token->get_gateway_id() !== $this->id;
-            });
-        }
-        return $tokens;
-    }
 }

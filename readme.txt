@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.43.0
+Stable tag: 4.44.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -203,6 +203,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.44.0 =
+* Dashboard de relatórios da recorrência: agora você pode ver alguns indicadores importantes de suas assinaturas, como o total de assinaturas ativas, o total de assinaturas canceladas e o total de assinaturas suspensas, Receita Recorrente Mensal, e muito mais.
+* Agora é possível salvar o cartão de crédito para uso posterior no checkout em blocos (nativo do WooCommerce).
+* Possível correção onde em alguns cenários dois campos de parcelamento eram exibidos na página de checkout.
+* Alteração no URL de nossa API e de alguns links de ajuda.
 
 = 4.43.0 = 
 * Agora é possível salvar o cartão para uso posterior
@@ -460,13 +466,13 @@ Ao atualizar versões majoritárias (ex: 3.5 para 4.0), certifique-se de testar 
 
 == Screenshots ==
 1. Cartão de Crédito na visão do cliente
-2. PIX - Tela de Sucesso
+2. PIX - Tela de Sucesso com confirmação instantânea
 3. Configurações de cartão de crédito
 4. PIX e Boleto - Configurações
 5. Admin - Tela do Pedido
 6. Envio Fácil
 7. Autenticação 3D Secure
-8. Pedidos Recorrentes (assinaturas)
+8. Pedidos Recorrentes (assinaturas) com relatórios
 9. Parcelamento na Página de Produto
 10. Suporte a Checkout em Blocos do WooCommerce
 11. Conteúdo para assinantes
