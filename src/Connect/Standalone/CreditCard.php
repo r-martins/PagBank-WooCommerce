@@ -638,6 +638,16 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     public function render_installments_field() {
+        // Check if user has saved tokens before rendering the installments field
+        if (!is_user_logged_in()) {
+            return '';
+        }
+
+        $customer_tokens = WC_Payment_Tokens::get_customer_tokens(get_current_user_id(), $this->id);
+        if (empty($customer_tokens)) {
+            return '';
+        }
+
         ob_start();
         include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/payments/creditcard/installment_options.php';
         $html = ob_get_clean();
