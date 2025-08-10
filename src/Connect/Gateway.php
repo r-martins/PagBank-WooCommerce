@@ -115,30 +115,36 @@ class Gateway extends WC_Payment_Gateway_CC
 
         $api = new Api();
         $api->setConnectKey($connect_key);
-        
+
         try {
             $ret = $api->post('ws/public-keys', ['type' => 'card']);
-            if (isset($ret['public_key'])) {
-                $this->update_option('public_key', $ret['public_key']);
-                $this->update_option('public_key_created_at', $ret['created_at']);
-				$isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
-				$this->update_option('is_sandbox', $isSandbox);
+            $success = isset($ret['public_key']);
+            $publicKey = $ret['public_key'] ?? '';
+            $errorMessages = $ret['error_messages'] ?? [];
+
+            if ($success) {
+                $this->update_option('public_key', $publicKey);
+                $this->update_option('public_key_created_at', $ret['created_at'] ?? '');
+                $isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
+                $this->update_option('is_sandbox', $isSandbox);
+                return $connect_key;
             }
 
-            if (isset($ret['error_messages'])){
-                //implode error_messages showing code and description
+            if (!$success && !empty($errorMessages)) {
                 $error_messages = array_map(function($error){
                     return $error['code'] . ' - ' . $error['description'];
-                }, $ret['error_messages']);
+                }, $errorMessages);
                 WC_Admin_Settings::add_error(implode('<br/>', $error_messages));
-                $connect_key = '';
+                return $connect_key;
             }
+
+            WC_Admin_Settings::add_error(__('A Connect Key informada é inválida. Verifique se você copiou corretamente.', 'pagbank-connect'));
+            return $connect_key;
+
         } catch (Exception $e) {
             WC_Admin_Settings::add_error('Validação da Connect Key Falhou. ' . $e->getMessage());
-            $connect_key = '';
+            return $connect_key;
         }
-
-        return $connect_key;
 
     }
     
