@@ -71,7 +71,7 @@ SVG;
             __('Relatórios', 'pagbank-connect'),
             __('Relatórios', 'pagbank-connect'),
             'manage_woocommerce',
-            'rm-pagbank-logs',
+            'rm-pagbank-reports',
             function () {
                 wp_safe_redirect(admin_url('admin.php?page=wc-reports&tab=pagbank'));
                 exit;
