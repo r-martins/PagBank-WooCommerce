@@ -115,30 +115,36 @@ class Gateway extends WC_Payment_Gateway_CC
 
         $api = new Api();
         $api->setConnectKey($connect_key);
-        
+
         try {
             $ret = $api->post('ws/public-keys', ['type' => 'card']);
-            if (isset($ret['public_key'])) {
-                $this->update_option('public_key', $ret['public_key']);
-                $this->update_option('public_key_created_at', $ret['created_at']);
-				$isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
-				$this->update_option('is_sandbox', $isSandbox);
+            $isPublicKey = isset($ret['public_key']);
+            $publicKey = $ret['public_key'] ?? '';
+            $errorMessages = $ret['error_messages'] ?? [];
+
+            if ($isPublicKey) {
+                $this->update_option('public_key', $publicKey);
+                $this->update_option('public_key_created_at', $ret['created_at'] ?? '');
+                $isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
+                $this->update_option('is_sandbox', $isSandbox);
+                return $connect_key;
             }
 
-            if (isset($ret['error_messages'])){
-                //implode error_messages showing code and description
+            if (!$isPublicKey && !empty($errorMessages)) {
                 $error_messages = array_map(function($error){
                     return $error['code'] . ' - ' . $error['description'];
-                }, $ret['error_messages']);
+                }, $errorMessages);
                 WC_Admin_Settings::add_error(implode('<br/>', $error_messages));
-                $connect_key = '';
+                return $connect_key;
             }
+
+            WC_Admin_Settings::add_error(__('A Connect Key informada é inválida. Verifique se você copiou corretamente.', 'pagbank-connect'));
+            return $connect_key;
+
         } catch (Exception $e) {
             WC_Admin_Settings::add_error('Validação da Connect Key Falhou. ' . $e->getMessage());
-            $connect_key = '';
+            return $connect_key;
         }
-
-        return $connect_key;
 
     }
     
@@ -251,6 +257,10 @@ class Gateway extends WC_Payment_Gateway_CC
         $message .= !$isSandbox ? "Expira em: $expires <br>" : null;
         $message .= "Sandbox: $sandbox <br>";
         $message .= !$isSandbox ? "* renova automaticamente" : null;
+        if(isset($info['error_messages'][0]['code'])) {
+            $status = $info['error_messages'][0]['code'];
+            $message = "Descrição: " . esc_html($info['error_messages'][0]['description']);
+        }
         // Tooltip with detailed connect information
         $tooltip = esc_attr($message);
 
@@ -263,7 +273,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 $btn = $this->buildStatusBadge('#f44336', 'dashicons-dismiss', 'Chave inválida');
                 break;
             case "UNAUTHORIZED":
-                $btn = $this->buildStatusBadge('#ff9800', 'dashicons-lock', 'Não autorizado');
+                $btn = $this->buildStatusBadge('#ff9800', 'dashicons-lock', 'Não autorizado. Connect Key inválida');
                 break;
             case "UNKNOWN":
                 $btn = $this->buildStatusBadge('#9e9e9e', 'dashicons-info-outline', 'Desconhecido');
