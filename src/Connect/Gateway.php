@@ -118,11 +118,11 @@ class Gateway extends WC_Payment_Gateway_CC
 
         try {
             $ret = $api->post('ws/public-keys', ['type' => 'card']);
-            $success = isset($ret['public_key']);
+            $isPublicKey = isset($ret['public_key']);
             $publicKey = $ret['public_key'] ?? '';
             $errorMessages = $ret['error_messages'] ?? [];
 
-            if ($success) {
+            if ($isPublicKey) {
                 $this->update_option('public_key', $publicKey);
                 $this->update_option('public_key_created_at', $ret['created_at'] ?? '');
                 $isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
@@ -130,7 +130,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 return $connect_key;
             }
 
-            if (!$success && !empty($errorMessages)) {
+            if (!$isPublicKey && !empty($errorMessages)) {
                 $error_messages = array_map(function($error){
                     return $error['code'] . ' - ' . $error['description'];
                 }, $errorMessages);
@@ -257,6 +257,10 @@ class Gateway extends WC_Payment_Gateway_CC
         $message .= !$isSandbox ? "Expira em: $expires <br>" : null;
         $message .= "Sandbox: $sandbox <br>";
         $message .= !$isSandbox ? "* renova automaticamente" : null;
+        if(isset($info['error_messages'][0]['code'])) {
+            $status = $info['error_messages'][0]['code'];
+            $message = "Descrição: " . esc_html($info['error_messages'][0]['description']);
+        }
         // Tooltip with detailed connect information
         $tooltip = esc_attr($message);
 
@@ -269,7 +273,7 @@ class Gateway extends WC_Payment_Gateway_CC
                 $btn = $this->buildStatusBadge('#f44336', 'dashicons-dismiss', 'Chave inválida');
                 break;
             case "UNAUTHORIZED":
-                $btn = $this->buildStatusBadge('#ff9800', 'dashicons-lock', 'Não autorizado');
+                $btn = $this->buildStatusBadge('#ff9800', 'dashicons-lock', 'Não autorizado. Connect Key inválida');
                 break;
             case "UNKNOWN":
                 $btn = $this->buildStatusBadge('#9e9e9e', 'dashicons-info-outline', 'Desconhecido');
