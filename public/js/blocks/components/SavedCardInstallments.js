@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { __ } from '@wordpress/i18n';
 import InstallmentsOptions from './InstallmentsOptions';
+import RecurringInfo from './RecurringInfo';
 
 const SavedCardInstallments = (props) => {
     const { token, emitResponse, eventRegistration, billing } = props;
-     const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
+    const total = billing?.cartTotal?.value || 0;
+    const showInstallments = Number(total) > 0;
+    const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
     // Example: fetch installments by saved card BIN
     const [installments, setInstallments] = useState([]);
     const [selectedInstallment, setSelectedInstallment] = useState('1'); // default to 1 installment
 
     // Function to fetch installments based on BIN and total amount
     const fetchInstallments = (bin, total) => {
-        if (!bin || bin.length < 6) return;
+        if (!bin || bin.length < 6 || !total || Number(total) <= 0) return;
         jQuery.ajax({
             url: window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).ajax_url,
             method: 'POST',
@@ -86,12 +89,17 @@ const SavedCardInstallments = (props) => {
         
     }, [selectedInstallment, token, onPaymentSetup]);
 
+    const settings = window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {});
+    if (!showInstallments) {
+        return settings.isCartRecurring ? <RecurringInfo /> : null;
+    }
     return (
         <div style={{ marginTop: '1em' }}>
             <InstallmentsOptions
                 installments={installments}
                 onChange={e => setSelectedInstallment(e.target.value)}
             />
+            {settings.isCartRecurring ? <RecurringInfo /> : null}
         </div>
     );
 };
