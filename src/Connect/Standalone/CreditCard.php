@@ -230,8 +230,12 @@ class CreditCard extends WC_Payment_Gateway_CC
             $order->add_meta_data('_pagbank_recurring_trial_length', $recurringTrialPeriod);
         }
 
-        if ($recurringTrialPeriod && $order->get_total() == 0) {
-            $payment_method = $payment_method . '_token';
+        $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
+        $is_saved_token = $token_id !== null && $token_id !== 'new';
+        $is_trial_zero = $recurringTrialPeriod && $order->get_total() == 0;
+
+        if ($is_trial_zero) {
+            $payment_method .= '_token';
         }
 
         switch ($payment_method) {
@@ -240,7 +244,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments', FILTER_SANITIZE_NUMBER_INT)
                     ?: filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT); 
                 $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
-                if(null != $token_id && 'new' !== $token_id){
+                if($is_saved_token){
                     $order->add_meta_data(
                         '_pagbank_card_token_id',
                         $token_id,
@@ -321,6 +325,26 @@ class CreditCard extends WC_Payment_Gateway_CC
                     true
                 );
                 $method = new CreditCardToken($order);
+                if ($is_saved_token) {
+                    $tokenCc = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($token_id);
+                    $holder_name = (string)$tokenCc->get_meta('holder_name');
+                    $brand = (string)$tokenCc->get_card_type();
+                    $resp = [
+                        'id'    => $tokenCc->get_token() ?: '',
+                        'holder'   => [
+                            'name' => $holder_name,
+                        ],
+                        'first_digits'   => $tokenCc->get_meta('cc_bin'),
+                        'last_digits'   => $tokenCc->get_last4(),
+                        'exp_month'   => $tokenCc->get_expiry_month(),
+                        'exp_year'   => $tokenCc->get_expiry_year(),
+                        'brand' => $brand,
+                    ];
+                   
+                    $order->add_meta_data('pagbank_payment_method', $method->code, true);
+                    $order->set_payment_method(Connect::DOMAIN);
+                    break;
+                }
                 $params = $method->prepare();
                 break;
             default:
@@ -343,7 +367,9 @@ class CreditCard extends WC_Payment_Gateway_CC
             $this->saveCcToken($order);
         }
 
-        $resp = $this->makeRequest($order, $params, $method);
+        if (!$is_trial_zero || ($is_trial_zero && !$is_saved_token)) {
+            $resp = $this->makeRequest($order, $params, $method);
+        }
 
         $method->process_response($order, $resp);
         self::updateTransaction($order, $resp);
@@ -425,6 +451,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         $token->set_last4( $resp['last_digits']);
         $token->set_expiry_month( $resp['exp_month'] );
         $token->set_expiry_year( (int) $resp['exp_year'] );
+        $token->update_meta_data( 'holder_name', $resp['holder']['name'] ?? '');
         $token->update_meta_data( 'cc_bin', $resp['first_digits'] );
         $token->update_meta_data( 'customer_document', $order->get_meta('_rm_pagbank_customer_document') );
         $token->save();
@@ -778,6 +805,7 @@ class CreditCard extends WC_Payment_Gateway_CC
             $token->set_last4($resp['last_digits'] ?? '****');
             $token->set_expiry_month($resp['exp_month'] ?? '');
             $token->set_expiry_year($resp['exp_year'] ?? '');
+            $token->update_meta_data( 'holder_name', $resp['holder']['name'] ?? null );
             $token->update_meta_data( 'cc_bin', $resp['first_digits'] );
             $token->update_meta_data(
                 'customer_document',
