@@ -174,10 +174,8 @@ class Redirect extends WC_Payment_Gateway
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
         if ($order->get_meta('pagbank_payment_method') === 'redirect' && in_array($email->id, $emailIds)) {
             $redirectLink = $order->get_meta('pagbank_redirect_url');
-            $timestamp = strtotime($order->get_meta('pagbank_redirect_expiration'));
-            $date_format = get_option('date_format'); // Ex: d/m/Y
-            $time_format = get_option('time_format'); // Ex: H:i
-            $checkoutExpires = wp_date(sprintf("%s %s", $date_format, $time_format), $timestamp);
+            $checkoutExpires = $order->get_meta('pagbank_redirect_expiration');
+            $checkoutExpires = $checkoutExpires ? Functions::formatDate($checkoutExpires) : '';
             ob_start();
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/redirect-payment-details.php';
             $output = ob_get_clean();
