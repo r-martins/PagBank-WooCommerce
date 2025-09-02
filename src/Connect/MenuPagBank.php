@@ -77,6 +77,15 @@ SVG;
                 exit;
             }
         );
+        
+        add_submenu_page(
+            'rm-pagbank',
+            __('Caixas EnvioFácil', 'pagbank-connect'),
+            __('Caixas EnvioFácil', 'pagbank-connect'),
+            'manage_woocommerce',
+            'rm-pagbank-boxes',
+            [MenuPagBank::class, 'renderPagbankBoxesListPage']
+        );
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
             add_submenu_page(
@@ -109,6 +118,24 @@ SVG;
             'rm-pagbank-subscriptions-edit', // Submenu page slug
             [MenuPagBank::class, 'renderPagbankSubscriptionEditPage'] // Function that renders the submenu page
         );
+        
+        add_submenu_page(
+            'rm-pagbank-hidden', // parent_slug doesn't exist, so it doesn't appear in the menu
+            'Nova Caixa', // Page title
+            'Nova Caixa', // Submenu title
+            'manage_woocommerce', // Required capability to view the submenu
+            'rm-pagbank-boxes-new', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankBoxNewPage'] // Function that renders the submenu page
+        );
+        
+        add_submenu_page(
+            'rm-pagbank-hidden', // parent_slug doesn't exist, so it doesn't appear in the menu
+            'Editar Caixa', // Page title
+            'Editar Caixa', // Submenu title
+            'manage_woocommerce', // Required capability to view the submenu
+            'rm-pagbank-boxes-edit', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankBoxEditPage'] // Function that renders the submenu page
+        );
     }
     
     public static function renderPagbankSubscriptionsListPage()
@@ -132,6 +159,17 @@ SVG;
         wp_enqueue_style('rm-pagbank-admin');
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_script('wp-color-picker');
+        
+        // Enqueue boxes CSS for box management pages
+        $current_screen = get_current_screen();
+        if ($current_screen && strpos($current_screen->id, 'rm-pagbank-boxes') !== false) {
+            wp_enqueue_style(
+                'rm-pagbank-boxes-admin',
+                plugins_url('public/css/admin/boxes.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
+            );
+        }
         
         // Add custom CSS styles
         $custom_css = '
@@ -234,6 +272,234 @@ SVG;
         $subscriptionDetailsListTable->display();
 
         echo '</div>';
+    }
+    
+    /**
+     * Renderiza a página de listagem de caixas
+     */
+    public static function renderPagbankBoxesListPage()
+    {
+        // Processar exclusão individual
+        if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+            if (wp_verify_nonce($_GET['_wpnonce'], 'delete_box_' . $_GET['id'])) {
+                $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
+                $result = $box_manager->delete(intval($_GET['id']));
+                
+                if (is_wp_error($result)) {
+                    echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
+                } else {
+                    echo '<div class="notice notice-success"><p>' . esc_html(__('Caixa excluída com sucesso!', 'pagbank-connect')) . '</p></div>';
+                }
+            }
+        }
+        
+        $boxesListTable = new \RM_PagBank\Connect\EnvioFacil\BoxListTable();
+        $boxesListTable->prepare_items();
+        
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html(__('Caixas EnvioFácil', 'pagbank-connect')) . '</h1>';
+        
+        // Botão para adicionar nova caixa
+        echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes-new') . '" class="page-title-action">';
+        echo esc_html(__('Adicionar Nova Caixa', 'pagbank-connect'));
+        echo '</a>';
+        
+        $boxesListTable->display();
+        echo '</div>';
+    }
+    
+    /**
+     * Renderiza a página de nova caixa
+     */
+    public static function renderPagbankBoxNewPage()
+    {
+        $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
+        
+        // Processar formulário
+        if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'create_box')) {
+            $result = $box_manager->create($_POST);
+            
+            if (is_wp_error($result)) {
+                echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-success"><p>' . esc_html(__('Caixa criada com sucesso!', 'pagbank-connect')) . '</p></div>';
+                // Redirecionar para a listagem
+                wp_safe_redirect(admin_url('admin.php?page=rm-pagbank-boxes'));
+                exit;
+            }
+        }
+        
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html(__('Nova Caixa', 'pagbank-connect')) . '</h1>';
+        
+        echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes') . '" class="button">';
+        echo esc_html(__('Voltar para Listagem', 'pagbank-connect'));
+        echo '</a>';
+        
+        self::renderBoxForm();
+        echo '</div>';
+    }
+    
+    /**
+     * Renderiza a página de edição de caixa
+     */
+    public static function renderPagbankBoxEditPage()
+    {
+        if (!isset($_GET['id'])) {
+            echo '<h1>' . esc_html(__('ID da caixa não fornecido', 'pagbank-connect')) . '</h1>';
+            return;
+        }
+        
+        $box_id = intval($_GET['id']);
+        $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
+        $box = $box_manager->get_by_id($box_id);
+        
+        if (!$box) {
+            echo '<h1>' . esc_html(__('Caixa não encontrada', 'pagbank-connect')) . '</h1>';
+            return;
+        }
+        
+        // Processar formulário
+        if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'edit_box')) {
+            $result = $box_manager->update($box_id, $_POST);
+            
+            if (is_wp_error($result)) {
+                echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-success"><p>' . esc_html(__('Caixa atualizada com sucesso!', 'pagbank-connect')) . '</p></div>';
+                // Atualizar dados da caixa
+                $box = $box_manager->get_by_id($box_id);
+            }
+        }
+        
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html(__('Editar Caixa', 'pagbank-connect')) . '</h1>';
+        
+        echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes') . '" class="button">';
+        echo esc_html(__('Voltar para Listagem', 'pagbank-connect'));
+        echo '</a>';
+        
+        self::renderBoxForm($box);
+        echo '</div>';
+    }
+    
+    /**
+     * Renderiza o formulário de caixa
+     */
+    private static function renderBoxForm($box = null)
+    {
+        $is_edit = !is_null($box);
+        $action = $is_edit ? 'edit_box' : 'create_box';
+        $nonce = wp_create_nonce($action);
+        
+        ?>
+        <form method="post" action="">
+            <?php wp_nonce_field($action); ?>
+            
+            <table class="form-table">
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            <label for="reference"><?php _e('Referência', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="text" id="reference" name="reference" value="<?php echo $is_edit ? esc_attr($box->reference) : ''; ?>" class="regular-text" required />
+                            <p class="description"><?php _e('Identificador único da caixa (ex: CAIXA_PEQUENA_001)', 'pagbank-connect'); ?></p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="is_available"><?php _e('Disponível', 'pagbank-connect'); ?></label>
+                        </th>
+                        <td>
+                            <label>
+                                <input type="checkbox" id="is_available" name="is_available" value="1" <?php checked($is_edit ? $box->is_available : 1, 1); ?> />
+                                <?php _e('Esta caixa está disponível para uso', 'pagbank-connect'); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row" colspan="2">
+                            <h3><?php _e('Dimensões Externas (cm)', 'pagbank-connect'); ?></h3>
+                        </th>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="outer_width"><?php _e('Largura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="number" id="outer_width" name="outer_width" value="<?php echo $is_edit ? esc_attr($box->outer_width) : ''; ?>" class="small-text" min="0.1" step="0.1" required />
+                            <span class="description">cm</span>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="outer_depth"><?php _e('Altura/Profundidade Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="number" id="outer_depth" name="outer_depth" value="<?php echo $is_edit ? esc_attr($box->outer_depth) : ''; ?>" class="small-text" min="0.1" step="0.1" required />
+                            <span class="description">cm</span>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="outer_length"><?php _e('Comprimento Externo', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="number" id="outer_length" name="outer_length" value="<?php echo $is_edit ? esc_attr($box->outer_length) : ''; ?>" class="small-text" min="0.1" step="0.1" required />
+                            <span class="description">cm</span>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="thickness"><?php _e('Espessura', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="number" id="thickness" name="thickness" value="<?php echo $is_edit ? esc_attr($box->thickness) : '0.2'; ?>" class="small-text" min="0.1" step="0.1" required />
+                            <span class="description">cm</span>
+                            <p class="description"><?php _e('As dimensões internas serão calculadas automaticamente', 'pagbank-connect'); ?></p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row" colspan="2">
+                            <h3><?php _e('Peso (gramas)', 'pagbank-connect'); ?></h3>
+                        </th>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="max_weight"><?php _e('Peso Máximo', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="number" id="max_weight" name="max_weight" value="<?php echo $is_edit ? esc_attr($box->max_weight) : ''; ?>" class="small-text" min="1" required />
+                            <span class="description">g</span>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="empty_weight"><?php _e('Peso da Caixa Vazia', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                        </th>
+                        <td>
+                            <input type="number" id="empty_weight" name="empty_weight" value="<?php echo $is_edit ? esc_attr($box->empty_weight) : ''; ?>" class="small-text" min="0" required />
+                            <span class="description">g</span>
+                        </td>
+                    </tr>
+                    
+
+                </tbody>
+            </table>
+            
+            <?php submit_button($is_edit ? __('Atualizar Caixa', 'pagbank-connect') : __('Criar Caixa', 'pagbank-connect')); ?>
+        </form>
+        <?php
     }
     
 }
