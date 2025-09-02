@@ -38,7 +38,7 @@ class BoxListTable extends WP_List_Table
             'reference' => __('Referência', 'pagbank-connect'),
             'dimensions' => __('Dimensões (mm)', 'pagbank-connect'),
             'weight' => __('Peso (g)', 'pagbank-connect'),
-            'cost' => __('Custo (R$)', 'pagbank-connect'),
+            //'cost' => __('Custo (R$)', 'pagbank-connect'),
             'is_available' => __('Disponível', 'pagbank-connect'),
             'created_at' => __('Criado em', 'pagbank-connect')
         ];
