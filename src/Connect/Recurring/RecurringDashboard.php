@@ -28,17 +28,25 @@ class RecurringDashboard
             return $order->get_id();
         }, $orders);
 
-        $ids_string_placeholders = implode(', ', array_fill(0, count($ids), '%d'));
-        
         global $wpdb;
-        //select from pagbank_recurring where initial order is one of those
+        
+        // If no orders, return empty array
+        if (empty($ids)) {
+            return [];
+        }
+        
+        // Create placeholders for each ID
+        $placeholders = array_fill(0, count($ids), '%d');
+        $format = implode(',', $placeholders);
+        
+        // Prepare and execute the query safely
         $table = $wpdb->prefix . 'pagbank_recurring';
-        $subscriptions = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM `$table` WHERE initial_order_id IN ( $ids_string_placeholders ) ORDER BY id DESC",
-                $ids
-            )
+        $query = $wpdb->prepare(
+            "SELECT * FROM `$table` WHERE initial_order_id IN ($format) ORDER BY id DESC",
+            $ids
         );
+        
+        $subscriptions = $wpdb->get_results($query);
         
         if ( ! empty($subscriptions))
         {

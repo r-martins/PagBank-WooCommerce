@@ -90,14 +90,15 @@ class SubscriptionList extends WP_List_Table
         $orderby = wp_unslash($orderby);
         $order = (isset($_GET['order']) && in_array($_GET['order'], array('asc', 'desc'))) ? $_GET['order'] : 'desc'; //phpcs:ignore WordPress.Security.NonceVerification
 
+        global $wpdb;
         $where = "1=1";
         if (!empty($_REQUEST['status'])) {
             $status = sanitize_text_field(wp_unslash($_REQUEST['status']));
-            $where .= " AND status = '$status'";
+            $where .= $wpdb->prepare(" AND status = %s", $status);
         }
         if (!empty($_REQUEST['order_id'])) {
             $order_id = intval($_REQUEST['order_id']);
-            $where .= " AND initial_order_id = $order_id";
+            $where .= $wpdb->prepare(" AND initial_order_id = %d", $order_id);
         }
 
 
