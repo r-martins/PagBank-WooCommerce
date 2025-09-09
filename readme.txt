@@ -1,11 +1,11 @@
 === PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, recorrencia, brasil
+Tags: pagseguro, pagbank, pix, subscription, brasil
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.44.2
+Stable tag: 4.44.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -15,17 +15,23 @@ Autenticação 3D: menos chargeback + aprovações.
 
 **Aceite PagBank (PagSeguro) (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
-**Economize nas tarifas oficiais do PagBank.** Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação e PIX na hora por 0,99%. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
+**🌟[Parceiro oficial](https://developer.pagbank.com.br/docs/ricardo-martins-woocommerce) PagBank/PagSeguro desde 2014.**
+
+**Economize nas taxas PagBank.** Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação e PIX na hora por 0,99%. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
 
 O **melhor plugin de pagamentos** do Brasil.
 
 Com **recursos exclusivos**, de código aberto e gratuito. Integre seu WooCommerce com PagBank (PagSeguro) agora.
 
-Receba Pix, Boleto e Cartão de Crédito no seu WooCommerce em minutos. Veja nosso [**passo a passo de instalação**](https://pbintegracoes.com/woocommerce/?utm_source=readme&utm_content=passoapasso#instrucoes) simplificado com vídeos.
+Receba Pix, Boleto e Cartão de Crédito no seu WooCommerce em minutos. 
 
-⭐️Atualizações quase todas as semanas, suporte e [instalação gratuita](https://pbintegracoes.com/woocommerce/agenteinstala/?utm_source=readme&utm_content=agenteinstala), e taxas cada vez menores para lojas antigas e novas.⭐️
+Veja nosso [**passo a passo de instalação**](https://pbintegracoes.com/woocommerce/?utm_source=readme&utm_content=passoapasso#instrucoes) simplificado com vídeos.
 
-**🏆TOP 1 em pagamentos WooCommerce no Brasil!**
+**📈 Conecte, converta, cresça. 👏 Feito pra quem compara e toma as próprias decisões.**
+
+🚀️Atualizações quase todas as semanas, suporte e [instalação gratuita](https://pbintegracoes.com/woocommerce/agenteinstala/?utm_source=readme&utm_content=agenteinstala), e taxas cada vez menores para lojas antigas e novas.
+
+**🏆 TOP 1 em pagamentos WooCommerce no Brasil! 100% Gratuito!**
 
 === ⚡️Taxas menores pra você, mais lucro pra crescer===
 Ao invés de pagar 3,99% + R$0,40 ou 4,99% + R$0,40 por transação aprovada no Cartão de Crédito, você pode optar por:
@@ -204,6 +210,9 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.44.3 =
+* Compliance: adicionado Plugin URI nos headers do plugin e atualização de screenshots.
 
 = 4.44.2 =
 * Correção: Menu PagBank > Logs redirecionava para tela de relatórios e não de log
