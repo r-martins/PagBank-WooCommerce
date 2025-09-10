@@ -7,8 +7,15 @@ use WP_Error;
 
 /**
  * Class Box
- * 
- * Gerencia operações CRUD para caixas do EnvioFácil
+ *
+ * Manages CRUD operations for Envio Fácil boxes.
+ * Developer comments translated to English; user‑facing strings kept in Portuguese for localization.
+ *
+ * Responsibilities:
+ *  - Persist box definitions (outer/inner dimensions, weights)
+ *  - Validate & sanitize input
+ *  - Provide listing & availability helpers
+ *  - Derive inner dimensions from thickness
  *
  * @author    Ricardo Martins
  * @copyright 2024 Magenteiro
@@ -25,16 +32,16 @@ class Box
     }
     
     /**
-     * Cria uma nova caixa
+     * Create a new box.
      *
-     * @param array $data Dados da caixa
-     * @return int|WP_Error ID da caixa criada ou erro
+     * @param array $data Box data
+     * @return int|WP_Error Box ID or error
      */
     public function create(array $data)
     {
         global $wpdb;
         
-        // Validar dados obrigatórios
+    // Validate required fields
         $required_fields = [
             'reference',
             'outer_width',
@@ -51,18 +58,18 @@ class Box
             }
         }
         
-        // Sanitizar dados
+        // Sanitize input
         $sanitized_data = $this->sanitize_data($data);
         
-        // Calcular dimensões internas
+        // Compute inner dimensions
         $sanitized_data = $this->calculate_inner_dimensions($sanitized_data);
         
-        // Verificar se a referência já existe
+        // Prevent duplicate references
         if ($this->reference_exists($sanitized_data['reference'])) {
             return new WP_Error('duplicate_reference', __('Esta referência já existe. Escolha outra.', 'pagbank-connect'));
         }
         
-        // Inserir no banco
+        // Insert into DB
         $result = $wpdb->insert($this->table_name, $sanitized_data);
         
         if ($result === false) {
@@ -73,10 +80,10 @@ class Box
     }
     
     /**
-     * Busca uma caixa por ID
+     * Get box by ID.
      *
-     * @param int $box_id ID da caixa
-     * @return object|null Objeto da caixa ou null se não encontrada
+     * @param int $box_id Box ID
+     * @return object|null Box row or null
      */
     public function get_by_id(int $box_id)
     {
@@ -89,10 +96,10 @@ class Box
     }
     
     /**
-     * Busca todas as caixas
+     * Get all boxes (with optional filters & pagination).
      *
-     * @param array $args Argumentos para filtros
-     * @return array Lista de caixas
+     * @param array $args Filter args
+     * @return array Box list
      */
     public function get_all(array $args = [])
     {
@@ -134,10 +141,10 @@ class Box
     }
     
     /**
-     * Conta o total de caixas
+     * Count boxes (filter aware).
      *
-     * @param array $args Argumentos para filtros
-     * @return int Total de caixas
+     * @param array $args Filter args
+     * @return int Total count
      */
     public function count(array $args = [])
     {
@@ -164,38 +171,49 @@ class Box
         
         return (int) $wpdb->get_var($sql);
     }
+
+    /**
+     * Return all available boxes (no pagination).
+     * @return array
+     */
+    public function get_all_available(): array
+    {
+        global $wpdb;
+        $sql = "SELECT * FROM {$this->table_name} WHERE is_available = 1 ORDER BY reference ASC";
+        return $wpdb->get_results($sql);
+    }
     
     /**
-     * Atualiza uma caixa
+     * Update a box.
      *
-     * @param int $box_id ID da caixa
-     * @param array $data Dados para atualizar
-     * @return bool|WP_Error True se sucesso ou erro
+     * @param int $box_id Box ID
+     * @param array $data Data to update
+     * @return bool|WP_Error True or error
      */
     public function update(int $box_id, array $data)
     {
         global $wpdb;
         
-        // Verificar se a caixa existe
+        // Ensure box exists
         if (!$this->get_by_id($box_id)) {
             return new WP_Error('box_not_found', __('Caixa não encontrada.', 'pagbank-connect'));
         }
         
-        // Sanitizar dados
+        // Sanitize
         $sanitized_data = $this->sanitize_data($data);
         
-        // Calcular dimensões internas se dimensões externas ou espessura foram alteradas
+        // Recalculate inner dimensions when outer dims or thickness changed
         if (isset($sanitized_data['outer_width']) || isset($sanitized_data['outer_depth']) || 
             isset($sanitized_data['outer_length']) || isset($sanitized_data['thickness'])) {
             $sanitized_data = $this->calculate_inner_dimensions($sanitized_data);
         }
         
-        // Verificar se a referência já existe (exceto para a própria caixa)
+        // Prevent duplicate reference (excluding current box)
         if (isset($sanitized_data['reference']) && $this->reference_exists($sanitized_data['reference'], $box_id)) {
             return new WP_Error('duplicate_reference', __('Esta referência já existe. Escolha outra.', 'pagbank-connect'));
         }
         
-        // Atualizar no banco
+        // Run DB update
         $result = $wpdb->update(
             $this->table_name,
             $sanitized_data,
@@ -212,16 +230,16 @@ class Box
     }
     
     /**
-     * Remove uma caixa
+     * Delete a box.
      *
-     * @param int $box_id ID da caixa
-     * @return bool|WP_Error True se sucesso ou erro
+     * @param int $box_id Box ID
+     * @return bool|WP_Error True or error
      */
     public function delete(int $box_id)
     {
         global $wpdb;
         
-        // Verificar se a caixa existe
+        // Ensure exists before deleting
         if (!$this->get_by_id($box_id)) {
             return new WP_Error('box_not_found', __('Caixa não encontrada.', 'pagbank-connect'));
         }
@@ -240,11 +258,11 @@ class Box
     }
     
     /**
-     * Verifica se uma referência já existe
+     * Check if a reference already exists.
      *
-     * @param string $reference Referência a verificar
-     * @param int $exclude_id ID a excluir da verificação (para updates)
-     * @return bool True se existe
+     * @param string $reference Reference value
+     * @param int $exclude_id Excluded box ID (when updating)
+     * @return bool
      */
     private function reference_exists(string $reference, int $exclude_id = 0): bool
     {
@@ -264,10 +282,10 @@ class Box
     }
     
     /**
-     * Sanitiza dados de entrada
+     * Sanitize input array.
      *
-     * @param array $data Dados para sanitizar
-     * @return array Dados sanitizados
+     * @param array $data Raw data
+     * @return array Sanitized data
      */
     private function sanitize_data(array $data): array
     {
@@ -308,20 +326,20 @@ class Box
     }
     
     /**
-     * Calcula as dimensões internas baseado nas externas e espessura
+     * Calculate inner dimensions from outer dimensions and thickness.
      *
-     * @param array $data Dados da caixa
-     * @return array Dados com dimensões internas calculadas
+     * @param array $data Box data
+     * @return array Updated data
      */
     private function calculate_inner_dimensions(array $data): array
     {
-        // Obter dimensões externas e espessura
+    // Extract outer dims + thickness
         $outer_width = $data['outer_width'] ?? 0;
         $outer_depth = $data['outer_depth'] ?? 0;
         $outer_length = $data['outer_length'] ?? 0;
         $thickness = $data['thickness'] ?? 2;
         
-        // Calcular dimensões internas
+    // Derive usable inner dimensions
         $data['inner_width'] = max(0, $outer_width - ($thickness * 2));
         $data['inner_depth'] = max(0, $outer_depth - ($thickness * 2));
         $data['inner_length'] = max(0, $outer_length - ($thickness * 2));
@@ -330,10 +348,10 @@ class Box
     }
     
     /**
-     * Retorna array de formatos para wpdb
+     * Return formats array for $wpdb operations.
      *
-     * @param array $data Dados
-     * @return array Formatos
+     * @param array $data Data
+     * @return array Formats
      */
     private function get_format_array(array $data): array
     {
@@ -341,7 +359,7 @@ class Box
         
         foreach ($data as $key => $value) {
             if (in_array($key, ['outer_width', 'outer_depth', 'outer_length', 'thickness', 'inner_length', 'inner_width', 'inner_depth'])) {
-                $formats[] = '%f';
+                $formats[] = '%s';
             } elseif (in_array($key, ['max_weight', 'empty_weight', 'is_available'])) {
                 $formats[] = '%d';
             } else {
@@ -353,13 +371,13 @@ class Box
     }
     
     /**
-     * Busca caixas disponíveis para um produto
+     * Get boxes that can fit a product with given specs.
      *
-     * @param int $width Largura do produto
-     * @param int $length Comprimento do produto
-     * @param int $depth Profundidade do produto
-     * @param int $weight Peso do produto
-     * @return array Caixas que cabem o produto
+     * @param int $width Product width
+     * @param int $length Product length
+     * @param int $depth Product depth
+     * @param int $weight Product weight
+     * @return array Matching boxes
      */
     public function get_available_boxes(int $width, int $length, int $depth, int $weight): array
     {

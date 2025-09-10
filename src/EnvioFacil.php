@@ -18,6 +18,7 @@ class EnvioFacil extends WC_Shipping_Method
 {
 	public $countries = ['BR'];
 
+	const CODE = 'rm_enviofacil';
 	/**
 	 * Constructor.
 	 *
@@ -25,7 +26,7 @@ class EnvioFacil extends WC_Shipping_Method
 	 *
 	 * @noinspection PhpUnusedParameterInspection*/
 	public function __construct( $instance_id = 0 ) {
-		$this->id                 = 'rm_enviofacil';
+		$this->id                 = self::CODE;
 		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect' );  // Title shown in admin
 		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect' ); // Description shown in admin
 
@@ -63,10 +64,10 @@ class EnvioFacil extends WC_Shipping_Method
 			return false;
 		}
 
-		$connectKey = substr(Params::getConfig('connect_key'), 0, 7);
-		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
-			return false;
-		}
+		// $connectKey = substr(Params::getConfig('connect_key'), 0, 7);
+		// if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
+		// 	return false;
+		// }
 
 		return parent::is_available($package);
 	}
@@ -94,71 +95,185 @@ class EnvioFacil extends WC_Shipping_Method
             return [];
         }
 
-        //body
-        $params = [
-            'sender' => $senderPostcode,
-            'receiver' => $destinationPostcode,
-            'length' => $dimensions['length'],
-            'height' => $dimensions['height'],
-            'width' => $dimensions['width'],
-            'weight' => $dimensions['weight'],
-            'value' => max($productValue, 0.1)
-        ];
+		// Build individual (non-aggregated) items for improved boxing calculation
+		$items = [];
+		$dimensionUnit = get_option('woocommerce_dimension_unit', 'cm');
+		switch ($dimensionUnit) {
+			case 'mm': $dimMultiplier = 1; break;
+			case 'cm': $dimMultiplier = 10; break; // 1 cm = 10 mm
+			case 'm': $dimMultiplier = 1000; break; // 1 m = 1000 mm
+			case 'in': $dimMultiplier = 25.4; break; // inch to mm
+			case 'yd': $dimMultiplier = 914.4; break; // yard to mm
+			default: $dimMultiplier = 10; // fallback assume cm
+		}
+		$weightUnit = get_option('woocommerce_weight_unit', 'kg');
+		switch ($weightUnit) {
+			case 'g': $weightMultiplier = 1; break; // already grams
+			case 'kg': $weightMultiplier = 1000; break; // kg to g
+			case 'lbs': $weightMultiplier = 453.59237; break; // pounds to g
+			case 'oz': $weightMultiplier = 28.34952; break; // ounces to g
+			default: $weightMultiplier = 1000; // fallback assume kg
+		}
+		foreach ($package['contents'] as $content) {
+			/** @var WC_Product $product */
+			$product = $content['data'];
+			$qty = (int) $content['quantity'];
+			if ($qty < 1) { continue; }
+
+			$prodDims = $product->get_dimensions(false); // array length|width|height
+			$prodDims = array_map('floatval', $prodDims);
+			$prodWeight = (float)$product->get_weight();
+
+			$widthMm  = $prodDims['width'];
+			$heightMm = $prodDims['height'] ?: 1;
+			$lengthMm = $prodDims['length'] ?: 1;
+			$weightG  = $prodWeight ?: 0.01;
+
+			$priceUnit = (float) wc_get_price_excluding_tax($product); // valor unitário
+			if ($priceUnit <= 0) {
+				$priceUnit = $productValue / max(1, $qty); // fallback
+			}
+			
+			$items[] = [
+				'reference' => substr($product->get_name(), 0, 40),
+				'width' => round($widthMm * $dimMultiplier),
+				'length' => round($lengthMm * $dimMultiplier),
+				'depth' => round($heightMm * $dimMultiplier),
+				'weight' => round($weightG * $weightMultiplier),
+				'qty' => $qty,
+				'price' => (float) $priceUnit,
+			];
+		}
+
+		if (empty($items)) {
+			return [];
+		}
+
+		// Retrieve registered boxes (if the Box class exists)
+		   $boxesPayload = [];
+		   if (class_exists('\\RM_PagBank\\Connect\\EnvioFacil\\Box')) {
+			   $boxManager = new \RM_PagBank\Connect\EnvioFacil\Box();
+			   $availableBoxes = $boxManager->get_all_available();
+			   foreach ($availableBoxes as $b) {
+				   // Convert decimal columns from DB to int mm/g as required by API (no multiplication, just round)
+				   $boxesPayload[] = [
+					   'reference'   => $b->reference,
+					   'outerWidth'  => (int) $b->outer_width,
+					   'outerLength' => (int) $b->outer_length,
+					   'outerDepth'  => (int) $b->outer_depth,
+					   'emptyWeight' => (int) $b->empty_weight,
+					   'innerWidth'  => (int) $b->inner_width,
+					   'innerLength' => (int) $b->inner_length,
+					   'innerDepth'  => (int) $b->inner_depth,
+					   'maxWeight'   => (int) $b->max_weight,
+				   ];
+			   }
+		   }
+
+		   
+
+		$params = [
+			'sender' => $senderPostcode,
+			'receiver' => $destinationPostcode,
+			'boxes' => $boxesPayload,
+			'items' => $items,
+		];
         
         if (!$senderPostcode || strlen($senderPostcode) != 8) {
             Functions::log('EnvioFacil: CEP de origem não configurado ou incorreto', 'debug');
             return [];
         }
-        
-        $url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
-        $ret = wp_remote_get($url, [
-            'headers' => [
-                'Authorization' => 'Bearer '.Params::getConfig('connect_key'),
-            ],
-            'timeout' => 10,
-            'sslverify' => false,
-            'httpversion' => '1.1'
-        ]);
+
+		$url = 'https://ws.pbintegracoes.com/pspro/v7/ef/boxing';
+
+		$headers = [
+			'Authorization' => 'Bearer ' . Params::getConfig('connect_key'),
+			'Content-Type'  => 'application/json',
+			'Platform' => 'WooCommerce',
+			'Extra-Version' => WC()->version,
+			'Platform-Version' => get_bloginfo('version'),
+			'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
+			'Referer' => get_site_url(),
+		];
+
+		$ret = wp_remote_post($url, [
+			'headers' => $headers,
+			'body' => wp_json_encode($params),
+            'timeout' => 60,
+		]);
         
         if (is_wp_error($ret)) {
             return [];
         }
-        $ret = wp_remote_retrieve_body($ret);
-        $ret = json_decode($ret, true);
-        
-        if (isset($ret['error_messages'])) {
-            Functions::log('Erro ao calcular o frete: '.print_r($ret['error_messages'], true), 'debug');
 
-            return [];
-        }
+		$body = wp_remote_retrieve_body($ret);
+		$decoded = json_decode($body, true);
+		if (!is_array($decoded)) {
+			Functions::log('EnvioFacil: resposta inválida boxing: '.$body, 'debug');
+			return [];
+		}
 
-        foreach ($ret as $provider) {
-            if (!isset($provider['provider']) || !isset($provider['providerMethod'])
-                || !isset($provider['contractValue'])) {
-                continue;
-            }
+		if (isset($decoded['error_messages'])) {
+			$errors = $decoded['error_messages'];
+			$codes = array_map(static function($e){return $e['code'] ?? '';}, $errors);
+			Functions::log('EnvioFacil: erros boxing', 'debug', ['errors' => $errors]);
+			// Optional handling for specific error codes
+			if (in_array('NO_BOXES_AVAILABLE', $codes, true)) {
+				return [];
+			}
+			return []; // fallback genérico
+		}
 
-            $addDays = $this->get_option('add_days', 0);
-            $provider['estimateDays'] += $addDays;
-            
-            $adjustment = $this->get_option('adjustment_fee', 0);
-            $provider['contractValue'] = Functions::applyPriceAdjustment($provider['contractValue'], $adjustment);
-            $rate = array(
-                'id'       => 'ef-'.$provider['provider'] . '-' . $provider['providerMethod'],
-                'label'    => $provider['provider'].' - '.$provider['providerMethod'].sprintf(
-                    __(' - %d dias úteis', 'pagbank-connect'),
-                    $provider['estimateDays']
-                ),
-                'cost'     => $provider['contractValue'],
-                'calc_tax' => 'per_order',
-            );
+		// Expected structure: boxes[] each box contains shipping[]
+		$aggregated = [];
+		$boxCount = isset($decoded['boxes']) && is_array($decoded['boxes']) ? count($decoded['boxes']) : 0;
+		$boxes = $decoded['boxes'] ?? [];
+		foreach ($boxes as $box) {
+			if (empty($box['shipping']) || !is_array($box['shipping'])) { continue; }
+			foreach ($box['shipping'] as $option) {
+				if (!isset($option['provider'], $option['providerMethod'], $option['contractValue'])) { continue; }
+				$key = $option['provider'].'|'.$option['providerMethod'];
+				if (!isset($aggregated[$key])) {
+					$aggregated[$key] = [
+						'provider' => $option['provider'],
+						'method' => $option['providerMethod'],
+						'contractValue' => 0.0,
+						'estimateDays' => (int) ($option['estimateDays'] ?? 0),
+					];
+				}
+				$aggregated[$key]['contractValue'] += (float) $option['contractValue'];
+				// total transit time = maximum transit among boxes (assuming consolidated shipment)
+				$aggregated[$key]['estimateDays'] = max($aggregated[$key]['estimateDays'], (int) ($option['estimateDays'] ?? 0));
+			}
+		}
 
-            if (!$rate['cost']) {
-                continue;
-            }
+		if (empty($aggregated)) {
+			return [];
+		}
 
-            $this->add_rate($rate);
-        }
+		$addDays = (int) $this->get_option('add_days', 0);
+		$adjustment = $this->get_option('adjustment_fee', 0);
+		foreach ($aggregated as $aggr) {
+			$days = $aggr['estimateDays'] + $addDays;
+			$cost = Functions::applyPriceAdjustment($aggr['contractValue'], $adjustment);
+			if ($cost <= 0) { continue; }
+			$label = sprintf('%s - %s - %d %s', $aggr['provider'], $aggr['method'], $days, _n('dia útil', 'dias úteis', $days, 'pagbank-connect'));
+			if ($boxCount > 1) {
+				$label .= sprintf(' (%d caixas)', $boxCount);
+			}
+			$this->add_rate([
+				'id' => 'ef-'.$aggr['provider'].'-'.$aggr['method'],
+				'label' => $label,
+				'cost' => $cost,
+				'calc_tax' => 'per_order',
+				'meta_data' => [
+					'pagbank_enviofacil_provider' => $aggr['provider'],
+					'pagbank_enviofacil_method' => $aggr['method'],
+					'pagbank_enviofacil_days' => $days,
+					'pagbank_enviofacil_boxes' => $boxCount,
+				]
+			]);
+		}
         return [];
 	}
 
@@ -351,16 +466,16 @@ class EnvioFacil extends WC_Shipping_Method
 		$value = $value == '1' ? 'yes' : 'no';
 
 		$connectKey = Params::getConfig('connect_key');
-		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
-			WC_Admin_Settings::add_error(
-				__(
-					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
-					.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
-					'pagbank-connect'
-				)
-			);
-			$value = 'no';
-		}
+		// if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
+		// 	WC_Admin_Settings::add_error(
+		// 		__(
+		// 			'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
+		// 			.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
+		// 			'pagbank-connect'
+		// 		)
+		// 	);
+		// 	$value = 'no';
+		// }
 
 		return $value;
 	}

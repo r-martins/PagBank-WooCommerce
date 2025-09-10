@@ -6,8 +6,14 @@ use WP_List_Table;
 
 /**
  * Class BoxListTable
- * 
- * Lista caixas do EnvioFácil usando WP_List_Table
+ *
+ * Displays Envio Fácil boxes using WP_List_Table.
+ * Developer commentary translated to English; user facing strings (i18n) preserved in Portuguese.
+ *
+ * Responsibilities:
+ *  - Render list table (columns, sorting, pagination)
+ *  - Handle bulk actions (delete / activate / deactivate)
+ *  - Provide basic filters (availability)
  *
  * @author    Ricardo Martins
  * @copyright 2024 Magenteiro
@@ -29,7 +35,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Define as colunas da tabela
+     * Define table columns (keys map to column_* methods or direct output).
      */
     public function get_columns(): array
     {
@@ -45,7 +51,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Define colunas ordenáveis
+     * Define sortable columns.
      */
     public function get_sortable_columns(): array
     {
@@ -58,7 +64,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Define ações em lote
+     * Define bulk actions.
      */
     public function get_bulk_actions(): array
     {
@@ -70,7 +76,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Processa ações em lote
+     * Process bulk actions (called early in prepare_items).
      */
     public function process_bulk_action(): void
     {
@@ -115,7 +121,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Prepara os dados para exibição
+     * Prepare items (query, pagination, headers).
      */
     public function prepare_items(): void
     {
@@ -132,7 +138,7 @@ class BoxListTable extends WP_List_Table
             'order' => $_GET['order'] ?? 'ASC'
         ];
         
-        // Filtro por disponibilidade
+    // Availability filter
         if (isset($_GET['filter_available']) && $_GET['filter_available'] !== '') {
             $args['is_available'] = (int) $_GET['filter_available'];
         }
@@ -154,7 +160,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de checkbox
+     * Checkbox column (bulk selector).
      */
     protected function column_cb($item): string
     {
@@ -162,7 +168,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de referência
+     * Reference column (links + row actions).
      */
     protected function column_reference($item): string
     {
@@ -189,7 +195,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de dimensões
+     * Dimensions column (external & internal in mm).
      */
     protected function column_dimensions($item): string
     {
@@ -201,7 +207,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de peso
+     * Weight column (max & empty in grams).
      */
     protected function column_weight($item): string
     {
@@ -212,7 +218,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de custo
+     * Cost column (commented out in columns array, kept for future usage).
      */
     protected function column_cost($item): string
     {
@@ -220,7 +226,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de disponibilidade
+     * Availability column (icons).
      */
     protected function column_is_available($item): string
     {
@@ -232,7 +238,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza coluna de data de criação
+     * Created at column (localized date/time).
      */
     protected function column_created_at($item): string
     {
@@ -240,7 +246,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza quando não há itens
+     * No items message.
      */
     public function no_items(): void
     {
@@ -248,7 +254,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Renderiza filtros extras
+     * Extra controls above the table (availability filter).
      */
     protected function extra_tablenav($which): void
     {
@@ -268,7 +274,7 @@ class BoxListTable extends WP_List_Table
     }
     
     /**
-     * Adiciona notificação administrativa
+     * Render admin notice (helper).
      */
     private function add_admin_notice(string $message, string $type = 'info'): void
     {
