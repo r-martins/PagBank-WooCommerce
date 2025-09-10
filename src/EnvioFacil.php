@@ -260,9 +260,6 @@ class EnvioFacil extends WC_Shipping_Method
 			$cost = Functions::applyPriceAdjustment($aggr['contractValue'], $adjustment);
 			if ($cost <= 0) { continue; }
 			$label = sprintf('%s - %s - %d %s', $aggr['provider'], $aggr['method'], $days, _n('dia útil', 'dias úteis', $days, 'pagbank-connect'));
-			if ($boxCount > 1) {
-				$label .= sprintf(' (%d caixas)', $boxCount);
-			}
 
 			$recommendedBoxes = '';
 			if ( ! empty( $boxReferences ) ) {
