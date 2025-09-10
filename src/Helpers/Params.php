@@ -221,6 +221,10 @@ class Params
             $params['credit_card_bin'] = '555566'; //Because test credit card numbers are not accepted by the API
         }
 
+        if(!$orderTotal || $orderTotal <= 0) {
+            return [];
+        }
+
         if ($mi = self::getMaxInstallments()) {
             $params['max_installments'] = $mi;
         }
