@@ -228,8 +228,10 @@ class EnvioFacil extends WC_Shipping_Method
 		$aggregated = [];
 		$boxCount = isset($decoded['boxes']) && is_array($decoded['boxes']) ? count($decoded['boxes']) : 0;
 		$boxes = $decoded['boxes'] ?? [];
+		$boxReferences = [];
 		foreach ($boxes as $box) {
 			if (empty($box['shipping']) || !is_array($box['shipping'])) { continue; }
+			$boxReferences[] = $box['reference'];
 			foreach ($box['shipping'] as $option) {
 				if (!isset($option['provider'], $option['providerMethod'], $option['contractValue'])) { continue; }
 				$key = $option['provider'].'|'.$option['providerMethod'];
@@ -261,6 +263,17 @@ class EnvioFacil extends WC_Shipping_Method
 			if ($boxCount > 1) {
 				$label .= sprintf(' (%d caixas)', $boxCount);
 			}
+
+			$recommendedBoxes = '';
+			if ( ! empty( $boxReferences ) ) {
+				$boxCounts = array_count_values( $boxReferences );
+				$boxStrings = [];
+				foreach ( $boxCounts as $ref => $count ) {
+					$boxStrings[] = $count . 'x ' . $ref;
+				}
+				$recommendedBoxes = implode( ', ', $boxStrings );
+			}
+
 			$this->add_rate([
 				'id' => 'ef-'.$aggr['provider'].'-'.$aggr['method'],
 				'label' => $label,
@@ -271,6 +284,7 @@ class EnvioFacil extends WC_Shipping_Method
 					'pagbank_enviofacil_method' => $aggr['method'],
 					'pagbank_enviofacil_days' => $days,
 					'pagbank_enviofacil_boxes' => $boxCount,
+					'pagbank_enviofacil_recommended_boxes' => $recommendedBoxes,
 				]
 			]);
 		}
