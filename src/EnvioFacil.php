@@ -64,10 +64,10 @@ class EnvioFacil extends WC_Shipping_Method
 			return false;
 		}
 
-		// $connectKey = substr(Params::getConfig('connect_key'), 0, 7);
-		// if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
-		// 	return false;
-		// }
+		$connectKey = substr(Params::getConfig('connect_key'), 0, 7);
+		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
+			return false;
+		}
 
 		return parent::is_available($package);
 	}
@@ -477,16 +477,16 @@ class EnvioFacil extends WC_Shipping_Method
 		$value = $value == '1' ? 'yes' : 'no';
 
 		$connectKey = Params::getConfig('connect_key');
-		// if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
-		// 	WC_Admin_Settings::add_error(
-		// 		__(
-		// 			'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
-		// 			.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
-		// 			'pagbank-connect'
-		// 		)
-		// 	);
-		// 	$value = 'no';
-		// }
+		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
+			WC_Admin_Settings::add_error(
+				__(
+					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
+					.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
+					'pagbank-connect'
+				)
+			);
+			$value = 'no';
+		}
 
 		return $value;
 	}
