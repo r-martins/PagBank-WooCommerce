@@ -333,16 +333,16 @@ class Box
      */
     private function calculate_inner_dimensions(array $data): array
     {
-    // Extract outer dims + thickness
-        $outer_width = $data['outer_width'] ?? 0;
-        $outer_depth = $data['outer_depth'] ?? 0;
-        $outer_length = $data['outer_length'] ?? 0;
-        $thickness = $data['thickness'] ?? 2;
+        // Extract outer dims + thickness
+        $outer_width    = $data['outer_width'] ?? 0;
+        $outer_depth    = $data['outer_depth'] ?? 0;
+        $outer_length   = $data['outer_length'] ?? 0;
+        $thickness      = $data['thickness'] ?? 2;
         
-    // Derive usable inner dimensions
-        $data['inner_width'] = max(0, $outer_width - ($thickness * 2));
-        $data['inner_depth'] = max(0, $outer_depth - ($thickness * 2));
-        $data['inner_length'] = max(0, $outer_length - ($thickness * 2));
+        // Derive usable inner dimensions
+        $data['inner_width']    =   $outer_width    - $thickness;
+        $data['inner_depth']    =   $outer_depth    - $thickness;
+        $data['inner_length']   =   $outer_length   - $thickness;
         
         return $data;
     }

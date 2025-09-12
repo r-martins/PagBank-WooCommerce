@@ -87,13 +87,6 @@ class EnvioFacil extends WC_Shipping_Method
 
         $productValue = $package['contents_cost'];
 
-        $dimensions = $this->getDimensionsAndWeight($package);
-
-        $isValid = $this->validateDimensions($dimensions);
-
-        if (!$isValid || !$dimensions) {
-            return [];
-        }
 
 		// Build individual (non-aggregated) items for improved boxing calculation
 		$items = [];
@@ -158,13 +151,13 @@ class EnvioFacil extends WC_Shipping_Method
 				   // Convert decimal columns from DB to int mm/g as required by API (no multiplication, just round)
 				   $boxesPayload[] = [
 					   'reference'   => $b->reference,
-					   'outerWidth'  => (int) $b->outer_width,
-					   'outerLength' => (int) $b->outer_length,
-					   'outerDepth'  => (int) $b->outer_depth,
+					   'outerWidth'  => (int) $b->outer_width * 10,
+					   'outerLength' => (int) $b->outer_length * 10,
+					   'outerDepth'  => (int) $b->outer_depth * 10,
 					   'emptyWeight' => (int) $b->empty_weight,
-					   'innerWidth'  => (int) $b->inner_width,
-					   'innerLength' => (int) $b->inner_length,
-					   'innerDepth'  => (int) $b->inner_depth,
+					   'innerWidth'  => (int) $b->inner_width * 10,
+					   'innerLength' => (int) $b->inner_length * 10,
+					   'innerDepth'  => (int) $b->inner_depth * 10,
 					   'maxWeight'   => (int) $b->max_weight,
 				   ];
 			   }
@@ -301,74 +294,9 @@ class EnvioFacil extends WC_Shipping_Method
 		return $methods;
 	}
 
-	/**
-	 * Get a sum of the dimensions and weight of the products in the package
-	 * @param $package
-	 *
-	 * @return int[]
-	 */
-	public function getDimensionsAndWeight($package): array
-	{
-		$return = [
-			'length' => 0,
-			'height' => 0,
-			'width' => 0,
-			'weight' => 0,
-		];
 
-		foreach ($package['contents'] as $content)
-		{
-			/** @var WC_Product $product */
-			$product = $content['data'];
 
-			$dimensions = $product->get_dimensions(false);
-			//convert each dimension to float
-			$dimensions = array_map('floatval', $dimensions);
 
-			$weight = floatval($product->get_weight());
-            $weight = Functions::convertToKg($weight);
-			 $return['length'] += $dimensions['length'] * $content['quantity'];
-			 $return['height'] += $dimensions['height'] * $content['quantity'];
-			 $return['width'] += $dimensions['width'] * $content['quantity'];
-			 $return['weight'] += $weight * $content['quantity'];
-		}
-
-		return $return;
-
-	}
-
-	/**
-	 * Validates the dimensions and weight of the package and logs errors if any
-	 * @param $dimensions
-	 *
-	 * @return bool
-	 */
-	public function validateDimensions($dimensions): bool
-	{
-		if(($dimensions['length'] < 15 || $dimensions['length'] > 100)){
-			Functions::log('Comprimento inválido: ' . $dimensions['length'] . '. Deve ser entre 15 e 100.', 'debug');
-			return false;
-		}
-		if(($dimensions['height'] < 1 || $dimensions['height'] > 100)){
-			Functions::log('Altura inválida: ' . $dimensions['height'] . '. Deve ser entre 1 e 100.', 'debug');
-			return false;
-		}
-		if(($dimensions['width'] < 10 || $dimensions['width'] > 100)){
-			Functions::log('Largura inválida: ' . $dimensions['width'] . '. Deve ser entre 10 e 100.', 'debug');
-			return false;
-		}
-
-		if ($dimensions['weight'] > 10 || $dimensions['weight'] < 0.3)
-		{
-            Functions::log(
-                'Peso inválido: '.$dimensions['weight'].'. Deve ser menor que 10kg e maior que 0.3.',
-                'debug'
-            );
-			return false;
-		}
-
-		return true;
-	}
 
     public function init_form_fields()
     {
