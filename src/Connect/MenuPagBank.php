@@ -304,7 +304,10 @@ SVG;
         echo esc_html(__('Adicionar Nova Caixa', 'pagbank-connect'));
         echo '</a>';
         
+        // Formulário para ações em massa
+        echo '<form method="post">';
         $boxesListTable->display();
+        echo '</form>';
         echo '</div>';
     }
     

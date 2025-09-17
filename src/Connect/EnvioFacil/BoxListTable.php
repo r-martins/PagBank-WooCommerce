@@ -84,8 +84,18 @@ class BoxListTable extends WP_List_Table
             return;
         }
         
+        // Check if this is a POST request with bulk action
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+        
         $action = $this->current_action();
         if (!$action) {
+            return;
+        }
+        
+        // Verify nonce for security
+        if (!wp_verify_nonce($_POST['_wpnonce'] ?? '', 'bulk-' . $this->_args['plural'])) {
             return;
         }
         
@@ -118,6 +128,10 @@ class BoxListTable extends WP_List_Table
                 $this->add_admin_notice(__('Caixas desativadas com sucesso.', 'pagbank-connect'), 'success');
                 break;
         }
+        
+        // Redirect to avoid form resubmission
+        wp_redirect(remove_query_arg(['action', 'action2', '_wpnonce', 'box']));
+        exit;
     }
     
     /**
