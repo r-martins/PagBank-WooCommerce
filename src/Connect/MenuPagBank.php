@@ -434,18 +434,18 @@ SVG;
                             <label for="outer_width"><?php _e('Largura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_width" name="outer_width" value="<?php echo $is_edit ? esc_attr($box->outer_width) : ''; ?>" class="small-text" min="0.1" step="0.1" required />
-                            <span class="description">cm</span>
+                            <input type="number" id="outer_width" name="outer_width" value="<?php echo $is_edit ? esc_attr($box->outer_width) : ''; ?>" class="small-text" min="10" max="100" step="0.1" required />
+                            <span class="description">cm (mín: 10cm, máx: 100cm)</span>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="outer_depth"><?php _e('Altura/Profundidade Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="outer_depth"><?php _e('Altura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_depth" name="outer_depth" value="<?php echo $is_edit ? esc_attr($box->outer_depth) : ''; ?>" class="small-text" min="0.1" step="0.1" required />
-                            <span class="description">cm</span>
+                            <input type="number" id="outer_depth" name="outer_depth" value="<?php echo $is_edit ? esc_attr($box->outer_depth) : ''; ?>" class="small-text" min="1" max="100" step="0.1" required />
+                            <span class="description">cm (mín: 1cm, máx: 100cm)</span>
                         </td>
                     </tr>
                     
@@ -454,8 +454,8 @@ SVG;
                             <label for="outer_length"><?php _e('Comprimento Externo', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_length" name="outer_length" value="<?php echo $is_edit ? esc_attr($box->outer_length) : ''; ?>" class="small-text" min="0.1" step="0.1" required />
-                            <span class="description">cm</span>
+                            <input type="number" id="outer_length" name="outer_length" value="<?php echo $is_edit ? esc_attr($box->outer_length) : ''; ?>" class="small-text" min="15" max="100" step="0.1" required />
+                            <span class="description">cm (mín: 15cm, máx: 100cm)</span>
                         </td>
                     </tr>
                     
@@ -481,8 +481,8 @@ SVG;
                             <label for="max_weight"><?php _e('Peso Máximo', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="max_weight" name="max_weight" value="<?php echo $is_edit ? esc_attr($box->max_weight) : ''; ?>" class="small-text" min="1" required />
-                            <span class="description">g</span>
+                            <input type="number" id="max_weight" name="max_weight" value="<?php echo $is_edit ? esc_attr($box->max_weight) : ''; ?>" class="small-text" min="300" max="10000" required />
+                            <span class="description">g (mín: 300g, máx: 10kg)</span>
                         </td>
                     </tr>
                     
@@ -491,8 +491,8 @@ SVG;
                             <label for="empty_weight"><?php _e('Peso da Caixa Vazia', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="empty_weight" name="empty_weight" value="<?php echo $is_edit ? esc_attr($box->empty_weight) : ''; ?>" class="small-text" min="0" required />
-                            <span class="description">g</span>
+                            <input type="number" id="empty_weight" name="empty_weight" value="<?php echo $is_edit ? esc_attr($box->empty_weight) : ''; ?>" class="small-text" min="1" max="9999" required />
+                            <span class="description">g (deve ser menor que peso máximo)</span>
                         </td>
                     </tr>
                     
@@ -502,6 +502,57 @@ SVG;
             
             <?php submit_button($is_edit ? __('Atualizar Caixa', 'pagbank-connect') : __('Criar Caixa', 'pagbank-connect')); ?>
         </form>
+        
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Validação em tempo real do peso vazio vs peso máximo
+            function validateWeights() {
+                var maxWeight = parseInt($('#max_weight').val()) || 0;
+                var emptyWeight = parseInt($('#empty_weight').val()) || 0;
+                
+                if (emptyWeight > 0 && maxWeight > 0 && emptyWeight >= maxWeight) {
+                    $('#empty_weight').css('border-color', '#dc3232');
+                    $('#empty_weight').next('.description').css('color', '#dc3232').text('<?php _e('Peso vazio deve ser menor que o peso máximo', 'pagbank-connect'); ?>');
+                    return false;
+                } else {
+                    $('#empty_weight').css('border-color', '');
+                    $('#empty_weight').next('.description').css('color', '').text('g (deve ser menor que peso máximo)');
+                    return true;
+                }
+            }
+            
+            $('#max_weight, #empty_weight').on('input change', validateWeights);
+            
+            // Converter centímetros para milímetros antes do envio
+            $('form').on('submit', function(e) {
+                if (!validateWeights()) {
+                    e.preventDefault();
+                    alert('<?php _e('Por favor, corrija os erros no formulário antes de continuar.', 'pagbank-connect'); ?>');
+                    return false;
+                }
+                
+                // Converter dimensões de cm para mm (multiplicar por 10)
+                var dimensionFields = ['outer_width', 'outer_depth', 'outer_length', 'thickness'];
+                dimensionFields.forEach(function(field) {
+                    var input = $('#' + field);
+                    var cmValue = parseFloat(input.val()) || 0;
+                    var mmValue = cmValue * 10;
+                    input.val(mmValue);
+                });
+            });
+            
+            // Converter milímetros para centímetros na exibição (se editando)
+            <?php if ($is_edit): ?>
+            var dimensionFields = ['outer_width', 'outer_depth', 'outer_length', 'thickness'];
+            dimensionFields.forEach(function(field) {
+                var input = $('#' + field);
+                var mmValue = parseFloat(input.val()) || 0;
+                var cmValue = mmValue / 10;
+                input.val(cmValue);
+            });
+            <?php endif; ?>
+        });
+        </script>
         <?php
     }
     

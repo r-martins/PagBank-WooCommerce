@@ -61,6 +61,12 @@ class Box
         // Sanitize input
         $sanitized_data = $this->sanitize_data($data);
         
+        // Validate dimensions and weight limits
+        $validation_error = $this->validate_box_limits($sanitized_data);
+        if (is_wp_error($validation_error)) {
+            return $validation_error;
+        }
+        
         // Compute inner dimensions
         $sanitized_data = $this->calculate_inner_dimensions($sanitized_data);
         
@@ -202,6 +208,12 @@ class Box
         // Sanitize
         $sanitized_data = $this->sanitize_data($data);
         
+        // Validate dimensions and weight limits
+        $validation_error = $this->validate_box_limits($sanitized_data);
+        if (is_wp_error($validation_error)) {
+            return $validation_error;
+        }
+        
         // Recalculate inner dimensions when outer dims or thickness changed
         if (isset($sanitized_data['outer_width']) || isset($sanitized_data['outer_depth']) || 
             isset($sanitized_data['outer_length']) || isset($sanitized_data['thickness'])) {
@@ -299,6 +311,7 @@ class Box
             $sanitized['is_available'] = (int) $data['is_available'];
         }
         
+        // Campos de dimensão - já vêm em milímetros do formulário após conversão JavaScript
         $dimension_fields = [
             'outer_width', 'outer_depth', 'outer_length',
             'thickness'
@@ -393,5 +406,81 @@ class Box
              ORDER BY cost ASC",
             $width, $length, $depth, $weight
         ));
+    }
+    
+    /**
+     * Validate box dimensions and weight limits according to shipping rules.
+     *
+     * @param array $data Box data
+     * @return bool|WP_Error True if valid, WP_Error if invalid
+     */
+    private function validate_box_limits(array $data)
+    {
+        // Limites definidos pelos Correios/PagBank
+        $limits = [
+            'outer_length' => ['min' => 150, 'max' => 1000], // 15cm - 100cm em mm
+            'outer_depth' => ['min' => 10, 'max' => 1000],   // 1cm - 100cm em mm  
+            'outer_width' => ['min' => 100, 'max' => 1000],  // 10cm - 100cm em mm
+            'max_weight' => ['min' => 300, 'max' => 10000],  // 300g - 10kg em gramas
+        ];
+        
+        // Validar comprimento (outer_length)
+        if (isset($data['outer_length'])) {
+            $length_mm = $data['outer_length'];
+            if ($length_mm < $limits['outer_length']['min'] || $length_mm > $limits['outer_length']['max']) {
+                return new WP_Error('invalid_length', 
+                    sprintf(__('Comprimento deve estar entre %dcm e %dcm.', 'pagbank-connect'), 
+                        $limits['outer_length']['min'] / 10, 
+                        $limits['outer_length']['max'] / 10)
+                );
+            }
+        }
+        
+        // Validar altura (outer_depth)
+        if (isset($data['outer_depth'])) {
+            $depth_mm = $data['outer_depth'];
+            if ($depth_mm < $limits['outer_depth']['min'] || $depth_mm > $limits['outer_depth']['max']) {
+                return new WP_Error('invalid_depth', 
+                    sprintf(__('Altura deve estar entre %dcm e %dcm.', 'pagbank-connect'), 
+                        $limits['outer_depth']['min'] / 10, 
+                        $limits['outer_depth']['max'] / 10)
+                );
+            }
+        }
+        
+        // Validar largura (outer_width)
+        if (isset($data['outer_width'])) {
+            $width_mm = $data['outer_width'];
+            if ($width_mm < $limits['outer_width']['min'] || $width_mm > $limits['outer_width']['max']) {
+                return new WP_Error('invalid_width', 
+                    sprintf(__('Largura deve estar entre %dcm e %dcm.', 'pagbank-connect'), 
+                        $limits['outer_width']['min'] / 10, 
+                        $limits['outer_width']['max'] / 10)
+                );
+            }
+        }
+        
+        // Validar peso máximo
+        if (isset($data['max_weight'])) {
+            $weight_g = $data['max_weight'];
+            if ($weight_g < $limits['max_weight']['min'] || $weight_g > $limits['max_weight']['max']) {
+                return new WP_Error('invalid_weight', 
+                    sprintf(__('Peso deve estar entre %dg e %dkg.', 'pagbank-connect'), 
+                        $limits['max_weight']['min'], 
+                        $limits['max_weight']['max'] / 1000)
+                );
+            }
+        }
+        
+        // Validar se peso vazio não é maior que peso máximo
+        if (isset($data['empty_weight']) && isset($data['max_weight'])) {
+            if ($data['empty_weight'] >= $data['max_weight']) {
+                return new WP_Error('invalid_empty_weight', 
+                    __('Peso vazio deve ser menor que o peso máximo.', 'pagbank-connect')
+                );
+            }
+        }
+        
+        return true;
     }
 }
