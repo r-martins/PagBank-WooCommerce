@@ -270,11 +270,11 @@ class EnvioFacil extends WC_Shipping_Method
 				'cost' => $cost,
 				'calc_tax' => 'per_order',
 				'meta_data' => [
-					'pagbank_enviofacil_provider' => $aggr['provider'],
-					'pagbank_enviofacil_method' => $aggr['method'],
-					'pagbank_enviofacil_days' => $days,
-					'pagbank_enviofacil_boxes' => $boxCount,
-					'pagbank_enviofacil_recommended_boxes' => $recommendedBoxes,
+					__('Transportadora', 'pagbank-connect') => $aggr['provider'],
+					__('Método de envio', 'pagbank-connect') => $aggr['method'],
+					__('Entrega estimada (dias)', 'pagbank-connect') => $days,
+					__('Quantidade de caixas', 'pagbank-connect') => $boxCount,
+					__('Caixas recomendadas', 'pagbank-connect') => $recommendedBoxes,
 				]
 			]);
 		}
