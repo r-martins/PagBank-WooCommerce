@@ -151,13 +151,13 @@ class EnvioFacil extends WC_Shipping_Method
 				   // Convert decimal columns from DB to int mm/g as required by API (no multiplication, just round)
 				   $boxesPayload[] = [
 					   'reference'   => $b->reference,
-					   'outerWidth'  => (int) $b->outer_width * 10,
-					   'outerLength' => (int) $b->outer_length * 10,
-					   'outerDepth'  => (int) $b->outer_depth * 10,
+					   'outerWidth'  => (int) $b->outer_width,
+					   'outerLength' => (int) $b->outer_length,
+					   'outerDepth'  => (int) $b->outer_depth,
 					   'emptyWeight' => (int) $b->empty_weight,
-					   'innerWidth'  => (int) $b->inner_width * 10,
-					   'innerLength' => (int) $b->inner_length * 10,
-					   'innerDepth'  => (int) $b->inner_depth * 10,
+					   'innerWidth'  => (int) $b->inner_width,
+					   'innerLength' => (int) $b->inner_length,
+					   'innerDepth'  => (int) $b->inner_depth,
 					   'maxWeight'   => (int) $b->max_weight,
 				   ];
 			   }

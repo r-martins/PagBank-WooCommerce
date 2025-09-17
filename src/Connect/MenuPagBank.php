@@ -320,6 +320,10 @@ SVG;
         
         // Processar formulário
         if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'create_box')) {
+            // Se o campo não vier, define como 0
+            if (!isset($_POST['is_available'])) {
+                $_POST['is_available'] = 0;
+            }
             $result = $box_manager->create($_POST);
             
             if (is_wp_error($result)) {
@@ -364,6 +368,10 @@ SVG;
         
         // Processar formulário
         if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'edit_box')) {
+            // Se o campo não vier, define como 0
+            if (!isset($_POST['is_available'])) {
+                $_POST['is_available'] = 0;
+            }
             $result = $box_manager->update($box_id, $_POST);
             
             if (is_wp_error($result)) {
