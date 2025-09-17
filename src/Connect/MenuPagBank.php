@@ -275,11 +275,11 @@ SVG;
     }
     
     /**
-     * Renderiza a página de listagem de caixas
+     * render the PagBank boxes list page
      */
     public static function renderPagbankBoxesListPage()
     {
-        // Processar exclusão individual
+        // processing deletion of a single box
         if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
             if (wp_verify_nonce($_GET['_wpnonce'], 'delete_box_' . $_GET['id'])) {
                 $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
@@ -299,12 +299,12 @@ SVG;
         echo '<div class="wrap">';
         echo '<h1>' . esc_html(__('Caixas EnvioFácil', 'pagbank-connect')) . '</h1>';
         
-        // Botão para adicionar nova caixa
+        // Button to add a new box
         echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes-new') . '" class="page-title-action">';
         echo esc_html(__('Adicionar Nova Caixa', 'pagbank-connect'));
         echo '</a>';
         
-        // Formulário para ações em massa
+        // Display the list table
         echo '<form method="post">';
         $boxesListTable->display();
         echo '</form>';
@@ -317,10 +317,10 @@ SVG;
     public static function renderPagbankBoxNewPage()
     {
         $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
-        
-        // Processar formulário
+
+        // Process form submission
         if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'create_box')) {
-            // Se o campo não vier, define como 0
+            // If the field is not set, default to 0
             if (!isset($_POST['is_available'])) {
                 $_POST['is_available'] = 0;
             }
@@ -330,7 +330,7 @@ SVG;
                 echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
             } else {
                 echo '<div class="notice notice-success"><p>' . esc_html(__('Caixa criada com sucesso!', 'pagbank-connect')) . '</p></div>';
-                // Redirecionar para a listagem
+                // Redirect to the list
                 wp_safe_redirect(admin_url('admin.php?page=rm-pagbank-boxes'));
                 exit;
             }
@@ -348,7 +348,8 @@ SVG;
     }
     
     /**
-     * Renderiza a página de edição de caixa
+     * Page to edit an existing box
+     * @return void
      */
     public static function renderPagbankBoxEditPage()
     {
@@ -366,9 +367,9 @@ SVG;
             return;
         }
         
-        // Processar formulário
+        // Process form submission
         if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'edit_box')) {
-            // Se o campo não vier, define como 0
+            // If the field is not set, default to 0
             if (!isset($_POST['is_available'])) {
                 $_POST['is_available'] = 0;
             }
@@ -378,7 +379,7 @@ SVG;
                 echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
             } else {
                 echo '<div class="notice notice-success"><p>' . esc_html(__('Caixa atualizada com sucesso!', 'pagbank-connect')) . '</p></div>';
-                // Atualizar dados da caixa
+                // Update box data
                 $box = $box_manager->get_by_id($box_id);
             }
         }
@@ -395,7 +396,8 @@ SVG;
     }
     
     /**
-     * Renderiza o formulário de caixa
+     * Renders the box form, used for both creating and editing boxes.
+     * @param object|null $box The box object when editing, or null when creating a
      */
     private static function renderBoxForm($box = null)
     {
@@ -513,7 +515,7 @@ SVG;
         
         <script type="text/javascript">
         jQuery(document).ready(function($) {
-            // Validação em tempo real do peso vazio vs peso máximo
+            // Real-time validation of empty weight vs max weight
             function validateWeights() {
                 var maxWeight = parseInt($('#max_weight').val()) || 0;
                 var emptyWeight = parseInt($('#empty_weight').val()) || 0;
@@ -530,8 +532,8 @@ SVG;
             }
             
             $('#max_weight, #empty_weight').on('input change', validateWeights);
-            
-            // Converter centímetros para milímetros antes do envio
+
+            // Convert centimeters to millimeters before submission
             $('form').on('submit', function(e) {
                 if (!validateWeights()) {
                     e.preventDefault();
@@ -539,7 +541,7 @@ SVG;
                     return false;
                 }
                 
-                // Converter dimensões de cm para mm (multiplicar por 10)
+                // Convert cm to mm
                 var dimensionFields = ['outer_width', 'outer_depth', 'outer_length', 'thickness'];
                 dimensionFields.forEach(function(field) {
                     var input = $('#' + field);
@@ -549,7 +551,7 @@ SVG;
                 });
             });
             
-            // Converter milímetros para centímetros na exibição (se editando)
+            // Convert millimeters to centimeters on display (if editing)
             <?php if ($is_edit): ?>
             var dimensionFields = ['outer_width', 'outer_depth', 'outer_length', 'thickness'];
             dimensionFields.forEach(function(field) {
