@@ -173,7 +173,11 @@ class EnvioFacil extends WC_Shipping_Method
 		];
         
         if (!$senderPostcode || strlen($senderPostcode) != 8) {
-            Functions::log('EnvioFacil: CEP de origem não configurado ou incorreto', 'debug');
+            Functions::log('[EnvioFácil] CEP de origem não configurado ou incorreto', 'error', [
+                'sender_postcode' => $senderPostcode,
+                'configured_postcode' => $this->get_option('origin_postcode'),
+                'store_postcode' => get_option('woocommerce_store_postcode')
+            ]);
             return [];
         }
 
@@ -196,22 +200,60 @@ class EnvioFacil extends WC_Shipping_Method
 		]);
         
         if (is_wp_error($ret)) {
+            $error_message = $ret->get_error_message();
+            Functions::log('[EnvioFácil] Erro na requisição para API boxing', 'error', [
+                'error' => $error_message,
+                'request_data' => $params,
+                'url' => $url
+            ]);
             return [];
         }
 
 		$body = wp_remote_retrieve_body($ret);
 		$decoded = json_decode($body, true);
 		if (!is_array($decoded)) {
-			Functions::log('EnvioFacil: resposta inválida boxing: '.$body, 'debug');
+			Functions::log('[EnvioFácil] Resposta inválida da API boxing', 'error', [
+				'response_body' => $body,
+				'request_data' => $params,
+				'http_code' => wp_remote_retrieve_response_code($ret)
+			]);
 			return [];
 		}
 
 		if (isset($decoded['error_messages'])) {
 			$errors = $decoded['error_messages'];
 			$codes = array_map(static function($e){return $e['code'] ?? '';}, $errors);
-			Functions::log('EnvioFacil: erros boxing', 'debug', ['errors' => $errors]);
+			
+			// Log detailed errors for debugging
+			Functions::log('[EnvioFácil] Erro na API de boxing', 'error', [
+				'errors' => $errors,
+				'codes' => $codes,
+				'request_data' => $params,
+				'response_body' => $body
+			]);
+			
+			// Log user-friendly messages for store owners
+			foreach ($errors as $error) {
+				$errorMsg = $error['message'] ?? 'Erro desconhecido';
+				$errorCode = $error['code'] ?? 'UNKNOWN';
+				Functions::log("[EnvioFácil] [$errorCode] $errorMsg", 'error');
+			}
+			
 			// Optional handling for specific error codes
 			if (in_array('NO_BOXES_AVAILABLE', $codes, true)) {
+				Functions::log('[EnvioFácil] Nenhuma caixa disponível para os produtos selecionados', 'error');
+				return [];
+			}
+			if (in_array('INVALID_BOX_DIMENSIONS', $codes, true)) {
+				Functions::log('[EnvioFácil] Dimensões de caixa inválidas ou não aceitas pela transportadora', 'error');
+				return [];
+			}
+			if (in_array('INVALID_ITEM_DIMENSIONS', $codes, true)) {
+				Functions::log('[EnvioFácil] Dimensões de produto inválidas ou incompatíveis com caixas disponíveis', 'error');
+				return [];
+			}
+			if (in_array('INVALID_POSTCODE', $codes, true)) {
+				Functions::log('[EnvioFácil] CEP de origem ou destino inválido', 'error');
 				return [];
 			}
 			return []; // fallback genérico
@@ -243,8 +285,20 @@ class EnvioFacil extends WC_Shipping_Method
 		}
 
 		if (empty($aggregated)) {
+			Functions::log('[EnvioFácil] Nenhuma opção de frete disponível após processamento dos dados da API', 'warning', [
+				'boxes_count' => $boxCount,
+				'boxes_references' => $boxReferences,
+				'decoded_response' => $decoded
+			]);
 			return [];
 		}
+
+		// Log successful calculation
+		Functions::log('[EnvioFácil] Cálculo de frete realizado com sucesso', 'info', [
+			'shipping_options' => count($aggregated),
+			'boxes_used' => $boxCount,
+			'boxes_references' => $boxReferences
+		]);
 
 		$addDays = (int) $this->get_option('add_days', 0);
 		$adjustment = $this->get_option('adjustment_fee', 0);

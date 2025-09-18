@@ -256,7 +256,17 @@ class BoxListTable extends WP_List_Table
      */
     protected function column_created_at($item): string
     {
-        return date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($item->created_at));
+        // Check if created_at property exists and is not null/empty
+        if (!isset($item->created_at) || empty($item->created_at)) {
+            return __('N/A', 'pagbank-connect');
+        }
+        
+        $timestamp = strtotime($item->created_at);
+        if ($timestamp === false) {
+            return __('Data inválida', 'pagbank-connect');
+        }
+        
+        return date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $timestamp);
     }
     
     /**
