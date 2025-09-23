@@ -159,3 +159,115 @@ li.payment_method_rm-pagbank label img {
     max-height: 24px;
 }
 
+/* Fix for checkout page editor - prevent input overflow breaking layout */
+#wc-rm-pagbank-cc-form .form-row {
+    box-sizing: border-box;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+#wc-rm-pagbank-cc-form .form-row input,
+#wc-rm-pagbank-cc-form .form-row select {
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
+}
+
+#wc-rm-pagbank-cc-form .form-row-first,
+#wc-rm-pagbank-cc-form .form-row-last {
+    width: 48%;
+    float: left;
+}
+
+#wc-rm-pagbank-cc-form .form-row-last {
+    float: right;
+}
+
+#wc-rm-pagbank-cc-form .form-row-wide,
+#wc-rm-pagbank-cc-form .form-row-full {
+    width: 100%;
+    clear: both;
+}
+
+/* Installment options fieldset */
+#rm-pagbank-installments-token {
+    box-sizing: border-box;
+    max-width: 100%;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+#rm-pagbank-installments-token .form-row {
+    box-sizing: border-box;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+#rm-pagbank-installments-token .form-row input,
+#rm-pagbank-installments-token .form-row select {
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Prevent layout break in Customizer/page editors */
+.customize-control #wc-rm-pagbank-cc-form,
+.wp-block-editor #wc-rm-pagbank-cc-form,
+[data-customize-setting] #wc-rm-pagbank-cc-form,
+.customize-partial-edit-shortcut-button + #wc-rm-pagbank-cc-form,
+.customize-control-nav_menu #wc-rm-pagbank-cc-form,
+.customize-control #rm-pagbank-installments-token,
+.wp-block-editor #rm-pagbank-installments-token,
+[data-customize-setting] #rm-pagbank-installments-token,
+.customize-partial-edit-shortcut-button + #rm-pagbank-installments-token {
+    overflow: hidden;
+    word-wrap: break-word;
+    min-height: auto !important;
+}
+
+.customize-control #wc-rm-pagbank-cc-form .form-row,
+.wp-block-editor #wc-rm-pagbank-cc-form .form-row,
+[data-customize-setting] #wc-rm-pagbank-cc-form .form-row,
+.customize-partial-edit-shortcut-button + #wc-rm-pagbank-cc-form .form-row,
+.customize-control-nav_menu #wc-rm-pagbank-cc-form .form-row,
+.customize-control #rm-pagbank-installments-token .form-row,
+.wp-block-editor #rm-pagbank-installments-token .form-row,
+[data-customize-setting] #rm-pagbank-installments-token .form-row,
+.customize-partial-edit-shortcut-button + #rm-pagbank-installments-token .form-row {
+    float: none;
+    width: 100% !important;
+    margin-bottom: 1em;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Additional fixes for Customizer editing mode */
+.customize-partial-edit-shortcuts-shown #wc-rm-pagbank-cc-form,
+.customize-partial-edit-shortcuts-shown #wc-rm-pagbank-cc-form .form-row,
+.customize-partial-edit-shortcuts-shown #wc-rm-pagbank-cc-form input,
+.customize-partial-edit-shortcuts-shown #wc-rm-pagbank-cc-form select,
+.customize-partial-edit-shortcuts-shown #rm-pagbank-installments-token,
+.customize-partial-edit-shortcuts-shown #rm-pagbank-installments-token .form-row,
+.customize-partial-edit-shortcuts-shown #rm-pagbank-installments-token input,
+.customize-partial-edit-shortcuts-shown #rm-pagbank-installments-token select {
+    position: relative;
+    overflow: hidden;
+    word-wrap: break-word;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Fix specific for when user is editing checkout page */
+body.customize-partial-edit-shortcuts-shown li.payment_method_rm-pagbank,
+body.customize-partial-edit-shortcuts-shown .payment_method_rm-pagbank {
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+body.customize-partial-edit-shortcuts-shown li.payment_method_rm-pagbank .payment_box,
+body.customize-partial-edit-shortcuts-shown .payment_method_rm-pagbank .payment_box {
+    overflow: hidden;
+    max-width: 100%;
+}
+
