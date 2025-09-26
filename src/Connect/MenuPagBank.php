@@ -80,8 +80,8 @@ SVG;
         
         add_submenu_page(
             'rm-pagbank',
-            __('Caixas EnvioFácil', 'pagbank-connect'),
-            __('Caixas EnvioFácil', 'pagbank-connect'),
+            __('Embalagens', 'pagbank-connect'),
+            __('Embalagens', 'pagbank-connect'),
             'manage_woocommerce',
             'rm-pagbank-boxes',
             [MenuPagBank::class, 'renderPagbankBoxesListPage']
@@ -297,7 +297,7 @@ SVG;
         $boxesListTable->prepare_items();
         
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html(__('Caixas EnvioFácil', 'pagbank-connect')) . '</h1>';
+        echo '<h1>' . esc_html(__('Embalagens Envio Fácil', 'pagbank-connect')) . '</h1>';
         
         // Button to add a new box
         echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes-new') . '" class="page-title-action">';
@@ -444,7 +444,7 @@ SVG;
                             <label for="outer_width"><?php _e('Largura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_width" name="outer_width" value="<?php echo $is_edit ? esc_attr($box->outer_width) : ''; ?>" class="small-text" min="10" max="100" step="0.1" required />
+                            <input type="number" id="outer_width" name="outer_width" value="<?php echo $is_edit ? esc_attr($box->outer_width/10) : ''; ?>" class="small-text" min="10" max="100" step="0.1" required />
                             <span class="description">cm (mín: 10cm, máx: 100cm)</span>
                         </td>
                     </tr>
@@ -454,7 +454,7 @@ SVG;
                             <label for="outer_depth"><?php _e('Altura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_depth" name="outer_depth" value="<?php echo $is_edit ? esc_attr($box->outer_depth) : ''; ?>" class="small-text" min="1" max="100" step="0.1" required />
+                            <input type="number" id="outer_depth" name="outer_depth" value="<?php echo $is_edit ? esc_attr($box->outer_depth/10) : ''; ?>" class="small-text" min="1" max="100" step="0.1" required />
                             <span class="description">cm (mín: 1cm, máx: 100cm)</span>
                         </td>
                     </tr>
@@ -464,7 +464,7 @@ SVG;
                             <label for="outer_length"><?php _e('Comprimento Externo', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_length" name="outer_length" value="<?php echo $is_edit ? esc_attr($box->outer_length) : ''; ?>" class="small-text" min="15" max="100" step="0.1" required />
+                            <input type="number" id="outer_length" name="outer_length" value="<?php echo $is_edit ? esc_attr($box->outer_length/10) : ''; ?>" class="small-text" min="15" max="100" step="0.1" required />
                             <span class="description">cm (mín: 15cm, máx: 100cm)</span>
                         </td>
                     </tr>
@@ -474,7 +474,7 @@ SVG;
                             <label for="thickness"><?php _e('Espessura', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="thickness" name="thickness" value="<?php echo $is_edit ? esc_attr($box->thickness) : '0.2'; ?>" class="small-text" min="0.1" step="0.1" required />
+                            <input type="number" id="thickness" name="thickness" value="<?php echo $is_edit ? esc_attr($box->thickness/10) : '0.2'; ?>" class="small-text" min="0.1" step="0.1" required />
                             <span class="description">cm</span>
                             <p class="description"><?php _e('As dimensões internas serão calculadas automaticamente', 'pagbank-connect'); ?></p>
                         </td>
@@ -533,34 +533,14 @@ SVG;
             
             $('#max_weight, #empty_weight').on('input change', validateWeights);
 
-            // Convert centimeters to millimeters before submission
+            // Submissão normal; conversão cm->mm agora realizada no backend (Box::sanitize_data)
             $('form').on('submit', function(e) {
                 if (!validateWeights()) {
                     e.preventDefault();
                     alert('<?php _e('Por favor, corrija os erros no formulário antes de continuar.', 'pagbank-connect'); ?>');
                     return false;
                 }
-                
-                // Convert cm to mm
-                var dimensionFields = ['outer_width', 'outer_depth', 'outer_length', 'thickness'];
-                dimensionFields.forEach(function(field) {
-                    var input = $('#' + field);
-                    var cmValue = parseFloat(input.val()) || 0;
-                    var mmValue = cmValue * 10;
-                    input.val(mmValue);
-                });
             });
-            
-            // Convert millimeters to centimeters on display (if editing)
-            <?php if ($is_edit): ?>
-            var dimensionFields = ['outer_width', 'outer_depth', 'outer_length', 'thickness'];
-            dimensionFields.forEach(function(field) {
-                var input = $('#' + field);
-                var mmValue = parseFloat(input.val()) || 0;
-                var cmValue = mmValue / 10;
-                input.val(cmValue);
-            });
-            <?php endif; ?>
         });
         </script>
         <?php

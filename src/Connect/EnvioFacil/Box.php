@@ -319,7 +319,8 @@ class Box
         
         foreach ($dimension_fields as $field) {
             if (isset($data[$field])) {
-                $sanitized[$field] = (float) $data[$field];
+                $value = (float) $data[$field];
+                $sanitized[$field] = $value * 10;
             }
         }
         

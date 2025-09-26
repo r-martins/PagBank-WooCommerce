@@ -3,6 +3,7 @@ namespace RM_PagBank;
 
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Api;
 use WC_Admin_Settings;
 use WC_Product;
 use WC_Shipping_Method;
@@ -163,7 +164,13 @@ class EnvioFacil extends WC_Shipping_Method
 			   }
 		   }
 
-		   
+	   
+	   if (empty($boxesPayload)) {
+		   Functions::log('[EnvioFácil] Nenhuma embalagem ativa cadastrada – requisição boxing ignorada', 'debug', [
+			   'itens' => count($items),
+		   ]);
+		   return [];
+	   }
 
 		$params = [
 			'sender' => $senderPostcode,
@@ -181,41 +188,13 @@ class EnvioFacil extends WC_Shipping_Method
             return [];
         }
 
-		$url = 'https://ws.pbintegracoes.com/pspro/v7/ef/boxing';
-
-		$headers = [
-			'Authorization' => 'Bearer ' . Params::getConfig('connect_key'),
-			'Content-Type'  => 'application/json',
-			'Platform' => 'WooCommerce',
-			'Extra-Version' => WC()->version,
-			'Platform-Version' => get_bloginfo('version'),
-			'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
-			'Referer' => get_site_url(),
-		];
-
-		$ret = wp_remote_post($url, [
-			'headers' => $headers,
-			'body' => wp_json_encode($params),
-            'timeout' => 60,
-		]);
-        
-        if (is_wp_error($ret)) {
-            $error_message = $ret->get_error_message();
-            Functions::log('[EnvioFácil] Erro na requisição para API boxing', 'error', [
-                'error' => $error_message,
-                'request_data' => $params,
-                'url' => $url
-            ]);
-            return [];
-        }
-
-		$body = wp_remote_retrieve_body($ret);
-		$decoded = json_decode($body, true);
-		if (!is_array($decoded)) {
-			Functions::log('[EnvioFácil] Resposta inválida da API boxing', 'error', [
-				'response_body' => $body,
+		try {
+			$api = new Api();
+			$decoded = $api->postEf('boxing', $params);
+		} catch (\Exception $e) {
+			Functions::log('[EnvioFácil] Erro na requisição para API boxing', 'error', [
+				'message' => $e->getMessage(),
 				'request_data' => $params,
-				'http_code' => wp_remote_retrieve_response_code($ret)
 			]);
 			return [];
 		}
@@ -229,7 +208,7 @@ class EnvioFacil extends WC_Shipping_Method
 				'errors' => $errors,
 				'codes' => $codes,
 				'request_data' => $params,
-				'response_body' => $body
+				'decoded_response' => $decoded,
 			]);
 			
 			// Log user-friendly messages for store owners
