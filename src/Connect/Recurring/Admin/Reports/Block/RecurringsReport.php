@@ -354,14 +354,41 @@ class RecurringsReport extends WC_Admin_Report
                                 </td>
                                 <td>
                                     <?php
+                                    // Try names from query first
                                     $customer_name = trim(($row->billing_first_name ?? '') . ' ' . ($row->billing_last_name ?? ''));
-                                    if ($customer_name) {
-                                        echo esc_html($customer_name);
-                                        if ($row->customer_email) {
-                                            echo '<br><small>' . esc_html($row->customer_email) . '</small>';
+                                    $customer_email = $row->customer_email ?? '';
+
+                                    // Fallback: resolve from WooCommerce order if missing
+                                    if (($customer_name === '' && $customer_email === '') || ($customer_name === '')) {
+                                        $order_id = isset($row->initial_order_id) ? intval($row->initial_order_id) : 0;
+                                        if ($order_id > 0) {
+                                            $order = function_exists('wc_get_order') ? wc_get_order($order_id) : null;
+                                            if ($order) {
+                                                $first_name = method_exists($order, 'get_billing_first_name') ? (string) $order->get_billing_first_name() : '';
+                                                $last_name  = method_exists($order, 'get_billing_last_name') ? (string) $order->get_billing_last_name() : '';
+                                                $email      = method_exists($order, 'get_billing_email') ? (string) $order->get_billing_email() : '';
+
+                                                if ($customer_name === '') {
+                                                    $resolved_name = trim($first_name . ' ' . $last_name);
+                                                    if ($resolved_name !== '') {
+                                                        $customer_name = $resolved_name;
+                                                    }
+                                                }
+
+                                                if ($customer_email === '' && $email !== '') {
+                                                    $customer_email = $email;
+                                                }
+                                            }
                                         }
-                                    } elseif ($row->customer_email) {
-                                        echo esc_html($row->customer_email);
+                                    }
+
+                                    if ($customer_name !== '') {
+                                        echo esc_html($customer_name);
+                                        if ($customer_email !== '') {
+                                            echo '<br><small>' . esc_html($customer_email) . '</small>';
+                                        }
+                                    } elseif ($customer_email !== '') {
+                                        echo esc_html($customer_email);
                                     } else {
                                         echo esc_html('Cliente não identificado');
                                     }
