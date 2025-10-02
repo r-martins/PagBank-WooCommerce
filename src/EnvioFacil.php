@@ -166,10 +166,14 @@ class EnvioFacil extends WC_Shipping_Method
 
 	   
 	   if (empty($boxesPayload)) {
-		   Functions::log('[EnvioFácil] Nenhuma embalagem ativa cadastrada – requisição boxing ignorada', 'debug', [
-			   'itens' => count($items),
-		   ]);
-		   return [];
+		   $defaultBox = $this->getDefaultBoxForCalculation();
+		   if ($defaultBox) {
+			   $boxesPayload[] = $defaultBox;
+			   Functions::log('[EnvioFácil] Usando caixa padrão das configurações para cálculo', 'info', [
+				   'default_box' => $defaultBox,
+				   'itens' => count($items),
+			   ]);
+		   }
 	   }
 
 		$params = [
@@ -333,12 +337,22 @@ class EnvioFacil extends WC_Shipping_Method
 
     public function init_form_fields()
     {
+        $defaultBoxData = $this->getDefaultBoxData();
         $this->form_fields = [
             'enabled'         => [
                 'title'   => __('Habilitar', 'pagbank-connect'),
                 'type'    => 'checkbox',
                 'label'   => __('Habilitar', 'pagbank-connect'),
                 'default' => 'no',
+            ],
+            'boxes_info' => [
+                'title' => __('Embalagens', 'pagbank-connect'),
+                'type' => 'title',
+                'description' => sprintf(
+                    __('📦 <a href="%s" target="_blank">Gerenciar embalagens do Envio Fácil</a> - Configure as caixas/embalagens disponíveis para cálculo de frete.', 'pagbank-connect'),
+                    admin_url('admin.php?page=rm-pagbank-boxes')
+                ),
+                'desc_tip' => false,
             ],
             'origin_postcode' => [
                 'title'       => __('CEP de Origem', 'pagbank-connect'),
@@ -368,9 +382,175 @@ class EnvioFacil extends WC_Shipping_Method
                 'description' => __('dias à estimativa do frete.', 'pagbank-connect'),
                 'desc_tip'    => false,
             ],
+            'default_box_section' => [
+                'title' => __('Caixa Padrão', 'pagbank-connect'),
+                'type' => 'title',
+                'description' => __('Configure uma caixa padrão para cálculo de frete. Deixe em branco se já possui caixas cadastradas.', 'pagbank-connect'),
+            ],
+            'default_box_reference' => [
+                'title' => __('Referência da Caixa', 'pagbank-connect'),
+                'type' => 'text',
+                'description' => __('Nome identificador da caixa (ex: CAIXA_PADRAO)', 'pagbank-connect'),
+                'default' => $defaultBoxData['reference'],
+                'desc_tip' => true,
+            ],
+            'default_box_width' => [
+                'title' => __('Largura (cm)', 'pagbank-connect'),
+                'type' => 'number',
+                'description' => __('Largura externa da caixa em centímetros', 'pagbank-connect'),
+                'default' => $defaultBoxData['width'],
+                'custom_attributes' => [
+                    'min' => '10',
+                    'max' => '100',
+                    'step' => '0.1'
+                ],
+                'desc_tip' => true,
+            ],
+            'default_box_height' => [
+                'title' => __('Altura (cm)', 'pagbank-connect'),
+                'type' => 'number',
+                'description' => __('Altura externa da caixa em centímetros', 'pagbank-connect'),
+                'default' => $defaultBoxData['height'],
+                'custom_attributes' => [
+                    'min' => '1',
+                    'max' => '100',
+                    'step' => '0.1'
+                ],
+                'desc_tip' => true,
+            ],
+            'default_box_length' => [
+                'title' => __('Comprimento (cm)', 'pagbank-connect'),
+                'type' => 'number',
+                'description' => __('Comprimento externo da caixa em centímetros', 'pagbank-connect'),
+                'default' => $defaultBoxData['length'],
+                'custom_attributes' => [
+                    'min' => '15',
+                    'max' => '100',
+                    'step' => '0.1'
+                ],
+                'desc_tip' => true,
+            ],
+            'default_box_thickness' => [
+                'title' => __('Espessura (cm)', 'pagbank-connect'),
+                'type' => 'number',
+                'description' => __('Espessura da parede da caixa em centímetros', 'pagbank-connect'),
+                'default' => $defaultBoxData['thickness'],
+                'custom_attributes' => [
+                    'min' => '0.1',
+                    'step' => '0.1'
+                ],
+                'desc_tip' => true,
+            ],
+            'default_box_max_weight' => [
+                'title' => __('Peso Máximo (g)', 'pagbank-connect'),
+                'type' => 'number',
+                'description' => __('Peso máximo suportado pela caixa em gramas', 'pagbank-connect'),
+                'default' => $defaultBoxData['max_weight'],
+                'custom_attributes' => [
+                    'min' => '300',
+                    'max' => '10000',
+                    'step' => '1'
+                ],
+                'desc_tip' => true,
+            ],
+            'default_box_empty_weight' => [
+                'title' => __('Peso Vazio (g)', 'pagbank-connect'),
+                'type' => 'number',
+                'description' => __('Peso da caixa vazia em gramas', 'pagbank-connect'),
+                'default' => $defaultBoxData['empty_weight'],
+                'custom_attributes' => [
+                    'min' => '1',
+                    'max' => '9999',
+                    'step' => '1'
+                ],
+                'desc_tip' => true,
+            ],
         ];
 
     }
+
+	/**
+	 * Get default box data for calculation if configured
+	 *
+	 * @return array|null
+	 */
+	private function getDefaultBoxForCalculation(): ?array
+	{
+		$reference = $this->get_option('default_box_reference');
+		$width = $this->get_option('default_box_width');
+		$height = $this->get_option('default_box_height');
+		$length = $this->get_option('default_box_length');
+		$thickness = $this->get_option('default_box_thickness');
+		$maxWeight = $this->get_option('default_box_max_weight');
+		$emptyWeight = $this->get_option('default_box_empty_weight');
+
+		// Se algum campo obrigatório estiver vazio, retornar null
+		if (empty($reference) || empty($width) || empty($height) || empty($length) || empty($thickness) || empty($maxWeight) || empty($emptyWeight)) {
+			return null;
+		}
+
+		// Converter valores para mm/g conforme esperado pela API
+		$widthMm = floatval($width) * 10;   // cm para mm
+		$heightMm = floatval($height) * 10; // cm para mm
+		$lengthMm = floatval($length) * 10; // cm para mm
+		$thicknessMm = floatval($thickness) * 10; // cm para mm
+
+		// Calcular dimensões internas subtraindo a espessura das paredes
+		$innerWidthMm = max(1, $widthMm - (2 * $thicknessMm));
+		$innerLengthMm = max(1, $lengthMm - (2 * $thicknessMm));
+		$innerHeightMm = max(1, $heightMm - $thicknessMm); // apenas uma espessura para altura
+
+		return [
+			'reference'   => $reference,
+			'outerWidth'  => (int) $widthMm,
+			'outerLength' => (int) $lengthMm,
+			'outerDepth'  => (int) $heightMm,
+			'emptyWeight' => (int) $emptyWeight,
+			'innerWidth'  => (int) $innerWidthMm,
+			'innerLength' => (int) $innerLengthMm,
+			'innerDepth'  => (int) $innerHeightMm,
+			'maxWeight'   => (int) $maxWeight,
+		];
+	}
+
+	/**
+	 * Get default box data for form fields
+	 *
+	 * @return array
+	 */
+	private function getDefaultBoxData(): array
+	{
+		if (!class_exists('\\RM_PagBank\\Connect\\EnvioFacil\\Box')) {
+			return [];
+		}
+
+		$boxManager = new \RM_PagBank\Connect\EnvioFacil\Box();
+		$boxes = $boxManager->get_all(['is_available' => null, 'limit' => 100]);
+		foreach ($boxes as $box) {
+			if ($box->reference === 'CAIXA_PADRAO_EF' || strpos($box->reference, 'PADRAO') !== false) {
+				return [
+					'reference' => $box->reference,
+					'width' => $box->outer_width / 10,    // converter mm para cm
+					'height' => $box->outer_depth / 10,   // converter mm para cm
+					'length' => $box->outer_length / 10,  // converter mm para cm
+					'thickness' => $box->thickness / 10,  // converter mm para cm
+					'max_weight' => $box->max_weight,
+					'empty_weight' => $box->empty_weight,
+				];
+			}
+		}
+
+		// Valores padrão se não encontrar caixa existente
+		return [
+			'reference' => 'CAIXA_PADRAO_EF',
+			'width' => '20',
+			'height' => '15',
+			'length' => '30',
+			'thickness' => '0.5',
+			'max_weight' => '1000',
+			'empty_weight' => '100',
+		];
+	}
 
 	/**
 	 * Get base postcode.
@@ -450,9 +630,7 @@ class EnvioFacil extends WC_Shipping_Method
 		}
 
 		return $value;
-	}
-
-    public function validate_adjustment_fee_field($key, $value) {
+	}    public function validate_adjustment_fee_field($key, $value) {
         return Functions::validateDiscountValue($value, true);
     }
     
@@ -461,6 +639,90 @@ class EnvioFacil extends WC_Shipping_Method
             return '';
         }
         return absint($value);
+    }
+
+    /**
+     * Process the default box settings and create/update the box
+     */
+    public function process_admin_options() {
+        $result = parent::process_admin_options();
+        
+        // Processar caixa padrão se os campos estiverem preenchidos
+        $this->processDefaultBox();
+        
+        return $result;
+    }
+
+    /**
+     * Process default box creation/update
+     */
+    private function processDefaultBox(): void {
+        if (!class_exists('\\RM_PagBank\\Connect\\EnvioFacil\\Box')) {
+            return;
+        }
+
+        $reference = $this->get_option('default_box_reference');
+        $width = $this->get_option('default_box_width');
+        $height = $this->get_option('default_box_height');
+        $length = $this->get_option('default_box_length');
+        $thickness = $this->get_option('default_box_thickness');
+        $maxWeight = $this->get_option('default_box_max_weight');
+        $emptyWeight = $this->get_option('default_box_empty_weight');
+
+        // Se algum campo obrigatório estiver vazio, não processar
+        if (empty($reference) || empty($width) || empty($height) || empty($length) || empty($thickness) || empty($maxWeight) || empty($emptyWeight)) {
+            return;
+        }
+
+        $boxManager = new \RM_PagBank\Connect\EnvioFacil\Box();
+        
+        // Verificar se já existe uma caixa com essa referência
+        $existingBoxes = $boxManager->get_all(['is_available' => null, 'limit' => 100]);
+        $existingBox = null;
+        foreach ($existingBoxes as $box) {
+            if ($box->reference === $reference) {
+                $existingBox = $box;
+                break;
+            }
+        }
+
+        $boxData = [
+            'reference' => $reference,
+            'is_available' => 1,
+            'outer_width' => floatval($width),
+            'outer_depth' => floatval($height),
+            'outer_length' => floatval($length),
+            'thickness' => floatval($thickness),
+            'max_weight' => intval($maxWeight),
+            'empty_weight' => intval($emptyWeight),
+        ];
+
+        if ($existingBox) {
+            $result = $boxManager->update($existingBox->box_id, $boxData);
+            if (is_wp_error($result)) {
+                WC_Admin_Settings::add_error(
+                    sprintf(__('Erro ao atualizar caixa %s: %s', 'pagbank-connect'), $reference, $result->get_error_message())
+                );
+            } else {
+                WC_Admin_Settings::add_message(
+                    sprintf(__('Caixa %s atualizada com sucesso!', 'pagbank-connect'), $reference)
+                );
+            }
+        } else {
+            $result = $boxManager->create($boxData);
+            if (is_wp_error($result)) {
+                WC_Admin_Settings::add_error(
+                    sprintf(__('Erro ao criar caixa %s: %s', 'pagbank-connect'), $reference, $result->get_error_message())
+                );
+            } else {
+                WC_Admin_Settings::add_message(
+                    sprintf(__('Caixa %s criada com sucesso! <a href="%s">Gerenciar todas as caixas</a>', 'pagbank-connect'), 
+                        $reference, 
+                        admin_url('admin.php?page=rm-pagbank-boxes')
+                    )
+                );
+            }
+        }
     }
 
 	public function init_settings()
