@@ -166,14 +166,10 @@ class EnvioFacil extends WC_Shipping_Method
 
 	   
 	   if (empty($boxesPayload)) {
-		   $defaultBox = $this->getDefaultBoxForCalculation();
-		   if ($defaultBox) {
-			   $boxesPayload[] = $defaultBox;
-			   Functions::log('[EnvioFácil] Usando caixa padrão das configurações para cálculo', 'info', [
-				   'default_box' => $defaultBox,
-				   'itens' => count($items),
-			   ]);
-		   }
+		   Functions::log('[EnvioFácil] Nenhuma embalagem ativa cadastrada – usando API antiga (fallback)', 'info', [
+			   'itens' => count($items),
+		   ]);
+		   return $this->calculateShippingLegacy($package);
 	   }
 
 		$params = [
@@ -319,6 +315,194 @@ class EnvioFacil extends WC_Shipping_Method
 	}
 
 	/**
+	 * Calculate shipping using legacy API (fallback when no boxes are configured)
+	 *
+	 * @param array $package Package array.
+	 * @return array
+	 */
+	private function calculateShippingLegacy($package = array()): array
+	{
+		$destinationPostcode = $package['destination']['postcode'];
+		$destinationPostcode = preg_replace('/[^0-9]/', '', $destinationPostcode);
+
+		$senderPostcode = $this->get_option('origin_postcode', get_option('woocommerce_store_postcode'));
+		$senderPostcode = preg_replace('/[^0-9]/', '', $senderPostcode);
+
+		$productValue = $package['contents_cost'];
+
+		$dimensions = $this->getDimensionsAndWeight($package);
+
+		$isValid = $this->validateDimensions($dimensions);
+
+		if (!$isValid || !$dimensions) {
+			return [];
+		}
+
+		//body
+		$params = [
+			'sender' => $senderPostcode,
+			'receiver' => $destinationPostcode,
+			'length' => $dimensions['length'],
+			'height' => $dimensions['height'],
+			'width' => $dimensions['width'],
+			'weight' => $dimensions['weight'],
+			'value' => max($productValue, 0.1)
+		];
+		
+		if (!$senderPostcode || strlen($senderPostcode) != 8) {
+			Functions::log('[EnvioFácil] CEP de origem não configurado ou incorreto', 'error', [
+				'sender_postcode' => $senderPostcode,
+				'configured_postcode' => $this->get_option('origin_postcode'),
+				'store_postcode' => get_option('woocommerce_store_postcode')
+			]);
+			return [];
+		}
+		
+		$url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
+		
+		Functions::log('[EnvioFácil] Chamada para API legacy', 'info', [
+			'url' => $url,
+			'params' => $params,
+		]);
+		
+		$ret = wp_remote_get($url, [
+			'headers' => [
+				'Authorization' => 'Bearer '.Params::getConfig('connect_key'),
+			],
+			'timeout' => 10,
+			'sslverify' => false,
+			'httpversion' => '1.1'
+		]);
+		
+		if (is_wp_error($ret)) {
+			Functions::log('[EnvioFácil] Erro na requisição para API legacy', 'error', [
+				'error' => $ret->get_error_message(),
+				'params' => $params,
+			]);
+			return [];
+		}
+		
+		$body = wp_remote_retrieve_body($ret);
+		Functions::log('[EnvioFácil] Resposta da API legacy', 'info', [
+			'response_body' => $body,
+		]);
+		
+		$ret = json_decode($body, true);
+		
+		if (isset($ret['error_messages'])) {
+			Functions::log('[EnvioFácil] Erro na API legacy', 'error', [
+				'errors' => $ret['error_messages'],
+				'params' => $params,
+			]);
+			return [];
+		}
+
+		$addDays = (int) $this->get_option('add_days', 0);
+		$adjustment = $this->get_option('adjustment_fee', 0);
+		
+		foreach ($ret as $provider) {
+			if (!isset($provider['provider']) || !isset($provider['providerMethod'])
+				|| !isset($provider['contractValue'])) {
+				continue;
+			}
+
+			$estimateDays = (int) ($provider['estimateDays'] ?? 0) + $addDays;
+			$cost = Functions::applyPriceAdjustment($provider['contractValue'], $adjustment);
+			
+			if ($cost <= 0) {
+				continue;
+			}
+			
+			$label = sprintf('%s - %s - %d %s', 
+				$provider['provider'], 
+				$provider['providerMethod'], 
+				$estimateDays, 
+				_n('dia útil', 'dias úteis', $estimateDays, 'pagbank-connect')
+			);
+
+			$this->add_rate([
+				'id' => 'ef-'.$provider['provider'] . '-' . $provider['providerMethod'],
+				'label' => $label,
+				'cost' => $cost,
+				'calc_tax' => 'per_order',
+				'meta_data' => [
+					__('Transportadora', 'pagbank-connect') => $provider['provider'],
+					__('Método de envio', 'pagbank-connect') => $provider['providerMethod'],
+					__('Entrega estimada (dias)', 'pagbank-connect') => $estimateDays,
+					__('Modo de cálculo', 'pagbank-connect') => __('API Legacy (sem caixas)', 'pagbank-connect'),
+				]
+			]);
+		}
+		
+		return [];
+	}
+
+	/**
+	 * Get a sum of the dimensions and weight of the products in the package
+	 * @param $package
+	 *
+	 * @return array
+	 */
+	private function getDimensionsAndWeight($package): array
+	{
+		$return = [
+			'length' => 0,
+			'height' => 0,
+			'width' => 0,
+			'weight' => 0,
+		];
+
+		foreach ($package['contents'] as $content)
+		{
+			/** @var WC_Product $product */
+			$product = $content['data'];
+
+			$dimensions = $product->get_dimensions(false);
+			//convert each dimension to float
+			$dimensions = array_map('floatval', $dimensions);
+
+			$weight = floatval($product->get_weight());
+			$weight = Functions::convertToKg($weight);
+			$return['length'] += $dimensions['length'] * $content['quantity'];
+			$return['height'] += $dimensions['height'] * $content['quantity'];
+			$return['width'] += $dimensions['width'] * $content['quantity'];
+			$return['weight'] += $weight * $content['quantity'];
+		}
+
+		return $return;
+	}
+
+	/**
+	 * Validates the dimensions and weight of the package and logs errors if any
+	 * @param $dimensions
+	 *
+	 * @return bool
+	 */
+	private function validateDimensions($dimensions): bool
+	{
+		if(($dimensions['length'] < 15 || $dimensions['length'] > 100)){
+			Functions::log('[EnvioFácil] Comprimento inválido: ' . $dimensions['length'] . '. Deve ser entre 15 e 100.', 'debug');
+			return false;
+		}
+		if(($dimensions['height'] < 1 || $dimensions['height'] > 100)){
+			Functions::log('[EnvioFácil] Altura inválida: ' . $dimensions['height'] . '. Deve ser entre 1 e 100.', 'debug');
+			return false;
+		}
+		if(($dimensions['width'] < 10 || $dimensions['width'] > 100)){
+			Functions::log('[EnvioFácil] Largura inválida: ' . $dimensions['width'] . '. Deve ser entre 10 e 100.', 'debug');
+			return false;
+		}
+
+		if ($dimensions['weight'] > 10 || $dimensions['weight'] < 0.3)
+		{
+			Functions::log('[EnvioFácil] Peso inválido: '.$dimensions['weight'].'. Deve ser menor que 10kg e maior que 0.3.', 'debug');
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Adds the method to the list of available payment methods
 	 *
 	 * @param $methods
@@ -337,7 +521,6 @@ class EnvioFacil extends WC_Shipping_Method
 
     public function init_form_fields()
     {
-        $defaultBoxData = $this->getDefaultBoxData();
         $this->form_fields = [
             'enabled'         => [
                 'title'   => __('Habilitar', 'pagbank-connect'),
@@ -382,175 +565,9 @@ class EnvioFacil extends WC_Shipping_Method
                 'description' => __('dias à estimativa do frete.', 'pagbank-connect'),
                 'desc_tip'    => false,
             ],
-            'default_box_section' => [
-                'title' => __('Caixa Padrão', 'pagbank-connect'),
-                'type' => 'title',
-                'description' => __('Configure uma caixa padrão para cálculo de frete. Deixe em branco se já possui caixas cadastradas.', 'pagbank-connect'),
-            ],
-            'default_box_reference' => [
-                'title' => __('Referência da Caixa', 'pagbank-connect'),
-                'type' => 'text',
-                'description' => __('Nome identificador da caixa (ex: CAIXA_PADRAO)', 'pagbank-connect'),
-                'default' => $defaultBoxData['reference'],
-                'desc_tip' => true,
-            ],
-            'default_box_width' => [
-                'title' => __('Largura (cm)', 'pagbank-connect'),
-                'type' => 'number',
-                'description' => __('Largura externa da caixa em centímetros', 'pagbank-connect'),
-                'default' => $defaultBoxData['width'],
-                'custom_attributes' => [
-                    'min' => '10',
-                    'max' => '100',
-                    'step' => '0.1'
-                ],
-                'desc_tip' => true,
-            ],
-            'default_box_height' => [
-                'title' => __('Altura (cm)', 'pagbank-connect'),
-                'type' => 'number',
-                'description' => __('Altura externa da caixa em centímetros', 'pagbank-connect'),
-                'default' => $defaultBoxData['height'],
-                'custom_attributes' => [
-                    'min' => '1',
-                    'max' => '100',
-                    'step' => '0.1'
-                ],
-                'desc_tip' => true,
-            ],
-            'default_box_length' => [
-                'title' => __('Comprimento (cm)', 'pagbank-connect'),
-                'type' => 'number',
-                'description' => __('Comprimento externo da caixa em centímetros', 'pagbank-connect'),
-                'default' => $defaultBoxData['length'],
-                'custom_attributes' => [
-                    'min' => '15',
-                    'max' => '100',
-                    'step' => '0.1'
-                ],
-                'desc_tip' => true,
-            ],
-            'default_box_thickness' => [
-                'title' => __('Espessura (cm)', 'pagbank-connect'),
-                'type' => 'number',
-                'description' => __('Espessura da parede da caixa em centímetros', 'pagbank-connect'),
-                'default' => $defaultBoxData['thickness'],
-                'custom_attributes' => [
-                    'min' => '0.1',
-                    'step' => '0.1'
-                ],
-                'desc_tip' => true,
-            ],
-            'default_box_max_weight' => [
-                'title' => __('Peso Máximo (g)', 'pagbank-connect'),
-                'type' => 'number',
-                'description' => __('Peso máximo suportado pela caixa em gramas', 'pagbank-connect'),
-                'default' => $defaultBoxData['max_weight'],
-                'custom_attributes' => [
-                    'min' => '300',
-                    'max' => '10000',
-                    'step' => '1'
-                ],
-                'desc_tip' => true,
-            ],
-            'default_box_empty_weight' => [
-                'title' => __('Peso Vazio (g)', 'pagbank-connect'),
-                'type' => 'number',
-                'description' => __('Peso da caixa vazia em gramas', 'pagbank-connect'),
-                'default' => $defaultBoxData['empty_weight'],
-                'custom_attributes' => [
-                    'min' => '1',
-                    'max' => '9999',
-                    'step' => '1'
-                ],
-                'desc_tip' => true,
-            ],
         ];
 
     }
-
-	/**
-	 * Get default box data for calculation if configured
-	 *
-	 * @return array|null
-	 */
-	private function getDefaultBoxForCalculation(): ?array
-	{
-		$reference = $this->get_option('default_box_reference');
-		$width = $this->get_option('default_box_width');
-		$height = $this->get_option('default_box_height');
-		$length = $this->get_option('default_box_length');
-		$thickness = $this->get_option('default_box_thickness');
-		$maxWeight = $this->get_option('default_box_max_weight');
-		$emptyWeight = $this->get_option('default_box_empty_weight');
-
-		// Se algum campo obrigatório estiver vazio, retornar null
-		if (empty($reference) || empty($width) || empty($height) || empty($length) || empty($thickness) || empty($maxWeight) || empty($emptyWeight)) {
-			return null;
-		}
-
-		// Converter valores para mm/g conforme esperado pela API
-		$widthMm = floatval($width) * 10;   // cm para mm
-		$heightMm = floatval($height) * 10; // cm para mm
-		$lengthMm = floatval($length) * 10; // cm para mm
-		$thicknessMm = floatval($thickness) * 10; // cm para mm
-
-		// Calcular dimensões internas subtraindo a espessura das paredes
-		$innerWidthMm = max(1, $widthMm - (2 * $thicknessMm));
-		$innerLengthMm = max(1, $lengthMm - (2 * $thicknessMm));
-		$innerHeightMm = max(1, $heightMm - $thicknessMm); // apenas uma espessura para altura
-
-		return [
-			'reference'   => $reference,
-			'outerWidth'  => (int) $widthMm,
-			'outerLength' => (int) $lengthMm,
-			'outerDepth'  => (int) $heightMm,
-			'emptyWeight' => (int) $emptyWeight,
-			'innerWidth'  => (int) $innerWidthMm,
-			'innerLength' => (int) $innerLengthMm,
-			'innerDepth'  => (int) $innerHeightMm,
-			'maxWeight'   => (int) $maxWeight,
-		];
-	}
-
-	/**
-	 * Get default box data for form fields
-	 *
-	 * @return array
-	 */
-	private function getDefaultBoxData(): array
-	{
-		if (!class_exists('\\RM_PagBank\\Connect\\EnvioFacil\\Box')) {
-			return [];
-		}
-
-		$boxManager = new \RM_PagBank\Connect\EnvioFacil\Box();
-		$boxes = $boxManager->get_all(['is_available' => null, 'limit' => 100]);
-		foreach ($boxes as $box) {
-			if ($box->reference === 'CAIXA_PADRAO_EF' || strpos($box->reference, 'PADRAO') !== false) {
-				return [
-					'reference' => $box->reference,
-					'width' => $box->outer_width / 10,    // converter mm para cm
-					'height' => $box->outer_depth / 10,   // converter mm para cm
-					'length' => $box->outer_length / 10,  // converter mm para cm
-					'thickness' => $box->thickness / 10,  // converter mm para cm
-					'max_weight' => $box->max_weight,
-					'empty_weight' => $box->empty_weight,
-				];
-			}
-		}
-
-		// Valores padrão se não encontrar caixa existente
-		return [
-			'reference' => 'CAIXA_PADRAO_EF',
-			'width' => '20',
-			'height' => '15',
-			'length' => '30',
-			'thickness' => '0.5',
-			'max_weight' => '1000',
-			'empty_weight' => '100',
-		];
-	}
 
 	/**
 	 * Get base postcode.
@@ -639,90 +656,6 @@ class EnvioFacil extends WC_Shipping_Method
             return '';
         }
         return absint($value);
-    }
-
-    /**
-     * Process the default box settings and create/update the box
-     */
-    public function process_admin_options() {
-        $result = parent::process_admin_options();
-        
-        // Processar caixa padrão se os campos estiverem preenchidos
-        $this->processDefaultBox();
-        
-        return $result;
-    }
-
-    /**
-     * Process default box creation/update
-     */
-    private function processDefaultBox(): void {
-        if (!class_exists('\\RM_PagBank\\Connect\\EnvioFacil\\Box')) {
-            return;
-        }
-
-        $reference = $this->get_option('default_box_reference');
-        $width = $this->get_option('default_box_width');
-        $height = $this->get_option('default_box_height');
-        $length = $this->get_option('default_box_length');
-        $thickness = $this->get_option('default_box_thickness');
-        $maxWeight = $this->get_option('default_box_max_weight');
-        $emptyWeight = $this->get_option('default_box_empty_weight');
-
-        // Se algum campo obrigatório estiver vazio, não processar
-        if (empty($reference) || empty($width) || empty($height) || empty($length) || empty($thickness) || empty($maxWeight) || empty($emptyWeight)) {
-            return;
-        }
-
-        $boxManager = new \RM_PagBank\Connect\EnvioFacil\Box();
-        
-        // Verificar se já existe uma caixa com essa referência
-        $existingBoxes = $boxManager->get_all(['is_available' => null, 'limit' => 100]);
-        $existingBox = null;
-        foreach ($existingBoxes as $box) {
-            if ($box->reference === $reference) {
-                $existingBox = $box;
-                break;
-            }
-        }
-
-        $boxData = [
-            'reference' => $reference,
-            'is_available' => 1,
-            'outer_width' => floatval($width),
-            'outer_depth' => floatval($height),
-            'outer_length' => floatval($length),
-            'thickness' => floatval($thickness),
-            'max_weight' => intval($maxWeight),
-            'empty_weight' => intval($emptyWeight),
-        ];
-
-        if ($existingBox) {
-            $result = $boxManager->update($existingBox->box_id, $boxData);
-            if (is_wp_error($result)) {
-                WC_Admin_Settings::add_error(
-                    sprintf(__('Erro ao atualizar caixa %s: %s', 'pagbank-connect'), $reference, $result->get_error_message())
-                );
-            } else {
-                WC_Admin_Settings::add_message(
-                    sprintf(__('Caixa %s atualizada com sucesso!', 'pagbank-connect'), $reference)
-                );
-            }
-        } else {
-            $result = $boxManager->create($boxData);
-            if (is_wp_error($result)) {
-                WC_Admin_Settings::add_error(
-                    sprintf(__('Erro ao criar caixa %s: %s', 'pagbank-connect'), $reference, $result->get_error_message())
-                );
-            } else {
-                WC_Admin_Settings::add_message(
-                    sprintf(__('Caixa %s criada com sucesso! <a href="%s">Gerenciar todas as caixas</a>', 'pagbank-connect'), 
-                        $reference, 
-                        admin_url('admin.php?page=rm-pagbank-boxes')
-                    )
-                );
-            }
-        }
     }
 
 	public function init_settings()
