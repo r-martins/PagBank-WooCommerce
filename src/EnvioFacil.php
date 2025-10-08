@@ -190,7 +190,7 @@ class EnvioFacil extends WC_Shipping_Method
 
 		try {
 			$api = new Api();
-			$decoded = $api->postEf('boxing', $params);
+			$decoded = $api->postEf('boxing', $params, 30);
 		} catch (\Exception $e) {
 			Functions::log('[EnvioFácil] Erro na requisição para API boxing', 'error', [
 				'message' => $e->getMessage(),
@@ -524,7 +524,7 @@ class EnvioFacil extends WC_Shipping_Method
                 'title' => __('Embalagens', 'pagbank-connect'),
                 'type' => 'title',
                 'description' => sprintf(
-                    __('📦 <a href="%s" target="_blank">Gerenciar embalagens do Envio Fácil</a> - Configure as caixas/embalagens disponíveis para cálculo de frete.', 'pagbank-connect'),
+                    __('📦 <a href="%s">Gerenciar embalagens do Envio Fácil</a> - Configure as caixas/embalagens disponíveis para cálculo de frete.', 'pagbank-connect'),
                     admin_url('admin.php?page=rm-pagbank-boxes')
                 ),
                 'desc_tip' => false,

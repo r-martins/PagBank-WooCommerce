@@ -213,7 +213,7 @@ class Api
      * @return array
      * @throws Exception
      */
-    public function postEf(string $endpoint, array $params = []): array
+    public function postEf(string $endpoint, array $params = [], int $cacheMin = 0): array
     {
         $isSandbox = $this->is_sandbox ? '?isSandbox=1' : '';
         $url = self::EF_URL . ltrim($endpoint, '/') . $isSandbox;
@@ -227,6 +227,15 @@ class Api
             'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
             'Referer' => get_site_url(),
         ];
+
+        $transientKey = 'cache_' . md5($url . serialize($params) . serialize($headers));
+        if ($cacheMin > 0) {
+            $cached = get_transient($transientKey);
+            if ($cached !== false) {
+                Functions::log('[EnvioFácil][Api] Response from ' . $endpoint . ' (cached): ' . wp_json_encode($cached, JSON_PRETTY_PRINT), 'debug');
+                return $cached;
+            }
+        }
 
         Functions::log('[EnvioFácil][Api] POST ' . $endpoint . ' payload: ' . wp_json_encode($params, JSON_PRETTY_PRINT), 'debug');
 
@@ -265,6 +274,11 @@ class Api
         }
 
         Functions::log('[EnvioFácil][Api] Resposta EF ' . $endpoint . ': ' . wp_json_encode($decoded, JSON_PRETTY_PRINT), 'debug');
+        
+        if ($cacheMin > 0) {
+            set_transient($transientKey, $decoded, $cacheMin * 60);
+        }
+        
         return $decoded;
     }
 
