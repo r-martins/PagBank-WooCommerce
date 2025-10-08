@@ -215,7 +215,7 @@ class CreditCard extends Common
         $card->setHolder($holder);
         $token_id = $this->order->get_meta('_pagbank_card_token_id');
         if($token_id && !empty($token_id) && 'new' !== $token_id){
-            $tokenCc = $this->getCcToken($token_id);
+            $tokenCc = self::getCcToken($token_id);
             $this->order->add_meta_data(
                 'pagbank_card_last4',
                 $tokenCc->get_last4(),
@@ -624,7 +624,7 @@ class CreditCard extends Common
      * @return \WC_Payment_Token|null
      * @throws Exception
      */
-    public function getCcToken($token_id)
+    public static function getCcToken($token_id)
     {
         if ($token_id && $token_id !== 'new') {
             $token = WC_Payment_Tokens::get($token_id);

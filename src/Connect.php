@@ -514,6 +514,36 @@ class Connect
             $wpdb->query($sql);
             update_option('pagbank_db_version', '4.28');
         }
+
+        if (version_compare($stored_version, '4.29', '<')) {
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            
+            $boxesTable = $wpdb->prefix . 'pagbank_ef_boxes';
+            $sql = "CREATE TABLE IF NOT EXISTS $boxesTable
+                    (
+                        box_id int NOT NULL AUTO_INCREMENT,
+                        reference varchar(30) NOT NULL,
+                        is_available tinyint NOT NULL DEFAULT '1',
+                        outer_width varchar(30) NOT NULL,
+                        outer_depth varchar(30) NOT NULL,
+                        outer_length varchar(30) NOT NULL,
+                        thickness varchar(30) NOT NULL DEFAULT 0.20,
+                        inner_length varchar(30) NOT NULL,
+                        inner_width varchar(30) NOT NULL,
+                        inner_depth decimal(30) NOT NULL,
+                        max_weight int NOT NULL,
+                        empty_weight int NOT NULL,
+                        cost float(4,2) DEFAULT '0.00',
+                        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+                        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (box_id),
+                        UNIQUE KEY reference (reference)
+                    )
+                    ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Boxes related to Envio Fácil Shipping';";
+            
+            dbDelta($sql);
+            update_option('pagbank_db_version', '4.29');
+        }
     }
 
     public static function uninstall()

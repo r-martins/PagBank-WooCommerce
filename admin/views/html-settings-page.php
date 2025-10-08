@@ -38,6 +38,7 @@ use RM_PagBank\Connect\Gateway;
         <a href="https://pbintegracoes.com/connect/autorizar/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key', 'pagbank-connect') ?></a>
         <a href="https://pbintegracoes.com/connect/sandbox/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
         <a href="https://ajuda.pbintegracoes.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php esc_html_e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', 'pagbank-connect');?>"><?php esc_html_e('Obter ajuda', 'pagbank-connect') ?></a>
+        <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=shipping&section=rm_enviofacil' ) ?>" class="button button-secondary" title="<?php esc_html_e('Economize no Frete com Envio Fácil', 'pagbank-connect');?>"><?php esc_html_e('📦 Envio Fácil', 'pagbank-connect') ?></a>
     <?php endif; ?>
     <?php echo '<table class="form-table">' . $this->generate_settings_html( $this->get_form_fields(), false ) . '</table>'; // WPCS: XSS ok. ?>
 </fieldset>
