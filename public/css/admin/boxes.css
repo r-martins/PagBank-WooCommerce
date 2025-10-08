@@ -1,0 +1,204 @@
+/**
+ * Style crud boxes admin
+ * 
+ * @package PagBank Connect
+ * @author Ricardo Martins
+ */
+
+/* Estilos para a listagem de caixas */
+.wp-list-table .column-reference {
+    width: 15%;
+}
+
+.wp-list-table .column-dimensions {
+    width: 25%;
+}
+
+.wp-list-table .column-weight {
+    width: 15%;
+}
+
+.wp-list-table .column-cost {
+    width: 10%;
+}
+
+.wp-list-table .column-is_available {
+    width: 10%;
+}
+
+.wp-list-table .column-created_at {
+    width: 15%;
+}
+
+/* Estilos para o formulário de caixa */
+.form-table th {
+    width: 200px;
+}
+
+.form-table h3 {
+    margin: 20px 0 10px 0;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    color: #23282d;
+}
+
+.form-table h3:first-child {
+    margin-top: 0;
+}
+
+/* Estilos para campos numéricos */
+.form-table input[type="number"] {
+    width: 80px;
+}
+
+.form-table .description {
+    font-style: italic;
+    color: #666;
+    margin-left: 5px;
+}
+
+/* Estilos para notificações */
+.notice {
+    margin: 15px 0;
+}
+
+/* Estilos para botões de ação */
+.page-title-action {
+    margin-left: 10px;
+}
+
+/* Estilos para ícones de status */
+.dashicons-yes-alt {
+    color: #46b450 !important;
+}
+
+.dashicons-dismiss {
+    color: #dc3232 !important;
+}
+
+/* Estilos para filtros */
+.alignleft.actions {
+    margin-bottom: 10px;
+}
+
+.alignleft.actions select {
+    margin-right: 10px;
+}
+
+/* Estilos responsivos */
+@media screen and (max-width: 782px) {
+    .wp-list-table .column-dimensions,
+    .wp-list-table .column-weight {
+        display: none;
+    }
+    
+    .form-table th {
+        width: auto;
+    }
+    
+    .form-table input[type="number"] {
+        width: 100%;
+        max-width: 120px;
+    }
+}
+
+/* Estilos para validação de formulário */
+.form-table input:invalid {
+    border-color: #dc3232;
+}
+
+.form-table input:valid {
+    border-color: #46b450;
+}
+
+/* Estilos para campos obrigatórios */
+.required {
+    color: #dc3232;
+}
+
+/* Estilos para seções do formulário */
+.form-table tr[colspan="2"] th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+    padding: 15px 10px;
+}
+
+/* Estilos para tooltips */
+[title] {
+    cursor: help;
+}
+
+/* Estilos para mensagens de erro */
+.notice-error p {
+    color: #dc3232;
+    font-weight: bold;
+}
+
+/* Estilos para mensagens de sucesso */
+.notice-success p {
+    color: #46b450;
+    font-weight: bold;
+}
+
+/* Estilos para a tabela de listagem */
+.wp-list-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Estilos para ações em lote */
+.bulk-actions {
+    margin-bottom: 10px;
+}
+
+/* Estilos para paginação */
+.tablenav-pages {
+    margin-top: 10px;
+}
+
+/* Estilos para busca */
+.search-box {
+    margin-bottom: 10px;
+}
+
+/* Estilos para ordenação */
+.wp-list-table .sortable a {
+    text-decoration: none;
+}
+
+.wp-list-table .sortable a:hover {
+    text-decoration: underline;
+}
+
+/* Estilos para checkboxes */
+.wp-list-table .check-column {
+    width: 2.2em;
+}
+
+/* Estilos para links de ação */
+.row-actions {
+    color: #ddd;
+    font-size: 11px;
+    margin-left: 0;
+    padding: 2px 0 0;
+    visibility: hidden;
+}
+
+.wp-list-table tr:hover .row-actions {
+    visibility: visible;
+}
+
+.row-actions span {
+    display: inline;
+}
+
+.row-actions .edit a {
+    color: #0073aa;
+}
+
+.row-actions .delete a {
+    color: #a00;
+}
+
+.row-actions .delete a:hover {
+    color: #dc3232;
+}

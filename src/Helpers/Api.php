@@ -21,6 +21,7 @@ class Api
 {
     // Saiba mais em https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/18183910009869
     const WS_URL = 'https://ws.pbintegracoes.com/pspro/v7/connect/';
+    const EF_URL = 'https://ws.pbintegracoes.com/pspro/v7/ef/';
 
     public string $connect_key;
 
@@ -74,6 +75,49 @@ class Api
             set_transient($transientKey, $decoded_response, $cacheMin * 60);
         }
         
+        return $decoded_response;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getEf(string $endpoint, array $params = [], int $cacheMin = 0): array
+    {
+        $params['isSandbox'] = $this->is_sandbox ? '1': '0';
+        $url = self::EF_URL . $endpoint .'?' .http_build_query($params);
+
+        $header = [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$this->connect_key,
+            'Referer' => get_site_url(),
+        ];
+
+        $transientKey = 'cache_' . md5($url . serialize($header));
+        $cached = get_transient($transientKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
+
+        if (is_wp_error($resp)) {
+            throw new Exception('Erro na requisição: ' . esc_attr($resp->get_error_message()));
+        }
+
+        $response = wp_remote_retrieve_body($resp);
+        if (empty($response)) {
+            throw new Exception('Resposta inválida da API: ""');
+        };
+
+        $decoded_response = json_decode($response, true);
+        if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
+        }
+
+        if ($cacheMin > 0) {
+            set_transient($transientKey, $decoded_response, $cacheMin * 60);
+        }
+
         return $decoded_response;
     }
 
@@ -161,6 +205,81 @@ class Api
             set_transient($transientKey, $decoded_response, $cacheMin * 60);
         }
         return $decoded_response;
+    }
+
+    /**
+     * @param string $endpoint (only suffix after EF_URL, e.g., 'boxing')
+     * @param array $params
+     * @return array
+     * @throws Exception
+     */
+    public function postEf(string $endpoint, array $params = [], int $cacheMin = 0): array
+    {
+        $isSandbox = $this->is_sandbox ? '?isSandbox=1' : '';
+        $url = self::EF_URL . ltrim($endpoint, '/') . $isSandbox;
+
+        $headers = [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $this->connect_key,
+            'Platform' => 'WooCommerce',
+            'Extra-Version' => WC()->version,
+            'Platform-Version' => get_bloginfo('version'),
+            'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
+            'Referer' => get_site_url(),
+        ];
+
+        $transientKey = 'cache_' . md5($url . serialize($params) . serialize($headers));
+        if ($cacheMin > 0) {
+            $cached = get_transient($transientKey);
+            if ($cached !== false) {
+                Functions::log('[EnvioFácil][Api] Response from ' . $endpoint . ' (cached): ' . wp_json_encode($cached, JSON_PRETTY_PRINT), 'debug');
+                return $cached;
+            }
+        }
+
+        Functions::log('[EnvioFácil][Api] POST ' . $endpoint . ' payload: ' . wp_json_encode($params, JSON_PRETTY_PRINT), 'debug');
+
+        $response = wp_remote_post($url, [
+            'headers' => $headers,
+            'body' => wp_json_encode($params),
+            'timeout' => 60,
+        ]);
+
+        if (is_wp_error($response)) {
+            Functions::log('[EnvioFácil][Api] Erro na requisição EF: ' . $response->get_error_message(), 'error', [
+                'endpoint' => $endpoint,
+                'payload' => $params,
+            ]);
+            throw new Exception('Erro na requisição EF: ' . $response->get_error_message());
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $code = wp_remote_retrieve_response_code($response);
+        if ($body === '' || !is_string($body)) {
+            Functions::log('[EnvioFácil][Api] Resposta vazia EF', 'error', [
+                'endpoint' => $endpoint,
+                'http_code' => $code,
+            ]);
+            throw new Exception('Resposta vazia EF: ' . $code);
+        }
+
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            Functions::log('[EnvioFácil][Api] JSON inválido EF', 'error', [
+                'endpoint' => $endpoint,
+                'body' => $body,
+                'http_code' => $code,
+            ]);
+            throw new Exception('JSON inválido EF');
+        }
+
+        Functions::log('[EnvioFácil][Api] Resposta EF ' . $endpoint . ': ' . wp_json_encode($decoded, JSON_PRETTY_PRINT), 'debug');
+        
+        if ($cacheMin > 0) {
+            set_transient($transientKey, $decoded, $cacheMin * 60);
+        }
+        
+        return $decoded;
     }
 
     public function getConnectInfo(): array
