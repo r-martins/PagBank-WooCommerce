@@ -335,6 +335,10 @@ class EnvioFacil extends WC_Shipping_Method
 		$isValid = $this->validateDimensions($dimensions);
 
 		if (!$isValid || !$dimensions) {
+            Functions::log('[EnvioFácil] Dimensões ou peso inválidos para os produtos no carrinho. Veja mais em https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce#dimensoes.', 'error', [
+                'dimensions' => $dimensions,
+                'is_valid' => $isValid
+            ]);
 			return [];
 		}
 
@@ -358,21 +362,8 @@ class EnvioFacil extends WC_Shipping_Method
 			return [];
 		}
 		
-		$url = 'https://ws.ricardomartins.net.br/pspro/v7/ef/quote?' . http_build_query($params);
-		
-		Functions::log('[EnvioFácil] Chamada para API legacy', 'info', [
-			'url' => $url,
-			'params' => $params,
-		]);
-		
-		$ret = wp_remote_get($url, [
-			'headers' => [
-				'Authorization' => 'Bearer '.Params::getConfig('connect_key'),
-			],
-			'timeout' => 10,
-			'sslverify' => false,
-			'httpversion' => '1.1'
-		]);
+		$api = new Api();
+        $ret = $api->getEf('quote', $params, 30);
 		
 		if (is_wp_error($ret)) {
 			Functions::log('[EnvioFácil] Erro na requisição para API legacy', 'error', [
@@ -382,12 +373,6 @@ class EnvioFacil extends WC_Shipping_Method
 			return [];
 		}
 		
-		$body = wp_remote_retrieve_body($ret);
-		Functions::log('[EnvioFácil] Resposta da API legacy', 'info', [
-			'response_body' => $body,
-		]);
-		
-		$ret = json_decode($body, true);
 		
 		if (isset($ret['error_messages'])) {
 			Functions::log('[EnvioFácil] Erro na API legacy', 'error', [
@@ -400,6 +385,13 @@ class EnvioFacil extends WC_Shipping_Method
 		$addDays = (int) $this->get_option('add_days', 0);
 		$adjustment = $this->get_option('adjustment_fee', 0);
 		
+        if (empty($ret) || !is_array($ret)) {
+            Functions::log('[EnvioFácil] Resposta da API legacy vazia ou inválida', 'error', [
+                'response' => $ret,
+            ]);
+            return [];
+        }
+        
 		foreach ($ret as $provider) {
 			if (!isset($provider['provider']) || !isset($provider['providerMethod'])
 				|| !isset($provider['contractValue'])) {

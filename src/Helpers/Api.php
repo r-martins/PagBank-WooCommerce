@@ -79,6 +79,49 @@ class Api
     }
 
     /**
+     * @throws Exception
+     */
+    public function getEf(string $endpoint, array $params = [], int $cacheMin = 0): array
+    {
+        $params['isSandbox'] = $this->is_sandbox ? '1': '0';
+        $url = self::EF_URL . $endpoint .'?' .http_build_query($params);
+
+        $header = [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$this->connect_key,
+            'Referer' => get_site_url(),
+        ];
+
+        $transientKey = 'cache_' . md5($url . serialize($header));
+        $cached = get_transient($transientKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
+
+        if (is_wp_error($resp)) {
+            throw new Exception('Erro na requisição: ' . esc_attr($resp->get_error_message()));
+        }
+
+        $response = wp_remote_retrieve_body($resp);
+        if (empty($response)) {
+            throw new Exception('Resposta inválida da API: ""');
+        };
+
+        $decoded_response = json_decode($response, true);
+        if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
+        }
+
+        if ($cacheMin > 0) {
+            set_transient($transientKey, $decoded_response, $cacheMin * 60);
+        }
+
+        return $decoded_response;
+    }
+
+    /**
      * @param string $endpoint
      * @param array  $params
      * @param int    $cacheMin cache response time for this request in minutes                    
