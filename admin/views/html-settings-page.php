@@ -9,10 +9,35 @@ if (!defined('ABSPATH')) {
  */
 
 use RM_PagBank\Connect\Gateway;
-
 /** @var Gateway $this */
 ?>
 <fieldset name="PagSeguro">
+    <?php 
+    // Exibir mensagens de erro do WC_Admin_Settings
+    // Como o método show_messages() não está funcionando corretamente, 
+    // vamos exibir as mensagens manualmente usando reflexão
+    $reflection = new ReflectionClass('WC_Admin_Settings');
+    $errors_property = $reflection->getProperty('errors');
+    $errors_property->setAccessible(true);
+    $errors = $errors_property->getValue();
+    
+    if (!empty($errors)) {
+        foreach($errors as $error) {
+            echo '<div class="notice notice-error"><p><strong>' . esc_html($error) . '</strong></p></div>';
+        }
+    }
+    
+    // Exibir mensagens de sucesso também
+    $messages_property = $reflection->getProperty('messages');
+    $messages_property->setAccessible(true);
+    $messages = $messages_property->getValue();
+    
+    if (!empty($messages)) {
+        foreach($messages as $message) {
+            echo '<div class="notice notice-success"><p><strong>' . esc_html($message) . '</strong></p></div>';
+        }
+    }
+    ?>
     <div class="pslogo-container">
         <img src="<?php echo esc_url(plugins_url('public/images/pagseguro-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo" alt="PagBank Icon"/>
         <?php

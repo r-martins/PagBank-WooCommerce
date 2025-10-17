@@ -562,7 +562,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 wp_enqueue_script(
                     'pagseguro-connect-creditcard',
                     plugins_url('public/js/creditcard.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                    ['jquery', 'jquery-payment'],
+                    ['jquery', 'jquery-payment', 'jquery-blockui'],
                     WC_PAGSEGURO_CONNECT_VERSION,
                     ['strategy' => 'defer', 'in_footer' => true]
                 );

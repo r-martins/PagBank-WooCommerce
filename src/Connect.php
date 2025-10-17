@@ -864,7 +864,7 @@ class Connect
         }
 
         $order_id = filter_input(INPUT_GET, 'order_id', FILTER_SANITIZE_NUMBER_INT);
-        $pagbank_order_id = filter_input(INPUT_GET, 'pagbank_order_id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $pagbank_order_id = isset($_GET['pagbank_order_id']) ? sanitize_text_field($_GET['pagbank_order_id']) : '';
 
         if (empty($pagbank_order_id) || empty($order_id)) {
             wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
