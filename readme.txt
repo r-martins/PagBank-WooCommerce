@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.45.0
+Stable tag: 4.45.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -210,6 +210,12 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.45.1 =
+* Correção: compatibilidade com PHP 8.1+ substituindo função depreciada de sanitização de caracteres especiais.
+* Correção: em alguns cenários as mensagens de erro de validação da connect key não são exibidas prop
+riamente no admin, nas configs do plugin.
+* Correção: adicionada dependência jquery-blockui para corrigir erro de validação 3DS que impedia finalização de pedido de forma silenciosa em alguns cenários de customização/temas que removiam tal componente.
 
 = 4.45.0 =
 * Envio Fácil ficou mais inteligente. Agora é possível cadastrar as suas embalagens disponíveis, e o sistema calculará automaticamente que embalagens devem ser usadas para cada carrinho, incluindo o uso de múltiplas embalagens para um único pedido.
