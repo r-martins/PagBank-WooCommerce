@@ -379,6 +379,28 @@ class Common
         }
 		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
+		
+		// Save split data if present
+		if (!empty($response['qr_codes'][0]['splits'])) {
+		    $order->add_meta_data('_pagbank_split_data', $response['qr_codes'][0]['splits'], true);
+		    $order->add_meta_data('_pagbank_split_applied', true, true);
+		} elseif (!empty($response['charges'][0]['payment_method']['splits'])) {
+		    $order->add_meta_data('_pagbank_split_data', $response['charges'][0]['payment_method']['splits'], true);
+		    $order->add_meta_data('_pagbank_split_applied', true, true);
+		}
+		
+		// Extract and save split_id from links (for custody release)
+		if (!empty($response['charges'][0]['links'])) {
+		    foreach ($response['charges'][0]['links'] as $link) {
+		        if (isset($link['rel']) && $link['rel'] === 'SPLIT' && !empty($link['href'])) {
+		            // Extract split_id from href (last part of URL)
+		            $split_id = basename(parse_url($link['href'], PHP_URL_PATH));
+		            $order->add_meta_data('_pagbank_split_id', $split_id, true);
+		            Functions::log('Split ID salvo no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
+		            break;
+		        }
+		    }
+		}
 
 		$order->update_status('pending', 'PagBank: Pagamento Pendente');
 

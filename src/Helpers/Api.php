@@ -200,7 +200,7 @@ class Api
             throw new Exception('Resposta inválida da API: ' . esc_attr($response));
         }
 
-        Functions::log('Response from '.$endpoint.': ' . wp_json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
+        Functions::log('Response from '.$endpoint.' (' . $responseCode . '-' . $responseMessage . '): ' . wp_json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
         if ($cacheMin > 0){
             set_transient($transientKey, $decoded_response, $cacheMin * 60);
         }
