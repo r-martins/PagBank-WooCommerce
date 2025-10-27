@@ -559,10 +559,14 @@ class CreditCard extends WC_Payment_Gateway_CC
 
             $api = new Api();
             if ( $this->get_option('enabled') == 'yes') {
+                // Define handles baseados na versão do WooCommerce (novos handles desde 10.3.0)
+                $blockui_handle = wp_script_is('wc-jquery-blockui', 'registered') ? 'wc-jquery-blockui' : 'jquery-blockui';
+                $payment_handle = wp_script_is('wc-jquery-payment', 'registered') ? 'wc-jquery-payment' : 'jquery-payment';
+                
                 wp_enqueue_script(
                     'pagseguro-connect-creditcard',
                     plugins_url('public/js/creditcard.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                    ['jquery', 'jquery-payment', 'jquery-blockui'],
+                    ['jquery', $payment_handle, $blockui_handle],
                     WC_PAGSEGURO_CONNECT_VERSION,
                     ['strategy' => 'defer', 'in_footer' => true]
                 );
