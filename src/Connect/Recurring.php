@@ -23,6 +23,7 @@ use wpdb;
  */
 class Recurring
 {
+    private const OPTION_RECURRING_BASE_URL = 'rm_pagbank_recurring_base_url';
 
     public function init()
     {
@@ -102,6 +103,10 @@ class Recurring
         add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
         add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
         add_action('admin_notices', [$this,'showMessegesTransient'], 10, 2);
+
+        // Admin validation/notice to prevent accidental recurring processing after URL change
+        add_action('admin_init', [$this, 'handleRecurringBaseUrlAdmin']);
+        add_action('admin_notices', [$this, 'maybeShowRecurringBaseUrlNotice']);
     }
 
     public static function showMessegesTransient()
@@ -594,6 +599,17 @@ class Recurring
     {
         global $wpdb;
         $recHelper = new \RM_PagBank\Helpers\Recurring();
+        // Guard: prevent processing if base URL changed (staging/backup clones)
+        $this->ensureStoredBaseUrl();
+        $storedUrl = $this->getStoredBaseUrl();
+        $currentUrl = $this->getCurrentBaseUrl();
+        if ($storedUrl && $currentUrl && $storedUrl !== $currentUrl) {
+            Functions::log('[Recorrência] Processamento pausado: URL base mudou', 'warning', [
+                'stored_url' => $storedUrl,
+                'current_url' => $currentUrl,
+            ]);
+            return; // do not process on mismatched environments
+        }
 
         //Get all recurring orders that are due or past due and active
         $now = gmdate('Y-m-d H:i:s');
@@ -672,6 +688,95 @@ class Recurring
                 $order->save();
             }
         }
+    }
+    /**
+     * Ensure base URL option exists; create it from current if missing.
+     */
+    private function ensureStoredBaseUrl(): void
+    {
+        $stored = get_option(self::OPTION_RECURRING_BASE_URL, '');
+        if (! $stored) {
+            add_option(self::OPTION_RECURRING_BASE_URL, $this->getCurrentBaseUrl());
+        }
+    }
+
+    private function getStoredBaseUrl(): string
+    {
+        return (string) get_option(self::OPTION_RECURRING_BASE_URL, '');
+    }
+
+    private function getCurrentBaseUrl(): string
+    {
+        // Prefer home URL (storefront), fallback to site URL
+        $home = home_url();
+        if ($home) { return rtrim($home, '/'); }
+        $site = site_url();
+        return rtrim($site, '/');
+    }
+
+    /**
+     * Handle admin confirmation to update the allowed base URL when it changes.
+     */
+    public function handleRecurringBaseUrlAdmin(): void
+    {
+        // Always ensure the option exists
+        $this->ensureStoredBaseUrl();
+
+        if (! is_admin()) { return; }
+
+        if (isset($_GET['rm_pagbank_confirm_recurring_url'])) {
+            if (! wp_verify_nonce($_GET['_wpnonce'] ?? '', 'rm_pagbank_confirm_recurring_url')) {
+                return;
+            }
+            $new = $this->getCurrentBaseUrl();
+            update_option(self::OPTION_RECURRING_BASE_URL, $new, false);
+            set_transient('pagbank_recurring_message', sprintf(
+                /* translators: %s: new base url */
+                __('URL base atualizada para %s. O processamento de recorrências foi retomado.', 'pagbank-connect'),
+                esc_url($new)
+            ), 30);
+        }
+    }
+
+    /**
+     * Show admin notice when base URL changed to let user resume processing.
+     */
+    public function maybeShowRecurringBaseUrlNotice(): void
+    {
+        if (! current_user_can('manage_woocommerce')) { return; }
+
+        $stored = $this->getStoredBaseUrl();
+        $current = $this->getCurrentBaseUrl();
+        if (! $stored || ! $current || $stored === $current) { return; }
+
+        $confirmUrl = wp_nonce_url(
+            add_query_arg(['rm_pagbank_confirm_recurring_url' => 1], admin_url()),
+            'rm_pagbank_confirm_recurring_url'
+        );
+
+        $message = sprintf(
+            /* translators: 1: stored url, 2: current url */
+            __('<strong>Atenção:</strong> Detectamos que a URL da loja mudou de %1$s para %2$s. Por segurança, o processamento de recorrências foi pausado automaticamente para evitar cobranças duplicadas. Deseja atualizar a URL e retomar o processamento?', 'pagbank-connect'),
+            '<code>'.esc_html($stored).'</code>',
+            '<code>'.esc_html($current).'</code>'
+        );
+
+        $buttons = '<p style="margin: 0.5em 0 0.5em 0;">
+                        <a href="'.esc_url($confirmUrl).'" class="button button-primary">'.esc_html__('Sim, atualizar e retomar', 'pagbank-connect').'</a>
+                    </p>';
+
+        if (function_exists('wp_admin_notice')) {
+            wp_admin_notice(
+                wp_kses_post($message).$buttons,
+                [
+                    'type' => 'warning',
+                    'dismissible' => false,
+                ]
+            );
+            return;
+        }
+
+        echo '<div class="notice notice-warning is-dismissible"><p>'.wp_kses_post($message).'</p>'.$buttons.'</div>';
     }
 
     /**
