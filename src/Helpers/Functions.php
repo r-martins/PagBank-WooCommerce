@@ -633,4 +633,30 @@ class Functions
         $file_data = get_file_data($file_path, $default_headers);
         return $file_data['Template Version'] ?? null;
     }
+
+    /**
+     * Sanitizes product name by removing HTML tags and special characters
+     * Used when sending product names to PagBank API
+     *
+     * @param string $name Product name
+     * @return string Sanitized product name
+     */
+    public static function sanitizeProductName(string $name): string
+    {
+        // Remove script and style tags completely (including their content)
+        $sanitized = preg_replace('/<script[^>]*>.*?<\/script>/is', ' ', $name);
+        $sanitized = preg_replace('/<style[^>]*>.*?<\/style>/is', ' ', $sanitized);
+        // Replace remaining HTML tags with spaces to preserve word separation
+        $sanitized = preg_replace('/<[^>]+>/', ' ', $sanitized);
+        // Remove HTML entities (like &amp;, &lt;, &quot;, etc.) completely
+        $sanitized = preg_replace('/&[a-zA-Z0-9#]+;/', '', $sanitized);
+        // Remove any remaining HTML entities in numeric format (like &#123;)
+        $sanitized = preg_replace('/&#[0-9]+;/', '', $sanitized);
+        // Remove null bytes and other control characters (except newlines, tabs, carriage returns)
+        $sanitized = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $sanitized);
+        // Trim and normalize whitespace (multiple spaces become single space)
+        $sanitized = trim(preg_replace('/\s+/', ' ', $sanitized));
+        
+        return $sanitized;
+    }
 }

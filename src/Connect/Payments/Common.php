@@ -171,7 +171,7 @@ class Common
         $items = [];
         $itemObj = new Item();
         $itemObj->setReferenceId(1);
-        $itemObj->setName('Compra em ' . get_bloginfo('name') ?? 'PagBank');
+        $itemObj->setName(Functions::sanitizeProductName('Compra em ' . get_bloginfo('name') ?? 'PagBank'));
         $itemObj->setQuantity(1);
         $unitAmount = number_format($amount, 2, '', '');
         $itemObj->setUnitAmount($unitAmount);
@@ -194,7 +194,7 @@ class Common
             $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
-            $itemObj->setName($item['name']);
+            $itemObj->setName(Functions::sanitizeProductName($item['name']));
             $itemObj->setQuantity($item['quantity']);
 
             $amount = $item->get_subtotal('edit') / $item['quantity'];
