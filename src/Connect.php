@@ -208,7 +208,7 @@ class Connect
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'block_checkout' => Functions::isBlockCheckoutInUse(),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
-            'standalone' => Params::getConfig('standalone'),
+            'enable_proxy' => Params::getConfig('enable_proxy', "no"),
             'settings' => [
                 'enabled' => Params::getConfig('enabled'),
                 'cc_enabled' => Params::getCcConfig('enabled'),

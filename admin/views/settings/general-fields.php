@@ -52,6 +52,18 @@ return array(
             )),
         'default' => 'no',
     ],
+    'enable_proxy' => [
+        'title'       => esc_html(__('Notificações PagBank', 'pagbank-connect')),
+        'label'       => esc_html(__('Usar rota alternativa (Proxy)', 'pagbank-connect')),
+        'type'        => 'checkbox',
+        'desc_tip'    => false,
+        'description' => __(
+            'Alguns provedores barram notificações enviadas pelo PagBank. Ao marcar essa opção,'
+            . ' a notificação será encaminhada por outra rota.',
+            'pagbank-connect'
+        ),
+        'default'     => 'no',
+    ],
 	'title' => [
         'title'       => esc_html( __( 'Título Principal' , 'pagbank-connect' ) ),
         'type'        => 'text',
@@ -114,18 +126,6 @@ return array(
         'custom_attributes' => [
             'spellcheck' => 'false',
         ],
-    ],
-    'enable_proxy' => [
-        'title'       => esc_html(__('Notificações PagBank', 'pagbank-connect')),
-        'label'       => esc_html(__('Habilitar Proxy', 'pagbank-connect')),
-        'type'        => 'checkbox',
-        'desc_tip'    => false,
-        'description' => __(
-            'Alguns provedores barram notificações enviadas pelo PagBank. Ao marcar essa opção,'
-            . ' a notificação será encaminhada por outra rota.',
-            'pagbank-connect'
-        ),
-        'default'     => 'no',
     ],
     'force_order_update' => [
         'title'       => esc_html(__('Forçar atualização de pedidos automaticamente', 'pagbank-connect')),
