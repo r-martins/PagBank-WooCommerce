@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.45.2
+Stable tag: 4.46.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -210,6 +210,10 @@ O plugin é licenciado sob GPL v3. Você pode modificar e distribuir, contanto q
 Você deve fazer isso através de Pull Requests ao [repositório oficial no github](https://github.com/r-martins/PagBank-WooCommerce).
 
 == Changelog ==
+
+= 4.46.0 =
+* Melhoria: agora é possível definir uma rota alternativa para as notificações/atualizações do PagBank, caso seu provedor bloqueie asas requisições padrão.
+* Correção: em alguns cenários, se o nome do produto contivesse caracteres ilegais como tags html, o pedido não era criado corretamente ocasionando erro no pagamento.
 
 = 4.45.2 =
 * Compatibilidade: Alguns métodos depreciados no Woo 10.3 poderiam exibir warnings no log. Corrigido.
