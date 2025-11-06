@@ -115,6 +115,18 @@ return array(
             'spellcheck' => 'false',
         ],
     ],
+    'enable_proxy' => [
+        'title'       => esc_html(__('Notificações PagBank', 'pagbank-connect')),
+        'label'       => esc_html(__('Habilitar Proxy', 'pagbank-connect')),
+        'type'        => 'checkbox',
+        'desc_tip'    => false,
+        'description' => __(
+            'Alguns provedores barram notificações enviadas pelo PagBank. Ao marcar essa opção,'
+            . ' a notificação será encaminhada por outra rota.',
+            'pagbank-connect'
+        ),
+        'default'     => 'no',
+    ],
     'force_order_update' => [
         'title'       => esc_html(__('Forçar atualização de pedidos automaticamente', 'pagbank-connect')),
         'label'       => esc_html(__('Habilitar', 'pagbank-connect')),
