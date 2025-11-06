@@ -45,6 +45,7 @@ class Common
             'reference_id' => $this->order->get_id(),
             'customer' => $this->getCustomerData(),
             'items' => $this->getItemsData(),
+            'enable_proxy' => $this->getEnableProxy(),
         ];
         
         if (empty($return['items'])){
@@ -171,7 +172,7 @@ class Common
         $items = [];
         $itemObj = new Item();
         $itemObj->setReferenceId(1);
-        $itemObj->setName('Compra em ' . get_bloginfo('name') ?? 'PagBank');
+        $itemObj->setName(Functions::sanitizeProductName('Compra em ' . get_bloginfo('name') ?? 'PagBank'));
         $itemObj->setQuantity(1);
         $unitAmount = number_format($amount, 2, '', '');
         $itemObj->setUnitAmount($unitAmount);
@@ -194,7 +195,7 @@ class Common
             $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
-            $itemObj->setName($item['name']);
+            $itemObj->setName(Functions::sanitizeProductName($item['name']));
             $itemObj->setQuantity($item['quantity']);
 
             $amount = $item->get_subtotal('edit') / $item['quantity'];
@@ -326,6 +327,11 @@ class Common
         return [
             get_site_url() . '/?wc-api=rm_ps_notif&hash=' . $hash
         ];
+    }
+
+    public function getEnableProxy(): bool
+    {
+        return Params::getConfig('enable_proxy', false);
     }
 
 
