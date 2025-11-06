@@ -45,6 +45,7 @@ class Common
             'reference_id' => $this->order->get_id(),
             'customer' => $this->getCustomerData(),
             'items' => $this->getItemsData(),
+            'enable_proxy' => $this->getEnableProxy(),
         ];
         
         if (empty($return['items'])){
@@ -326,6 +327,11 @@ class Common
         return [
             get_site_url() . '/?wc-api=rm_ps_notif&hash=' . $hash
         ];
+    }
+
+    public function getEnableProxy(): bool
+    {
+        return Params::getConfig('enable_proxy', false);
     }
 
 
