@@ -129,7 +129,7 @@ class EnvioFacil extends WC_Shipping_Method
 			}
 			
 			$items[] = [
-				'reference' => substr($product->get_name(), 0, 40),
+				'reference' => substr(Functions::sanitizeProductName($product->get_name()), 0, 40),
 				'width' => round($widthMm * $dimMultiplier),
 				'length' => round($lengthMm * $dimMultiplier),
 				'depth' => round($heightMm * $dimMultiplier),

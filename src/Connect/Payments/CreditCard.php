@@ -503,10 +503,13 @@ class CreditCard extends Common
             return;
         }
 
+        // Define payment handle baseado na versão do WooCommerce (wc-jquery-payment desde 10.3.0)
+        $payment_handle = wp_script_is('wc-jquery-payment', 'registered') ? 'wc-jquery-payment' : 'jquery-payment';
+        
         wp_enqueue_script(
             'pagseguro-connect-product-variable',
             plugins_url('public/js/product-variable.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            ['jquery', 'jquery-payment'],
+            ['jquery', $payment_handle],
             WC_PAGSEGURO_CONNECT_VERSION,
             ['strategy' => 'defer', 'in_footer' => true]
         );
