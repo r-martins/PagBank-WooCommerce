@@ -73,10 +73,18 @@ add_action('admin_init', function() {
 
 // Save integrations settings when form is submitted
 add_action('admin_init', function() {
-    if (isset($_GET['page']) && $_GET['page'] === 'wc-settings' 
+    // Check if we're on the integrations page (either direct or via redirect)
+    $is_integrations_page = (
+        isset($_GET['page']) && $_GET['page'] === 'wc-settings' 
         && isset($_GET['tab']) && $_GET['tab'] === 'checkout'
-        && isset($_GET['section']) && $_GET['section'] === 'rm-pagbank-integrations'
-        && isset($_POST['save']) && check_admin_referer('woocommerce-settings')) {
+        && (
+            (isset($_GET['section']) && $_GET['section'] === 'rm-pagbank-integrations')
+            || (isset($_GET['section']) && $_GET['section'] === 'rm-pagbank' && isset($_GET['show_integrations']) && $_GET['show_integrations'] === '1')
+            || (isset($_POST['section']) && $_POST['section'] === 'rm-pagbank-integrations')
+        )
+    );
+    
+    if ($is_integrations_page && isset($_POST['save']) && check_admin_referer('woocommerce-settings')) {
         
         // Get all posted data
         $integrations_settings = [];
@@ -96,8 +104,8 @@ add_action('admin_init', function() {
         // Add success message
         add_settings_error('woocommerce_rm-pagbank-integrations', 'settings_updated', __('Configurações salvas com sucesso.', 'pagbank-connect'), 'updated');
         
-        // Redirect to avoid form resubmission
-        wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-integrations'));
+        // Redirect to avoid form resubmission (maintain show_integrations flag)
+        wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
         exit;
     }
 });

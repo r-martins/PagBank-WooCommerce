@@ -80,6 +80,10 @@ class DokanHooks
                 <?php endif; ?>
                 <p class="help-block">
                     <?php _e('Seu Account ID PagBank para receber pagamentos diretos via split. Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (41 caracteres)', 'pagbank-connect'); ?>
+                    <br>
+                    <a href="https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize" target="_blank" rel="noopener noreferrer">
+                        <?php _e('Clique aqui para descobrir qual é o seu Account ID', 'pagbank-connect'); ?>
+                    </a>
                 </p>
             </div>
         </div>
@@ -284,6 +288,10 @@ class DokanHooks
                 
                 <p class="description">
                     <?php _e('Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (41 caracteres)', 'pagbank-connect'); ?>
+                    <br>
+                    <a href="https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize" target="_blank" rel="noopener noreferrer">
+                        <?php _e('Clique aqui para descobrir qual é o seu Account ID', 'pagbank-connect'); ?>
+                    </a>
                 </p>
             </td>
         </tr>

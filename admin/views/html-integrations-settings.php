@@ -25,12 +25,15 @@ $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings
 
 // Display the settings form
 ?>
-<form method="post" id="mainform" action="" enctype="multipart/form-data">
-    <?php wp_nonce_field('woocommerce-settings'); ?>
-    <table class="form-table">
+<input type="hidden" name="section" value="rm-pagbank-integrations" />
+<table class="form-table">
         <?php
         foreach ($integrations_fields as $key => $field) {
-            $field['id'] = $key;
+            // Use field ID if available, otherwise use key
+            if (!isset($field['id'])) {
+                $field['id'] = $key;
+            }
+            $field_id = $field['id']; // Use the field ID for HTML attributes
             $field_value = isset($integrations_options[$key]) ? $integrations_options[$key] : (isset($field['default']) ? $field['default'] : '');
             
             switch ($field['type']) {
@@ -51,17 +54,17 @@ $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings
                     ?>
                     <tr valign="top">
                         <th scope="row" class="titledesc">
-                            <label for="<?php echo esc_attr($key); ?>"><?php echo esc_html($field['title']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['title']); ?></label>
                         </th>
                         <td class="forminp forminp-<?php echo esc_attr($field['type']); ?>">
                             <fieldset>
                                 <legend class="screen-reader-text"><span><?php echo esc_html($field['title']); ?></span></legend>
-                                <label for="<?php echo esc_attr($key); ?>">
+                                <label for="<?php echo esc_attr($field_id); ?>">
                                     <input 
                                         type="checkbox" 
                                         class="<?php echo esc_attr(isset($field['class']) ? $field['class'] : ''); ?>" 
                                         name="<?php echo esc_attr($key); ?>" 
-                                        id="<?php echo esc_attr($key); ?>" 
+                                        id="<?php echo esc_attr($field_id); ?>" 
                                         value="1" 
                                         <?php checked($field_value, 'yes'); ?> 
                                     />
@@ -78,13 +81,13 @@ $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings
                     ?>
                     <tr valign="top">
                         <th scope="row" class="titledesc">
-                            <label for="<?php echo esc_attr($key); ?>"><?php echo esc_html($field['title']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['title']); ?></label>
                         </th>
                         <td class="forminp forminp-<?php echo esc_attr($field['type']); ?>">
                             <input 
                                 type="<?php echo esc_attr($field['type']); ?>" 
                                 name="<?php echo esc_attr($key); ?>" 
-                                id="<?php echo esc_attr($key); ?>" 
+                                id="<?php echo esc_attr($field_id); ?>" 
                                 value="<?php echo esc_attr($field_value); ?>" 
                                 class="<?php echo esc_attr(isset($field['class']) ? $field['class'] : ''); ?>"
                                 <?php if (isset($field['custom_attributes']) && is_array($field['custom_attributes'])) {
@@ -105,12 +108,12 @@ $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings
                     ?>
                     <tr valign="top">
                         <th scope="row" class="titledesc">
-                            <label for="<?php echo esc_attr($key); ?>"><?php echo esc_html($field['title']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['title']); ?></label>
                         </th>
                         <td class="forminp forminp-<?php echo esc_attr($field['type']); ?>">
                             <select 
                                 name="<?php echo esc_attr($key); ?>" 
-                                id="<?php echo esc_attr($key); ?>" 
+                                id="<?php echo esc_attr($field_id); ?>" 
                                 class="<?php echo esc_attr(isset($field['class']) ? $field['class'] : ''); ?>"
                             >
                                 <?php foreach ($field['options'] as $option_key => $option_value): ?>
@@ -130,11 +133,3 @@ $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings
         }
         ?>
     </table>
-    
-    <p class="submit">
-        <button name="save" class="button-primary woocommerce-save-button" type="submit" value="<?php echo esc_attr__('Salvar alterações', 'pagbank-connect'); ?>">
-            <?php echo esc_html__('Salvar alterações', 'pagbank-connect'); ?>
-        </button>
-    </p>
-</form>
-

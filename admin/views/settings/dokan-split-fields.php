@@ -26,14 +26,20 @@ return array(
     'marketplace_account_id' => [
         'title'       => esc_html( __( 'Account ID do Marketplace', 'pagbank-connect' ) ),
         'type'        => 'text',
-        'description' => esc_html( __(
-            'ID da conta PagBank do marketplace (recebedor primário). Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-            'pagbank-connect'
-        )),
+        'description' => sprintf(
+            '%s<br><a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+            esc_html( __(
+                'ID da conta PagBank do marketplace (recebedor primário). Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+                'pagbank-connect'
+            )),
+            esc_url( 'https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize' ),
+            esc_html( __( 'Clique aqui para descobrir qual é o seu Account ID', 'pagbank-connect' ) )
+        ),
         'default'     => '',
         'placeholder' => 'ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
         'desc_tip'    => true,
         'required'    => false,
+        'id'          => 'woocommerce_rm-pagbank-integrations_marketplace_account_id',
         'custom_attributes' => [
             'pattern' => 'ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}',
             'title' => 'Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
@@ -51,6 +57,7 @@ return array(
         'placeholder' => 'Comissão do Marketplace',
         'desc_tip'    => true,
         'required'    => false,
+        'id'          => 'woocommerce_rm-pagbank-integrations_split_marketplace_reason',
         'custom_attributes' => [
             'maxlength' => 64
         ]
@@ -66,6 +73,7 @@ return array(
         'placeholder' => '7',
         'desc_tip'    => true,
         'required'    => false,
+        'id'          => 'woocommerce_rm-pagbank-integrations_split_custody_days',
         'custom_attributes' => [
             'min' => 1,
             'max' => 30
@@ -84,6 +92,7 @@ return array(
             'marketplace' => esc_html( __( 'Sempre marketplace liable', 'pagbank-connect' ) )
         ],
         'desc_tip'    => true,
+        'id'          => 'woocommerce_rm-pagbank-integrations_split_chargeback_liability',
     ],
     'split_notifications' => [
         'title' => esc_html( __( 'Notificações', 'pagbank-connect' ) ),
@@ -95,5 +104,6 @@ return array(
         )),
         'default' => 'yes',
         'desc_tip'    => true,
+        'id'          => 'woocommerce_rm-pagbank-integrations_split_notifications',
     ],
 );

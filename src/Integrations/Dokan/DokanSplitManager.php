@@ -284,7 +284,18 @@ class DokanSplitManager
         
         // Get liability configuration
         $gateway_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
-        $liability_config = $gateway_settings['split_chargeback_liability'] ?? 'auto';
+        $liability_config_raw = $gateway_settings['split_chargeback_liability'] ?? 'auto';
+        $liability_config = is_string($liability_config_raw) ? trim($liability_config_raw) : 'auto';
+        
+        \RM_PagBank\Helpers\Functions::log(
+            sprintf(
+                'DokanSplitManager::buildSplitData - Configuração de liable lida: "%s" (tipo: %s, valor bruto: %s)',
+                $liability_config,
+                gettype($liability_config),
+                var_export($gateway_settings['split_chargeback_liability'] ?? 'não definido', true)
+            ),
+            'info'
+        );
         
         // Count non-marketplace vendors
         $non_marketplace_vendors = array_filter($vendors, function($v) use ($marketplace_vendor_ids) {
@@ -297,9 +308,11 @@ class DokanSplitManager
         $single_vendor_id = null;
         
         if ($isCreditCard) {
-            if ($liability_config === 'marketplace') {
-                // Always marketplace is liable
+            // Use strict comparison and handle both 'marketplace' and possible variations
+            if ($liability_config === 'marketplace' || strtolower($liability_config) === 'marketplace') {
+                // Always marketplace is liable - explicitly set single_vendor_id to null
                 $marketplace_is_liable = true;
+                $single_vendor_id = null; // Ensure no vendor is marked as liable
             } else {
                 // Auto: single vendor = vendor is liable, 2+ vendors = marketplace is liable
                 if ($vendor_count === 1) {
@@ -307,9 +320,21 @@ class DokanSplitManager
                     $single_vendor_id = reset($non_marketplace_vendors)['id'];
                 } else {
                     $marketplace_is_liable = true;
+                    $single_vendor_id = null; // Ensure no vendor is marked as liable when marketplace is liable
                 }
             }
         }
+        
+        \RM_PagBank\Helpers\Functions::log(
+            sprintf(
+                'DokanSplitManager::buildSplitData - Configuração de liable: %s, Marketplace liable: %s, Single vendor ID: %s, Vendor count: %d',
+                $liability_config,
+                $marketplace_is_liable ? 'true' : 'false',
+                $single_vendor_id ?? 'null',
+                $vendor_count
+            ),
+            'info'
+        );
         
         // Marketplace configurations
         $marketplaceReceiver->setCustody(false); // No custody for marketplace
@@ -320,11 +345,16 @@ class DokanSplitManager
             $marketplaceReceiver->setLiable($marketplace_is_liable);
             \RM_PagBank\Helpers\Functions::log(
                 sprintf(
-                    'DokanSplitManager::buildSplitData - Liable: %s (config: %s, %d vendedores)',
-                    $marketplace_is_liable ? 'Marketplace' : 'Vendedor único',
+                    'DokanSplitManager::buildSplitData - Marketplace marcado como liable: %s (config: %s, %d vendedores não-marketplace)',
+                    $marketplace_is_liable ? 'SIM' : 'NÃO',
                     $liability_config,
                     $vendor_count
                 ),
+                'info'
+            );
+        } else {
+            \RM_PagBank\Helpers\Functions::log(
+                'DokanSplitManager::buildSplitData - Método de pagamento não é cartão de crédito, liable não será aplicado',
                 'info'
             );
         }
@@ -356,12 +386,26 @@ class DokanSplitManager
             
             // Vendor configurations
             $vendorReceiver->setCustody(true, self::calculateCustodyReleaseDate($order));
-            $vendorReceiver->setChargeback($vendor_count === 1 ? 100 : 0); // Single vendor gets 100% chargeback
+            // Chargeback transfer should always be 0% for secondary receivers
+            // The marketplace (PRIMARY) is responsible for the payment, so chargeback is handled by them
+            $vendorReceiver->setChargeback(0);
             
-            // Single vendor is liable (only for credit card, when not forced marketplace)
-            if ($isCreditCard && !$marketplace_is_liable && $vendor['id'] === $single_vendor_id) {
+            // Single vendor is liable (only for credit card, when marketplace is NOT liable)
+            // IMPORTANT: If marketplace is liable, NO vendor should be marked as liable
+            // Only set liable=true for the single vendor when marketplace is NOT liable
+            if ($isCreditCard && !$marketplace_is_liable && $single_vendor_id !== null && $vendor['id'] === $single_vendor_id) {
                 $vendorReceiver->setLiable(true);
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf(
+                        'DokanSplitManager::buildSplitData - Vendedor %d marcado como liable (config: %s, marketplace liable: false)',
+                        $vendor['id'],
+                        $liability_config
+                    ),
+                    'info'
+                );
             }
+            // Note: We don't explicitly set liable=false for vendors when marketplace is liable
+            // because the API should not receive the liable property at all for those vendors
             
             // Don't set statement - removed until PagBank fixes their API
             // $vendorReceiver->setStatement(false);

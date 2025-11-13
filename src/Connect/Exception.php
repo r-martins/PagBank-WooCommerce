@@ -63,32 +63,45 @@ class Exception extends \Exception
      */
     public function getFriendlyParameterName(string $parameterName): string
     {
-        if ($parameterName === 'customer.tax_id') {
-            return $parameterName . ' - ' . esc_html(__('CPF/CNPJ', 'pagbank-connect'));
-        } elseif ($parameterName === 'charges[0].payment_method.boleto.due_date') {
-            return $parameterName . ' - ' . esc_html(__('Data de vencimento do boleto', 'pagbank-connect'));
-        } elseif (strpos($parameterName, 'locality') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Bairro', 'pagbank-connect'));
-        } elseif (strpos($parameterName, 'address.number') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Número do Endereço', 'pagbank-connect'));
-        } elseif (strpos($parameterName, 'address.city') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Cidade do Endereço', 'pagbank-connect'));
-        } elseif (strpos($parameterName, 'address.region') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Estado do Endereço', 'pagbank-connect'));
-        } elseif ($parameterName === 'charges[0].payment_method.authentication_method.id') {
-            return esc_html(__('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect'));
-        } elseif ($parameterName === 'charges[0].payment_method.card.encrypted') {
-            return esc_html(__('Criptografia do cartão', 'pagbank-connect'));
-        } elseif ($parameterName === 'customer.name') {
-            return esc_html(__('Nome do Cliente', 'pagbank-connect'));
-        } elseif ($parameterName === 'customer.phones[0].number') {
-            return esc_html(__('Telefone', 'pagbank-connect'));
-        } elseif ($parameterName === 'customer.email') {
-            return esc_html(__('E-mail do Cliente', 'pagbank-connect'));
-        } elseif ($parameterName === 'customer.phone.number') {
-            return esc_html(__('Telefone do Cliente', 'pagbank-connect'));
+        // Exact matches that don't include parameter name prefix
+        $exactMatchesNoPrefix = [
+            'charges[0].payment_method.authentication_method.id' => __('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect'),
+            'charges[0].payment_method.card.encrypted' => __('Criptografia do cartão', 'pagbank-connect'),
+            ''
+        ];
+
+        if (isset($exactMatchesNoPrefix[$parameterName])) {
+            return esc_html($exactMatchesNoPrefix[$parameterName]);
         }
-        
+
+        // Exact matches - using array for better performance and readability
+        $exactMatches = [
+            'customer.tax_id' => __('CPF/CNPJ', 'pagbank-connect'),
+            'charges[0].payment_method.boleto.due_date' => __('Data de vencimento do boleto', 'pagbank-connect'),
+            'customer.name' => __('Nome do Cliente', 'pagbank-connect'),
+            'customer.phones[0].number' => __('Telefone', 'pagbank-connect'),
+            'customer.email' => __('E-mail do Cliente', 'pagbank-connect'),
+            'customer.phone.number' => __('Telefone do Cliente', 'pagbank-connect'),
+        ];
+
+        if (isset($exactMatches[$parameterName])) {
+            return $parameterName . ' - ' . esc_html($exactMatches[$parameterName]);
+        }
+
+        // Pattern matches - checked in order of specificity
+        $patternMatches = [
+            'locality' => __('Bairro', 'pagbank-connect'),
+            'address.number' => __('Número do Endereço', 'pagbank-connect'),
+            'address.city' => __('Cidade do Endereço', 'pagbank-connect'),
+            'address.region' => __('Estado do Endereço', 'pagbank-connect'),
+        ];
+
+        foreach ($patternMatches as $pattern => $friendlyName) {
+            if (strpos($parameterName, $pattern) !== false) {
+                return $parameterName . ' - ' . esc_html($friendlyName);
+            }
+        }
+
         return $parameterName;
     }
 
@@ -218,6 +231,11 @@ class Exception extends \Exception
                 case 'There are some syntax errors in the request payload. Please check the documentation.':
                     return __(
                         'Há alguns erros de sintaxe na solicitação. Por favor, verifique a documentação e os logs.',
+                        'pagbank-connect'
+                    );
+                case 'This receiver is already responsible for paying the chargeback. You can inform another receiver as responsible for being the chargeback debtor.':
+                    return __(
+                        'Este recebedor já está responsável por pagar o chargeback. Você pode informar outro receptor como responsável por ser o devedor do chargeback.',
                         'pagbank-connect'
                     );
                 default:
