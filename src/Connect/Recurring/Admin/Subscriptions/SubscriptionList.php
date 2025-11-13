@@ -104,6 +104,14 @@ class SubscriptionList extends WP_List_Table
             $order_id = intval($_REQUEST['order_id']);
             $where .= $wpdb->prepare(" AND initial_order_id = %d", $order_id);
         }
+        if (!empty($_REQUEST['customer_name'])) {
+            $customer_name = sanitize_text_field(wp_unslash($_REQUEST['customer_name']));
+            $where .= $wpdb->prepare(" AND (CONCAT(first_name, ' ', last_name) like %s )", '%' . $wpdb->esc_like($customer_name) . '%');
+        }
+        if (!empty($_REQUEST['customer_email'])) {
+            $customer_email = sanitize_text_field(wp_unslash($_REQUEST['customer_email']));
+            $where .= $wpdb->prepare(" AND billing_email like %s", '%' . $wpdb->esc_like($customer_email) . '%');
+        }
 
 
         $this->set_pagination_args([
@@ -155,6 +163,8 @@ class SubscriptionList extends WP_List_Table
                     <?php endforeach;?>
                 </select>
                 <input type="text" name="order_id" id="filter-by-order-id" placeholder="<?php echo esc_attr(__('ID do Pedido', 'rm-pagbank'));?>">
+                <input type="text" name="customer_name" id="filter-by-customer-name" placeholder="<?php echo esc_attr(__('Nome', 'rm-pagbank'));?>">
+                <input type="text" name="customer_email" id="filter-by-customer-email" placeholder="<?php echo esc_attr(__('Email', 'rm-pagbank'));?>">
                 <?php submit_button(__('Filtrar'), 'button', 'filter_action', false);?>
             </div>
         </form>
