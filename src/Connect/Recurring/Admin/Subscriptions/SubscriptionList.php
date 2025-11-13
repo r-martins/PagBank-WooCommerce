@@ -55,8 +55,6 @@ class SubscriptionList extends WP_List_Table
             case 'status':
                 $recHelper = new Recurring();
                 return $recHelper->getFriendlyStatus($item[$column_name]);
-            case 'billing_name':
-                return $item['first_name'] . ' '. $item['last_name'];
             case 'initial_order_id':
                  $item['initial_order_id'];
             default:
@@ -124,7 +122,7 @@ class SubscriptionList extends WP_List_Table
 
         $this->items = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT pagb_recurring.*,  wc_customer.*, "
+                "SELECT pagb_recurring.*,  wc_customer.email as billing_email, "
                 . "CONCAT(wc_customer.first_name, ' ', wc_customer.last_name) as billing_name FROM {$wpdb->prefix}pagbank_recurring pagb_recurring"
                     . " inner join {$wpdb->prefix}wc_orders wc_order ON pagb_recurring.initial_order_id = wc_order.id"
                     . " inner join {$wpdb->prefix}wc_customer_lookup wc_customer ON wc_order.customer_id = wc_customer.customer_id"

@@ -99,7 +99,9 @@ class SubscriptionDetails extends WP_List_Table
 
     $order = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT pagb_recurring.*, wc_order.*, wc_customer.* FROM {$wpdb->prefix}pagbank_recurring pagb_recurring"
+                    "SELECT pagb_recurring.*, wc_customer.email as billing_email"
+                    . " , CONCAT(wc_customer.first_name, ' ', wc_customer.last_name) as billing_name"
+                    . " FROM {$wpdb->prefix}pagbank_recurring pagb_recurring"
                         . " inner join {$wpdb->prefix}wc_orders wc_order ON pagb_recurring.initial_order_id = wc_order.id"
                         . " inner join {$wpdb->prefix}wc_customer_lookup wc_customer ON wc_order.customer_id = wc_customer.customer_id"
                         . " WHERE pagb_recurring.initial_order_id = %d",
@@ -115,7 +117,7 @@ class SubscriptionDetails extends WP_List_Table
             ['name' => 'Pedido Inicial', 'value' => $this->subscription->initial_order_id],
             ['name' => 'Valor Recorrente', 'value' => $this->subscription->recurring_amount],
             ['name' => 'Status', 'value' => $status],
-            ['name' => 'Nome Cliente', 'value' => $order[0]['first_name'] . ' ' . $order[0]['last_name']],
+            ['name' => 'Nome Cliente', 'value' => $order['0']['billing_name']],
             ['name'=> 'Email', 'value'=> $order[0]['billing_email']]
         ];
 
