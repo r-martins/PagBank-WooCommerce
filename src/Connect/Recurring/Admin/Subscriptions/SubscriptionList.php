@@ -30,12 +30,14 @@ class SubscriptionList extends WP_List_Table
             'id'                 => __('ID', 'rm-pagbank'),
             'initial_order_id'   => __('Pedido Inicial', 'rm-pagbank'),
             'view'                 => __('Visualizar', 'rm-pagbank'),
-            'recurring_amount'   => __('Valor Recorrente', 'rm-pagbank'),
+            'recurring_amount'   => __('Valor Recor.', 'rm-pagbank'),
             'status'             => __('Status', 'rm-pagbank'),
-            'recurring_type'     => __('Tipo Recorrente', 'rm-pagbank'),
+            'recurring_type'     => __('Tipo Recor.', 'rm-pagbank'),
             'created_at'         => __('Criado em', 'rm-pagbank'),
             'updated_at'         => __('Atualizado em', 'rm-pagbank'),
             'next_bill_at'       => __('Próxima Cobrança', 'rm-pagbank'),
+            'billing_name'       => __('Cliente', 'rm-pagbank'),
+            'billing_email'       => __('Email', 'rm-pagbank'),
         ];
     }
 
@@ -53,6 +55,8 @@ class SubscriptionList extends WP_List_Table
             case 'status':
                 $recHelper = new Recurring();
                 return $recHelper->getFriendlyStatus($item[$column_name]);
+            case 'billing_name':
+                return $item['first_name'] . ' '. $item['last_name'];
             default:
                 return $item[$column_name];
         }
@@ -110,7 +114,10 @@ class SubscriptionList extends WP_List_Table
 
         $this->items = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d",
+                "SELECT pagb_recurring.*, wc_order.*, wc_customer.* FROM {$wpdb->prefix}pagbank_recurring pagb_recurring"
+                    . " inner join {$wpdb->prefix}wc_orders wc_order ON pagb_recurring.initial_order_id = wc_order.id"
+                    . " inner join {$wpdb->prefix}wc_customer_lookup wc_customer ON wc_order.customer_id = wc_customer.customer_id"
+                    . " WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d",
                 $per_page,
                 ($current_page - 1) * $per_page
             ),
@@ -129,6 +136,8 @@ class SubscriptionList extends WP_List_Table
             'created_at' => array('created_at', false),
             'updated_at' => array('updated_at', false),
             'next_bill_at' => array('next_bill_at', false),
+            'billing_name' => array('billing_name', false),
+            'billing_email' => array('billing_email', false),
         );
     }
     
