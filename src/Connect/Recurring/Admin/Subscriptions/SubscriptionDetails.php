@@ -90,16 +90,33 @@ class SubscriptionDetails extends WP_List_Table
     public function prepare_items()
     {
         $this->_column_headers = [$this->get_columns()];
+        global $wpdb;
 
         $recHelper = new Recurring();
         $status = $recHelper->getFriendlyStatus($this->subscription->status);
         $type = $recHelper->translateFrequency($this->subscription->recurring_type);
 
+
+    $order = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT pagb_recurring.*, wc_order.*, wc_customer.* FROM {$wpdb->prefix}pagbank_recurring pagb_recurring"
+                        . " inner join {$wpdb->prefix}wc_orders wc_order ON pagb_recurring.initial_order_id = wc_order.id"
+                        . " inner join {$wpdb->prefix}wc_customer_lookup wc_customer ON wc_order.customer_id = wc_customer.customer_id"
+                        . " WHERE pagb_recurring.initial_order_id = %d",
+                    $this->subscription->initial_order_id
+                ),
+                ARRAY_A
+            );
+
+
+
         $this->items = [
             ['name' => 'ID', 'value' => $this->subscription->id],
             ['name' => 'Pedido Inicial', 'value' => $this->subscription->initial_order_id],
             ['name' => 'Valor Recorrente', 'value' => $this->subscription->recurring_amount],
-            ['name' => 'Status', 'value' => $status]
+            ['name' => 'Status', 'value' => $status],
+            ['name' => 'Nome Cliente', 'value' => $order[0]['first_name'] . ' ' . $order[0]['last_name']],
+            ['name'=> 'Email', 'value'=> $order[0]['billing_email']]
         ];
 
         if ($this->subscription->recurring_trial_period) {
