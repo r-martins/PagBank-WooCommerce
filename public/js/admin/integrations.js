@@ -8,15 +8,47 @@ jQuery(document).ready(function($) {
     // Dokan Split Integration
     function initDokanSplitIntegration() {
         const $dokanEnabled = $('#woocommerce_rm-pagbank-integrations_dokan_split_enabled');
+        const $splitPaymentsEnabled = $('#woocommerce_rm-pagbank_split_payments_enabled');
         const $marketplaceAccount = $('#woocommerce_rm-pagbank-integrations_marketplace_account_id');
         const $marketplaceReason = $('#woocommerce_rm-pagbank-integrations_split_marketplace_reason');
         const $custodyDays = $('#woocommerce_rm-pagbank-integrations_split_custody_days');
         const $chargebackLiability = $('#woocommerce_rm-pagbank-integrations_split_chargeback_liability');
         const $notifications = $('#woocommerce_rm-pagbank-integrations_split_notifications');
         
+        // Check for mutual exclusivity
+        function checkMutualExclusivity() {
+            const dokanChecked = $dokanEnabled.is(':checked');
+            const splitPaymentsChecked = $splitPaymentsEnabled.is(':checked');
+            
+            // Remove previous warnings
+            $dokanEnabled.closest('tr').find('.mutual-exclusivity-warning').remove();
+            $splitPaymentsEnabled.closest('tr').find('.mutual-exclusivity-warning').remove();
+            
+            if (dokanChecked && splitPaymentsChecked) {
+                const warningMsg = '<span class="mutual-exclusivity-warning" style="color: #d63638; font-weight: bold; display: block; margin-top: 5px;">⚠ ' +
+                    'Não é possível ativar Divisão de Pagamentos e Split Dokan simultaneamente. Desative um para ativar o outro.</span>';
+                
+                if (!$dokanEnabled.closest('tr').find('.mutual-exclusivity-warning').length) {
+                    $dokanEnabled.closest('tr').find('td').append(warningMsg);
+                }
+                if (!$splitPaymentsEnabled.closest('tr').find('.mutual-exclusivity-warning').length) {
+                    $splitPaymentsEnabled.closest('tr').find('td').append(warningMsg);
+                }
+            }
+        }
+        
         // Toggle dependent fields
         function toggleDokanFields() {
             const isEnabled = $dokanEnabled.is(':checked');
+            const splitPaymentsChecked = $splitPaymentsEnabled.is(':checked');
+            
+            // Disable if split payments is enabled
+            if (splitPaymentsChecked && isEnabled) {
+                $dokanEnabled.prop('checked', false);
+                checkMutualExclusivity();
+                return;
+            }
+            
             $marketplaceAccount.closest('tr').toggle(isEnabled);
             $marketplaceReason.closest('tr').toggle(isEnabled);
             $custodyDays.closest('tr').toggle(isEnabled);
@@ -24,8 +56,28 @@ jQuery(document).ready(function($) {
             $notifications.closest('tr').toggle(isEnabled);
         }
         
-        $dokanEnabled.on('change', toggleDokanFields);
+        // Handle change events
+        $dokanEnabled.on('change', function() {
+            if ($(this).is(':checked') && $splitPaymentsEnabled.is(':checked')) {
+                $(this).prop('checked', false);
+                alert('Não é possível ativar Split Dokan enquanto a Divisão de Pagamentos estiver ativa. Desative a Divisão de Pagamentos primeiro.');
+                return;
+            }
+            toggleDokanFields();
+            checkMutualExclusivity();
+        });
+        
+        $splitPaymentsEnabled.on('change', function() {
+            if ($(this).is(':checked') && $dokanEnabled.is(':checked')) {
+                $(this).prop('checked', false);
+                alert('Não é possível ativar Divisão de Pagamentos enquanto o Split Dokan estiver ativo. Desative o Split Dokan primeiro.');
+                return;
+            }
+            checkMutualExclusivity();
+        });
+        
         toggleDokanFields(); // Initial state
+        checkMutualExclusivity(); // Initial check
         
         // Validate Account ID format
         $('#woocommerce_rm-pagbank-integrations_marketplace_account_id').on('blur', function() {

@@ -29,6 +29,15 @@ class DokanSplitManager
             return false;
         }
 
+        // Check mutual exclusivity with Split Payments
+        $gateway = new \RM_PagBank\Connect\Gateway();
+        $split_payments_enabled = $gateway->get_option('split_payments_enabled', 'no');
+        
+        if ($split_payments_enabled === 'yes') {
+            \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Divisão de Pagamentos está ativa, não aplicando Split Dokan', 'info');
+            return false;
+        }
+
         // Check if split is enabled
         $gateway_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
         $split_enabled = $gateway_settings['dokan_split_enabled'] ?? false;

@@ -386,7 +386,7 @@ class Common
 		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 		
-		// Save split data if present
+		// Save split data if present (for Pix, split data comes directly in response)
 		if (!empty($response['qr_codes'][0]['splits'])) {
 		    $order->add_meta_data('_pagbank_split_data', $response['qr_codes'][0]['splits'], true);
 		    $order->add_meta_data('_pagbank_split_applied', true, true);
@@ -395,14 +395,28 @@ class Common
 		    $order->add_meta_data('_pagbank_split_applied', true, true);
 		}
 		
-		// Extract and save split_id from links (for custody release)
+		// For credit card payments, split details come via a link (SPLIT)
+		// We need to fetch the split details from the API
 		if (!empty($response['charges'][0]['links'])) {
 		    foreach ($response['charges'][0]['links'] as $link) {
 		        if (isset($link['rel']) && $link['rel'] === 'SPLIT' && !empty($link['href'])) {
 		            // Extract split_id from href (last part of URL)
 		            $split_id = basename(parse_url($link['href'], PHP_URL_PATH));
 		            $order->add_meta_data('_pagbank_split_id', $split_id, true);
-		            Functions::log('Split ID salvo no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
+		            Functions::log('Split ID encontrado no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
+		            
+		            // Fetch split details from the API (no authentication required)
+		            try {
+		                $split_details = $this->fetchSplitDetails($link['href']);
+		                if (!empty($split_details)) {
+		                    // Save split data in the same format as Pix
+		                    $order->add_meta_data('_pagbank_split_data', $split_details, true);
+		                    $order->add_meta_data('_pagbank_split_applied', true, true);
+		                    Functions::log('Detalhes do split obtidos e salvos para o pedido ' . $order->get_id(), 'info');
+		                }
+		            } catch (\Exception $e) {
+		                Functions::log('Erro ao buscar detalhes do split para o pedido ' . $order->get_id() . ': ' . $e->getMessage(), 'error');
+		            }
 		            break;
 		        }
 		    }
@@ -412,6 +426,55 @@ class Common
 
         do_action('pagbank_connect_after_proccess_response', $order, $response);
 	}
+
+    /**
+     * Fetch split details from PagBank API
+     * Note: According to PagBank docs, this endpoint doesn't require authentication
+     *
+     * @param string $split_url Full URL to the split endpoint
+     * @return array|null Split details or null on error
+     */
+    protected function fetchSplitDetails(string $split_url): ?array
+    {
+        // Replace sandbox domain with internal sandbox domain
+        if (strpos($split_url, 'https://sandbox.api.pagseguro.com') !== false) {
+            $split_url = str_replace(
+                'https://sandbox.api.pagseguro.com',
+                'https://internal.sandbox.api.pagseguro.com',
+                $split_url
+            );
+        }
+        
+        // Make GET request without authentication headers
+        $response = wp_remote_get($split_url, [
+            'timeout' => 30,
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        if (is_wp_error($response)) {
+            throw new \Exception('Erro ao buscar detalhes do split: ' . $response->get_error_message());
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $status_code = wp_remote_retrieve_response_code($response);
+
+        if ($status_code !== 200) {
+            throw new \Exception('Erro ao buscar detalhes do split. Status: ' . $status_code);
+        }
+
+        if (empty($body)) {
+            throw new \Exception('Resposta vazia ao buscar detalhes do split');
+        }
+
+        $split_data = json_decode($body, true);
+        if ($split_data === null && json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('Resposta inválida ao buscar detalhes do split: ' . json_last_error_msg());
+        }
+
+        return $split_data;
+    }
 
     public function getThankyouInstructions($order_id){
         $alreadyEnqueued = wp_script_is('pagseguro-connect-success');

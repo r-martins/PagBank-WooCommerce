@@ -238,6 +238,16 @@ class Exception extends \Exception
                         'Este recebedor já está responsável por pagar o chargeback. Você pode informar outro receptor como responsável por ser o devedor do chargeback.',
                         'pagbank-connect'
                     );
+                case 'Receivers amount must be informed.':
+                    return __(
+                        'O valor pago aos recebedores deve ser informado.',
+                        'pagbank-connect'
+                    );
+                case '3DS AUTHENTICATION IS NOT VALID METHOD FOR SPLIT TRANSACTIONS WITH LIABLE CONFIGURATION':
+                    return __(
+                        'A autenticação 3D não é um método válido para transações com configuração de responsabilidade do receptor (liable).',
+                        'pagbank-connect'
+                    );
                 default:
                     return $this->errors[$error['code']] ?? $error['description'];
             }

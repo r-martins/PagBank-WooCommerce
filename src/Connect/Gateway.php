@@ -56,6 +56,214 @@ class Gateway extends WC_Payment_Gateway_CC
         add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
     }
 
+    /**
+     * Process admin options - override to handle custom field types
+     */
+    public function process_admin_options()
+    {
+        // Process split_payments_receivers field manually before parent processes
+        $field_key = $this->get_field_key('split_payments_receivers');
+        
+        // Check if split payments is enabled
+        $split_enabled_key = $this->get_field_key('split_payments_enabled');
+        $split_enabled = isset($_POST[$split_enabled_key]) ? 'yes' : 'no';
+        
+        // Temporarily remove the custom field from form_fields to prevent parent from processing it
+        $custom_field = null;
+        if (isset($this->form_fields['split_payments_receivers'])) {
+            $custom_field = $this->form_fields['split_payments_receivers'];
+            unset($this->form_fields['split_payments_receivers']);
+        }
+        
+        // Debug logging - check for array notation fields
+        $post_keys_with_field = [];
+        foreach ($_POST as $key => $value) {
+            if (strpos($key, $field_key) === 0) {
+                $post_keys_with_field[] = $key . ' => ' . (is_array($value) ? 'array(' . count($value) . ')' : gettype($value));
+            }
+        }
+        
+        \RM_PagBank\Helpers\Functions::log(
+            sprintf(
+                'Gateway::process_admin_options - Split enabled: %s, Field key: %s, Field in POST: %s, Field value type: %s, POST keys matching: %s',
+                $split_enabled,
+                $field_key,
+                isset($_POST[$field_key]) ? 'yes' : 'no',
+                isset($_POST[$field_key]) ? gettype($_POST[$field_key]) : 'N/A',
+                !empty($post_keys_with_field) ? implode(', ', $post_keys_with_field) : 'none'
+            ),
+            'info'
+        );
+        
+        // Check mutual exclusivity with Dokan Split
+        $integrations_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
+        $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
+        
+        if ($split_enabled === 'yes' && $dokan_split_enabled === 'yes') {
+            WC_Admin_Settings::add_error(
+                __('Não é possível ativar Divisão de Pagamentos enquanto o Split Dokan estiver ativo. Desative o Split Dokan primeiro.', 'pagbank-connect')
+            );
+            // Don't save split payments if Dokan is enabled
+            $split_enabled = 'no';
+            $this->update_option('split_payments_enabled', 'no');
+        }
+        
+        // Fetch Account ID from API when split is being enabled
+        $primary_account_id_to_save = null;
+        if ($split_enabled === 'yes') {
+            $primary_account_id_key = $this->get_field_key('split_payments_primary_account_id');
+            $primary_account_id = isset($_POST[$primary_account_id_key]) ? sanitize_text_field($_POST[$primary_account_id_key]) : '';
+            $current_split_enabled = $this->get_option('split_payments_enabled', 'no');
+            $saved_account_id = $this->get_option('split_payments_primary_account_id', '');
+            
+            // Check if split is being enabled (was 'no' and now is 'yes')
+            $is_being_enabled = ($current_split_enabled !== 'yes' && $split_enabled === 'yes');
+            
+            // If Account ID is not provided manually and (split is being enabled OR Account ID is not saved), fetch from API
+            if (empty($primary_account_id) && ($is_being_enabled || empty($saved_account_id))) {
+                try {
+                    $api = new \RM_PagBank\Helpers\Api();
+                    $account_info = $api->get('accountId', [], 0); // No cache, we want fresh data
+                    
+                    if (!empty($account_info['accountId'])) {
+                        $primary_account_id = $account_info['accountId'];
+                        // Store to save after parent::process_admin_options()
+                        $primary_account_id_to_save = $primary_account_id;
+                        // Add to $_POST so WooCommerce processes it correctly
+                        $_POST[$primary_account_id_key] = $primary_account_id;
+                        \RM_PagBank\Helpers\Functions::log(
+                            'Gateway::process_admin_options - Account ID Principal obtido da API: ' . $primary_account_id,
+                            'info'
+                        );
+                    } else {
+                        WC_Admin_Settings::add_error(
+                            __('Não foi possível obter o Account ID Principal da API. Configure manualmente o Account ID Principal ou verifique se a Connect Key está correta.', 'pagbank-connect')
+                        );
+                        // Don't enable split if we can't get Account ID
+                        $split_enabled = 'no';
+                        $this->update_option('split_payments_enabled', 'no');
+                    }
+                } catch (\Exception $e) {
+                    \RM_PagBank\Helpers\Functions::log(
+                        'Gateway::process_admin_options - Erro ao buscar Account ID da API: ' . $e->getMessage(),
+                        'error'
+                    );
+                    WC_Admin_Settings::add_error(
+                        sprintf(
+                            __('Erro ao obter Account ID Principal da API: %s. Configure manualmente o Account ID Principal ou verifique se a Connect Key está correta.', 'pagbank-connect'),
+                            esc_html($e->getMessage())
+                        )
+                    );
+                    // Don't enable split if we can't get Account ID
+                    $split_enabled = 'no';
+                    $this->update_option('split_payments_enabled', 'no');
+                }
+            }
+            
+            // Use saved Account ID if not provided manually and not fetched from API
+            if (empty($primary_account_id) && !empty($saved_account_id)) {
+                $primary_account_id = $saved_account_id;
+            }
+            
+            // Validate Account ID format if provided manually
+            if (!empty($primary_account_id)) {
+                $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
+                if (!preg_match($pattern, $primary_account_id)) {
+                    WC_Admin_Settings::add_error(
+                        __('Account ID Principal com formato inválido. Use o formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'pagbank-connect')
+                    );
+                }
+            }
+            
+            // Final check: if split is enabled but Account ID is still empty, show error
+            if ($split_enabled === 'yes' && empty($primary_account_id)) {
+                WC_Admin_Settings::add_error(
+                    __('Account ID Principal é obrigatório quando a Divisão de Pagamentos está ativada. Configure o Account ID Principal ou verifique se a Connect Key está correta.', 'pagbank-connect')
+                );
+                // Don't enable split if Account ID is missing
+                $split_enabled = 'no';
+                $this->update_option('split_payments_enabled', 'no');
+            }
+        }
+        
+        // Only process receivers if split is enabled
+        if ($split_enabled === 'yes') {
+            $receivers_data = null;
+            
+            // Check if field is in POST as array (PHP auto-converts field[0][key] to array)
+            if (isset($_POST[$field_key]) && is_array($_POST[$field_key])) {
+                $receivers_data = $_POST[$field_key];
+            } else {
+                // Try to build array manually from individual fields (field[0][account_id], field[0][percentage], etc.)
+                $receivers_data = [];
+                $index = 0;
+                while (isset($_POST[$field_key . '[' . $index . '][account_id]']) || isset($_POST[$field_key . '[' . $index . '][percentage]'])) {
+                    $account_id = isset($_POST[$field_key . '[' . $index . '][account_id]']) ? $_POST[$field_key . '[' . $index . '][account_id]'] : '';
+                    $percentage = isset($_POST[$field_key . '[' . $index . '][percentage]']) ? $_POST[$field_key . '[' . $index . '][percentage]'] : '';
+                    
+                    if (!empty($account_id) || !empty($percentage)) {
+                        $receivers_data[$index] = [
+                            'account_id' => $account_id,
+                            'percentage' => $percentage
+                        ];
+                    }
+                    $index++;
+                }
+                
+                // Clean up individual fields from POST
+                foreach ($_POST as $key => $value) {
+                    if (strpos($key, $field_key . '[') === 0) {
+                        unset($_POST[$key]);
+                    }
+                }
+            }
+            
+            if (!empty($receivers_data) && is_array($receivers_data)) {
+                $value = $this->validate_split_payments_repeater_field('split_payments_receivers', $receivers_data);
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf(
+                        'Gateway::process_admin_options - Saving %d receivers: %s',
+                        count($value),
+                        json_encode($value)
+                    ),
+                    'info'
+                );
+                $this->update_option('split_payments_receivers', $value);
+            } else {
+                // Field not in POST - this happens when table is empty
+                // Set to empty array to clear any existing data
+                \RM_PagBank\Helpers\Functions::log(
+                    'Gateway::process_admin_options - Split enabled but no receivers data found, clearing receivers',
+                    'info'
+                );
+                $this->update_option('split_payments_receivers', []);
+            }
+        } else {
+            // If split is disabled, clear the receivers
+            $this->update_option('split_payments_receivers', []);
+        }
+        
+        // Remove from POST to prevent any other processing
+        unset($_POST[$field_key]);
+
+        // Call parent to process other fields
+        parent::process_admin_options();
+        
+        // Save Account ID if it was fetched from API
+        if ($primary_account_id_to_save !== null) {
+            $this->update_option('split_payments_primary_account_id', $primary_account_id_to_save);
+            \RM_PagBank\Helpers\Functions::log(
+                'Gateway::process_admin_options - Account ID Principal salvo após process_admin_options: ' . $primary_account_id_to_save,
+                'info'
+            );
+        }
+        
+        // Restore the custom field to form_fields
+        if ($custom_field !== null) {
+            $this->form_fields['split_payments_receivers'] = $custom_field;
+        }
+    }
+
     public function init_form_fields()
     {
         $fields = [];
@@ -68,6 +276,155 @@ class Gateway extends WC_Payment_Gateway_CC
 
         include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-settings-page.php';
 //        parent::admin_options();
+    }
+
+    /**
+     * Generate HTML for split payments repeater field
+     *
+     * @param string $key Field key
+     * @param array  $data Field data
+     * @return string
+     */
+    public function generate_split_payments_repeater_html($key, $data)
+    {
+        $field_key = $this->get_field_key($key);
+        $defaults = [
+            'title'             => '',
+            'label'             => '',
+            'description'       => '',
+            'class'             => '',
+            'css'               => '',
+            'placeholder'       => '',
+            'type'              => 'text',
+            'desc_tip'          => false,
+            'custom_attributes' => [],
+            'default'           => [],
+        ];
+
+        $data = wp_parse_args($data, $defaults);
+        $value = $this->get_option($key, $data['default']);
+        
+        // Ensure value is an array
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        ob_start();
+        ?>
+        <tr valign="top">
+            <th scope="row" class="titledesc">
+                <label for="<?php echo esc_attr($field_key); ?>"><?php echo wp_kses_post($data['title']); ?></label>
+            </th>
+            <td class="forminp forminp-<?php echo esc_attr($data['type']); ?>">
+                <?php if ($data['description']): ?>
+                    <p class="description"><?php echo wp_kses_post($data['description']); ?></p>
+                <?php endif; ?>
+                
+                <style>
+                    .pagbank-split-payments-table {
+                        margin-top: 10px;
+                    }
+                    .pagbank-split-payments-table th {
+                        padding: 10px;
+                        background: #f9f9f9;
+                        font-weight: 600;
+                    }
+                    .pagbank-split-payments-table td {
+                        padding: 8px 10px;
+                        vertical-align: middle;
+                    }
+                    .pagbank-split-payments-table .account-id-column {
+                        width: 50%;
+                    }
+                    .pagbank-split-payments-table .percentage-column {
+                        width: 25%;
+                    }
+                    .pagbank-split-payments-table .actions-column {
+                        width: 25%;
+                        text-align: right;
+                    }
+                    .pagbank-split-payment-row .pagbank-account-id {
+                        width: 100%;
+                    }
+                    .pagbank-split-payment-row .pagbank-percentage {
+                        width: 100px;
+                    }
+                    .pagbank-split-payment-row small a {
+                        color: #2271b1;
+                        text-decoration: underline;
+                    }
+                    .pagbank-split-payment-row small a:hover {
+                        color: #135e96;
+                    }
+                </style>
+                
+                <div class="pagbank-split-payments-repeater" id="<?php echo esc_attr($field_key); ?>_container">
+                    <table class="widefat pagbank-split-payments-table" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th class="account-id-column"><?php esc_html_e('Account ID PagBank', 'pagbank-connect'); ?></th>
+                                <th class="percentage-column"><?php esc_html_e('Percentual (%)', 'pagbank-connect'); ?></th>
+                                <th class="actions-column"><?php esc_html_e('Ações', 'pagbank-connect'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody class="pagbank-split-payments-tbody">
+                            <?php if (!empty($value)): ?>
+                                <?php foreach ($value as $index => $receiver): ?>
+                                    <tr class="pagbank-split-payment-row">
+                                        <td class="account-id-column">
+                                            <input 
+                                                type="text" 
+                                                name="<?php echo esc_attr($field_key); ?>[<?php echo esc_attr($index); ?>][account_id]" 
+                                                value="<?php echo esc_attr($receiver['account_id'] ?? ''); ?>" 
+                                                placeholder="ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                                pattern="ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"
+                                                class="regular-text pagbank-account-id"
+                                                maxlength="41"
+                                            />
+                                            <br>
+                                            <small>
+                                                <a href="https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                                                    <?php esc_html_e('Qual é meu Account Id?', 'pagbank-connect'); ?>
+                                                </a>
+                                            </small>
+                                        </td>
+                                        <td class="percentage-column">
+                                            <input 
+                                                type="number" 
+                                                name="<?php echo esc_attr($field_key); ?>[<?php echo esc_attr($index); ?>][percentage]" 
+                                                value="<?php echo esc_attr($receiver['percentage'] ?? ''); ?>" 
+                                                placeholder="0.00"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                class="small-text pagbank-percentage"
+                                            />
+                                        </td>
+                                        <td class="actions-column">
+                                            <button type="button" class="button pagbank-remove-row"><?php esc_html_e('Remover', 'pagbank-connect'); ?></button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3">
+                                    <button type="button" class="button button-secondary pagbank-add-row">
+                                        <?php esc_html_e('+ Adicionar Conta', 'pagbank-connect'); ?>
+                                    </button>
+                                    <span class="pagbank-total-percentage" style="margin-left: 15px; font-weight: bold;">
+                                        <?php esc_html_e('Total:', 'pagbank-connect'); ?> <span class="total-value">0</span>%
+                                    </span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </td>
+        </tr>
+        <?php
+        return ob_get_clean();
     }
 
     /**
@@ -142,6 +499,154 @@ class Gateway extends WC_Payment_Gateway_CC
 
     }
     
+    /**
+     * Validate split payments repeater field
+     *
+     * @param string $key Field key
+     * @param mixed  $value Field value (array of receivers)
+     * @return array
+     */
+    public function validate_split_payments_repeater_field($key, $value)
+    {
+        \RM_PagBank\Helpers\Functions::log(
+            sprintf(
+                'Gateway::validate_split_payments_repeater_field - Input value type: %s, value: %s',
+                gettype($value),
+                is_array($value) ? json_encode($value) : var_export($value, true)
+            ),
+            'info'
+        );
+        
+        // Ensure value is an array
+        if (!is_array($value)) {
+            \RM_PagBank\Helpers\Functions::log(
+                'Gateway::validate_split_payments_repeater_field - Value is not array, returning empty',
+                'info'
+            );
+            return [];
+        }
+
+        $sanitized = [];
+        
+        foreach ($value as $index => $receiver) {
+            if (!is_array($receiver)) {
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf('Gateway::validate_split_payments_repeater_field - Receiver %d is not array, skipping', $index),
+                    'info'
+                );
+                continue;
+            }
+
+            $account_id = isset($receiver['account_id']) ? sanitize_text_field($receiver['account_id']) : '';
+            $percentage = isset($receiver['percentage']) ? floatval($receiver['percentage']) : 0;
+
+            \RM_PagBank\Helpers\Functions::log(
+                sprintf(
+                    'Gateway::validate_split_payments_repeater_field - Processing receiver %d: account_id=%s, percentage=%s',
+                    $index,
+                    $account_id,
+                    $percentage
+                ),
+                'info'
+            );
+
+            // Skip empty entries
+            if (empty($account_id) && empty($percentage)) {
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf('Gateway::validate_split_payments_repeater_field - Receiver %d is empty, skipping', $index),
+                    'info'
+                );
+                continue;
+            }
+
+            // Validate Account ID format if provided
+            if (!empty($account_id)) {
+                $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
+                if (!preg_match($pattern, $account_id)) {
+                    WC_Admin_Settings::add_error(
+                        sprintf(
+                            __('Account ID inválido na linha %d: %s', 'pagbank-connect'),
+                            $index + 1,
+                            esc_html($account_id)
+                        )
+                    );
+                    \RM_PagBank\Helpers\Functions::log(
+                        sprintf('Gateway::validate_split_payments_repeater_field - Receiver %d has invalid account_id format', $index),
+                        'info'
+                    );
+                    continue;
+                }
+            }
+
+            // Validate percentage (0-100)
+            if ($percentage < 0 || $percentage > 100) {
+                WC_Admin_Settings::add_error(
+                    sprintf(
+                        __('Percentual inválido na linha %d: deve estar entre 0 e 100', 'pagbank-connect'),
+                        $index + 1
+                    )
+                );
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf('Gateway::validate_split_payments_repeater_field - Receiver %d has invalid percentage', $index),
+                    'info'
+                );
+                continue;
+            }
+
+            // Only add if both account_id and percentage are valid
+            if (!empty($account_id) && $percentage > 0) {
+                $sanitized[] = [
+                    'account_id' => $account_id,
+                    'percentage' => round($percentage, 2)
+                ];
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf('Gateway::validate_split_payments_repeater_field - Receiver %d added to sanitized array', $index),
+                    'info'
+                );
+            } else {
+                \RM_PagBank\Helpers\Functions::log(
+                    sprintf('Gateway::validate_split_payments_repeater_field - Receiver %d skipped: account_id empty or percentage <= 0', $index),
+                    'info'
+                );
+            }
+        }
+
+        // Validate that total percentage is less than 100% (primary account also receives a portion)
+        $total_percentage = 0;
+        foreach ($sanitized as $receiver) {
+            $total_percentage += $receiver['percentage'];
+        }
+
+        if ($total_percentage >= 100) {
+            WC_Admin_Settings::add_error(
+                sprintf(
+                    __('A soma dos percentuais das contas secundárias deve ser menor que 100%%. Total atual: %.2f%%. A conta principal também receberá uma parte do pagamento.', 'pagbank-connect'),
+                    $total_percentage
+                )
+            );
+            \RM_PagBank\Helpers\Functions::log(
+                sprintf(
+                    'Gateway::validate_split_payments_repeater_field - Total percentage %.2f%% is >= 100%%, validation failed',
+                    $total_percentage
+                ),
+                'info'
+            );
+            // Return empty array to prevent saving invalid configuration
+            return [];
+        }
+
+        \RM_PagBank\Helpers\Functions::log(
+            sprintf(
+                'Gateway::validate_split_payments_repeater_field - Returning %d sanitized receivers with total percentage %.2f%%',
+                count($sanitized),
+                $total_percentage
+            ),
+            'info'
+        );
+
+        return $sanitized;
+    }
+
     public function validate_icons_color_field($key, $icon_color)
     {
         //Validate if dynamic icon is accessible

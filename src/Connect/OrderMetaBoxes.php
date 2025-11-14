@@ -94,7 +94,18 @@ class OrderMetaBoxes
         if (isset($split_data['receivers']) && is_array($split_data['receivers'])) {
             foreach ($split_data['receivers'] as $index => $receiver) {
                 $account_id = $receiver['account']['id'] ?? '';
-                $amount = ($receiver['amount']['value'] ?? 0) / 100;
+                $amount_value = $receiver['amount']['value'] ?? 0;
+                
+                // For PERCENTAGE method, value is already a percentage (float)
+                // For FIXED method, value is in cents and needs to be divided by 100
+                if ($method === 'PERCENTAGE') {
+                    $amount = $amount_value; // Already a percentage
+                    $amount_display = number_format($amount, 2, ',', '.') . '%';
+                } else {
+                    $amount = $amount_value / 100; // Convert cents to currency
+                    $amount_display = 'R$ ' . number_format($amount, 2, ',', '.');
+                }
+                
                 $type = $receiver['type'] ?? '';
                 $reason = $receiver['reason'] ?? '';
                 $configurations = $receiver['configurations'] ?? [];
@@ -116,8 +127,8 @@ class OrderMetaBoxes
                 
                 // Amount
                 echo '<div style="margin-bottom: 5px; font-size: 12px;">';
-                echo '<strong>' . __('Valor:', 'pagbank-connect') . '</strong> ';
-                echo '<span style="color: #2ea44f; font-weight: 600;">R$ ' . number_format($amount, 2, ',', '.') . '</span>';
+                echo '<strong>' . ($method === 'PERCENTAGE' ? __('Percentual:', 'pagbank-connect') : __('Valor:', 'pagbank-connect')) . '</strong> ';
+                echo '<span style="color: #2ea44f; font-weight: 600;">' . $amount_display . '</span>';
                 echo '</div>';
                 
                 // Reason

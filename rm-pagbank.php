@@ -86,16 +86,33 @@ add_action('admin_init', function() {
     
     if ($is_integrations_page && isset($_POST['save']) && check_admin_referer('woocommerce-settings')) {
         
-        // Get all posted data
+        // Get all posted data first
         $integrations_settings = [];
         $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/dokan-split-fields.php';
         
         foreach ($fields as $key => $field) {
             if ($field['type'] === 'checkbox') {
-                $integrations_settings[$key] = isset($_POST[$key]) ? 'yes' : 'no';
+                $integrations_settings[$key] = isset($_POST[$field['id']]) ? 'yes' : 'no';
             } else {
-                $integrations_settings[$key] = isset($_POST[$key]) ? sanitize_text_field($_POST[$key]) : '';
+                $integrations_settings[$key] = isset($_POST[$field['id']]) ? sanitize_text_field($_POST[$field['id']]) : '';
             }
+        }
+        
+        // Check mutual exclusivity with Split Payments
+        $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
+        $gateway = new Connect\Gateway();
+        $split_payments_enabled = $gateway->get_option('split_payments_enabled', 'no');
+        
+        if ($dokan_split_enabled === 'yes' && $split_payments_enabled === 'yes') {
+            add_settings_error(
+                'woocommerce_rm-pagbank-integrations',
+                'mutual_exclusivity_error',
+                __('Não é possível ativar Split Dokan enquanto a Divisão de Pagamentos estiver ativa. Desative a Divisão de Pagamentos primeiro.', 'pagbank-connect'),
+                'error'
+            );
+            // Don't save and redirect back
+            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
+            exit;
         }
         
         // Save to database
