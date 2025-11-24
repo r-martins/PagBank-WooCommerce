@@ -14,9 +14,9 @@ use JsonSerializable;
  */
 class Customer implements JsonSerializable
 {
-    private string $name;
-    private string $email;
-    private string $tax_id;
+    private string $name = '';
+    private string $email = '';
+    private string $tax_id = '';
     private $phone; //type not declared because it can be an array or a Phone object and mixed types are not allowed in PHP 7.4
 
     #[\ReturnTypeWillChange]
