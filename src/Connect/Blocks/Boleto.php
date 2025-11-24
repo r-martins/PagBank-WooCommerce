@@ -50,26 +50,42 @@ final class Boleto extends AbstractPaymentMethodType
             return [];
         }
 
-        $scriptPath = 'pagbank-connect/build/js/frontend/boleto.js';
-
-        wp_register_script(
-            'rm-pagbank-boleto-blocks-integration',
-            plugins_url( $scriptPath ),
-            [
+        $assetData = [
+            'dependencies' => [
                 'wc-blocks-registry',
                 'wc-settings',
                 'wp-element',
                 'wp-html-entities',
                 'wp-i18n',
             ],
-            null,
-            true
-        );
-        if( function_exists( 'wp_set_script_translations' ) ) {
-            wp_set_script_translations( 'rm-pagbank-boleto-blocks-integration');
+            'version' => defined( 'WC_PAGSEGURO_CONNECT_VERSION' ) ? WC_PAGSEGURO_CONNECT_VERSION : null,
+        ];
+
+        $assetPath = WC_PAGSEGURO_CONNECT_BASE_DIR . '/build/js/frontend/boleto.asset.php';
+        if ( file_exists( $assetPath ) ) {
+            $assetFile = include $assetPath;
+            if ( is_array( $assetFile ) ) {
+                $assetData = wp_parse_args( $assetFile, $assetData );
+            }
         }
 
-        return ['rm-pagbank-boleto-blocks-integration'];
+        wp_register_script(
+            'rm-pagbank-boleto-blocks-integration',
+            plugins_url( 'build/js/frontend/boleto.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE ),
+            $assetData['dependencies'],
+            $assetData['version'],
+            true
+        );
+
+        if ( function_exists( 'wp_set_script_translations' ) ) {
+            wp_set_script_translations(
+                'rm-pagbank-boleto-blocks-integration',
+                'pagbank-connect',
+                WC_PAGSEGURO_CONNECT_BASE_DIR . '/languages'
+            );
+        }
+
+        return [ 'rm-pagbank-boleto-blocks-integration' ];
     }
 
     /**
