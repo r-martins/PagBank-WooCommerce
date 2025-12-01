@@ -70,7 +70,15 @@ class RecurringsReport extends WC_Admin_Report
         ", $date_filter));
 
         // Detect HPOS
-        $is_hpos = class_exists('WC_Order_Storage') && method_exists('WC_Order_Storage', 'get_order_type') && wc_get_container()->get('order.store')::class === 'Automattic\WooCommerce\Internal\Order\Storage';
+        $is_hpos = false;
+        try {
+            $is_hpos = wc_get_container()->get(
+                \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
+            )->custom_orders_table_usage_is_enabled();
+        } catch (\Exception $e) {
+            // HPOS not available or error checking
+            $is_hpos = false;
+        }
 
         if ($is_hpos) {
             // HPOS: fetch data from wp_wc_orders and wp_wc_order_addresses
@@ -79,8 +87,7 @@ class RecurringsReport extends WC_Admin_Report
                 o.date_created_gmt as post_date,
                 oa.email as customer_email,
                 oa.first_name as billing_first_name,
-                oa.last_name as billing_last_name,
-                o.total as order_total
+                oa.last_name as billing_last_name
             FROM {$table} r
             LEFT JOIN {$wpdb->prefix}wc_orders o ON r.initial_order_id = o.id
             LEFT JOIN {$wpdb->prefix}wc_order_addresses oa ON o.id = oa.order_id AND oa.address_type = 'billing'
