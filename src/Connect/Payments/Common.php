@@ -217,53 +217,79 @@ class Common
 
 	/**
 	 * Populates the address object with data from the order
+	 * Compatible with HPOS and legacy storage
 	 * @return Address
 	 */
 	public function getShippingAddress(): Address
 	{
         $address = new Address();
-        $address->setStreet(substr($this->order->get_shipping_address_1('edit'), 0, 120));
-        //Usually virtual orders don't have shipping address' attributes replicated. So we use billing address instead.
-        $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
-        $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_shipping_number', 'shipping_number');
-        $shippingComplement = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
-            '_shipping_complement',
-            'shipping_complement'
-        );
+        
+        // Street - using WC_Order method (HPOS/Legacy compatible)
+        $shippingStreet = $this->order->get_shipping_address_1('edit');
+        $address->setStreet(substr($shippingStreet, 0, 120));
+        
+        // Usually virtual orders don't have shipping address' attributes replicated. So we use billing address instead.
+        // Number - prefer meta fields, fallback to address_2 (HPOS/Legacy compatible)
+        $shippingNumber = $this->order->get_meta('_shipping_number');
+        $billingNumber = $this->order->get_meta('_billing_number');
+        $shippingAddress2 = $this->order->get_shipping_address_2('edit');
+        $billingAddress2 = $this->order->get_billing_address_2('edit');
+        
+        // Complement - using get_meta() (HPOS/Legacy compatible)
+        $shippingComplement = $this->order->get_meta('_shipping_complement');
+        $billingComplement = $this->order->get_meta('_billing_complement');
+        
+        // Neighborhood - using get_meta() (HPOS/Legacy compatible)
+        $shippingNeighborhood = $this->order->get_meta('_shipping_neighborhood');
+        $billingNeighborhood = $this->order->get_meta('_billing_neighborhood');
+        
+        // Apply sanitization and length limits
         $shippingComplement = substr($shippingComplement, 0, 40);
-        $billingComplement = substr($this->order->get_billing_address_2('edit'), 0, 40);
-        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
-            '_billing_neighborhood',
-            'billing_neighborhood'
-        );
-        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
-            '_shipping_neighborhood',
-            'shipping_neighborhood'
-        );
+        $billingComplement = substr($billingComplement, 0, 40);
+        $shippingAddress2 = substr($shippingAddress2, 0, 40);
+        $billingAddress2 = substr($billingAddress2, 0, 40);
         $billingNeighborhood = substr($billingNeighborhood, 0, 60);
         $shippingNeighborhood = substr($shippingNeighborhood, 0, 60);
+        
+        // Number: prefer shipping meta, then billing meta, then shipping address_2, then billing address_2
+        $hasNumberMeta = !empty($shippingNumber) || !empty($billingNumber);
+        $number = !empty($shippingNumber) 
+            ? $shippingNumber 
+            : (!empty($billingNumber) 
+                ? $billingNumber 
+                : (!empty($shippingAddress2) 
+                    ? $shippingAddress2 
+                    : (!empty($billingAddress2) 
+                        ? $billingAddress2 
+                        : '...')));
+        $address->setNumber($number);
 
-        $billingNumber = !empty($billingNumber) ? $billingNumber : '...';
-        $address->setNumber($billingNumber);
-        if (!empty($shippingNumber)) {
-            $address->setNumber($shippingNumber);
-        }
-
-        $billingComplement = !empty($billingComplement) ? $billingComplement : '...';
-        $address->setComplement($billingComplement);
-        if (!empty($shippingComplement)) {
-            $address->setComplement($shippingComplement);
-        }
-
-        $billingNeighborhood = !empty($billingNeighborhood) ? $billingNeighborhood : '...';
-        $address->setLocality($billingNeighborhood);
-        if (!empty($shippingNeighborhood)) {
-            $address->setLocality($shippingNeighborhood);
+        // Complement: if number came from meta, use address_2 as complement fallback
+        // Otherwise, use meta complement fields only
+        // Only set complement if there's a valid value
+        if ($hasNumberMeta) {
+            // Number came from meta, so address_2 can be used as complement
+            $complement = !empty($shippingComplement) 
+                ? $shippingComplement 
+                : (!empty($billingComplement) 
+                    ? $billingComplement 
+                    : (!empty($shippingAddress2) 
+                        ? $shippingAddress2 
+                        : (!empty($billingAddress2) ? $billingAddress2 : '')));
+        } else {
+            // Number came from address_2, so only use meta complement fields
+            $complement = !empty($shippingComplement) ? $shippingComplement : (!empty($billingComplement) ? $billingComplement : '');
         }
         
+        if (!empty($complement)) {
+            $address->setComplement($complement);
+        }
+
+        // Neighborhood: prefer shipping, fallback to billing
+        $neighborhood = !empty($shippingNeighborhood) ? $shippingNeighborhood : (!empty($billingNeighborhood) ? $billingNeighborhood : '...');
+        $address->setLocality($neighborhood);
+        
+        // City, State, Postal Code - using WC_Order methods (HPOS/Legacy compatible)
         $address->setCity(substr($this->order->get_shipping_city('edit'), 0, 60));
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
@@ -273,42 +299,52 @@ class Common
 
     /**
      * Populates the address object with data from the order
+     * Compatible with HPOS and legacy storage
      * @return Address
      */
     public function getBillingAddress(): Address
     {
         $address = new Address();
-        $address->setStreet($this->order->get_billing_address_1('edit'));
-        $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
-        $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
-        $billingComplement = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
-            '_billing_complement',
-            'billing_complement'
-        );
-        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
-            '_billing_neighborhood',
-            'billing_neighborhood'
-        );
-        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
-            '_billing_neighborhood',
-            'billing_neighborhood'
-        );
-
-        $address->setNumber($billingNumber);
-        if (!empty($shippingNumber)) {
-            $address->setNumber($shippingNumber);
-        }
-
-        $address->setComplement($billingComplement);
         
-        $address->setLocality($billingNeighborhood);
-        if (!empty($shippingNeighborhood)) {
-            $address->setLocality($shippingNeighborhood);
-        }
+        // Street - using WC_Order method (HPOS/Legacy compatible)
+        $address->setStreet($this->order->get_billing_address_1('edit'));
+        
+        // Number - prefer meta field, fallback to address_2 (HPOS/Legacy compatible)
+        $billingNumber = $this->order->get_meta('_billing_number');
+        $billingAddress2 = $this->order->get_billing_address_2('edit');
+        
+        // Complement - using get_meta() (HPOS/Legacy compatible)
+        $billingComplement = $this->order->get_meta('_billing_complement');
+        
+        // Neighborhood - using get_meta() (HPOS/Legacy compatible)
+        $billingNeighborhood = $this->order->get_meta('_billing_neighborhood');
+        
+        // Apply sanitization and length limits
+        $billingComplement = substr($billingComplement, 0, 40);
+        $billingAddress2 = substr($billingAddress2, 0, 40);
+        $billingNeighborhood = substr($billingNeighborhood, 0, 60);
 
+        // Set address fields
+        // Number: prefer meta field, fallback to address_2
+        $hasNumberMeta = !empty($billingNumber);
+        $number = !empty($billingNumber) ? $billingNumber : (!empty($billingAddress2) ? $billingAddress2 : '...');
+        $address->setNumber($number);
+        
+        // Complement: if number came from meta, use address_2 as complement fallback
+        // Only set complement if there's a valid value
+        if ($hasNumberMeta) {
+            $complement = !empty($billingComplement) ? $billingComplement : (!empty($billingAddress2) ? $billingAddress2 : '');
+        } else {
+            // Number came from address_2, so only use meta complement field
+            $complement = !empty($billingComplement) ? $billingComplement : '';
+        }
+        
+        if (!empty($complement)) {
+            $address->setComplement($complement);
+        }
+        $address->setLocality(!empty($billingNeighborhood) ? $billingNeighborhood : '...');
+
+        // City, State, Postal Code - using WC_Order methods (HPOS/Legacy compatible)
         $address->setCity($this->order->get_billing_city('edit'));
         $address->setRegionCode($this->order->get_billing_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode('edit')));
