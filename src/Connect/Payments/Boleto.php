@@ -127,6 +127,20 @@ class Boleto extends Common
         $paymentMethod->setBoleto($boleto);
         $charge->setPaymentMethod($paymentMethod);
 
+        //region Split Integration
+        // Check Dokan Split first (if Dokan is active)
+        if (\RM_PagBank\Integrations\Dokan\DokanSplitManager::shouldApplySplit($this->order)) {
+            $splitManager = new \RM_PagBank\Integrations\Dokan\DokanSplitManager();
+            $splitData = $splitManager->buildSplitData($this->order, 'BOLETO');
+            $charge->setSplits($splitData->jsonSerialize());
+        }
+        // If Dokan Split is not applied, check General Split
+        elseif (\RM_PagBank\Integrations\GeneralSplitManager::shouldApplySplit($this->order)) {
+            $splitData = \RM_PagBank\Integrations\GeneralSplitManager::buildSplitData($this->order, 'BOLETO');
+            $charge->setSplits($splitData->jsonSerialize());
+        }
+        //endregion
+
         $charges = ['charges' => [$charge]];
 
         return array_merge($return, $charges);

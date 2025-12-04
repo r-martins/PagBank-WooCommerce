@@ -17,6 +17,7 @@ class Boleto implements JsonSerializable
     private string $due_date;
     private InstructionLines $instruction_lines;
     private Holder $holder;
+    private array $splits;
 
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
@@ -70,6 +71,22 @@ class Boleto implements JsonSerializable
     public function setHolder(Holder $holder): void
     {
         $this->holder = $holder;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSplits(): array
+    {
+        return $this->splits ?? [];
+    }
+
+    /**
+     * @param array $splits
+     */
+    public function setSplits(array $splits): void
+    {
+        $this->splits = $splits;
     }
 
 }

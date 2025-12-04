@@ -46,8 +46,97 @@ add_action('init', [Connect::class, 'init']);
 add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoints']);
 add_action('after_setup_theme', [Connect::class, 'loadTextDomain']);
 
+// Initialize Order Meta Boxes
+add_action('init', [Connect\OrderMetaBoxes::class, 'init']);
+
+// Initialize Dokan integration hooks
+add_action('init', function() {
+    if (class_exists('RM_PagBank\Integrations\Dokan\DokanHooks')) {
+        \RM_PagBank\Integrations\Dokan\DokanHooks::init();
+    }
+});
+
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
+
+// Redirect integrations section to main gateway with a flag
+add_action('admin_init', function() {
+    if (isset($_GET['page']) && $_GET['page'] === 'wc-settings' 
+        && isset($_GET['tab']) && $_GET['tab'] === 'checkout'
+        && isset($_GET['section']) && $_GET['section'] === 'rm-pagbank-integrations'
+        && !isset($_GET['show_integrations'])) {
+        
+        wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
+        exit;
+    }
+}, 1);
+
+// Save integrations settings when form is submitted
+add_action('admin_init', function() {
+    // Check if we're on the integrations page (either direct or via redirect)
+    $is_integrations_page = (
+        isset($_GET['page']) && $_GET['page'] === 'wc-settings' 
+        && isset($_GET['tab']) && $_GET['tab'] === 'checkout'
+        && (
+            (isset($_GET['section']) && $_GET['section'] === 'rm-pagbank-integrations')
+            || (isset($_GET['section']) && $_GET['section'] === 'rm-pagbank' && isset($_GET['show_integrations']) && $_GET['show_integrations'] === '1')
+            || (isset($_POST['section']) && $_POST['section'] === 'rm-pagbank-integrations')
+        )
+    );
+    
+    if ($is_integrations_page && isset($_POST['save']) && check_admin_referer('woocommerce-settings')) {
+        
+        // Get all posted data first
+        $integrations_settings = [];
+        $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/dokan-split-fields.php';
+        
+        foreach ($fields as $key => $field) {
+            if ($field['type'] === 'checkbox') {
+                $integrations_settings[$key] = isset($_POST[$field['id']]) ? 'yes' : 'no';
+            } else {
+                $integrations_settings[$key] = isset($_POST[$field['id']]) ? sanitize_text_field($_POST[$field['id']]) : '';
+            }
+        }
+        
+        // Check mutual exclusivity with Split Payments
+        $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
+        $gateway = new Connect\Gateway();
+        $split_payments_enabled = $gateway->get_option('split_payments_enabled', 'no');
+        
+        if ($dokan_split_enabled === 'yes' && $split_payments_enabled === 'yes') {
+            add_settings_error(
+                'woocommerce_rm-pagbank-integrations',
+                'mutual_exclusivity_error',
+                __('Não é possível ativar Split Dokan enquanto a Divisão de Pagamentos estiver ativa. Desative a Divisão de Pagamentos primeiro.', 'pagbank-connect'),
+                'error'
+            );
+            // Don't save and redirect back
+            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
+            exit;
+        }
+        
+        // Save to database
+        update_option('woocommerce_rm-pagbank-integrations_settings', $integrations_settings);
+        
+        // Add success message
+        add_settings_error('woocommerce_rm-pagbank-integrations', 'settings_updated', __('Configurações salvas com sucesso.', 'pagbank-connect'), 'updated');
+        
+        // Redirect to avoid form resubmission (maintain show_integrations flag)
+        wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
+        exit;
+    }
+});
+
+// Add custom validation for PagBank Account ID
+add_filter('woocommerce_admin_settings_sanitize_option', function($value, $option, $raw_value) {
+    if (isset($option['validate']) && $option['validate'] === 'validate_pagbank_account_id') {
+        if (!empty($value) && !preg_match('/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/', $value)) {
+            WC_Admin_Settings::add_error(__('Formato de Account ID PagBank inválido. Use o formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'pagbank-connect'));
+            return $raw_value; // Return original value to show error
+        }
+    }
+    return $value;
+}, 10, 3);
 //add_action('woocommerce_blocks_payment_method_type_registration', array(Connect::class, 'registerPaymentMethodOnCheckoutBlocks'));
 add_action('woocommerce_blocks_loaded', array(Connect::class, 'gatewayBlockSupport'));
 

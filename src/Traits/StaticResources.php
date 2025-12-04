@@ -133,6 +133,15 @@ trait StaticResources
                 [],
                 WC_PAGSEGURO_CONNECT_VERSION
             );
+            
+            // Enqueue split payments repeater script
+            wp_enqueue_script(
+                'pagbank-connect-split-payments',
+                plugins_url('public/js/admin/split-payments.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery'],
+                WC_PAGSEGURO_CONNECT_VERSION,
+                true
+            );
         }
 
         if ($hook == 'plugins.php') {

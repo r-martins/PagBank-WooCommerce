@@ -16,6 +16,7 @@ class QrCode implements JsonSerializable
 {
     private Amount $amount;
     private string $expiration_date;
+    private array $splits;
 
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
@@ -53,6 +54,22 @@ class QrCode implements JsonSerializable
     public function setExpirationDate(string $expiration_date): void
     {
         $this->expiration_date = $expiration_date;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSplits(): array
+    {
+        return $this->splits ?? [];
+    }
+
+    /**
+     * @param array $splits
+     */
+    public function setSplits(array $splits): void
+    {
+        $this->splits = $splits;
     }
 
 }
