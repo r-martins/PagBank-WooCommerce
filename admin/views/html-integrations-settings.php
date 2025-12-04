@@ -84,7 +84,7 @@ $dokan_is_active = function_exists('dokan');
                                     <?php if (!$dokan_is_active && $key === 'dokan_split_enabled'): ?>
                                         <p class="description" style="color: #d63638; margin-top: 5px;">
                                             <strong><?php esc_html_e('⚠', 'pagbank-connect'); ?></strong>
-                                            <?php esc_html_e('Esta configuração será ignorada porque o Dokan não está ativo.', 'pagbank-connect'); ?>
+                                            <?php esc_html_e('Esta configuração será ignorada porque o Dokan não está ativo ou instalado.', 'pagbank-connect'); ?>
                                         </p>
                                     <?php endif; ?>
                                 </label>

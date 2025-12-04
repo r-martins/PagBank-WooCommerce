@@ -405,9 +405,9 @@ class Common
 		            $order->add_meta_data('_pagbank_split_id', $split_id, true);
 		            Functions::log('Split ID encontrado no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
 		            
-		            // Fetch split details from the API (no authentication required)
+		            // Fetch split details from the API
 		            try {
-		                $split_details = $this->fetchSplitDetails($link['href']);
+		                $split_details = self::fetchSplitDetails($link['href']);
 		                if (!empty($split_details)) {
 		                    // Save split data in the same format as Pix
 		                    $order->add_meta_data('_pagbank_split_data', $split_details, true);
@@ -429,14 +429,43 @@ class Common
 
     /**
      * Fetch split details from PagBank API
-     * Note: According to PagBank docs, this endpoint doesn't require authentication
+     * Static method that can be called from anywhere
+     * 
+     * In production: Uses authenticated API endpoint
+     * In sandbox: Uses direct URL (no authentication required)
      *
      * @param string $split_url Full URL to the split endpoint
      * @return array|null Split details or null on error
      */
-    protected function fetchSplitDetails(string $split_url): ?array
+    public static function fetchSplitDetails(string $split_url): ?array
     {
-        // Replace sandbox domain with internal sandbox domain
+        $is_sandbox = Params::getConfig('is_sandbox', false);
+        
+        // In production, use authenticated API endpoint
+        if (!$is_sandbox) {
+            // Extract split_id from URL (e.g., https://api.pagseguro.com/splits/SPLI_xxx)
+            $split_id = basename(parse_url($split_url, PHP_URL_PATH));
+            
+            if (empty($split_id)) {
+                throw new \Exception('Não foi possível extrair o Split ID da URL: ' . $split_url);
+            }
+            
+            try {
+                // Use authenticated API endpoint
+                $api = new Api();
+                $split_data = $api->get('ws/splits/' . $split_id, [], 5);
+                
+                if (empty($split_data)) {
+                    throw new \Exception('Resposta vazia ao buscar detalhes do split');
+                }
+                
+                return $split_data;
+            } catch (\Exception $e) {
+                throw new \Exception('Erro ao buscar detalhes do split via API autenticada: ' . $e->getMessage());
+            }
+        }
+        
+        // In sandbox, use direct URL (replace with internal domain)
         if (strpos($split_url, 'https://sandbox.api.pagseguro.com') !== false) {
             $split_url = str_replace(
                 'https://sandbox.api.pagseguro.com',
@@ -445,7 +474,7 @@ class Common
             );
         }
         
-        // Make GET request without authentication headers
+        // Make GET request without authentication headers (sandbox only)
         $response = wp_remote_get($split_url, [
             'timeout' => 30,
             'headers' => [
