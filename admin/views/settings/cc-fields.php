@@ -162,4 +162,12 @@ return array(
             .'Esta opção só será exibida se o motivo da recusa do pagamento pelo PagBank permitir uma nova tentativa. <br/>',
         'default'     => 'yes',
     ],
+    'cc_allow_save_card' => [
+        'title'       => __('Permitir salvar cartão', 'pagbank-connect'),
+        'label'       => __('Habilitar opção de salvar cartão no checkout', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => __('Quando habilitado, os clientes poderão salvar o cartão de crédito para compras futuras. <br/>'
+            .'Para pedidos recorrentes (assinaturas), o cartão sempre será salvo automaticamente, independente desta configuração.', 'pagbank-connect'),
+        'default'     => 'no',
+    ],
 );

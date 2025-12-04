@@ -94,6 +94,25 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 	}
 
+    /**
+     * Outputs the save payment method checkbox.
+     * Only shows if:
+     * - It's a recurring order, OR
+     * - The allow_save_card setting is enabled
+     */
+    public function save_payment_method_checkbox() {
+        $recurringHelper = new \RM_PagBank\Helpers\Recurring();
+        $isCartRecurring = $recurringHelper->isCartRecurring();
+        $allowSaveCard = wc_string_to_bool($this->get_option('cc_allow_save_card', 'no'));
+
+        // Only show checkbox if it's a recurring order OR if save card is enabled
+        if (!$isCartRecurring && !$allowSaveCard) {
+            return;
+        }
+
+        parent::save_payment_method_checkbox();
+    }
+
     public function init_form_fields()
     {
         $this->form_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/cc-fields.php';
