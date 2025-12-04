@@ -1,0 +1,160 @@
+/* PagBank Connect - Integrations Styles */
+
+.pagbank-integration-status {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.pagbank-integration-status .status-item {
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.pagbank-integration-status .status-item:last-child {
+    border-bottom: none;
+}
+
+.pagbank-integration-status .status-item strong {
+    display: inline-block;
+    width: 200px;
+    color: #333;
+}
+
+.pagbank-integration-status .status-item span {
+    font-weight: 500;
+}
+
+/* Dokan Split Info Box */
+.dokan-split-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.dokan-split-info h4 {
+    margin-top: 0;
+    color: #0066cc;
+}
+
+.dokan-split-info ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.dokan-split-info li {
+    margin: 5px 0;
+    padding: 5px 0;
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-indicator.active {
+    background-color: #46b450;
+}
+
+.status-indicator.inactive {
+    background-color: #dc3232;
+}
+
+.status-indicator.warning {
+    background-color: #ffb900;
+}
+
+/* Status item states */
+.status-item.status-success {
+    background-color: #f0f8f0;
+    border-left: 3px solid #46b450;
+    padding-left: 10px;
+}
+
+.status-item.status-warning {
+    background-color: #fff8e1;
+    border-left: 3px solid #ffb900;
+    padding-left: 10px;
+}
+
+.status-item.status-error {
+    background-color: #fef2f2;
+    border-left: 3px solid #dc3232;
+    padding-left: 10px;
+}
+
+/* Integration cards */
+.integration-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.integration-card h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.integration-card .card-content {
+    margin: 15px 0;
+}
+
+.integration-card .card-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+/* Dokan Split Dependent Fields */
+.dokan-split-dependent-field {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.dokan-split-dependent-field[style*="display: none"] {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.dokan-split-dependent-field[style*="display: table-row"] {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Error states for validation */
+.error-message {
+    display: block;
+    color: #dc3232;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.dokan-split-dependent-field.error {
+    border-color: #dc3232;
+    box-shadow: 0 0 2px rgba(220, 50, 50, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pagbank-integration-status .status-item strong {
+        width: 150px;
+        font-size: 14px;
+    }
+    
+    .integration-card {
+        padding: 15px;
+    }
+}

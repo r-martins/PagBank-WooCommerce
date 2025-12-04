@@ -62,6 +62,20 @@ class Pix extends Common
         //calculate expiry date based on current time + expiry days using ISO 8601 format
         $qr_code->setExpirationDate(gmdate('c', strtotime('+' . Params::getPixConfig('pix_expiry_minutes', 1440) . 'minute')));
 
+        //region Split Integration
+        // Check Dokan Split first (if Dokan is active)
+        if (\RM_PagBank\Integrations\Dokan\DokanSplitManager::shouldApplySplit($this->order)) {
+            $splitManager = new \RM_PagBank\Integrations\Dokan\DokanSplitManager();
+            $splitData = $splitManager->buildSplitData($this->order, 'PIX');
+            $qr_code->setSplits($splitData->jsonSerialize());
+        }
+        // If Dokan Split is not applied, check General Split
+        elseif (\RM_PagBank\Integrations\GeneralSplitManager::shouldApplySplit($this->order)) {
+            $splitData = \RM_PagBank\Integrations\GeneralSplitManager::buildSplitData($this->order, 'PIX');
+            $qr_code->setSplits($splitData->jsonSerialize());
+        }
+        //endregion
+
         $return['qr_codes'] = [$qr_code];
         return $return;
     }

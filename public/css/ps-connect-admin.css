@@ -63,6 +63,36 @@ a.recurring-label{
     margin-right: 5px;
 }
 
+.split-label {
+    display: inline-flex;
+    align-items: center;
+    background-color: #e8f5e9;
+    border-radius: 5px;
+    padding: 2px 5px;
+    margin-left: 5px;
+    text-decoration: none;
+    color: #2e7d32;
+    transition: background-color 0.2s ease;
+}
+
+.split-label:hover {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+}
+
+.split-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    line-height: 1;
+}
+
+.split-text {
+    font-size: 12px;
+    line-height: 1.2;
+}
+
 .rm-sandbox-warning-box {
     background-color: #fff8e1;
     border-left: 4px solid #ffc107;

@@ -1,8 +1,20 @@
 import React, { useState } from "react";
 import { __ } from "@wordpress/i18n";
+import { getSetting } from '@woocommerce/settings';
 
 const SavedCreditCardToken = () => {
   const [isChecked, setIsChecked] = useState(false);
+  const settings = getSetting('rm-pagbank-cc_data', {});
+  
+  // Verifica se deve exibir o componente:
+  // - Se for pedido recorrente: sempre exibir
+  // - Se não for recorrente: só exibir se allowSaveCard estiver habilitado
+  const shouldShow = settings.isCartRecurring === true || settings.allowSaveCard === true;
+  
+  if (!shouldShow) {
+    return null;
+  }
+
   const handleCheckboxChange = () => {
     setIsChecked(!isChecked);
   };

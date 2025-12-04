@@ -6,6 +6,7 @@ use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
+use RM_PagBank\Connect\OrderMetaBoxes;
 use RM_PagBank\Connect\OrderProcessor;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Payments\Pix;
@@ -81,6 +82,9 @@ class Connect
         add_filter('woocommerce_gateway_title', [__CLASS__, 'getMethodTitle'], 10, 2);
 
         self::addPagBankMenu();
+        
+        // Initialize order meta boxes
+        OrderMetaBoxes::init();
 
         if (Params::getRecurringConfig('recurring_enabled')) {
             $recurring = new Connect\Recurring();

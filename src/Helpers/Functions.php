@@ -635,6 +635,41 @@ class Functions
     }
 
     /**
+     * Validate PagBank Account ID format
+     *
+     * @param string $account_id
+     * @return array|\WP_Error
+     */
+    public static function validateAccountId(string $account_id)
+    {
+        // Validate format only (no API endpoint exists for account validation)
+        if (!self::isValidAccountIdFormat($account_id)) {
+            return new \WP_Error('invalid_format', __('Formato de Account ID inválido. Use o formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'pagbank-connect'));
+        }
+
+        // If format is valid, consider it valid
+        return [
+            'valid' => true,
+            'account_id' => $account_id,
+            'message' => __('Formato de Account ID válido', 'pagbank-connect')
+        ];
+    }
+
+    /**
+     * Check if Account ID has valid format
+     *
+     * @param string $account_id
+     * @return bool
+     */
+    public static function isValidAccountIdFormat(string $account_id): bool
+    {
+        // Format: ACCO_ + 8 hex chars + - + 4 hex chars + - + 4 hex chars + - + 4 hex chars + - 12 hex chars
+        // Total: 41 characters
+        $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
+        return preg_match($pattern, $account_id) === 1 && strlen($account_id) === 41;
+    }
+
+    /**
      * Sanitizes product name by removing HTML tags and special characters
      * Used when sending product names to PagBank API
      *

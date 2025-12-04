@@ -99,6 +99,7 @@ final class CreditCard extends AbstractPaymentMethodType
             'isCartRecurring' => $recHelper->isCartRecurring(),
             'recurringTerms' => wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong'),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'allowSaveCard' => wc_string_to_bool($this->get_setting('cc_allow_save_card', 'no')),
             'defaultInstallments' => is_checkout() && !is_order_received_page() && !$recHelper->isCartRecurring() ? $this->gateway->getDefaultInstallments() : null,
             'ajax_url' => admin_url('admin-ajax.php'),
             'rm_pagbank_nonce' => wp_create_nonce('rm_pagbank_nonce'),
