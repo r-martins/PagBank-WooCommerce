@@ -7,6 +7,12 @@ const SavedCardInstallments = (props) => {
     const { token, emitResponse, eventRegistration, billing } = props;
     const total = billing?.cartTotal?.value || 0;
     const showInstallments = Number(total) > 0;
+    
+    // Safety check: ensure eventRegistration exists
+    if (!eventRegistration) {
+        return null;
+    }
+    
     const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
     // Example: fetch installments by saved card BIN
     const [installments, setInstallments] = useState([]);

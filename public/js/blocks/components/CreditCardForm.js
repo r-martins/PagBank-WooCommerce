@@ -5,7 +5,7 @@ import { getSetting } from '@woocommerce/settings';
 import MaskedInput from './MaskedInput';
 import InstallmentsOptions from './InstallmentsOptions';
 const { useSelect } = window.wp.data;
-const { checkoutStore } = window.wc.wcBlocksData;
+const { checkoutStore } = window.wc?.wcBlocksData || {};
 const PaymentInstructions = () => {
     const settings = getSetting('rm-pagbank-cc_data', {});
     const defaultInstallments = settings.defaultInstallments || [];
@@ -16,7 +16,16 @@ const PaymentInstructions = () => {
     const [installments, setInstallments] = useState(defaultInstallments);
     window.ps_cc_installments = installments;
 
-	const isCalculating = useSelect((select) => select(checkoutStore).isCalculating());
+	const isCalculating = useSelect((select) => {
+        if (!checkoutStore) {
+            return false;
+        }
+        try {
+            return select(checkoutStore)?.isCalculating() || false;
+        } catch (e) {
+            return false;
+        }
+    });
 	const detectCardBrand = (number) => {
 		const visaRegex = /^4[0-9]{0,}$/;
 		const mastercardRegex = /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$/;
