@@ -314,7 +314,7 @@ class Connect
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
 
-        $sql = "CREATE TABLE $recurringTable 
+        $sql = "CREATE TABLE IF NOT EXISTS $recurringTable
                 (
                     id               int auto_increment,
                     initial_order_id int           not null UNIQUE comment 'Order that generated the subscription profiler',
@@ -448,9 +448,9 @@ class Connect
             }
 
             $generalSettings = serialize($generalSettings);
-            $ccSettings = serialize($ccSettings);
-            $pixSettings = serialize($pixSettings);
-            $boletoSettings = serialize($boletoSettings);
+            $ccSettings = $ccSettings;
+            $pixSettings = $pixSettings;
+            $boletoSettings = $boletoSettings;
 
             $wpdb->update(
                 $settingsTable,
