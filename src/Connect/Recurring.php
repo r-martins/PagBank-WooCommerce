@@ -573,15 +573,11 @@ class Recurring
             $data['initial_order_id']
         ));
 
-        if ($existingSubscription && $existingSubscription->status === 'PENDING') {
-            $update = $wpdb->update($table, $data, ['id' => $existingSubscription->id]) !== false;
-            if ($update && isset($data['status']) && strcmp($data['status'], $existingSubscription->status) != 0) {
-                do_action('pagbank_recurring_subscription_status_changed', $existingSubscription, $data['status']);
-            }
-            return $update; 
+        if (isset($data['status'], $existingSubscription->status) && strcmp($data['status'], $existingSubscription->status) != 0) {
+            do_action('pagbank_recurring_subscription_status_changed', $existingSubscription, $data['status']);
         }
-
-        return $wpdb->insert($table, $data, $format) !== false;
+        $insertOrUpdate = $wpdb->replace($table, $data, $format) !== false;
+        return $insertOrUpdate !== false;
     }
 
     /**
