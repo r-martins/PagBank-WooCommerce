@@ -12,7 +12,7 @@ import RetryInput from './components/RetryInput';
 import SavedCardInstallments from './components/SavedCardInstallments';
 import SavedCreditCardToken from './components/SavedCreditCardToken';
 const { useSelect } = window.wp.data;
-const { checkoutStore } = window.wc.wcBlocksData;
+const { checkoutStore } = window.wc?.wcBlocksData || {};
 const settings = getSetting('rm-pagbank-cc_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Cartão de Crédito', 'rm-pagbank-pix' );
 let showRetryInput = false;
@@ -48,9 +48,24 @@ const Label = ( props ) => {
  */
 const Content = ( props ) => {
     const { eventRegistration, emitResponse, billing } = props;
+    
+    // Safety check: ensure required props exist
+    if (!eventRegistration || !emitResponse || !billing) {
+        return null;
+    }
+    
     const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
-    const isCalculating = useSelect((select) => select(checkoutStore).isCalculating());
-    const cartTotalRef = useRef(billing.cartTotal.value ?? 0);
+    const isCalculating = useSelect((select) => {
+        if (!checkoutStore) {
+            return false;
+        }
+        try {
+            return select(checkoutStore)?.isCalculating() || false;
+        } catch (e) {
+            return false;
+        }
+    });
+    const cartTotalRef = useRef(billing?.cartTotal?.value ?? 0);
     if (settings.paymentUnavailable) {
         useEffect( () => {
             const unsubscribe = onPaymentSetup(() => {
@@ -318,35 +333,37 @@ const Content = ( props ) => {
                     }
                 }
 
-                let customerName = billing.billingData.first_name + ' ' + billing.billingData.last_name;
+                let customerName = (billing?.billingData?.first_name || '') + ' ' + (billing?.billingData?.last_name || '');
                 if(customerName.trim() === '') {
-                    customerName = document.getElementById('billing-first_name').value.replace(/\s/g, '')
-                        + ' ' + document.getElementById('billing-last_name').value.replace(/\s/g, '');
+                    const firstNameEl = document.getElementById('billing-first_name');
+                    const lastNameEl = document.getElementById('billing-last_name');
+                    customerName = (firstNameEl?.value || '').replace(/\s/g, '')
+                        + ' ' + (lastNameEl?.value || '').replace(/\s/g, '');
                 }
                 customerName = customerName.trim().replace(/\s+/g, ' '); //removing duplicated spaces in the middle
                 customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
                 
 
-                let customerEmail = billing.billingData.email;
-                customerEmail = customerEmail.trim() === '' ? document.getElementById('email').value : customerEmail;
+                let customerEmail = billing?.billingData?.email || '';
+                customerEmail = customerEmail.trim() === '' ? (document.getElementById('email')?.value || '') : customerEmail;
 
-                let customerPhone = billing.billingData.phone;
-                customerPhone = customerPhone.trim() === '' ? document.getElementById('billing-phone').value : customerPhone;
+                let customerPhone = billing?.billingData?.phone || '';
+                customerPhone = customerPhone.trim() === '' ? (document.getElementById('billing-phone')?.value || '') : customerPhone;
 
-                let billingAddress1 = billing.billingData.address_1;
-                billingAddress1 = billingAddress1.trim() === '' ? document.getElementById('billing-address_1').value : billingAddress1;
+                let billingAddress1 = billing?.billingData?.address_1 || '';
+                billingAddress1 = billingAddress1.trim() === '' ? (document.getElementById('billing-address_1')?.value || '') : billingAddress1;
 
-                let billingAddress2 = billing.billingData.address_2;
-                billingAddress2 = billingAddress2.trim() === '' ? document.getElementById('billing-address_2').value : billingAddress2;
+                let billingAddress2 = billing?.billingData?.address_2 || '';
+                billingAddress2 = billingAddress2.trim() === '' ? (document.getElementById('billing-address_2')?.value || '') : billingAddress2;
 
-                let regionCode = billing.billingData.state;
-                regionCode = regionCode.trim() === '' ? document.getElementById('billing-state').value : regionCode;
+                let regionCode = billing?.billingData?.state || '';
+                regionCode = regionCode.trim() === '' ? (document.getElementById('billing-state')?.value || '') : regionCode;
 
-                let billingAddressCity = billing.billingData.city;
-                billingAddressCity = billingAddressCity.trim() === '' ? document.getElementById('billing-city').value : billingAddressCity;
+                let billingAddressCity = billing?.billingData?.city || '';
+                billingAddressCity = billingAddressCity.trim() === '' ? (document.getElementById('billing-city')?.value || '') : billingAddressCity;
 
-                let billingAddressPostcode = billing.billingData.postcode;
-                billingAddressPostcode = billingAddressPostcode.trim() === '' ? document.getElementById('billing-postcode').value : billingAddressPostcode;
+                let billingAddressPostcode = billing?.billingData?.postcode || '';
+                billingAddressPostcode = billingAddressPostcode.trim() === '' ? (document.getElementById('billing-postcode')?.value || '') : billingAddressPostcode;
 
                 let orderData = {
                     customer: {
@@ -453,7 +470,7 @@ const Content = ( props ) => {
 
     // When the bin changes or total recalculates
     useEffect(() => {
-        if (!isCalculating) {
+        if (!isCalculating && billing?.cartTotal?.value) {
             cartTotalRef.current = billing.cartTotal.value;
         }
     }, [isCalculating]);

@@ -314,7 +314,7 @@ class Connect
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
 
-        $sql = "CREATE TABLE $recurringTable 
+        $sql = "CREATE TABLE IF NOT EXISTS $recurringTable
                 (
                     id               int auto_increment,
                     initial_order_id int           not null UNIQUE comment 'Order that generated the subscription profiler',
@@ -340,6 +340,23 @@ class Connect
         add_option('pagbank_db_version', '4.0');
     }
 
+    /**
+     * Check if a table exists in the database
+     *
+     * @param string $table_name The table name to check
+     * @return bool True if table exists, false otherwise
+     */
+    private static function tableExists($table_name)
+    {
+        global $wpdb;
+        $table_name = esc_sql($table_name);
+        // Suppress errors to avoid warnings if table doesn't exist
+        $wpdb->suppress_errors();
+        $result = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+        $wpdb->suppress_errors(false);
+        return $result === $table_name;
+    }
+
     public static function upgrade()
     {
         global $wpdb;
@@ -347,15 +364,18 @@ class Connect
         $stored_version = get_option('pagbank_db_version');
 
         if (version_compare($stored_version, '4.12', '<')) {
-            if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'recurring_initial_fee'") !== 'recurring_initial_fee') { //if column recurring_initial_fee does not exist
-                $sql = "ALTER TABLE $recurringTable
-                        ADD COLUMN recurring_initial_fee float(8, 2) null comment 'Initial fee to be charged on the first payment' AFTER recurring_amount,
-                        ADD COLUMN recurring_trial_period int null comment 'Number of days to wait before charging the first fee' AFTER recurring_initial_fee,
-                        ADD COLUMN recurring_discount_amount float(8, 2) null comment 'Discount amount to be applied to the recurring amount' AFTER recurring_trial_period,
-                        ADD COLUMN recurring_discount_cycles int null comment 'Number of cycles to apply the discount' AFTER recurring_discount_amount;
-                        ";
+            // Check if table exists before trying to modify it
+            if (self::tableExists($recurringTable)) {
+                if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'recurring_initial_fee'") !== 'recurring_initial_fee') { //if column recurring_initial_fee does not exist
+                    $sql = "ALTER TABLE $recurringTable
+                            ADD COLUMN recurring_initial_fee float(8, 2) null comment 'Initial fee to be charged on the first payment' AFTER recurring_amount,
+                            ADD COLUMN recurring_trial_period int null comment 'Number of days to wait before charging the first fee' AFTER recurring_initial_fee,
+                            ADD COLUMN recurring_discount_amount float(8, 2) null comment 'Discount amount to be applied to the recurring amount' AFTER recurring_trial_period,
+                            ADD COLUMN recurring_discount_cycles int null comment 'Number of cycles to apply the discount' AFTER recurring_discount_amount;
+                            ";
 
-                $wpdb->query($sql);
+                    $wpdb->query($sql);
+                }
             }
             update_option('pagbank_db_version', '4.12');
         }
@@ -428,9 +448,9 @@ class Connect
             }
 
             $generalSettings = serialize($generalSettings);
-            $ccSettings = serialize($ccSettings);
-            $pixSettings = serialize($pixSettings);
-            $boletoSettings = serialize($boletoSettings);
+            $ccSettings = $ccSettings;
+            $pixSettings = $pixSettings;
+            $boletoSettings = $boletoSettings;
 
             $wpdb->update(
                 $settingsTable,
@@ -438,44 +458,11 @@ class Connect
                 ['option_name' => 'woocommerce_rm-pagbank_settings']
             );
 
-            if (get_option('woocommerce_rm-pagbank-cc_settings')) {
-                $wpdb->update(
-                    $settingsTable,
-                    ['option_value' => $ccSettings],
-                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings']
-                );
-            } else {
-                $wpdb->insert(
-                    $settingsTable,
-                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings', 'option_value' => $ccSettings]
-                );
-            }
-
-            if (get_option('woocommerce_rm-pagbank-pix_settings')) {
-                $wpdb->update(
-                    $settingsTable,
-                    ['option_value' => $pixSettings],
-                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings']
-                );
-            } else {
-                $wpdb->insert(
-                    $settingsTable,
-                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings', 'option_value' => $pixSettings]
-                );
-            }
-
-            if (get_option('woocommerce_rm-pagbank-boleto_settings')) {
-                $wpdb->update(
-                    $settingsTable,
-                    ['option_value' => $boletoSettings],
-                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings']
-                );
-            } else {
-                $wpdb->insert(
-                    $settingsTable,
-                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings', 'option_value' => $boletoSettings]
-                );
-            }
+            // Use update_option which automatically handles INSERT or UPDATE
+            // This prevents duplicate key errors
+            update_option('woocommerce_rm-pagbank-cc_settings', $ccSettings);
+            update_option('woocommerce_rm-pagbank-pix_settings', $pixSettings);
+            update_option('woocommerce_rm-pagbank-boleto_settings', $boletoSettings);
 
             foreach ($recurringSettings as $key => $setting) {
                 $key = 'woocommerce_rm-pagbank-' . $key;
@@ -502,20 +489,29 @@ class Connect
         }
 
         if (version_compare($stored_version, '4.27', '<')) {
-            if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'recurring_max_cycles'") !== 'recurring_max_cycles') {
-                $sql = "ALTER TABLE $recurringTable
-                    ADD COLUMN recurring_max_cycles int null comment 'Maximum number of billing cycles' AFTER recurring_discount_cycles;";
-                $wpdb->query($sql);
+            // Check if table exists before trying to modify it
+            if (self::tableExists($recurringTable)) {
+                if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'recurring_max_cycles'") !== 'recurring_max_cycles') {
+                    $sql = "ALTER TABLE $recurringTable
+                        ADD COLUMN recurring_max_cycles int null comment 'Maximum number of billing cycles' AFTER recurring_discount_cycles;";
+                    $wpdb->query($sql);
+                }
             }
             update_option('pagbank_db_version', '4.27');
         }
 
         if (version_compare($stored_version, '4.28', '<')) {
-            $sql = "ALTER TABLE $recurringTable
-                    ADD COLUMN retry_attempts_remaining int null comment 'Number of billing attempts remaining on suspended subscriptions' AFTER suspended_at;
-                    ";
+            // Check if table exists before trying to modify it
+            if (self::tableExists($recurringTable)) {
+                // Check if column already exists to avoid errors
+                if ($wpdb->get_var("SHOW COLUMNS FROM $recurringTable LIKE 'retry_attempts_remaining'") !== 'retry_attempts_remaining') {
+                    $sql = "ALTER TABLE $recurringTable
+                            ADD COLUMN retry_attempts_remaining int null comment 'Number of billing attempts remaining on suspended subscriptions' AFTER suspended_at;
+                            ";
 
-            $wpdb->query($sql);
+                    $wpdb->query($sql);
+                }
+            }
             update_option('pagbank_db_version', '4.28');
         }
 
