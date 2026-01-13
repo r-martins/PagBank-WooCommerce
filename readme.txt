@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.47.0
+Stable tag: 4.48.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -239,6 +239,13 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.48.0 =
+* Melhoria: adicionado medidas de segurança, evitando que: 1) usuários adicionem mais de 5 cartões salvos; 2) bots realizem testes de cartão ao adicionar cartões em intervalos menores que 2 minutos ou sem estarem logados; 3) nonce adicionado ao formulário de cartão (área logado) evitando que bots explorem diretamente este endpoint
+* Correção: erro fatal poderia ocorrer ao finalizar uma compra com assinatura por conta de uma tentativa de inserir registros duplicados. Na ausência da chave única na tabela, assinatura e cobranças duplicadas poderiam ser geradas. (Reportado por Ricardo Alves B.)
+* Correção: mesmo com opção de salvar cartão desabilitada, ainda era possível salvar cartão em Minha Conta > Meios de Pagamento
+* Correção/Melhoria: Erro fatal poderia ocorrer ao tentar finalizar um pedido com Boleto (métodos getter retornam null (retorna string vazia)) e melhorado phpdoc de alguns métodos do objeto Address.
+* Correção: Erro Fatal poderia ocorrer na primeira vez a configuração de uma das áreas do plugin fosse salva, dependendo de como o plugin foi reinstalado/reconfigurado no passado.
+* Correção: em cenários específicos, o form de cartão de crédito não era exibido no checkout em blocos (TypeError).
 
 = 4.47.0 =
 * Adicionado suporte a divisão de pagamentos (split) nativa.
