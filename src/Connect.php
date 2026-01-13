@@ -458,44 +458,11 @@ class Connect
                 ['option_name' => 'woocommerce_rm-pagbank_settings']
             );
 
-            if (get_option('woocommerce_rm-pagbank-cc_settings')) {
-                $wpdb->update(
-                    $settingsTable,
-                    ['option_value' => $ccSettings],
-                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings']
-                );
-            } else {
-                $wpdb->insert(
-                    $settingsTable,
-                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings', 'option_value' => $ccSettings]
-                );
-            }
-
-            if (get_option('woocommerce_rm-pagbank-pix_settings')) {
-                $wpdb->update(
-                    $settingsTable,
-                    ['option_value' => $pixSettings],
-                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings']
-                );
-            } else {
-                $wpdb->insert(
-                    $settingsTable,
-                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings', 'option_value' => $pixSettings]
-                );
-            }
-
-            if (get_option('woocommerce_rm-pagbank-boleto_settings')) {
-                $wpdb->update(
-                    $settingsTable,
-                    ['option_value' => $boletoSettings],
-                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings']
-                );
-            } else {
-                $wpdb->insert(
-                    $settingsTable,
-                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings', 'option_value' => $boletoSettings]
-                );
-            }
+            // Use update_option which automatically handles INSERT or UPDATE
+            // This prevents duplicate key errors
+            update_option('woocommerce_rm-pagbank-cc_settings', $ccSettings);
+            update_option('woocommerce_rm-pagbank-pix_settings', $pixSettings);
+            update_option('woocommerce_rm-pagbank-boleto_settings', $boletoSettings);
 
             foreach ($recurringSettings as $key => $setting) {
                 $key = 'woocommerce_rm-pagbank-' . $key;
