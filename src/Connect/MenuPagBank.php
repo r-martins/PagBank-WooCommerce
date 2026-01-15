@@ -231,7 +231,14 @@ SVG;
 
 
         echo '<h2>' . esc_html( __('Ações', 'pagbank-connect') ). '</h2>';
+        ob_start();
         do_action( 'rm_pagbank_view_subscription_actions', $subscription );
+        $actions_output = ob_get_clean();
+        if ( empty( trim( $actions_output ) ) ) {
+            echo '<p>' . esc_html( __('Não há ações disponíveis para esta assinatura.', 'pagbank-connect') ) . '</p>';
+        } else {
+            echo $actions_output;
+        }
 
         echo '<h2>' . esc_html( __('Pedidos Associados', 'pagbank-connect') ) . '</h2>';
         $ordersListTable = new OrdersList($subscription);

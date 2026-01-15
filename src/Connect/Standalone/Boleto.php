@@ -56,6 +56,8 @@ class Boleto extends WC_Payment_Gateway
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN . '-boleto', [$this, 'addThankyouInstructions']);
+        // Fallback hook for checkout legado where payment_method might not match gateway ID
+        add_action('woocommerce_thankyou', [$this, 'maybeAddThankyouInstructions'], 5);
         add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
@@ -177,6 +179,40 @@ class Boleto extends WC_Payment_Gateway
     public function validate_fields():bool
     {
         return true; //@TODO validate_fields
+    }
+
+    /**
+     * Fallback method to display Boleto instructions when payment_method doesn't match gateway ID
+     * This is needed for legacy checkout where the payment_method might not be set correctly
+     * 
+     * IMPORTANT: This hook only processes Boleto orders. It checks:
+     * 1. If the order has pagbank_payment_method meta = 'boleto'
+     * 2. If the payment_method doesn't match the gateway ID (meaning specific hook didn't fire)
+     * 3. Only then it displays the instructions
+     * 
+     * This ensures it won't interfere with other payment methods or gateways.
+     * 
+     * @param int $order_id
+     * @return void
+     */
+    public function maybeAddThankyouInstructions($order_id)
+    {
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+        
+        $payment_method_meta = $order->get_meta('pagbank_payment_method');
+        if ($payment_method_meta !== 'boleto') {
+            return; // Not a Boleto order, exit immediately
+        }
+        
+        $payment_method = $order->get_payment_method();
+        if ($payment_method === Connect::DOMAIN . '-boleto') {
+            return; // Already processed by specific hook woocommerce_thankyou_rm-pagbank-boleto
+        }
+        
+        $this->addThankyouInstructions($order_id);
     }
 
     public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {

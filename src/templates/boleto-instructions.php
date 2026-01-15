@@ -34,6 +34,10 @@ use RM_PagBank\Connect;
         <a href="<?php echo esc_url($boleto_png);?>" target="_blank" class="button button-primary"><?php esc_html_e('Imprimir Boleto', 'pagbank-connect')?></a>
     </div>
     <div class="boleto-exiration-container">
-        <p><strong>Seu boleto vence em <?php echo esc_html(gmdate('d/m/Y', strtotime($boleto_due_date) - 3600*3));?>.</strong></p>
+        <?php
+        // Format due_date (already in Brazil timezone, format: Y-m-d)
+        $formatted_due_date = $boleto_due_date ? date('d/m/Y', strtotime($boleto_due_date)) : '';
+        ?>
+        <p><strong>Seu boleto vence em <?php echo esc_html($formatted_due_date);?>.</strong></p>
     </div>
 </div>

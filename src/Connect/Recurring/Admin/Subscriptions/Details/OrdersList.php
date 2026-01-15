@@ -53,7 +53,9 @@ class OrdersList extends WP_List_Table
                 $id = isset($parentOrder) ? $parentOrder->get_id() : $item->get_id();
                 return '<a href="' . $editOrderUrl . '">' . $id . '</a>';
             case 'date':
-                return date_i18n(get_option('date_format'), strtotime($item->get_date_created()));
+                $date_format = get_option('date_format');
+                $time_format = get_option('time_format');
+                return date_i18n($date_format . ' ' . $time_format, strtotime($item->get_date_created()));
             default:
                 return (isset($parentOrder)) ? $parentOrder->get_data()[$column_name] : $item->get_data()[$column_name];
         }
