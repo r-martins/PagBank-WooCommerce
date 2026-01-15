@@ -95,12 +95,41 @@ class SubscriptionDetails extends WP_List_Table
         $status = $recHelper->getFriendlyStatus($this->subscription->status);
         $type = $recHelper->translateFrequency($this->subscription->recurring_type);
 
+        // Get customer name and email from initial order
+        $customer_name = '';
+        $customer_email = '';
+        $initial_order = wc_get_order($this->subscription->initial_order_id);
+        if ($initial_order) {
+            $customer_name = $initial_order->get_billing_first_name() . ' ' . $initial_order->get_billing_last_name();
+            $customer_name = trim($customer_name);
+            if (empty($customer_name)) {
+                $customer_name = $initial_order->get_formatted_billing_full_name();
+            }
+            $customer_email = $initial_order->get_billing_email();
+        }
+
         $this->items = [
             ['name' => 'ID', 'value' => $this->subscription->id],
             ['name' => 'Pedido Inicial', 'value' => $this->subscription->initial_order_id],
-            ['name' => 'Valor Recorrente', 'value' => $this->subscription->recurring_amount],
-            ['name' => 'Status', 'value' => $status]
         ];
+
+        // Add customer info if available
+        if (!empty($customer_name) || !empty($customer_email)) {
+            $customer_display = trim($customer_name);
+            if (!empty($customer_email)) {
+                if (!empty($customer_display)) {
+                    $customer_display .= ' (' . $customer_email . ')';
+                } else {
+                    $customer_display = $customer_email;
+                }
+            }
+            if (!empty($customer_display)) {
+                $this->items[] = ['name' => 'Cliente', 'value' => $customer_display];
+            }
+        }
+
+        $this->items[] = ['name' => 'Valor Recorrente', 'value' => $this->subscription->recurring_amount];
+        $this->items[] = ['name' => 'Status', 'value' => $status];
 
         if ($this->subscription->recurring_trial_period) {
             $this->items[] = ['name' => 'Período de testes (dias)', 'value' => $this->subscription->recurring_trial_period];
@@ -112,10 +141,12 @@ class SubscriptionDetails extends WP_List_Table
         }
 
         $this->items[] = ['name' => 'Tipo Recorrente', 'value' => $type];
-        $this->items[] = ['name' => 'Criado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->created_at))];
-        $this->items[] = ['name' => 'Atualizado em', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->updated_at))];
+        $date_format = get_option('date_format');
+        $time_format = get_option('time_format');
+        $this->items[] = ['name' => 'Criado em', 'value' => date_i18n($date_format . ' ' . $time_format, strtotime($this->subscription->created_at))];
+        $this->items[] = ['name' => 'Atualizado em', 'value' => date_i18n($date_format . ' ' . $time_format, strtotime($this->subscription->updated_at))];
         if ( in_array($this->subscription->status, ['ACTIVE', 'PENDING', 'SUSPENDED']) ):
-            $this->items[] = ['name' => 'Próxima Cobrança', 'value' => date_i18n(get_option('date_format'), strtotime($this->subscription->next_bill_at))];
+            $this->items[] = ['name' => 'Próxima Cobrança', 'value' => date_i18n($date_format . ' ' . $time_format, strtotime($this->subscription->next_bill_at))];
         endif;
     }
 }
