@@ -72,7 +72,11 @@ class Boleto extends Common
         $paymentMethod = new PaymentMethod();
         $paymentMethod->setType('BOLETO');
         $boleto = new BoletoObj();
-        $boleto->setDueDate(gmdate('Y-m-d', strtotime('+' . Params::getBoletoConfig('boleto_expiry_days', 7) . 'day')));
+        // Calculate due_date in Brazil timezone (UTC-3)
+        $brazilTimezone = new \DateTimeZone('America/Sao_Paulo');
+        $dueDate = new \DateTime('now', $brazilTimezone);
+        $dueDate->modify('+' . Params::getBoletoConfig('boleto_expiry_days', 7) . ' day');
+        $boleto->setDueDate($dueDate->format('Y-m-d'));
         $instruction_lines = new InstructionLines();
         $instruction_lines->setLine1(
             Functions::applyOrderPlaceholders(
