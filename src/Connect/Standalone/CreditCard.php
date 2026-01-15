@@ -66,7 +66,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN . '-cc', [$this, 'addThankyouInstructions']);
-        
+
         // Remove add_payment_method support if save card is disabled
         // Use the supports filter to override the support check, which is more reliable
         add_filter('woocommerce_payment_gateway_supports', [$this, 'maybe_remove_add_payment_method_support_filter'], 10, 3);

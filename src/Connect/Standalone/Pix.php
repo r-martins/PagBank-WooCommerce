@@ -58,6 +58,8 @@ class Pix extends WC_Payment_Gateway
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
         add_action('woocommerce_thankyou_' . Connect::DOMAIN . '-pix', [$this, 'addThankyouInstructions']);
+        // Fallback hook for legacy checkout where payment_method might not match gateway ID
+        add_action('woocommerce_thankyou', [$this, 'maybeAddThankyouInstructions'], 5);
         add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [$this, 'dismissPixOrderKeysNotice']);
         add_action('woocommerce_email_after_order_table', [$this, 'addPaymentDetailsToEmail'], 10, 4);
 
@@ -188,6 +190,41 @@ class Pix extends WC_Payment_Gateway
         // Set the user meta value
         update_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true);
     }
+
+    /**
+     * Fallback method to display PIX instructions when payment_method doesn't match gateway ID
+     * This is needed for legacy checkout where the payment_method might not be set correctly
+     * 
+     * IMPORTANT: This hook only processes PIX orders. It checks:
+     * 1. If the order has pagbank_payment_method meta = 'pix'
+     * 2. If the payment_method doesn't match the gateway ID (meaning specific hook didn't fire)
+     * 3. Only then it displays the instructions
+     * 
+     * This ensures it won't interfere with other payment methods or gateways.
+     * 
+     * @param int $order_id
+     * @return void
+     */
+    public function maybeAddThankyouInstructions($order_id)
+    {
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+        
+        $payment_method_meta = $order->get_meta('pagbank_payment_method');
+        if ($payment_method_meta !== 'pix') {
+            return; // Not a PIX order, exit immediately
+        }
+        
+        $payment_method = $order->get_payment_method();
+        if ($payment_method === Connect::DOMAIN . '-pix') {
+            return; // Already processed by specific hook woocommerce_thankyou_rm-pagbank-pix
+        }
+        
+        $this->addThankyouInstructions($order_id);
+    }
+
 
     public function addPaymentDetailsToEmail($order, $sent_to_admin, $plain_text, $email) {
         if ($order && $order->is_paid()) {

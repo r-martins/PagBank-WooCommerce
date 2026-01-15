@@ -96,7 +96,7 @@ class Pix extends Common
         
         $template_path = Functions::getTemplate('pix-instructions.php');
 
-        require_once $template_path;
+        require $template_path;
         parent::getThankyouInstructions($order_id);
     }
 
