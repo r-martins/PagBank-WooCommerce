@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.48.0
+Stable tag: 4.49.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -55,7 +55,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Atualização de pedidos automática, inclusive com [confirmação de pagamento instantâneo PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) com [comportamento configurável](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
 * Infinitas [**opções de parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento) ∞
 * 💳 [Salvar Cartão](https://ajuda.pbintegracoes.com/hc/pt-br/articles/38366350272397-Salvar-Cart%C3%A3o-de-Cr%C3%A9dito-no-WooCommerce) - Permite que seus clientes salvem o token do cartão de crédito para compras futuras, sem precisar digitar os dados novamente.
-* ⑂ Divisão de Pagamentos entre contas (Split)
+* **Divisão de Pagamentos** entre contas (Split). Seja sócio das lojas que você cria. Ou crie Marketplaces com WooCommerce e Dokan (integração nativa).
 
 == ⚡️ RECURSOS ADICIONAIS ==
 * Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
@@ -70,7 +70,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
 * Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
 * Use a mesma conta PagBank e a mesma Connect Key para integrar **várias lojas** WooCommerce, sem precisar de uma Connect Key para cada loja.
-* Integração com Marketplace Dokan para divisão de pagamentos entre múltiplos vendedores (split, multivendor)
+* Integração com Marketplace Dokan para divisão de pagamentos entre múltiplos vendedores (split, multivendor). [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/40558023581965-Dokan-Split-Divis%C3%A3o-de-Pagamentos-para-Marketplace).
 
 https://www.youtube.com/watch?v=a8rkT8IyIYo
 
@@ -239,6 +239,15 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 4.49.0=
+* Melhoria: agora é possível filtrar assinaturas por e-mail do cliente
+* Melhoria: e-mail do cliente é exibido nos detalhes da assinatura no admin, facilitando o gerenciamento
+* Melhoria: quando não há ações a serem executadas em uma assinatura, agora explicamos isso, ao invés de deixar a área de Ações vazia
+* Melhoria: passamos a exibir a hora da criação, atualização e próxima cobrança de uma assinatura
+* Correção: dia do vencimento do boleto podia ser exibido e/ou gerado com margem de erro de 1 dia dependendo do horário em que foi gerado.
+* Correção: Instruções PIX/Boleto não apareciam em checkout legado quando payment_method não correspondia ao gateway ID. Adiciona hook fallback para garantir exibição. Impacta lojas com checkout legado.
+
 = 4.48.0 =
 * Melhoria: adicionado medidas de segurança, evitando que: 1) usuários adicionem mais de 5 cartões salvos; 2) bots realizem testes de cartão ao adicionar cartões em intervalos menores que 2 minutos ou sem estarem logados; 3) nonce adicionado ao formulário de cartão (área logado) evitando que bots explorem diretamente este endpoint
 * Correção: erro fatal poderia ocorrer ao finalizar uma compra com assinatura por conta de uma tentativa de inserir registros duplicados. Na ausência da chave única na tabela, assinatura e cobranças duplicadas poderiam ser geradas. (Reportado por Ricardo Alves B.)
@@ -299,3 +308,5 @@ plugin pagbank woocommerce, gateway pagamento brasil, pagseguro woocommerce, pix
 9. Parcelamento na Página de Produto
 10. Suporte a Checkout em Blocos do WooCommerce
 11. Conteúdo para assinantes
+12. Divida pagamentos entre múltiplas contas PagBank
+13. Integração com Marketplace Dokan
