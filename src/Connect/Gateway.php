@@ -95,18 +95,7 @@ class Gateway extends WC_Payment_Gateway_CC
             'info'
         );
         
-        // Check mutual exclusivity with Dokan Split
-        $integrations_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
-        $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
-        
-        if ($split_enabled === 'yes' && $dokan_split_enabled === 'yes') {
-            WC_Admin_Settings::add_error(
-                __('Não é possível ativar Divisão de Pagamentos enquanto o Split Dokan estiver ativo. Desative o Split Dokan primeiro.', 'pagbank-connect')
-            );
-            // Don't save split payments if Dokan is enabled
-            $split_enabled = 'no';
-            $this->update_option('split_payments_enabled', 'no');
-        }
+        // Mutual exclusivity check is now handled by validate_split_payments_enabled_field()
         
         // Fetch Account ID from API when split is being enabled
         $primary_account_id_to_save = null;
@@ -246,11 +235,23 @@ class Gateway extends WC_Payment_Gateway_CC
         // Remove from POST to prevent any other processing
         unset($_POST[$field_key]);
 
-        // Call parent to process other fields
+        // Call parent to process other fields (this will call validate_split_payments_enabled_field)
         parent::process_admin_options();
         
-        // Save Account ID if it was fetched from API
-        if ($primary_account_id_to_save !== null) {
+        // After parent processes, read the validated value
+        $validated_split_enabled = $this->get_option('split_payments_enabled', 'no');
+        
+        // If validation rejected the split (returned 'no'), clear receivers
+        if ($validated_split_enabled !== 'yes' && $split_enabled === 'yes') {
+            $this->update_option('split_payments_receivers', []);
+            \RM_PagBank\Helpers\Functions::log(
+                'Gateway::process_admin_options - Split de pagamentos foi rejeitado pela validação, limpando receivers',
+                'info'
+            );
+        }
+        
+        // Save Account ID if it was fetched from API and split is still enabled
+        if ($primary_account_id_to_save !== null && $validated_split_enabled === 'yes') {
             $this->update_option('split_payments_primary_account_id', $primary_account_id_to_save);
             \RM_PagBank\Helpers\Functions::log(
                 'Gateway::process_admin_options - Account ID Principal salvo após process_admin_options: ' . $primary_account_id_to_save,
@@ -450,7 +451,32 @@ class Gateway extends WC_Payment_Gateway_CC
         return $recurring_enabled ? 'yes' : 'no';
     }
     
-    
+    /**
+     * Validates split payments enabled field - checks mutual exclusivity with Dokan Split
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return string
+     * @noinspection PhpUnused
+     * @noinspection PhpUnusedParameterInspection
+     */
+    public function validate_split_payments_enabled_field($key, $value): string
+    {
+        $split_enabled = $value ? 'yes' : 'no';
+        
+        // Check mutual exclusivity with Dokan Split
+        $integrations_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
+        $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
+        
+        if ($split_enabled === 'yes' && $dokan_split_enabled === 'yes') {
+            WC_Admin_Settings::add_error(
+                __('Não é possível ativar Divisão de Pagamentos enquanto o Split Dokan estiver ativo. Desative o Split Dokan primeiro.', 'pagbank-connect')
+            );
+            return 'no';
+        }
+        
+        return $split_enabled;
+    }
     
 	/**
 	 * Validates the inputed connect key and save additional information like public key and sandbox mode
