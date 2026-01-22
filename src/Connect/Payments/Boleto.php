@@ -93,14 +93,39 @@ class Boleto extends Common
         $boleto->setInstructionLines($instruction_lines);
 
         //cpf or cnpj
-        $customerData = $this->getCustomerData();
-        $taxId = $customerData->getTaxId();
-        if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
-            $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
+        $billingCompany = $this->order->get_billing_company();
+        $taxId = null;
+        
+        // Always check for CNPJ first (independent of company name)
+        $taxId = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_cnpj', 'billing_cnpj');
+        
+        // If CNPJ not found in order meta/post, try from customer meta (only if customer exists)
+        if (empty($taxId) && $this->order->get_customer_id()) {
+            $wcCustomer = new \WC_Customer($this->order->get_customer_id());
+            $taxId = $wcCustomer->get_meta('billing_cnpj');
+        }
+        
+        // If still no taxId (no CNPJ found), use the standard customer data method (checks CPF first, then CNPJ)
+        if (empty($taxId)) {
+            $customerData = $this->getCustomerData();
+            $taxId = $customerData->getTaxId();
+            if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
+                $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
+            }
+        }
+        
+        // Clean taxId (remove non-numeric characters)
+        if (!empty($taxId)) {
+            $taxId = Params::removeNonNumeric($taxId);
         }
         
         $holder = new Holder();
-        $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
+        // Use company name if available, otherwise use person name
+        if (!empty($billingCompany)) {
+            $holder->setName(trim($billingCompany));
+        } else {
+            $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
+        }
         $holder->setTaxId($taxId);
         $holder->setEmail($this->order->get_billing_email());
 
