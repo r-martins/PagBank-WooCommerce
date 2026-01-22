@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.49.0
+Stable tag: 4.50.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -239,6 +239,9 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.50.0 =
+* Melhoria: na geração de boletos, quando nome da empresa e CNPJ forem informados, usaremos estas informações como dados do pagador.
+* Correção que impedia integração com Dokan ser ativada em alguns cenarios
 
 = 4.49.0=
 * Melhoria: agora é possível filtrar assinaturas por e-mail do cliente

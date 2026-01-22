@@ -11,7 +11,7 @@
  * Plugin Name:       PagBank Connect
  * Plugin URI:        https://pbintegracoes.com
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente e muito mais.
- * Version:           4.49.0
+ * Version:           4.50.0
  * Requires at least: 5.2
  * Tested up to:      6.9
  * Requires PHP:      7.4
@@ -33,7 +33,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.49.0' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.50.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
@@ -91,17 +91,25 @@ add_action('admin_init', function() {
         $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/dokan-split-fields.php';
         
         foreach ($fields as $key => $field) {
+            // HTML form uses $key as name attribute, so we need to check $_POST[$key]
+            // Skip title fields as they don't have values
+            if ($field['type'] === 'title') {
+                continue;
+            }
+            
             if ($field['type'] === 'checkbox') {
-                $integrations_settings[$key] = isset($_POST[$field['id']]) ? 'yes' : 'no';
+                $integrations_settings[$key] = isset($_POST[$key]) ? 'yes' : 'no';
             } else {
-                $integrations_settings[$key] = isset($_POST[$field['id']]) ? sanitize_text_field($_POST[$field['id']]) : '';
+                $integrations_settings[$key] = isset($_POST[$key]) ? sanitize_text_field($_POST[$key]) : '';
             }
         }
         
         // Check mutual exclusivity with Split Payments
         $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
-        $gateway = new Connect\Gateway();
-        $split_payments_enabled = $gateway->get_option('split_payments_enabled', 'no');
+        // Read directly from database to ensure we get the most recent value
+        // This is important because the Gateway instance might have cached/old values
+        $gateway_settings = get_option('woocommerce_rm-pagbank_settings', []);
+        $split_payments_enabled = $gateway_settings['split_payments_enabled'] ?? 'no';
         
         if ($dokan_split_enabled === 'yes' && $split_payments_enabled === 'yes') {
             add_settings_error(
