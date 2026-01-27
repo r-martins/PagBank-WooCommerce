@@ -55,7 +55,11 @@ class Api
             return $cached;
         }
         
-        $resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
+        $resp = wp_remote_get($url, [
+            'headers' => $header,
+            'timeout' => 60,
+            'user-agent' => 'WooCommerce / PagBank Integracoes',
+        ]);
 
 		if (is_wp_error($resp)) {
 			throw new Exception('Erro na requisição: ' . esc_attr($resp->get_error_message()));
@@ -98,7 +102,11 @@ class Api
             return $cached;
         }
 
-        $resp = wp_remote_get($url, [ 'headers' => $header, 'timeout' => 60 ]);
+        $resp = wp_remote_get($url, [
+            'headers' => $header,
+            'timeout' => 60,
+            'user-agent' => 'WooCommerce / PagBank Integracoes',
+        ]);
 
         if (is_wp_error($resp)) {
             throw new Exception('Erro na requisição: ' . esc_attr($resp->get_error_message()));
@@ -163,6 +171,7 @@ class Api
 			'headers' => $headers,
 			'body' => wp_json_encode($params),
             'timeout' => 60,
+            'user-agent' => 'WooCommerce / PagBank Integracoes',
 		]);
 
 
@@ -243,6 +252,7 @@ class Api
             'headers' => $headers,
             'body' => wp_json_encode($params),
             'timeout' => 60,
+            'user-agent' => 'WooCommerce / PagBank Integracoes',
         ]);
 
         if (is_wp_error($response)) {
