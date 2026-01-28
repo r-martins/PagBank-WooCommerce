@@ -94,6 +94,27 @@ class Pix extends Common
         $qr_code_text = $order->get_meta('pagbank_pix_qrcode_text');
         $qr_code_exp = $order->get_meta('pagbank_pix_qrcode_expiration');
         
+        // Verificar se o charge está DECLINED
+        $charges = $order->get_meta('pagbank_order_charges');
+        $is_declined = false;
+        if (!empty($charges) && is_array($charges)) {
+            foreach ($charges as $charge) {
+                if (isset($charge['status']) && $charge['status'] === 'DECLINED') {
+                    $is_declined = true;
+                    break;
+                }
+            }
+        }
+        
+        // Verificar se há PIX válido (QR code ou código texto)
+        $has_valid_pix = !empty($qr_code) || !empty($qr_code_text);
+        
+        // Só exibir se não estiver DECLINED e houver PIX válido
+        if ($is_declined || !$has_valid_pix) {
+            parent::getThankyouInstructions($order_id);
+            return;
+        }
+        
         $template_path = Functions::getTemplate('pix-instructions.php');
 
         require $template_path;

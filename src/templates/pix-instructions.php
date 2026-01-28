@@ -17,12 +17,23 @@ use RM_PagBank\Helpers\Params;
 /** @var string $qr_code_text */
 /** @var string $qr_code_exp */
 ?>
+<?php
+// Verificar se há PIX válido antes de exibir
+$has_qr_code = !empty($qr_code);
+$has_qr_code_text = !empty($qr_code_text);
+$has_valid_pix = $has_qr_code || $has_qr_code_text;
+
+if ($has_valid_pix):
+?>
 <div class="pix-payment">
     <h2>Pague seu PIX</h2>
+    <?php if ($has_qr_code): ?>
     <p><?php _e('Escaneie o código abaixo com o aplicativo de seu banco.', 'pagbank-connect');?></p>
     <div class="pix-qr-container">
         <img src="<?php echo esc_url($qr_code);?>" class="pix-qr" alt="PIX QrCode" title="Escaneie o código com o aplicativo de seu banco."/>
     </div>
+    <?php endif; ?>
+    <?php if ($has_qr_code_text): ?>
     <p><?php _e('Ou se preferir, copie e cole o código abaixo no aplicativo de seu banco usando o PIX com o modo Copie e Cola.', 'pagbank-connect');?></p>
     <div class="code-container">
         <label>
@@ -31,12 +42,14 @@ use RM_PagBank\Helpers\Params;
         </label>
         <a href="javascript:void(0)" class="button copy-btn"><?php esc_html_e('Copiar', 'pagbank-connect'); ?></a>
     </div>
+    <?php endif; ?>
     <?php if($qr_code_exp):?>
     <div class="pix-exiration-container">
         <p><strong>Este código PIX expira em <?php echo Functions::formatDate($qr_code_exp);?>.</strong></p>
     </div>
     <?php endif;?>
 </div>
+<?php endif; ?>
 
 <div class="pix-payment-confirmed" style="display: none;">
     <h2><?php _e('Pagamento Confirmado', 'pagbank-connect');?></h2>

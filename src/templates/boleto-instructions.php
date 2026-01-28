@@ -19,9 +19,19 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 use RM_PagBank\Connect;
 
 ?>
+<?php
+// Verificar se há boleto válido antes de exibir
+$has_barcode = !empty($boleto_barcode) || !empty($boleto_barcode_formatted);
+$has_pdf = !empty($boleto_pdf);
+$has_png = !empty($boleto_png);
+$has_valid_boleto = $has_barcode || $has_pdf || $has_png;
+
+if ($has_valid_boleto):
+?>
 <div class="boleto-payment">
     <h2><?php _e('Pague seu Boleto', 'pagbank-connect');?></h2>
     <p><?php _e('Copie o código de barras abaixo e pague direto em seu banco.', 'pagbank-connect');?></p>
+    <?php if ($has_barcode): ?>
     <div class="code-container">
         <label>
             <?php echo esc_html(__('Código de barras:', 'pagbank-connect'));?>
@@ -29,15 +39,25 @@ use RM_PagBank\Connect;
         </label>
         <a href="javascript:void(0)" class="button copy-btn"><?php esc_html_e('Copiar', 'pagbank-connect'); ?></a>
     </div>
+    <?php endif; ?>
+    <?php if ($has_pdf || $has_png): ?>
     <div class="boleto-actions">
+        <?php if ($has_pdf): ?>
         <a href="<?php echo esc_url($boleto_pdf);?>" target="_blank" class="button button-primary"><?php esc_html_e('Baixar Boleto', 'pagbank-connect')?></a>
+        <?php endif; ?>
+        <?php if ($has_png): ?>
         <a href="<?php echo esc_url($boleto_png);?>" target="_blank" class="button button-primary"><?php esc_html_e('Imprimir Boleto', 'pagbank-connect')?></a>
+        <?php endif; ?>
     </div>
+    <?php endif; ?>
+    <?php if ($boleto_due_date): ?>
     <div class="boleto-exiration-container">
         <?php
         // Format due_date (already in Brazil timezone, format: Y-m-d)
-        $formatted_due_date = $boleto_due_date ? date('d/m/Y', strtotime($boleto_due_date)) : '';
+        $formatted_due_date = date('d/m/Y', strtotime($boleto_due_date));
         ?>
         <p><strong>Seu boleto vence em <?php echo esc_html($formatted_due_date);?>.</strong></p>
     </div>
+    <?php endif; ?>
 </div>
+<?php endif; ?>
