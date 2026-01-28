@@ -190,6 +190,28 @@ class Boleto extends Common
         $boleto_due_date = $order->get_meta('pagbank_boleto_due_date');
         $boleto_pdf = $order->get_meta('pagbank_boleto_pdf');
         $boleto_png = $order->get_meta('pagbank_boleto_png');
+        
+        // Verificar se o charge está DECLINED
+        $charges = $order->get_meta('pagbank_order_charges');
+        $is_declined = false;
+        if (!empty($charges) && is_array($charges)) {
+            foreach ($charges as $charge) {
+                if (isset($charge['status']) && $charge['status'] === 'DECLINED') {
+                    $is_declined = true;
+                    break;
+                }
+            }
+        }
+        
+        // Verificar se há boleto válido (código de barras e links)
+        $has_valid_boleto = !empty($boleto_barcode) || !empty($boleto_barcode_formatted);
+        $has_valid_links = !empty($boleto_pdf) || !empty($boleto_png);
+        
+        // Só exibir se não estiver DECLINED e houver boleto válido
+        if ($is_declined || (!$has_valid_boleto && !$has_valid_links)) {
+            return;
+        }
+        
         $template_path = Functions::getTemplate('boleto-instructions.php');
         require $template_path;
     }

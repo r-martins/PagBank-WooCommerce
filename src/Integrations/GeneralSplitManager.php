@@ -25,10 +25,8 @@ class GeneralSplitManager
         $gateway = new \RM_PagBank\Connect\Gateway();
         $split_enabled = $gateway->get_option('split_payments_enabled', 'no');
         
-        \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::shouldApplySplit - Split enabled: ' . var_export($split_enabled, true), 'info');
-        
         if ($split_enabled !== 'yes') {
-            \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::shouldApplySplit - Split não está habilitado nas configurações', 'info');
+            // Split não está habilitado nas configurações'
             return false;
         }
 
@@ -38,7 +36,7 @@ class GeneralSplitManager
             $dokan_split_enabled = $integrations_settings['dokan_split_enabled'] ?? 'no';
             
             if ($dokan_split_enabled === 'yes') {
-                \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::shouldApplySplit - Split Dokan está ativo, não aplicando Divisão de Pagamentos', 'info');
+                // Split Dokan está ativo, não aplicando Divisão de Pagamentos
                 return false;
             }
         }
@@ -87,7 +85,7 @@ class GeneralSplitManager
      */
     public static function buildSplitData(WC_Order $order, string $payment_method_type): Split
     {
-        \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::buildSplitData - Iniciando construção de split para pedido ' . $order->get_id(), 'info');
+        // Iniciando construção de split para pedido
         
         $gateway = new \RM_PagBank\Connect\Gateway();
         $receivers_config = $gateway->get_option('split_payments_receivers', []);

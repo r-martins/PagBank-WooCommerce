@@ -516,6 +516,7 @@ class Common
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
+            'user-agent' => 'WooCommerce / PagBank Integracoes',
         ]);
 
         if (is_wp_error($response)) {

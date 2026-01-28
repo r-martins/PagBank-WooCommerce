@@ -50,6 +50,38 @@ class RecurringOrder
             return;
         }
 
+        // CORREÇÃO: Verificar se assinatura SUSPENDED ainda tem tentativas restantes antes de criar pedido
+        if ($subscription->status == 'SUSPENDED') {
+            // Buscar valor atualizado do banco para evitar race conditions
+            global $wpdb;
+            $currentSubscription = $wpdb->get_row($wpdb->prepare(
+                "SELECT retry_attempts_remaining FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d",
+                $subscription->id
+            ));
+            
+            $retryAttemptsRemaining = $currentSubscription ? (int)$currentSubscription->retry_attempts_remaining : null;
+            
+            if (empty($retryAttemptsRemaining) || $retryAttemptsRemaining <= 0) {
+                Functions::log(
+                    sprintf(
+                        'Assinatura #%d está SUSPENDED sem tentativas restantes (%s). Não será criado novo pedido.',
+                        $subscription->id,
+                        $retryAttemptsRemaining ?? 'NULL'
+                    ),
+                    'info'
+                );
+                
+                // Cancelar assinatura se ainda não foi cancelada
+                $recurring = new \RM_PagBank\Connect\Recurring();
+                $recurring->cancelSubscription(
+                    $subscription,
+                    __('Pagamento recusado durante a renovação da assinatura. Número de tentativas de cobrança esgotado.', 'pagbank-connect'),
+                    'FAILURE'
+                );
+                return;
+            }
+        }
+
         $recHelper = new Recurring();
 
         // calculate total before new order creation

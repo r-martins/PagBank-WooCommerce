@@ -594,15 +594,62 @@ class Recurring
         //Get all recurring orders that are due or past due and active
         $now = gmdate('Y-m-d H:i:s');
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE ";
-        $sql .= $subscription == null 
-            ? "status IN ('ACTIVE', 'SUSPENDED') AND next_bill_at <= '%s'"
-            : "id = 0%d";
-        $nowOrId = $subscription == null ? $now : $subscription->id;
-        $sql = $wpdb->prepare($sql, $nowOrId);
+        if ($subscription == null) {
+            // Excluir assinaturas SUSPENDED sem tentativas restantes
+            $sql .= "(status = 'ACTIVE' AND next_bill_at <= '%s') OR (status = 'SUSPENDED' AND next_bill_at <= '%s' AND (retry_attempts_remaining IS NULL OR retry_attempts_remaining > 0))";
+            $sql = $wpdb->prepare($sql, $now, $now);
+        } else {
+            $sql .= "id = %d";
+            $sql = $wpdb->prepare($sql, $subscription->id);
+        }
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
-            $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
-            $recurringOrder->createRecurringOrderFromSub();
+            // Verificação adicional antes de processar (proteção extra contra race conditions)
+            if ($subscription->status == 'SUSPENDED' && (empty($subscription->retry_attempts_remaining) || $subscription->retry_attempts_remaining <= 0)) {
+                Functions::log(
+                    sprintf('Assinatura #%d está SUSPENDED sem tentativas restantes (%s). Pulando processamento.', 
+                        $subscription->id, 
+                        $subscription->retry_attempts_remaining ?? 'NULL'
+                    ),
+                    'debug'
+                );
+                continue;
+            }
+            
+            // CORREÇÃO: Lock de processamento para evitar race conditions
+            $lock_key = 'pagbank_processing_subscription_' . $subscription->id;
+            $lock = get_transient($lock_key);
+            
+            if ($lock !== false) {
+                // Assinatura já está sendo processada, pular
+                Functions::log(
+                    sprintf('Assinatura #%d já está sendo processada (lock ativo desde %s). Pulando para evitar duplicação.', 
+                        $subscription->id,
+                        date('Y-m-d H:i:s', $lock)
+                    ),
+                    'debug'
+                );
+                continue;
+            }
+            
+            // Criar lock por 10 minutos (tempo suficiente para processar)
+            set_transient($lock_key, time(), 10 * MINUTE_IN_SECONDS);
+            
+            try {
+                $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
+                $recurringOrder->createRecurringOrderFromSub();
+            } catch (\Exception $e) {
+                // Em caso de erro, remover lock para permitir nova tentativa
+                Functions::log(
+                    sprintf('Erro ao processar assinatura #%d: %s', $subscription->id, $e->getMessage()),
+                    'error'
+                );
+                delete_transient($lock_key);
+                throw $e;
+            } finally {
+                // Manter lock por mais alguns segundos após processamento para garantir que não haja duplicação
+                // O lock será removido automaticamente após 10 minutos
+            }
         }
     }
 
@@ -1165,9 +1212,41 @@ class Recurring
      */
     public function updateSuspendedSubscription(\stdClass $subscription)
     {
+        global $wpdb;
         $recHelper = new RecurringHelper();
-        $cycle = $subscription->retry_attempts_remaining > 1 ? 1 : 3; // aumenta o intervalo na última tentativa de cobrança para 3 dias
-        $retryAttemptsRemaining = --$subscription->retry_attempts_remaining;
+        
+        // Buscando valor atualizado do banco para evitar race conditions
+        $currentSubscription = $wpdb->get_row($wpdb->prepare(
+            "SELECT retry_attempts_remaining FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d",
+            $subscription->id
+        ));
+        
+        if (!$currentSubscription) {
+            Functions::log(
+                sprintf('Assinatura #%d não encontrada ao atualizar tentativas.', $subscription->id),
+                'error'
+            );
+            return;
+        }
+        
+        $currentRetryAttempts = (int)$currentSubscription->retry_attempts_remaining;
+        
+        // Verificar se ainda há tentativas antes de decrementar
+        if ($currentRetryAttempts <= 0) {
+            Functions::log(
+                sprintf('Assinatura #%d não tem mais tentativas restantes. Cancelando...', $subscription->id),
+                'info'
+            );
+            $this->cancelSubscription(
+                $subscription,
+                __('Pagamento recusado durante a renovação da assinatura. Número de tentativas de cobrança esgotado.', 'pagbank-connect'),
+                'FAILURE'
+            );
+            return;
+        }
+        
+        $retryAttemptsRemaining = $currentRetryAttempts - 1;
+        $cycle = $retryAttemptsRemaining > 0 ? 1 : 3; // aumenta o intervalo na última tentativa de cobrança para 3 dias
 
         $this->updateSubscription($subscription, [
             'status' => 'SUSPENDED',
