@@ -25,7 +25,7 @@ class DokanSplitManager
     {
         // Check if Dokan is active
         if (!function_exists('dokan')) {
-            \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Dokan não está ativo', 'info');
+            // Dokan não está ativo
             return false;
         }
 
@@ -34,7 +34,7 @@ class DokanSplitManager
         $split_payments_enabled = $gateway->get_option('split_payments_enabled', 'no');
         
         if ($split_payments_enabled === 'yes') {
-            \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Divisão de Pagamentos está ativa, não aplicando Split Dokan', 'info');
+            // Divisão de Pagamentos está ativa, não aplicando Split Dokan
             return false;
         }
 
@@ -42,10 +42,8 @@ class DokanSplitManager
         $gateway_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
         $split_enabled = $gateway_settings['dokan_split_enabled'] ?? false;
         
-        \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Split enabled: ' . var_export($split_enabled, true), 'info');
-        
         if ($split_enabled !== 'yes') {
-            \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Split não está habilitado nas configurações', 'info');
+            // Split não está habilitado nas configurações
             return false;
         }
 
@@ -251,7 +249,7 @@ class DokanSplitManager
      */
     public static function buildSplitData(WC_Order $order, string $payment_method_type): Split
     {
-        \RM_PagBank\Helpers\Functions::log('DokanSplitManager::buildSplitData - Iniciando construção de split para pedido ' . $order->get_id(), 'info');
+        // Iniciando construção de split para pedido
         
         $vendors = self::getOrderVendors($order);
         $isCreditCard = $payment_method_type === 'CREDIT_CARD';
