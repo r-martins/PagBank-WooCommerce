@@ -1735,7 +1735,7 @@ class Recurring
     {
         $userId = $userId ?? get_current_user_id();
         // Check if HPOS is enabled
-        if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
+        if (Functions::isHposEnabled()) {
             return wc_get_orders([
                 'customer_id' => $userId,
                 'limit'       => -1,
@@ -1980,7 +1980,7 @@ class Recurring
      */
     public static function getSandboxInitialOrders()
     {
-        if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
+        if (Functions::isHposEnabled()) {
             return wc_get_orders([
             'limit'        => -1,
             'relation' => 'AND',
