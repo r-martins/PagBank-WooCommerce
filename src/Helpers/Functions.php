@@ -354,6 +354,28 @@ class Functions
     }
 
     /**
+     * Verifica se o HPOS (High-Performance Order Storage) do WooCommerce está habilitado.
+     * Retorna false se o container/serviço não estiver disponível (ex.: WooCommerce antigo ou não inicializado).
+     *
+     * @return bool
+     */
+    public static function isHposEnabled(): bool
+    {
+        try {
+            if (!function_exists('wc_get_container')) {
+                return false;
+            }
+            $class = \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class;
+            if (!class_exists($class)) {
+                return false;
+            }
+            return wc_get_container()->get($class)->custom_orders_table_usage_is_enabled();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
      * @return array
      */
     public static function getExpiredPixOrders(): array
@@ -363,9 +385,7 @@ class Functions
         Functions::addMetaQueryFilter();
 
         // Check if HPOS is enabled
-        if (wc_get_container()->get(
-            \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
-        )->custom_orders_table_usage_is_enabled()) {
+        if (self::isHposEnabled()) {
             $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes * 60;
             return wc_get_orders([
                 'limit'        => -1,
@@ -448,9 +468,7 @@ class Functions
         Functions::addMetaQueryFilter();
 
         // Check if HPOS is enabled
-        if (wc_get_container()->get(
-            \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
-        )->custom_orders_table_usage_is_enabled()) {
+        if (self::isHposEnabled()) {
             $createdAtDate = strtotime(gmdate('Y-m-d H:i:s')) - 3600 * 24 * 7;
             return wc_get_orders([
                 'limit'        => -1,

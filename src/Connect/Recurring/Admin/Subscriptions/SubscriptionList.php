@@ -174,8 +174,7 @@ class SubscriptionList extends WP_List_Table
         global $wpdb;
         
         // Check if HPOS is enabled
-        if (class_exists('\Automattic\WooCommerce\Utilities\OrderUtil') && 
-            \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()) {
+        if (\RM_PagBank\Helpers\Functions::isHposEnabled()) {
             // HPOS: Use wc_get_orders with billing_email parameter
             $orders = wc_get_orders([
                 'billing_email' => $email,

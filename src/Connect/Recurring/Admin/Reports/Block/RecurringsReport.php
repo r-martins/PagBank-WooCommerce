@@ -70,15 +70,7 @@ class RecurringsReport extends WC_Admin_Report
         ", $date_filter));
 
         // Detect HPOS
-        $is_hpos = false;
-        try {
-            $is_hpos = wc_get_container()->get(
-                \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
-            )->custom_orders_table_usage_is_enabled();
-        } catch (\Exception $e) {
-            // HPOS not available or error checking
-            $is_hpos = false;
-        }
+        $is_hpos = \RM_PagBank\Helpers\Functions::isHposEnabled();
 
         if ($is_hpos) {
             // HPOS: fetch data from wp_wc_orders and wp_wc_order_addresses
