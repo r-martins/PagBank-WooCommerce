@@ -8,6 +8,7 @@
 ![WordPress Plugin: Tested WP Version](https://img.shields.io/wordpress/plugin/tested/pagbank-connect)
 ![Downloads por mês](https://img.shields.io/wordpress/plugin/dm/pagbank-connect)
 ![Avaliação dos clientes no WordPress](https://img.shields.io/wordpress/plugin/stars/pagbank-connect?color=yellow)
+[![Deploy pro WordPress SVN](https://github.com/r-martins/PagBank-WooCommerce/actions/workflows/releaseToSvnWp.yaml/badge.svg)](https://github.com/r-martins/PagBank-WooCommerce/actions/workflows/releaseToSvnWp.yaml)
 
 
 Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
