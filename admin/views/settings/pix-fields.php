@@ -85,6 +85,17 @@ return array(
         'default'     => 'no',
         'desc_tip'    => true,
     ],
+    'pix_show_discount_in_totals' => [
+        'title'       => __('Exibir desconto nos totais', 'pagbank-connect'),
+        'label'       => __('Exibir desconto Pix PagBank nos totais do pedido', 'pagbank-connect'),
+        'type'        => 'checkbox',
+        'description' => __(
+            'Se marcado, o desconto Pix será exibido nos totais do carrinho e do checkout (linha "Desconto Pix PagBank" e "Total no Pix"), quando houver desconto configurado acima.',
+            'pagbank-connect'
+        ),
+        'default'     => 'no',
+        'desc_tip'    => false,
+    ],
     'pix_send_new_order_email' => [
         'title'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
         'label'       => __('Enviar e-mail de novo pedido', 'pagbank-connect'),
