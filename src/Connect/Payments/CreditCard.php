@@ -139,8 +139,30 @@ class CreditCard extends Common
         }
         //endregion
 
+        // PagBank API does not allow liable configuration on recurring charges with split.
+        if ($this->isRecurringCharge()) {
+            $splitPayload = $charge->getSplits();
+            if (!empty($splitPayload['receivers']) && is_array($splitPayload['receivers'])) {
+                foreach ($splitPayload['receivers'] as $receiver) {
+                    if ($receiver instanceof \RM_PagBank\Object\Receiver) {
+                        $receiver->unsetLiable();
+                    }
+                }
+            }
+        }
+
         $return['charges'] = [$charge];
         return $return;
+    }
+
+    /**
+     * Whether this order is a recurring charge (INITIAL or SUBSEQUENT).
+     * Used to strip liable from split payload when recurring (API limitation).
+     */
+    protected function isRecurringCharge(): bool
+    {
+        return (bool) $this->order->get_meta('_pagbank_recurring_initial')
+            || wc_string_to_bool((string) $this->order->get_meta('_pagbank_is_recurring'));
     }
 
     /**
