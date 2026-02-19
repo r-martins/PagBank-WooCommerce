@@ -353,6 +353,38 @@ class Params
         return 0;
     }
 
+    /**
+     * Return the discount amount for a given total (e.g. cart total). Used to display Pix discount in cart/checkout totals.
+     *
+     * @param string $configValue Discount config (e.g. "5%" or "10.00")
+     * @param float $orderTotal Total amount (cart or order total)
+     * @param bool $excludesShipping Whether to exclude shipping from the base for percentage calculation
+     * @param float $shippingTotal Shipping amount (default 0)
+     * @return float
+     */
+    public static function getDiscountValueForTotal($configValue, $orderTotal, $excludesShipping, $shippingTotal = 0.0): float
+    {
+        $total = floatval($orderTotal);
+        if ($excludesShipping) {
+            $total -= floatval($shippingTotal);
+        }
+
+        $discountType = self::getDiscountType($configValue);
+        if (!$discountType) {
+            return 0.0;
+        }
+
+        if ('FIXED' == $discountType) {
+            return floatval($configValue);
+        }
+
+        if ('PERCENT' == $discountType) {
+            return $total * (floatval($configValue) / 100);
+        }
+
+        return 0.0;
+    }
+
 	/**
 	 * Gets the message about the discount that will be displayed in the checkout page
 	 * @param $method

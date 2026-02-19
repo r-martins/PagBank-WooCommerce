@@ -19,6 +19,7 @@ use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
 use RM_PagBank\Connect\Blocks\Redirect as RedirectBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
+use RM_PagBank\Connect\Blocks\PixDiscountTotals;
 use RM_PagBank\Cron\CancelExpiredPix;
 use RM_PagBank\Cron\ForceOrderUpdate;
 use RM_PagBank\Helpers\Api;
@@ -103,6 +104,11 @@ class Connect
                 );
             }
             //endregion
+            if (Params::getPixConfig('pix_show_discount_in_totals', 'no') === 'yes' && Params::getPixConfig('pix_discount', 0)) {
+                add_action('woocommerce_cart_totals_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
+                add_action('woocommerce_review_order_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
+                add_action('wp', [PixDiscountTotals::class, 'registerHydrationFilter'], 5);
+            }
         }
 
         //if force order update enabled
@@ -806,6 +812,41 @@ class Connect
         include_once WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 
+    /**
+     * Display Pix discount and "Total no Pix" in cart and checkout totals (when option is enabled).
+     *
+     * @return void
+     */
+    public static function displayPixDiscountInTotals()
+    {
+        if (!WC()->cart || is_wc_endpoint_url('order-pay')) {
+            return;
+        }
+        $discountConfig = Params::getPixConfig('pix_discount', 0);
+        if (!Params::getDiscountType($discountConfig)) {
+            return;
+        }
+        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
+        $cartTotal = floatval(WC()->cart->get_total('edit'));
+        $shippingTotal = floatval(WC()->cart->get_shipping_total());
+        $discount = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
+        if ($discount <= 0) {
+            return;
+        }
+        $totalNoPix = $cartTotal - $discount;
+        $pixTitle = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
+        $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
+        ?>
+        <tr class="pagbank-pix-discount fee">
+            <th><?php echo esc_html($discountLabel); ?></th>
+            <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
+        </tr>
+        <tr class="pagbank-pix-total">
+            <th><?php echo esc_html(__('Total no Pix', 'pagbank-connect')); ?></th>
+            <td data-title="<?php echo esc_attr(__('Total no Pix', 'pagbank-connect')); ?>"><?php echo wp_kses_post(wc_price($totalNoPix)); ?></td>
+        </tr>
+        <?php
+    }
 
     /**
      * Get order status (used for automatically update pix payment on the success page)
