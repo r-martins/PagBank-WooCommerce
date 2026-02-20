@@ -173,6 +173,15 @@ class Receiver implements JsonSerializable
     }
 
     /**
+     * Remove liable configuration (required for recurring charges with split:
+     * PagBank API does not allow liable configuration on recurring split transactions).
+     */
+    public function unsetLiable(): void
+    {
+        unset($this->configurations['liable']);
+    }
+
+    /**
      * Set statement configuration
      *
      * @param bool $show_full_value
