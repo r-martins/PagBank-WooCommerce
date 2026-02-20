@@ -219,51 +219,52 @@ class Connect
             'block_checkout' => Functions::isBlockCheckoutInUse(),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
             'enable_proxy' => Params::getConfig('enable_proxy', "no"),
+            // Use same defaults as admin form_fields when option not saved yet
             'settings' => [
-                'enabled' => Params::getConfig('enabled'),
-                'cc_enabled' => Params::getCcConfig('enabled'),
-                'pix_enabled' => Params::getPixConfig('enabled'),
-                'boleto_enabled' => Params::getBoletoConfig('enabled'),
+                'enabled' => Params::getConfig('enabled', ''),
+                'cc_enabled' => Params::getCcConfig('enabled', 'yes'),
+                'pix_enabled' => Params::getPixConfig('enabled', 'yes'),
+                'boleto_enabled' => Params::getBoletoConfig('enabled', 'no'),
                 'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
                 'sandbox' => $api->getIsSandbox(),
                 'boleto' => [
-                    'enabled' => Params::getBoletoConfig('enabled'),
-                    'expiry_days' => Params::getBoletoConfig('boleto_expiry_days'),
-                    'discount' => Params::getBoletoConfig('boleto_discount'),
+                    'enabled' => Params::getBoletoConfig('enabled', 'no'),
+                    'expiry_days' => Params::getBoletoConfig('boleto_expiry_days', '7'),
+                    'discount' => Params::getBoletoConfig('boleto_discount', '0'),
                 ],
                 'pix' => [
-                    'enabled' => Params::getPixConfig('enabled'),
-                    'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes'),
-                    'discount' => Params::getPixConfig('pix_discount'),
+                    'enabled' => Params::getPixConfig('enabled', 'yes'),
+                    'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes', '1440'),
+                    'discount' => Params::getPixConfig('pix_discount', '0'),
                 ],
                 'cc' => [
-                    'enabled' => Params::getCcConfig('enabled', 'no'),
+                    'enabled' => Params::getCcConfig('enabled', 'yes'),
                     'enabled_installment' => Params::getCcConfig('cc_installment_product_page', 'no'),
-                    'installment_options' => Params::getCcConfig('cc_installment_options'),
+                    'installment_options' => Params::getCcConfig('cc_installment_options', ''),
                     'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed', '3'),
                     'installments_options_min_total' => Params::getCcConfig('cc_installments_options_min_total', '50'),
-                    'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments'),
+                    'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments', ''),
                     'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments', '18'),
                     '3d_secure' => Params::getCcConfig('cc_3ds', 'yes'),
                     '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
-                    '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry'),
+                    '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry', 'yes'),
                     '3d_retry_failed' => Params::getCcConfig('cc_3ds_retry', 'yes'),
                 ],
                 'recurring' => [
-                        'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
-                        'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency'),
-                        'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
-                        'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
-                        'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
-                        'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
-                        'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
+                    'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
+                    'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency', 'hourly'),
+                    'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
+                    'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
+                    'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
+                    'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
+                    'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
                 ],
                 'redirect' => [
-                        'enabled' => Params::getRedirectConfig('enabled', 'no'),
-                        'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
-                        'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
-                        'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
-                        'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods'),
+                    'enabled' => Params::getRedirectConfig('enabled', 'yes'),
+                    'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
+                    'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
+                    'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
+                    'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods', ''),
                 ],
             ],
             'extra' => [
@@ -458,6 +459,15 @@ class Connect
             $ccSettings = $ccSettings;
             $pixSettings = $pixSettings;
             $boletoSettings = $boletoSettings;
+
+            // Idempotency: if main option was already migrated (no cc_*/pix_*/boleto_* keys), the split
+            // arrays are empty. Do NOT overwrite existing gateway options with empty arrays — that would
+            // wipe 'enabled' and cause payment methods to disappear from checkout. Only set DB version.
+            $alreadyMigrated = (count($ccSettings) === 0 && count($pixSettings) === 0 && count($boletoSettings) === 0);
+            if ($alreadyMigrated) {
+                update_option('pagbank_db_version', '4.13');
+                return;
+            }
 
             $wpdb->update(
                 $settingsTable,
