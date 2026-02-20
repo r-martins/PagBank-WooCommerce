@@ -8,8 +8,9 @@ use RM_PagBank\Helpers\Params;
 use WC_Cart;
 
 /**
- * Exposes Pix discount and "Total no Pix" in the Store API cart response
- * so the Checkout Block order summary can display them.
+ * Exposes Pix discount as a single fee in the Store API cart response so the
+ * Checkout Block order summary shows the discount and the total is updated (total - discount).
+ * No separate "Total no Pix" line is added; the cart total already reflects the discount.
  */
 class PixDiscountTotals
 {
@@ -169,8 +170,8 @@ class PixDiscountTotals
     }
 
     /**
-     * Injects two "virtual" fees into the Store API cart response so the Checkout Block
-     * order summary displays "Desconto ..." and "Total no Pix" without modifying the real cart.
+     * Injects one "virtual" fee (Pix discount, negative) into the Store API cart response
+     * so the Checkout Block order summary displays the discount and the total is (total - discount).
      *
      * @param \WP_HTTP_Response $response
      * @param \WP_REST_Server   $server
@@ -264,7 +265,7 @@ class PixDiscountTotals
     }
 
     /**
-     * Injects Pix discount and Total no Pix into a cart data array (top-level or from batch body).
+     * Injects Pix discount (single negative fee) into a cart data array. Cart total becomes (total - discount).
      * Returns modified array or null if nothing injected.
      *
      * @param array<string, mixed> $data Cart data (must have 'fees' key).
@@ -276,14 +277,20 @@ class PixDiscountTotals
             $data['fees'] = [];
         }
 
+        $ourKey = 'pagbank-pix-discount';
+        $data['fees'] = array_values(array_filter($data['fees'], function ($fee) use ($ourKey) {
+            $key = is_array($fee) ? ($fee['key'] ?? null) : (is_object($fee) ? ($fee->key ?? null) : null);
+            return $key !== $ourKey;
+        }));
+
         $cart = WC()->cart;
         if (!$cart) {
-            return null;
+            return $data;
         }
 
         $discountConfig = Params::getPixConfig('pix_discount', '0');
         if (!Params::getDiscountType($discountConfig)) {
-            return null;
+            return $data;
         }
 
         $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
@@ -291,38 +298,22 @@ class PixDiscountTotals
         $shippingTotal    = (float) $cart->get_shipping_total();
         $discount         = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
         if ($discount <= 0) {
-            return null;
+            return $data;
         }
 
         $pixTitle      = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
-        $discountLabel  = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
-        $totalNoPix     = $cartTotal - $discount;
-        $decimals       = wc_get_price_decimals();
-        $minor_unit     = (int) pow(10, $decimals);
-        $discountCents  = (int) round(-$discount * $minor_unit);
-        $totalNoPixCents = (int) round($totalNoPix * $minor_unit);
-        $totals         = isset($data['totals']) && is_array($data['totals']) ? $data['totals'] : [];
-        $currencyProps  = self::getTotalsCurrencyProps($totals);
-
-        $ourKeys = ['pagbank-pix-discount', 'pagbank-pix-total'];
-        $data['fees'] = array_values(array_filter($data['fees'], function ($fee) use ($ourKeys) {
-            $key = is_array($fee) ? ($fee['key'] ?? null) : (is_object($fee) ? ($fee->key ?? null) : null);
-            return !in_array($key, $ourKeys, true);
-        }));
+        $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
+        $decimals      = wc_get_price_decimals();
+        $minor_unit    = (int) pow(10, $decimals);
+        $discountCents = (int) round(-$discount * $minor_unit);
+        $totals        = isset($data['totals']) && is_array($data['totals']) ? $data['totals'] : [];
+        $currencyProps = self::getTotalsCurrencyProps($totals);
 
         $data['fees'][] = [
             'key'    => 'pagbank-pix-discount',
             'name'   => $discountLabel,
             'totals' => (object) array_merge($currencyProps, [
                 'total'     => (string) $discountCents,
-                'total_tax' => '0',
-            ]),
-        ];
-        $data['fees'][] = [
-            'key'    => 'pagbank-pix-total',
-            'name'   => __('Total no Pix', 'pagbank-connect'),
-            'totals' => (object) array_merge($currencyProps, [
-                'total'     => (string) $totalNoPixCents,
                 'total_tax' => '0',
             ]),
         ];

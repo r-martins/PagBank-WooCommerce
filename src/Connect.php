@@ -70,7 +70,6 @@ class Connect
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
         add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
-        add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
         add_action('rest_api_init', [CreditCard::class,'restApiInstallments']);
 
         // Load plugin files
@@ -93,7 +92,8 @@ class Connect
         }
 
         //if pix enabled
-        if (Params::getPixConfig('enabled')) {
+        if (Params::getPixConfig('enabled') === 'yes') {
+            add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
             //region cron to cancel expired pix non-paid payments
             add_action('rm_pagbank_cron_cancel_expired_pix', [CancelExpiredPix::class, 'execute']);
             if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
@@ -105,9 +105,13 @@ class Connect
             }
             //endregion
             if (Params::getPixConfig('pix_show_discount_in_totals', 'no') === 'yes' && Params::getPixConfig('pix_discount', 0)) {
-                add_action('woocommerce_cart_totals_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
+                add_action('woocommerce_cart_totals_before_order_total', [__CLASS__, 'displayPixDiscountInCartTotals']);
                 add_action('woocommerce_review_order_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
+                add_filter('woocommerce_cart_totals_order_total_html', [__CLASS__, 'filterOrderTotalHtmlWhenPixSelected'], 10, 1);
+                add_action('wp_enqueue_scripts', [__CLASS__, 'enqueuePixDiscountCheckoutScript'], 20);
+                add_action('rest_api_init', [PixDiscountTotals::class, 'registerFilter'], 20);
                 add_action('wp', [PixDiscountTotals::class, 'registerHydrationFilter'], 5);
+                add_action('woocommerce_blocks_loaded', [PixDiscountTotals::class, 'init']);
             }
         }
 
@@ -823,13 +827,85 @@ class Connect
     }
 
     /**
-     * Display Pix discount and "Total no Pix" in cart and checkout totals (when option is enabled).
+     * Whether PIX is currently selected as payment (legacy: rm-pagbank + ps_connect_method=pix; blocks: rm-pagbank-pix).
+     *
+     * @return bool
+     */
+    private static function isPixSelectedAsPayment(): bool
+    {
+        $chosen = WC()->session ? WC()->session->get('chosen_payment_method', '') : '';
+        if ($chosen === 'rm-pagbank-pix') {
+            return true;
+        }
+        if ($chosen !== self::DOMAIN) {
+            return false;
+        }
+        // Legacy checkout: gateway is rm-pagbank; sub-method is in post_data (ps_connect_method).
+        if (!empty($_POST['ps_connect_method'])) {
+            return sanitize_text_field(wp_unslash($_POST['ps_connect_method'])) === 'pix';
+        }
+        if (!empty($_POST['post_data']) && is_string($_POST['post_data'])) {
+            parse_str(wp_unslash($_POST['post_data']), $post_data);
+            return isset($post_data['ps_connect_method']) && $post_data['ps_connect_method'] === 'pix';
+        }
+        return false;
+    }
+
+    /**
+     * Outputs PIX discount and "Total no PIX" rows on the cart page (always, when discount is configured).
+     *
+     * @return void
+     */
+    public static function displayPixDiscountInCartTotals(): void
+    {
+        if (!function_exists('is_cart') || !is_cart() || !WC()->cart || is_wc_endpoint_url('order-pay')) {
+            return;
+        }
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return;
+        }
+        $discountConfig = Params::getPixConfig('pix_discount', 0);
+        if (!Params::getDiscountType($discountConfig)) {
+            return;
+        }
+        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
+        $cartTotal        = floatval(WC()->cart->get_total('edit'));
+        $shippingTotal    = floatval(WC()->cart->get_shipping_total());
+        $discount         = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
+        if ($discount <= 0) {
+            return;
+        }
+        $pixTitle       = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
+        $discountLabel  = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
+        $totalNoPix     = $cartTotal - $discount;
+        $totalNoPixLabel = __('Total no PIX', 'pagbank-connect');
+        ?>
+        <tr class="pagbank-pix-discount fee">
+            <th><?php echo esc_html($discountLabel); ?></th>
+            <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
+        </tr>
+        <tr class="pagbank-pix-total-no-pix order-total">
+            <th><?php echo esc_html($totalNoPixLabel); ?></th>
+            <td data-title="<?php echo esc_attr($totalNoPixLabel); ?>"><?php echo wp_kses_post(wc_price($totalNoPix)); ?></td>
+        </tr>
+        <?php
+    }
+
+    /**
+     * Display Pix discount row in checkout totals only when PIX is the selected payment method.
+     * Relies on update_checkout (triggered on payment method change) so the fragment is re-rendered with session state.
      *
      * @return void
      */
     public static function displayPixDiscountInTotals()
     {
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return;
+        }
         if (!WC()->cart || is_wc_endpoint_url('order-pay')) {
+            return;
+        }
+        if (!self::isPixSelectedAsPayment()) {
             return;
         }
         $discountConfig = Params::getPixConfig('pix_discount', 0);
@@ -843,7 +919,6 @@ class Connect
         if ($discount <= 0) {
             return;
         }
-        $totalNoPix = $cartTotal - $discount;
         $pixTitle = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
         $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
         ?>
@@ -851,11 +926,64 @@ class Connect
             <th><?php echo esc_html($discountLabel); ?></th>
             <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
         </tr>
-        <tr class="pagbank-pix-total">
-            <th><?php echo esc_html(__('Total no Pix', 'pagbank-connect')); ?></th>
-            <td data-title="<?php echo esc_attr(__('Total no Pix', 'pagbank-connect')); ?>"><?php echo wp_kses_post(wc_price($totalNoPix)); ?></td>
-        </tr>
         <?php
+    }
+
+    /**
+     * When PIX is selected, replace the order total HTML with the discounted total.
+     *
+     * @param string $value Default order total HTML.
+     * @return string
+     */
+    public static function filterOrderTotalHtmlWhenPixSelected(string $value): string
+    {
+        if (Params::getPixConfig('enabled') !== 'yes' || !WC()->cart) {
+            return $value;
+        }
+        if (!self::isPixSelectedAsPayment()) {
+            return $value;
+        }
+        $discountConfig = Params::getPixConfig('pix_discount', 0);
+        if (!Params::getDiscountType($discountConfig)) {
+            return $value;
+        }
+        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
+        $cartTotal = floatval(WC()->cart->get_total('edit'));
+        $shippingTotal = floatval(WC()->cart->get_shipping_total());
+        $discount = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
+        if ($discount <= 0) {
+            return $value;
+        }
+        $totalWithDiscount = $cartTotal - $discount;
+        // Preserve tax suffix from original if present (e.g. "includes VAT").
+        $suffix = '';
+        if (preg_match('#<small class="includes_tax">(.+?)</small>#s', $value, $m)) {
+            $suffix = '<small class="includes_tax">' . $m[1] . '</small>';
+        }
+        return '<strong>' . wp_kses_post(wc_price($totalWithDiscount)) . '</strong> ' . $suffix;
+    }
+
+    /**
+     * Enqueue script that triggers update_checkout when payment method changes
+     * (same approach as Pix por Piggly), so the server re-renders totals with the correct PIX discount.
+     *
+     * @return void
+     */
+    public static function enqueuePixDiscountCheckoutScript()
+    {
+        if (!is_checkout() || empty(WC()->cart)) {
+            return;
+        }
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return;
+        }
+        if (Params::getPixConfig('pix_show_discount_in_totals', 'no') !== 'yes' || !Params::getPixConfig('pix_discount', 0)) {
+            return;
+        }
+        $script = "!function(a){\"use strict\";a(function(){a(document.body).on(\"change\",\"input[name=\\\"payment_method\\\"]\",function(){a(\"body\").trigger(\"update_checkout\")})})}(jQuery);";
+        wp_register_script('pagbank-pix-checkout-update', false, ['jquery'], WC_PAGSEGURO_CONNECT_VERSION, true);
+        wp_enqueue_script('pagbank-pix-checkout-update');
+        wp_add_inline_script('pagbank-pix-checkout-update', $script, 'after');
     }
 
     /**

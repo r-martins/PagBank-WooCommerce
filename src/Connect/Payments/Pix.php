@@ -127,7 +127,9 @@ class Pix extends Common
     * @param mixed $product
     */
     public static function showPriceDiscountPixProduct($price, $product) {
-        
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return $price;
+        }
         // Check if the product is a subscription or if the user is in the admin area
         if(!$product || is_admin()){
             return $price;
