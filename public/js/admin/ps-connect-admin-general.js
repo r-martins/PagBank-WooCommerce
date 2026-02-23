@@ -39,4 +39,14 @@ jQuery(document).ready(function($) {
     jQuery(document).on('change', '#woocommerce_rm-pagbank_success_behavior', handleSuccessBehaviorChange);
     handleSuccessBehaviorChange({ target: $('#woocommerce_rm-pagbank_success_behavior')[0] });
     // endregion
+
+    // Show/hide "Cor dos ícones" row based on "Exibir ícones de pagamento" (general tab only)
+    function toggleIconsColorRow() {
+        var $showIcons = $('input[name="woocommerce_rm-pagbank_show_payment_icons"]');
+        var $row = $('input.pagbank-icons-color-field').closest('tr');
+        if (!$showIcons.length || !$row.length) return;
+        $row.toggle($showIcons.is(':checked'));
+    }
+    $('input[name="woocommerce_rm-pagbank_show_payment_icons"]').on('change', toggleIconsColorRow);
+    toggleIconsColorRow();
 });

@@ -70,7 +70,6 @@ class Connect
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
         add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
-        add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
         add_action('rest_api_init', [CreditCard::class,'restApiInstallments']);
 
         // Load plugin files
@@ -93,7 +92,8 @@ class Connect
         }
 
         //if pix enabled
-        if (Params::getPixConfig('enabled')) {
+        if (Params::getPixConfig('enabled') === 'yes') {
+            add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
             //region cron to cancel expired pix non-paid payments
             add_action('rm_pagbank_cron_cancel_expired_pix', [CancelExpiredPix::class, 'execute']);
             if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
@@ -105,9 +105,13 @@ class Connect
             }
             //endregion
             if (Params::getPixConfig('pix_show_discount_in_totals', 'no') === 'yes' && Params::getPixConfig('pix_discount', 0)) {
-                add_action('woocommerce_cart_totals_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
+                add_action('woocommerce_cart_totals_before_order_total', [__CLASS__, 'displayPixDiscountInCartTotals']);
                 add_action('woocommerce_review_order_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
+                add_filter('woocommerce_cart_totals_order_total_html', [__CLASS__, 'filterOrderTotalHtmlWhenPixSelected'], 10, 1);
+                add_action('wp_enqueue_scripts', [__CLASS__, 'enqueuePixDiscountCheckoutScript'], 20);
+                add_action('rest_api_init', [PixDiscountTotals::class, 'registerFilter'], 20);
                 add_action('wp', [PixDiscountTotals::class, 'registerHydrationFilter'], 5);
+                add_action('woocommerce_blocks_loaded', [PixDiscountTotals::class, 'init']);
             }
         }
 
@@ -219,51 +223,52 @@ class Connect
             'block_checkout' => Functions::isBlockCheckoutInUse(),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
             'enable_proxy' => Params::getConfig('enable_proxy', "no"),
+            // Use same defaults as admin form_fields when option not saved yet
             'settings' => [
-                'enabled' => Params::getConfig('enabled'),
-                'cc_enabled' => Params::getCcConfig('enabled'),
-                'pix_enabled' => Params::getPixConfig('enabled'),
-                'boleto_enabled' => Params::getBoletoConfig('enabled'),
+                'enabled' => Params::getConfig('enabled', ''),
+                'cc_enabled' => Params::getCcConfig('enabled', 'yes'),
+                'pix_enabled' => Params::getPixConfig('enabled', 'yes'),
+                'boleto_enabled' => Params::getBoletoConfig('enabled', 'no'),
                 'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
                 'sandbox' => $api->getIsSandbox(),
                 'boleto' => [
-                    'enabled' => Params::getBoletoConfig('enabled'),
-                    'expiry_days' => Params::getBoletoConfig('boleto_expiry_days'),
-                    'discount' => Params::getBoletoConfig('boleto_discount'),
+                    'enabled' => Params::getBoletoConfig('enabled', 'no'),
+                    'expiry_days' => Params::getBoletoConfig('boleto_expiry_days', '7'),
+                    'discount' => Params::getBoletoConfig('boleto_discount', '0'),
                 ],
                 'pix' => [
-                    'enabled' => Params::getPixConfig('enabled'),
-                    'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes'),
-                    'discount' => Params::getPixConfig('pix_discount'),
+                    'enabled' => Params::getPixConfig('enabled', 'yes'),
+                    'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes', '1440'),
+                    'discount' => Params::getPixConfig('pix_discount', '0'),
                 ],
                 'cc' => [
-                    'enabled' => Params::getCcConfig('enabled', 'no'),
+                    'enabled' => Params::getCcConfig('enabled', 'yes'),
                     'enabled_installment' => Params::getCcConfig('cc_installment_product_page', 'no'),
-                    'installment_options' => Params::getCcConfig('cc_installment_options'),
+                    'installment_options' => Params::getCcConfig('cc_installment_options', ''),
                     'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed', '3'),
                     'installments_options_min_total' => Params::getCcConfig('cc_installments_options_min_total', '50'),
-                    'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments'),
+                    'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments', ''),
                     'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments', '18'),
                     '3d_secure' => Params::getCcConfig('cc_3ds', 'yes'),
                     '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
-                    '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry'),
+                    '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry', 'yes'),
                     '3d_retry_failed' => Params::getCcConfig('cc_3ds_retry', 'yes'),
                 ],
                 'recurring' => [
-                        'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
-                        'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency'),
-                        'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
-                        'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
-                        'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
-                        'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
-                        'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
+                    'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
+                    'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency', 'hourly'),
+                    'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
+                    'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
+                    'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
+                    'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
+                    'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
                 ],
                 'redirect' => [
-                        'enabled' => Params::getRedirectConfig('enabled', 'no'),
-                        'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
-                        'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
-                        'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
-                        'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods'),
+                    'enabled' => Params::getRedirectConfig('enabled', 'yes'),
+                    'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
+                    'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
+                    'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
+                    'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods', ''),
                 ],
             ],
             'extra' => [
@@ -458,6 +463,15 @@ class Connect
             $ccSettings = $ccSettings;
             $pixSettings = $pixSettings;
             $boletoSettings = $boletoSettings;
+
+            // Idempotency: if main option was already migrated (no cc_*/pix_*/boleto_* keys), the split
+            // arrays are empty. Do NOT overwrite existing gateway options with empty arrays — that would
+            // wipe 'enabled' and cause payment methods to disappear from checkout. Only set DB version.
+            $alreadyMigrated = (count($ccSettings) === 0 && count($pixSettings) === 0 && count($boletoSettings) === 0);
+            if ($alreadyMigrated) {
+                update_option('pagbank_db_version', '4.13');
+                return;
+            }
 
             $wpdb->update(
                 $settingsTable,
@@ -813,13 +827,85 @@ class Connect
     }
 
     /**
-     * Display Pix discount and "Total no Pix" in cart and checkout totals (when option is enabled).
+     * Whether PIX is currently selected as payment (legacy: rm-pagbank + ps_connect_method=pix; blocks: rm-pagbank-pix).
+     *
+     * @return bool
+     */
+    private static function isPixSelectedAsPayment(): bool
+    {
+        $chosen = WC()->session ? WC()->session->get('chosen_payment_method', '') : '';
+        if ($chosen === 'rm-pagbank-pix') {
+            return true;
+        }
+        if ($chosen !== self::DOMAIN) {
+            return false;
+        }
+        // Legacy checkout: gateway is rm-pagbank; sub-method is in post_data (ps_connect_method).
+        if (!empty($_POST['ps_connect_method'])) {
+            return sanitize_text_field(wp_unslash($_POST['ps_connect_method'])) === 'pix';
+        }
+        if (!empty($_POST['post_data']) && is_string($_POST['post_data'])) {
+            parse_str(wp_unslash($_POST['post_data']), $post_data);
+            return isset($post_data['ps_connect_method']) && $post_data['ps_connect_method'] === 'pix';
+        }
+        return false;
+    }
+
+    /**
+     * Outputs PIX discount and "Total no PIX" rows on the cart page (always, when discount is configured).
+     *
+     * @return void
+     */
+    public static function displayPixDiscountInCartTotals(): void
+    {
+        if (!function_exists('is_cart') || !is_cart() || !WC()->cart || is_wc_endpoint_url('order-pay')) {
+            return;
+        }
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return;
+        }
+        $discountConfig = Params::getPixConfig('pix_discount', 0);
+        if (!Params::getDiscountType($discountConfig)) {
+            return;
+        }
+        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
+        $cartTotal        = floatval(WC()->cart->get_total('edit'));
+        $shippingTotal    = floatval(WC()->cart->get_shipping_total());
+        $discount         = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
+        if ($discount <= 0) {
+            return;
+        }
+        $pixTitle       = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
+        $discountLabel  = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
+        $totalNoPix     = $cartTotal - $discount;
+        $totalNoPixLabel = __('Total no PIX', 'pagbank-connect');
+        ?>
+        <tr class="pagbank-pix-discount fee">
+            <th><?php echo esc_html($discountLabel); ?></th>
+            <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
+        </tr>
+        <tr class="pagbank-pix-total-no-pix order-total">
+            <th><?php echo esc_html($totalNoPixLabel); ?></th>
+            <td data-title="<?php echo esc_attr($totalNoPixLabel); ?>"><?php echo wp_kses_post(wc_price($totalNoPix)); ?></td>
+        </tr>
+        <?php
+    }
+
+    /**
+     * Display Pix discount row in checkout totals only when PIX is the selected payment method.
+     * Relies on update_checkout (triggered on payment method change) so the fragment is re-rendered with session state.
      *
      * @return void
      */
     public static function displayPixDiscountInTotals()
     {
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return;
+        }
         if (!WC()->cart || is_wc_endpoint_url('order-pay')) {
+            return;
+        }
+        if (!self::isPixSelectedAsPayment()) {
             return;
         }
         $discountConfig = Params::getPixConfig('pix_discount', 0);
@@ -833,7 +919,6 @@ class Connect
         if ($discount <= 0) {
             return;
         }
-        $totalNoPix = $cartTotal - $discount;
         $pixTitle = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
         $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
         ?>
@@ -841,11 +926,64 @@ class Connect
             <th><?php echo esc_html($discountLabel); ?></th>
             <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
         </tr>
-        <tr class="pagbank-pix-total">
-            <th><?php echo esc_html(__('Total no Pix', 'pagbank-connect')); ?></th>
-            <td data-title="<?php echo esc_attr(__('Total no Pix', 'pagbank-connect')); ?>"><?php echo wp_kses_post(wc_price($totalNoPix)); ?></td>
-        </tr>
         <?php
+    }
+
+    /**
+     * When PIX is selected, replace the order total HTML with the discounted total.
+     *
+     * @param string $value Default order total HTML.
+     * @return string
+     */
+    public static function filterOrderTotalHtmlWhenPixSelected(string $value): string
+    {
+        if (Params::getPixConfig('enabled') !== 'yes' || !WC()->cart) {
+            return $value;
+        }
+        if (!self::isPixSelectedAsPayment()) {
+            return $value;
+        }
+        $discountConfig = Params::getPixConfig('pix_discount', 0);
+        if (!Params::getDiscountType($discountConfig)) {
+            return $value;
+        }
+        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
+        $cartTotal = floatval(WC()->cart->get_total('edit'));
+        $shippingTotal = floatval(WC()->cart->get_shipping_total());
+        $discount = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
+        if ($discount <= 0) {
+            return $value;
+        }
+        $totalWithDiscount = $cartTotal - $discount;
+        // Preserve tax suffix from original if present (e.g. "includes VAT").
+        $suffix = '';
+        if (preg_match('#<small class="includes_tax">(.+?)</small>#s', $value, $m)) {
+            $suffix = '<small class="includes_tax">' . $m[1] . '</small>';
+        }
+        return '<strong>' . wp_kses_post(wc_price($totalWithDiscount)) . '</strong> ' . $suffix;
+    }
+
+    /**
+     * Enqueue script that triggers update_checkout when payment method changes
+     * (same approach as Pix por Piggly), so the server re-renders totals with the correct PIX discount.
+     *
+     * @return void
+     */
+    public static function enqueuePixDiscountCheckoutScript()
+    {
+        if (!is_checkout() || empty(WC()->cart)) {
+            return;
+        }
+        if (Params::getPixConfig('enabled') !== 'yes') {
+            return;
+        }
+        if (Params::getPixConfig('pix_show_discount_in_totals', 'no') !== 'yes' || !Params::getPixConfig('pix_discount', 0)) {
+            return;
+        }
+        $script = "!function(a){\"use strict\";a(function(){a(document.body).on(\"change\",\"input[name=\\\"payment_method\\\"]\",function(){a(\"body\").trigger(\"update_checkout\")})})}(jQuery);";
+        wp_register_script('pagbank-pix-checkout-update', false, ['jquery'], WC_PAGSEGURO_CONNECT_VERSION, true);
+        wp_enqueue_script('pagbank-pix-checkout-update');
+        wp_add_inline_script('pagbank-pix-checkout-update', $script, 'after');
     }
 
     /**
@@ -952,6 +1090,48 @@ class Connect
         }
 
         wp_redirect($edit_order_url);
+    }
+
+    public static function gatewayOrderFilter($order)
+    {
+        if (!is_array($order)) {
+            return $order;
+        }
+        $pagbank_ids = array('rm-pagbank-pix', 'rm-pagbank-cc', 'rm-pagbank-boleto', 'rm-pagbank-redirect');
+        // First pass: mark positions taken by non-PagBank gateways (e.g. OpenPix forces 0 and 1).
+        $used = array();
+        foreach ($order as $id => $pos) {
+            if (!is_numeric($pos)) {
+                continue;
+            }
+            $p = (int)$pos;
+            if (in_array($id, $pagbank_ids, true)) {
+                continue;
+            }
+            $used[$p] = $id;
+        }
+        $next = 0;
+        foreach ($pagbank_ids as $id) {
+            if (!isset($order[$id]) || !is_numeric($order[$id])) {
+                continue;
+            }
+            $pos = (int)$order[$id];
+            if (isset($used[$pos])) {
+                while (isset($used[$next])) {
+                    $next++;
+                }
+                $order[$id] = $next;
+                $used[$next] = $id;
+                $next++;
+            } else {
+                $used[$pos] = $id;
+                if ($pos >= $next) {
+                    $next = $pos + 1;
+                }
+            }
+        }
+
+        return $order;
     }
 
 }

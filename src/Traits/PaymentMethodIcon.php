@@ -12,6 +12,9 @@ trait PaymentMethodIcon
      * @return string
      */
     public function get_icon() {
+        if (Params::getConfig('show_payment_icons', 'yes') !== 'yes') {
+            return '';
+        }
         $icon = parent::get_icon();
         $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
         if ($isDynamicIcoAccessible) {

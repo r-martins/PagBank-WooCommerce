@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.51.0
+Stable tag: 4.52.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -239,6 +239,15 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 4.52.0 =
+* Melhoria: Agora é possível esconder os ícones de pagamento (interessante se tiver problemas com css e não quiser ajustar)
+* Workaround: alguns plugins sobrescrevem a ordem de plugins de pagamentos que são carregados, fazendo com que o nosso não seja exibido, incluindo algumas abas de nossas configurações que deixam de ser exibidas.
+* Correção: ao fazer upgrade do plugin, em alguns cenários uma das migrações poderia resetar algumas configurações, tornando alguns meios de pagamento não mais "ativos" até que a pessoa salvas
+se sua configuração novamente
+* Correção: ferramenta de diagnóstico não exibia valores corretamente quando os valores-padrão estavam em uso ou quando o usuário não havia realizado nenhuma mudança
+* Correção: escondemos os descontos pix nos totais caso pix nno seja o selecionado + atualizamos o total com o desconto pixx
+* Correção: split de pagamentos recorrentes com Dokan Marketplace terminava em falha por conta de parâmetro liable não suportado. 
 
 = 4.51.0 =
 * Melhoria: Agora é possível exibir os totais com desconto PIX no checkout e carrinho. Basta ativar nas configurações.

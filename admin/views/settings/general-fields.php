@@ -87,6 +87,14 @@ return array(
             'never'		=> __('Nunca fornecer ao PagBank', 'pagbank-connect'),
         ],
     ],
+    'show_payment_icons' => [
+        'title'   => __('Exibir ícones de pagamento', 'pagbank-connect'),
+        'label'   => __('Exibir ícones dos meios de pagamento no checkout', 'pagbank-connect'),
+        'type'    => 'checkbox',
+        'default' => 'yes',
+        'desc_tip' => true,
+        'description' => __('Quando desmarcado, os ícones não serão exibidos no checkout e a opção "Cor dos ícones" ficará oculta.', 'pagbank-connect'),
+    ],
     'icons_color' => [
         'title'		=> __('Cor dos Ícones', 'pagbank-connect'),
         'type'		=> 'text',
@@ -94,7 +102,7 @@ return array(
             .'Para mais customizações visuais, veja este <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles'
             .'/18278019489677">artigo</a>.', 'pagbank-connect'),
         'default'	=> 'gray',
-        'class' => 'icon-color-picker'
+        'class' => 'icon-color-picker pagbank-icons-color-field',
     ],
     'success_behavior' => [
         'title'		=> __('Comportamento ao confirmar pagamento', 'pagbank-connect'),
