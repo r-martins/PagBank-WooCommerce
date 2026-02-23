@@ -1092,4 +1092,46 @@ class Connect
         wp_redirect($edit_order_url);
     }
 
+    public static function gatewayOrderFilter($order)
+    {
+        if (!is_array($order)) {
+            return $order;
+        }
+        $pagbank_ids = array('rm-pagbank-pix', 'rm-pagbank-cc', 'rm-pagbank-boleto', 'rm-pagbank-redirect');
+        // First pass: mark positions taken by non-PagBank gateways (e.g. OpenPix forces 0 and 1).
+        $used = array();
+        foreach ($order as $id => $pos) {
+            if (!is_numeric($pos)) {
+                continue;
+            }
+            $p = (int)$pos;
+            if (in_array($id, $pagbank_ids, true)) {
+                continue;
+            }
+            $used[$p] = $id;
+        }
+        $next = 0;
+        foreach ($pagbank_ids as $id) {
+            if (!isset($order[$id]) || !is_numeric($order[$id])) {
+                continue;
+            }
+            $pos = (int)$order[$id];
+            if (isset($used[$pos])) {
+                while (isset($used[$next])) {
+                    $next++;
+                }
+                $order[$id] = $next;
+                $used[$next] = $id;
+                $next++;
+            } else {
+                $used[$pos] = $id;
+                if ($pos >= $next) {
+                    $next = $pos + 1;
+                }
+            }
+        }
+
+        return $order;
+    }
+
 }

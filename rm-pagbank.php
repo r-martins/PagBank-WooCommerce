@@ -58,6 +58,7 @@ add_action('init', function() {
 
 // Add Gateway
 add_filter('woocommerce_payment_gateways', array(Connect::class, 'addGateway'));
+add_filter('option_woocommerce_gateway_order', array(Connect::class, 'gatewayOrderFilter'), 2);
 
 // Redirect integrations section to main gateway with a flag
 add_action('admin_init', function() {
