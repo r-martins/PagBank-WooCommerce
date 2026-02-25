@@ -8,6 +8,7 @@ use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
 use RM_PagBank\Connect\OrderMetaBoxes;
 use RM_PagBank\Connect\OrderProcessor;
+use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
@@ -19,7 +20,6 @@ use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
 use RM_PagBank\Connect\Blocks\Redirect as RedirectBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
-use RM_PagBank\Connect\Blocks\PixDiscountTotals;
 use RM_PagBank\Cron\CancelExpiredPix;
 use RM_PagBank\Cron\ForceOrderUpdate;
 use RM_PagBank\Helpers\Api;
@@ -104,15 +104,10 @@ class Connect
                 );
             }
             //endregion
-            if (Params::getPixConfig('pix_show_discount_in_totals', 'no') === 'yes' && Params::getPixConfig('pix_discount', 0)) {
-                add_action('woocommerce_cart_totals_before_order_total', [__CLASS__, 'displayPixDiscountInCartTotals']);
-                add_action('woocommerce_review_order_before_order_total', [__CLASS__, 'displayPixDiscountInTotals']);
-                add_filter('woocommerce_cart_totals_order_total_html', [__CLASS__, 'filterOrderTotalHtmlWhenPixSelected'], 10, 1);
-                add_action('wp_enqueue_scripts', [__CLASS__, 'enqueuePixDiscountCheckoutScript'], 20);
-                add_action('rest_api_init', [PixDiscountTotals::class, 'registerFilter'], 20);
-                add_action('wp', [PixDiscountTotals::class, 'registerHydrationFilter'], 5);
-                add_action('woocommerce_blocks_loaded', [PixDiscountTotals::class, 'init']);
-            }
+        }
+        if ((Params::getPixConfig('enabled') === 'yes' && Params::getPixConfig('pix_discount', 0))
+            || (Params::getBoletoConfig('enabled') === 'yes' && Params::getBoletoConfig('boleto_discount', 0))) {
+            add_action('woocommerce_cart_calculate_fees', [__CLASS__, 'addPaymentMethodDiscountFees'], 20);
         }
 
         //if force order update enabled
@@ -827,163 +822,140 @@ class Connect
     }
 
     /**
-     * Whether PIX is currently selected as payment (legacy: rm-pagbank + ps_connect_method=pix; blocks: rm-pagbank-pix).
+     * Whether a given payment method is currently selected (blocks: rm-pagbank-pix / rm-pagbank-boleto;
+     * legacy: rm-pagbank + ps_connect_method=pix|boleto). Checks POST and post_data first so update_order_review
+     * AJAX applies the fee before session is updated.
      *
+     * @param string      $gatewayId Gateway ID (e.g. 'rm-pagbank-pix', 'rm-pagbank-boleto').
+     * @param string|null $subMethod  Legacy sub-method when gateway is rm-pagbank (e.g. 'pix', 'boleto').
      * @return bool
      */
-    private static function isPixSelectedAsPayment(): bool
+    public static function isPaymentMethodSelected(string $gatewayId, ?string $subMethod = null): bool
     {
+        $post_method = null;
+        $post_data_parsed = null;
+
+        if (!empty($_POST['payment_method'])) {
+            $post_method = sanitize_text_field(wp_unslash($_POST['payment_method']));
+        }
+        if ($post_method === null && !empty($_POST['post_data']) && is_string($_POST['post_data'])) {
+            parse_str(wp_unslash($_POST['post_data']), $post_data_parsed);
+            $post_method = isset($post_data_parsed['payment_method']) ? sanitize_text_field($post_data_parsed['payment_method']) : null;
+        }
+        if ($post_data_parsed === null && !empty($_POST['post_data']) && is_string($_POST['post_data'])) {
+            parse_str(wp_unslash($_POST['post_data']), $post_data_parsed);
+        }
+
+        if ($post_method !== null) {
+            if ($post_method === $gatewayId) {
+                return true;
+            }
+            if ($post_method === self::DOMAIN && $subMethod !== null) {
+                $sub = false;
+                if (!empty($_POST['ps_connect_method']) && sanitize_text_field(wp_unslash($_POST['ps_connect_method'])) === $subMethod) {
+                    $sub = true;
+                }
+                if (!$sub && is_array($post_data_parsed) && isset($post_data_parsed['ps_connect_method']) && $post_data_parsed['ps_connect_method'] === $subMethod) {
+                    $sub = true;
+                }
+                if ($sub) {
+                    return true;
+                }
+            }
+            if ($post_method !== $gatewayId && $post_method !== self::DOMAIN) {
+                return false;
+            }
+        }
+
         $chosen = WC()->session ? WC()->session->get('chosen_payment_method', '') : '';
-        if ($chosen === 'rm-pagbank-pix') {
+        if ($chosen === $gatewayId) {
             return true;
         }
         if ($chosen !== self::DOMAIN) {
             return false;
         }
-        // Legacy checkout: gateway is rm-pagbank; sub-method is in post_data (ps_connect_method).
-        if (!empty($_POST['ps_connect_method'])) {
-            return sanitize_text_field(wp_unslash($_POST['ps_connect_method'])) === 'pix';
+        if ($subMethod !== null && !empty($_POST['ps_connect_method']) && sanitize_text_field(wp_unslash($_POST['ps_connect_method'])) === $subMethod) {
+            return true;
         }
-        if (!empty($_POST['post_data']) && is_string($_POST['post_data'])) {
-            parse_str(wp_unslash($_POST['post_data']), $post_data);
-            return isset($post_data['ps_connect_method']) && $post_data['ps_connect_method'] === 'pix';
+        if ($subMethod !== null && is_array($post_data_parsed) && isset($post_data_parsed['ps_connect_method']) && $post_data_parsed['ps_connect_method'] === $subMethod) {
+            return true;
+        }
+        if ($subMethod !== null && $post_data_parsed === null && !empty($_POST['post_data']) && is_string($_POST['post_data'])) {
+            parse_str(wp_unslash($_POST['post_data']), $post_data_parsed);
+            return is_array($post_data_parsed) && isset($post_data_parsed['ps_connect_method']) && $post_data_parsed['ps_connect_method'] === $subMethod;
         }
         return false;
     }
 
     /**
-     * Outputs PIX discount and "Total no PIX" rows on the cart page (always, when discount is configured).
+     * Adds PIX/Boleto discount fees when the respective method is selected at checkout.
+     * Called from woocommerce_cart_calculate_fees; tries each method that has discount configured.
      *
+     * @param \WC_Cart $cart Cart instance.
      * @return void
      */
-    public static function displayPixDiscountInCartTotals(): void
+    public static function addPaymentMethodDiscountFees($cart): void
     {
-        if (!function_exists('is_cart') || !is_cart() || !WC()->cart || is_wc_endpoint_url('order-pay')) {
-            return;
-        }
-        if (Params::getPixConfig('enabled') !== 'yes') {
-            return;
-        }
-        $discountConfig = Params::getPixConfig('pix_discount', 0);
-        if (!Params::getDiscountType($discountConfig)) {
-            return;
-        }
-        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
-        $cartTotal        = floatval(WC()->cart->get_total('edit'));
-        $shippingTotal    = floatval(WC()->cart->get_shipping_total());
-        $discount         = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
-        if ($discount <= 0) {
-            return;
-        }
-        $pixTitle       = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
-        $discountLabel  = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
-        $totalNoPix     = $cartTotal - $discount;
-        $totalNoPixLabel = __('Total no PIX', 'pagbank-connect');
-        ?>
-        <tr class="pagbank-pix-discount fee">
-            <th><?php echo esc_html($discountLabel); ?></th>
-            <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
-        </tr>
-        <tr class="pagbank-pix-total-no-pix order-total">
-            <th><?php echo esc_html($totalNoPixLabel); ?></th>
-            <td data-title="<?php echo esc_attr($totalNoPixLabel); ?>"><?php echo wp_kses_post(wc_price($totalNoPix)); ?></td>
-        </tr>
-        <?php
+        self::addDiscountAsFeeForMethod($cart, 'pix');
+        self::addDiscountAsFeeForMethod($cart, 'boleto');
     }
 
     /**
-     * Display Pix discount row in checkout totals only when PIX is the selected payment method.
-     * Relies on update_checkout (triggered on payment method change) so the fragment is re-rendered with session state.
+     * Adds discount as a cart fee (negative) for one payment method when it is selected.
      *
+     * @param \WC_Cart $cart  Cart instance.
+     * @param string   $method 'pix' or 'boleto'.
      * @return void
      */
-    public static function displayPixDiscountInTotals()
+    protected static function addDiscountAsFeeForMethod($cart, string $method): void
     {
-        if (Params::getPixConfig('enabled') !== 'yes') {
+        if (function_exists('is_cart') && is_cart()) {
             return;
         }
-        if (!WC()->cart || is_wc_endpoint_url('order-pay')) {
+        $config = [
+            'pix'    => [
+                'enabled'    => Params::getPixConfig('enabled') === 'yes',
+                'discount'   => Params::getPixConfig('pix_discount', 0),
+                'excludes'   => Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes',
+                'title'      => Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect')),
+                'gateway_id' => 'rm-pagbank-pix',
+                'sub_method' => 'pix',
+                'fee_id'     => Pix::DISCOUNT_FEE_ID,
+            ],
+            'boleto' => [
+                'enabled'    => Params::getBoletoConfig('enabled') === 'yes',
+                'discount'   => Params::getBoletoConfig('boleto_discount', 0),
+                'excludes'   => Params::getBoletoConfig('boleto_discount_excludes_shipping', 'no') === 'yes',
+                'title'      => Params::getBoletoConfig('title', __('Boleto via PagBank', 'pagbank-connect')),
+                'gateway_id' => 'rm-pagbank-boleto',
+                'sub_method' => 'boleto',
+                'fee_id'     => Boleto::DISCOUNT_FEE_ID,
+            ],
+        ];
+        if (!isset($config[$method])) {
             return;
         }
-        if (!self::isPixSelectedAsPayment()) {
+        $c = $config[$method];
+        if (!$c['enabled'] || !self::isPaymentMethodSelected($c['gateway_id'], $c['sub_method'])) {
             return;
         }
-        $discountConfig = Params::getPixConfig('pix_discount', 0);
-        if (!Params::getDiscountType($discountConfig)) {
+        if (!Params::getDiscountType($c['discount'])) {
             return;
         }
-        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
-        $cartTotal = floatval(WC()->cart->get_total('edit'));
-        $shippingTotal = floatval(WC()->cart->get_shipping_total());
-        $discount = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
+        $cartTotal = (float) $cart->get_cart_contents_total() + (float) $cart->get_shipping_total();
+        $shippingTotal = (float) $cart->get_shipping_total();
+        $discount = Params::getDiscountValueForTotal($c['discount'], $cartTotal, $c['excludes'], $shippingTotal);
         if ($discount <= 0) {
             return;
         }
-        $pixTitle = Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect'));
-        $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $pixTitle;
-        ?>
-        <tr class="pagbank-pix-discount fee">
-            <th><?php echo esc_html($discountLabel); ?></th>
-            <td data-title="<?php echo esc_attr($discountLabel); ?>"><?php echo wp_kses_post(wc_price(-$discount)); ?></td>
-        </tr>
-        <?php
-    }
-
-    /**
-     * When PIX is selected, replace the order total HTML with the discounted total.
-     *
-     * @param string $value Default order total HTML.
-     * @return string
-     */
-    public static function filterOrderTotalHtmlWhenPixSelected(string $value): string
-    {
-        if (Params::getPixConfig('enabled') !== 'yes' || !WC()->cart) {
-            return $value;
-        }
-        if (!self::isPixSelectedAsPayment()) {
-            return $value;
-        }
-        $discountConfig = Params::getPixConfig('pix_discount', 0);
-        if (!Params::getDiscountType($discountConfig)) {
-            return $value;
-        }
-        $excludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes';
-        $cartTotal = floatval(WC()->cart->get_total('edit'));
-        $shippingTotal = floatval(WC()->cart->get_shipping_total());
-        $discount = Params::getDiscountValueForTotal($discountConfig, $cartTotal, $excludesShipping, $shippingTotal);
-        if ($discount <= 0) {
-            return $value;
-        }
-        $totalWithDiscount = $cartTotal - $discount;
-        // Preserve tax suffix from original if present (e.g. "includes VAT").
-        $suffix = '';
-        if (preg_match('#<small class="includes_tax">(.+?)</small>#s', $value, $m)) {
-            $suffix = '<small class="includes_tax">' . $m[1] . '</small>';
-        }
-        return '<strong>' . wp_kses_post(wc_price($totalWithDiscount)) . '</strong> ' . $suffix;
-    }
-
-    /**
-     * Enqueue script that triggers update_checkout when payment method changes
-     * (same approach as Pix por Piggly), so the server re-renders totals with the correct PIX discount.
-     *
-     * @return void
-     */
-    public static function enqueuePixDiscountCheckoutScript()
-    {
-        if (!is_checkout() || empty(WC()->cart)) {
-            return;
-        }
-        if (Params::getPixConfig('enabled') !== 'yes') {
-            return;
-        }
-        if (Params::getPixConfig('pix_show_discount_in_totals', 'no') !== 'yes' || !Params::getPixConfig('pix_discount', 0)) {
-            return;
-        }
-        $script = "!function(a){\"use strict\";a(function(){a(document.body).on(\"change\",\"input[name=\\\"payment_method\\\"]\",function(){a(\"body\").trigger(\"update_checkout\")})})}(jQuery);";
-        wp_register_script('pagbank-pix-checkout-update', false, ['jquery'], WC_PAGSEGURO_CONNECT_VERSION, true);
-        wp_enqueue_script('pagbank-pix-checkout-update');
-        wp_add_inline_script('pagbank-pix-checkout-update', $script, 'after');
+        $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $c['title'];
+        $cart->fees_api()->add_fee([
+            'id'        => $c['fee_id'],
+            'name'      => $discountLabel,
+            'amount'    => -$discount,
+            'taxable'   => false,
+            'tax_class' => '',
+        ]);
     }
 
     /**

@@ -26,6 +26,9 @@ class Boleto extends Common
 {
     public string $code = 'boleto';
 
+    /** Fee ID for Boleto discount (cart and order). Use this to detect our fee; do not match by name. */
+    public const DISCOUNT_FEE_ID = 'pagbank_boleto_discount';
+
 
 	/**
 	 * Prepare order params for Boleto
@@ -41,32 +44,7 @@ class Boleto extends Common
         $charge->setReferenceId($this->order->get_id());
 
         $amount = new Amount();
-        $orderTotal = $this->order->get_total();
-        $discountExcludesShipping = Params::getBoletoConfig('boleto_discount_excludes_shipping', false) == 'yes';
-
-        if (($discountConfig = Params::getBoletoConfig('boleto_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
-            $discount = floatval(Params::getDiscountValue($discountConfig, $this->order, $discountExcludesShipping));
-            $orderTotal = $orderTotal - $discount;
-
-            $fee = new \WC_Order_Item_Fee();
-            $fee->set_name(__('Desconto para pagamento com Boleto', 'rm-pagbank'));
-
-            // Define the fee amount, negative number to discount
-            $fee->set_amount(-$discount);
-            $fee->set_total(-$discount);
-
-            // Define the tax class for the fee
-            $fee->set_tax_class('');
-            $fee->set_tax_status('none');
-
-            // Add the fee to the order
-            $this->order->add_item($fee);
-
-            // Recalculate the order
-            $this->order->calculate_totals();
-        }
-
-        $amount->setValue(Params::convertToCents($orderTotal));
+        $amount->setValue(Params::convertToCents($this->order->get_total()));
         $charge->setAmount($amount);
 
         $paymentMethod = new PaymentMethod();
