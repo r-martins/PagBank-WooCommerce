@@ -16,6 +16,11 @@ jQuery(document).ready(function($) {
         jQuery(this).addClass('active')
 
     })
+
+    // Update order summary when payment method changes in order to update the order total with pix discounts if any
+    jQuery(document.body).on('change', 'input[name="payment_method"]', function() {
+        jQuery('body').trigger('update_checkout');
+    });
     
     //global function to translate and parse error messages
     window.pagBankParseErrorMessage = function(errorMessage) {

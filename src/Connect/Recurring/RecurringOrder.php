@@ -111,7 +111,7 @@ class RecurringOrder
             }
             $itemObj->update_meta_data('_frequency', $initialOrder->get_meta('_recurring_frequency'));
             $itemObj->update_meta_data('_cycle', $initialOrder->get_meta('_recurring_cycle'));
-
+            $itemObj->set_price($item->get_total('edit')); // Note that this is not the charged amount
             $order->add_product($itemObj, $item->get_quantity('edit'));
         }
 
