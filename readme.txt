@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.53.1
+Stable tag: 4.53.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -239,6 +239,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.53.2 =
+* Melhorias e correções no ícone de pagamento. Definido utf-8 para caracteres especiais no SVG; Sanitização do $_GET que era inutilizado; Validação de existência do arquivo ícone; Controle explícito de formatação e espaços no load do SVG no DOM; Elimina duplicações da tag svg e remove declaração de XML e DOCTYPE. (contribuição de [Matheus Vale](https://matheusvale.com/))
+
+
 = 4.53.1 =
 * Correção: em doações recorrentes com valor especificado pelo comprador o valor não era replicado no item, causando falha e cancelamento da assinatura no segundo ciclo da recorrencia.
 * Correção: desconto pix nem sempre era exibido pois o checkout nem sempre atualizava o total
