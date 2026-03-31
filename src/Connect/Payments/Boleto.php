@@ -140,9 +140,9 @@ class Boleto extends Common
             $splitManager = new \RM_PagBank\Integrations\Dokan\DokanSplitManager();
             $splitData = $splitManager->buildSplitData($this->order, 'BOLETO');
             $charge->setSplits($splitData->jsonSerialize());
-        }
-        // If Dokan Split is not applied, check General Split
-        elseif (\RM_PagBank\Integrations\GeneralSplitManager::shouldApplySplit($this->order)) {
+        } elseif (($splitData = apply_filters('pagbank_connect_split_for_order', null, $this->order, 'BOLETO')) && $splitData instanceof \RM_PagBank\Object\Split) {
+            $charge->setSplits($splitData->jsonSerialize());
+        } elseif (\RM_PagBank\Integrations\GeneralSplitManager::shouldApplySplit($this->order)) {
             $splitData = \RM_PagBank\Integrations\GeneralSplitManager::buildSplitData($this->order, 'BOLETO');
             $charge->setSplits($splitData->jsonSerialize());
         }
