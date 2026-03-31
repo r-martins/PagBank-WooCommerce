@@ -679,7 +679,7 @@ class Gateway extends WC_Payment_Gateway_CC
         delete_transient('rm_pagbank_dynamic_ico_accessible');
         $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
         if (!$isDynamicIcoAccessible) {
-            WC_Admin_Settings::add_error(__('A personalização da cor dos ícones foi desativada, pois alguma configuração de sua loja ou ambiente impede ele de ser utilizado/acessado.', 'pagbank-connect'));
+            WC_Admin_Settings::add_error(__('A personalização da cor dos ícones foi desativada, pois alguma configuração de sua loja ou ambiente impede ele de ser utilizado/acessado. Se estiver em ambiente local, ignore esta mensagem.', 'pagbank-connect'));
             $icon_color = 'gray';
         }
         
@@ -723,6 +723,7 @@ class Gateway extends WC_Payment_Gateway_CC
         if (! $force_refresh ) {
             $cached = get_transient($transient_key);
             if ($cached !== false) {
+                self::maybePersistMerchantAccountId($cached);
                 return $cached;
             }
         }
@@ -736,7 +737,25 @@ class Gateway extends WC_Payment_Gateway_CC
             set_transient($transient_key, $info, DAY_IN_SECONDS);
         }
 
+        self::maybePersistMerchantAccountId($info);
+
         return $info;
+    }
+
+    /**
+     * Store Connect merchant Account ID for third-party integrations (e.g. affiliate split).
+     *
+     * @param array|null $info connectInfo payload.
+     */
+    private static function maybePersistMerchantAccountId($info)
+    {
+        if (!is_array($info) || empty($info['accountId'])) {
+            return;
+        }
+        $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
+        if (preg_match($pattern, $info['accountId'])) {
+            update_option('woocommerce_rm-pagbank_merchant_account_id', sanitize_text_field($info['accountId']), false);
+        }
     }
 
     /**
