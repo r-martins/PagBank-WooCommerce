@@ -4,17 +4,22 @@ on:
   push:
     branches:
       - master
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Node 20 on Actions is deprecated; align JS action runtimes with Node 24 (see GitHub changelog Sep 2025).
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout GitHub repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
@@ -26,12 +31,6 @@ jobs:
 
       - name: Install Subversion
         run: sudo apt-get install subversion
-        
-      - name: Setup SVN
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: '11'
 
       - name: Checkout WordPress SVN repo
         run: |

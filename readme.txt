@@ -1,11 +1,11 @@
 === PagBank / PagSeguro Connect para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, woocommerce, brasil
+Tags: pagseguro, pagbank, pix, woocommerce, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.54.0
+Stable tag: 4.54.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -72,7 +72,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Use a mesma conta PagBank e a mesma Connect Key para integrar **várias lojas** WooCommerce, sem precisar de uma Connect Key para cada loja.
 * Integração com Marketplace Dokan para divisão de pagamentos entre múltiplos vendedores (split, multivendor). [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/40558023581965-Dokan-Split-Divis%C3%A3o-de-Pagamentos-para-Marketplace).
 
-https://www.youtube.com/watch?v=a8rkT8IyIYo
+https://www.youtube.com/watch?v=R7nyqVCo9fU
 
 Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
 
@@ -99,7 +99,7 @@ Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do Pa
 * Clique no botão para instalar e ative o plugin
 * Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
-=== WP-CLI ===
+=== Instalação com WP-CLI ===
 Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/). 
 
 * Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
@@ -239,6 +239,12 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.54.1 =
+* Correção: no checkout em blocos, quando um desconto era aplicado as parcelas do cartão não eram atualizadas, e a autenticação 3D falhava em alguns cenários pedindo para recarregar a página
+* Correção: no checkout em blocos, quando o usuário falhava em digitar uma das informações corretamente e o 3D falhava apontando o erro, mesmo que o comprador corrigisse o problema ainda não conseguiria finalizar o checkout
+* Adicionamos sourcemaps nos arquivos js do checkout em blocos a fim de facilitar o desenvolvimento futuro.
+* Correção: No checkout em blocos se o PIX com desconto fosse o meio padrão selecionado seus descontos não eram exibidos nos totais. E em outros cenários, ao selecionar cartão de crédito o desconto pix permanecia aplicado (e impedindo a finalização de compra).
+
 = 4.54.0 =
 * Melhoria: filtro de split adicionado a fim de permitir pagamento de afiliados automática com novo plugin PB Afiliados.
 
