@@ -66,6 +66,7 @@ const Content = ( props ) => {
         }
     });
     const cartTotalRef = useRef(billing?.cartTotal?.value ?? 0);
+    const latestBillingRef = useRef(billing);
     if (settings.paymentUnavailable) {
         useEffect( () => {
             const unsubscribe = onPaymentSetup(() => {
@@ -128,6 +129,7 @@ const Content = ( props ) => {
                 'must be an integer number': 'deve ser um número inteiro',
                 'card holder name must contain a first and last name': 'o nome do titular do cartão deve conter um primeiro e último nome',
                 'must be a well-formed email address': 'deve ser um endereço de e-mail válido',
+                'size must be between 6 and 9': 'deve ter entre 6 e 9 caracteres',
             };
 
             const parameters = {
@@ -303,6 +305,11 @@ const Content = ( props ) => {
                     selectedInstallments = 1;
                 }
 
+                // Always refresh with latest checkout total before 3DS request.
+                const latestBillingData = latestBillingRef.current;
+                const latestCartTotal = Number(latestBillingData?.cartTotal?.value ?? cartTotalRef.current ?? 0);
+                cartTotalRef.current = Number.isFinite(latestCartTotal) ? latestCartTotal : 0;
+
                 //if cart total is less than 100, don't continue with 3ds
                 if (cartTotalRef.current < 100) {
                     canContinue = true;
@@ -311,7 +318,12 @@ const Content = ( props ) => {
                 }
 
                 if (selectedInstallments > 1) {
-                    cartTotalRef.current = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount_raw;
+                    const selectedInstallmentData = window.ps_cc_installments?.find(
+                        (installment, idx, installments) => installments[idx].installments == selectedInstallments
+                    );
+                    if (selectedInstallmentData?.total_amount_raw) {
+                        cartTotalRef.current = selectedInstallmentData.total_amount_raw;
+                    }
                 }
 
                 let request = {
@@ -344,26 +356,52 @@ const Content = ( props ) => {
                 customerName = customerName.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '').replace(/\s+/g, ' '); //removing specials
                 
 
-                let customerEmail = billing?.billingData?.email || '';
-                customerEmail = customerEmail.trim() === '' ? (document.getElementById('email')?.value || '') : customerEmail;
+                const getLiveCheckoutFieldValue = (preferredSelectors, billingValue = '') => {
+                    for (const selector of preferredSelectors) {
+                        const field = document.querySelector(selector);
+                        const rawValue = (field?.value || '').toString();
+                        if (rawValue.trim() !== '') {
+                            return rawValue;
+                        }
+                    }
 
-                let customerPhone = billing?.billingData?.phone || '';
-                customerPhone = customerPhone.trim() === '' ? (document.getElementById('billing-phone')?.value || '') : customerPhone;
+                    return (billingValue || '').toString();
+                };
 
-                let billingAddress1 = billing?.billingData?.address_1 || '';
-                billingAddress1 = billingAddress1.trim() === '' ? (document.getElementById('billing-address_1')?.value || '') : billingAddress1;
+                const customerEmail = getLiveCheckoutFieldValue(
+                    ['#email', 'input[name="email"]', 'input[name="billing_email"]'],
+                    latestBillingData?.billingData?.email
+                );
 
-                let billingAddress2 = billing?.billingData?.address_2 || '';
-                billingAddress2 = billingAddress2.trim() === '' ? (document.getElementById('billing-address_2')?.value || '') : billingAddress2;
+                const customerPhone = getLiveCheckoutFieldValue(
+                    ['#billing-phone', '#billing-phone input', 'input[name="billing_phone"]', '#shipping-phone', '#shipping-phone input', 'input[name="shipping_phone"]'],
+                    latestBillingData?.billingData?.phone
+                );
 
-                let regionCode = billing?.billingData?.state || '';
-                regionCode = regionCode.trim() === '' ? (document.getElementById('billing-state')?.value || '') : regionCode;
+                const billingAddress1 = getLiveCheckoutFieldValue(
+                    ['#billing-address_1', '#billing-address_1 input', 'input[name="billing_address_1"]', '#shipping-address_1', '#shipping-address_1 input', 'input[name="shipping_address_1"]'],
+                    latestBillingData?.billingData?.address_1
+                );
 
-                let billingAddressCity = billing?.billingData?.city || '';
-                billingAddressCity = billingAddressCity.trim() === '' ? (document.getElementById('billing-city')?.value || '') : billingAddressCity;
+                const billingAddress2 = getLiveCheckoutFieldValue(
+                    ['#billing-address_2', '#billing-address_2 input', 'input[name="billing_address_2"]', '#shipping-address_2', '#shipping-address_2 input', 'input[name="shipping_address_2"]'],
+                    latestBillingData?.billingData?.address_2
+                );
 
-                let billingAddressPostcode = billing?.billingData?.postcode || '';
-                billingAddressPostcode = billingAddressPostcode.trim() === '' ? (document.getElementById('billing-postcode')?.value || '') : billingAddressPostcode;
+                const regionCode = getLiveCheckoutFieldValue(
+                    ['#billing-state', '#billing-state input', '#billing-state select', 'input[name="billing_state"]', 'select[name="billing_state"]', '#shipping-state', '#shipping-state input', '#shipping-state select', 'input[name="shipping_state"]', 'select[name="shipping_state"]'],
+                    latestBillingData?.billingData?.state
+                );
+
+                const billingAddressCity = getLiveCheckoutFieldValue(
+                    ['#billing-city', '#billing-city input', 'input[name="billing_city"]', '#shipping-city', '#shipping-city input', 'input[name="shipping_city"]'],
+                    latestBillingData?.billingData?.city
+                );
+
+                const billingAddressPostcode = getLiveCheckoutFieldValue(
+                    ['#billing-postcode', '#billing-postcode input', 'input[name="billing_postcode"]', '#shipping-postcode', '#shipping-postcode input', 'input[name="shipping_postcode"]'],
+                    latestBillingData?.billingData?.postcode
+                );
 
                 let orderData = {
                     customer: {
@@ -468,17 +506,22 @@ const Content = ( props ) => {
         };
     }, [onPaymentSetup] );
 
-    // When the bin changes or total recalculates
     useEffect(() => {
-        if (!isCalculating && billing?.cartTotal?.value) {
-            cartTotalRef.current = billing.cartTotal.value;
+        latestBillingRef.current = billing;
+    }, [billing]);
+
+    // Keep the 3DS amount in sync with the latest checkout total.
+    useEffect(() => {
+        const latestCartTotal = Number(billing?.cartTotal?.value ?? 0);
+        if (Number.isFinite(latestCartTotal) && latestCartTotal > 0) {
+            cartTotalRef.current = latestCartTotal;
         }
-    }, [isCalculating]);
+    }, [billing?.cartTotal?.value, isCalculating]);
 
     return (
         <div className="rm-pagbank-cc">
             {showRetryInput ? <RetryInput /> : null}
-            <CreditCardForm />
+            <CreditCardForm billing={billing} />
             <SavedCreditCardToken />
             <CustomerDocumentField />
             {settings.isCartRecurring ? <RecurringInfo /> : null}
