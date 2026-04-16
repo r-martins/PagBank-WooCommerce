@@ -3,6 +3,7 @@
 namespace RM_PagBank;
 
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
+use Automattic\WooCommerce\StoreApi\Utilities\PaymentUtils;
 use Exception;
 use RM_PagBank\Connect\Gateway;
 use RM_PagBank\Connect\MenuPagBank;
@@ -870,6 +871,17 @@ class Connect
         $chosen = WC()->session ? WC()->session->get('chosen_payment_method', '') : '';
         if ($chosen === $gatewayId) {
             return true;
+        }
+        // Blocks Store API: session may not have chosen_payment_method yet while the UI
+        // already shows the first gateway as selected — align fees with that default.
+        if ($chosen === '' && class_exists(PaymentUtils::class)) {
+            $cart = WC()->cart;
+            if ($cart && isset($cart->cart_context) && 'store-api' === $cart->cart_context) {
+                $defaultMethod = PaymentUtils::get_default_payment_method();
+                if ($defaultMethod === $gatewayId) {
+                    return true;
+                }
+            }
         }
         if ($chosen !== self::DOMAIN) {
             return false;

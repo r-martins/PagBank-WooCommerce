@@ -211,7 +211,21 @@ class CreditCard extends Common
 
         if (!$orderTotal) {
             global $woocommerce;
-            $orderTotal = floatval($woocommerce->cart->get_total('edit'));
+            $cart = $woocommerce->cart ?? null;
+            $session = WC()->session;
+            $previousChosen = $session ? $session->get('chosen_payment_method') : '';
+            // Installments always reflect credit-card totals; session may still be PIX
+            // from the previous selection when this AJAX runs before cart recalculation.
+            if ($session) {
+                $session->set('chosen_payment_method', Connect::DOMAIN . '-cc');
+            }
+            if ($cart) {
+                $cart->calculate_totals();
+            }
+            $orderTotal = floatval($cart ? $cart->get_total('edit') : 0);
+            if ($session) {
+                $session->set('chosen_payment_method', $previousChosen);
+            }
         }
         
         if ($orderTotal <= 0) {
