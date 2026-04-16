@@ -6,7 +6,7 @@ import MaskedInput from './MaskedInput';
 import InstallmentsOptions from './InstallmentsOptions';
 const { useSelect } = window.wp.data;
 const { checkoutStore } = window.wc?.wcBlocksData || {};
-const PaymentInstructions = () => {
+const PaymentInstructions = ({ billing }) => {
     const settings = getSetting('rm-pagbank-cc_data', {});
     const defaultInstallments = settings.defaultInstallments || [];
     const [creditCardNumber, setCreditCardNumber] = useState('555566');
@@ -93,12 +93,19 @@ const PaymentInstructions = () => {
 		}
 	}, [creditCardNumber]);
 
-	// When the bin changes or total recalculates
+	// Recalculate installments when BIN changes and checkout finishes recalculating.
 	useEffect(() => {
 		if (!isCalculating && ccBin) {
 			fetchInstallments(ccBin, true);
 		}
 	}, [ccBin, isCalculating]);
+
+	// Recalculate installments when cart total changes (coupon/shipping/tax updates).
+	useEffect(() => {
+		if (!isCalculating && ccBin) {
+			fetchInstallments(ccBin, true);
+		}
+	}, [billing?.cartTotal?.value, ccBin, isCalculating]);
 
     return (
         <div>
