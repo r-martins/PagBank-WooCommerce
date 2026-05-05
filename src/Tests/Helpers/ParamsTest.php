@@ -47,6 +47,33 @@ class ParamsTest extends \WP_UnitTestCase
 		$this->assertEquals($phone['type'], 'HOME');
 	}
 
+	public function testGetCcConfigUsesFormDefaultWhenOptionMissing()
+	{
+		delete_option('woocommerce_rm-pagbank-cc_settings');
+		$this->assertSame('yes', Params::getCcConfig('cc_3ds'));
+		$this->assertSame(3, Params::getCcConfig('cc_installment_options_fixed'));
+	}
+
+	public function testGetCcConfigReturnsSavedValueIncludingEmptyString()
+	{
+		update_option(
+			'woocommerce_rm-pagbank-cc_settings',
+			[
+				'cc_3ds'    => 'no',
+				'title_api' => '',
+			]
+		);
+		$this->assertSame('no', Params::getCcConfig('cc_3ds'));
+		$this->assertSame('', Params::getCcConfig('title_api', 'should-not-use'));
+	}
+
+	public function testGetCcConfigFinalFallbackWhenNoFormDefault()
+	{
+		update_option('woocommerce_rm-pagbank-cc_settings', []);
+		$this->assertSame(0, Params::getCcConfig('cc_discount', 0));
+		$this->assertSame('custom-fallback', Params::getCcConfig('nonexistent_key_xyz', 'custom-fallback'));
+	}
+
 	public function testGetMaxInstallments()
 	{
 		//TODO find a way to mock wp_options or change its value OR convert to non-static method and use normal Mocks

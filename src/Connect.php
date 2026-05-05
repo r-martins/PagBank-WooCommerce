@@ -24,6 +24,7 @@ use RM_PagBank\Connect\Blocks\Pix as PixBlock;
 use RM_PagBank\Cron\CancelExpiredPix;
 use RM_PagBank\Cron\ForceOrderUpdate;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\CreditCardDisplayTitle;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
@@ -65,7 +66,9 @@ class Connect
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'recurringRestrictPaymentMethod']);
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
-        add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        add_filter('woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        add_filter('woocommerce_rest_prepare_shop_order_object', [CreditCardDisplayTitle::class, 'filterRestPrepareShopOrderObject'], 20, 3);
+        add_filter('woocommerce_order_get_payment_method_title', [CreditCardDisplayTitle::class, 'filterPaymentMethodTitle'], 10, 2);
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
         add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);

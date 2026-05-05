@@ -133,6 +133,20 @@ return array(
             'maxlength' => 17,
         ],
     ],
+    'title_customer'                                   => [
+        'title'       => __('Título para o cliente', 'pagbank-connect'),
+        'type'        => 'safe_text',
+        'description' => __('Texto exibido ao cliente (checkout concluído, e-mail, detalhes do pedido).<br><small><a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/45603209754893-T%C3%ADtulo-do-cart%C3%A3o-e-placeholders/?utm_source=wordpressadmin">Placeholders disponíveis.</a></small>', 'pagbank-connect'),
+        'default'     => __('Cartão de Crédito — {installments}x de {installmentValueFormatted} ({yesNoInterest})', 'pagbank-connect'),
+        'desc_tip'    => false,
+    ],
+    'title_api'                                   => [
+        'title'       => __('Título na API (REST)', 'pagbank-connect'),
+        'type'        => 'safe_text',
+        'description' => __('Texto de payment_method_title na API WooCommerce.<br><small><a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/45603209754893-T%C3%ADtulo-do-cart%C3%A3o-e-placeholders/?utm_source=wordpressadmin">Placeholders disponíveis.</a></small>', 'pagbank-connect'),
+        'default'     => __('Cartão de Crédito via PagBank', 'pagbank-connect'),
+        'desc_tip'    => false,
+    ],
     'cc_3ds'                                   => [
         'title'       => __('Autenticação 3D', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
