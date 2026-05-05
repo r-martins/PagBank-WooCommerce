@@ -6,6 +6,8 @@ const CustomerDocumentField = () => {
         <MaskedInput
             name="rm-pagbank-customer-document"
             type="text"
+            inputMode="numeric"
+            autoComplete="off"
             className="input-text"
             label={__('CPF/CNPJ', 'rm-pagbank')}
             placeholder="documento do pagador"
