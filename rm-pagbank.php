@@ -15,6 +15,7 @@
  * Requires at least: 5.2
  * Tested up to:      6.9
  * Requires PHP:      7.4
+ * Requires Plugins:   woocommerce
  * Author:            PagBank Integrações (Ricardo Martins)
  * Author URI:        https://pbintegracoes.com
  * License:           GPL-3.0
@@ -153,8 +154,14 @@ add_action('woocommerce_blocks_loaded', array(Connect::class, 'gatewayBlockSuppo
 add_filter('woocommerce_get_settings_checkout' , [Connect\Recurring::class, 'recurringSettingsFields'] , 10, 2 );
 add_filter('woocommerce_settings_checkout' , [Connect\Recurring::class, 'recurringHeaderSettingsSection'] , 10, 2 );
 
-//envio facil
-add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
+// Envio Facil shipping method must only be registered after WooCommerce shipping classes are loaded.
+add_action('plugins_loaded', function () {
+    if (!class_exists('WC_Shipping_Method')) {
+        return;
+    }
+
+    add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
+}, 20);
 
 //recurring and styles
 add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99999, 1);
