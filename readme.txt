@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro, pagbank, pix, woocommerce, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.54.1
+Stable tag: 4.55.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -58,7 +58,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * **Divisão de Pagamentos** entre contas (Split). Seja sócio das lojas que você cria. Ou crie Marketplaces com WooCommerce e Dokan (integração nativa).
 
 == ⚡️ RECURSOS ADICIONAIS ==
-* Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo)
+* Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo) e [Regras personalizadas de desconto](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45632701768077-Descontos-PIX-ou-Boleto-com-regras-personalizadas-avan%C3%A7adas)
 * Permite definir [**validade** de boletos e código PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/24770387325837-Cancelamento-autom%C3%A1tico-de-pedidos-PIX-expirados) (em dias ou minutos)
 * Atualizações automáticas de **status de pedidos** mesmo que sua loja bloqueie as notificações automáticas do PagBank
 * Opção de [forçar atualização](https://github.com/r-martins/PagBank-WooCommerce/releases/tag/4.31.0) de um pedido manualmente ou automaticamente
@@ -239,6 +239,16 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.55.0 =
+* Adicionado suporte ao WordPress 7.0
+* Melhoria: agora exibimos informações de parcelamento na tela de sucesso e e-mail, além de dar a opção de [personalizar a forma como o nome do meio de pagamento é exibido](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45603209754893-T%C3%ADtulo-do-cart%C3%A3o-e-placeholders) nas APIs, podendo incluir informações de parcelamento detalhadas para facilitar integrações
+* Melhoria: Campos de cartão e CPF/CNPJ agora mostram teclado numérico no checkout em blocos em dispositivos moveis.
+* Melhoria: [Regras avançadas de desconto](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45632701768077-Descontos-PIX-ou-Boleto-com-regras-personalizadas-avan%C3%A7adas) agora podem ser criadas com novos filtros. Veja [documentação detalhada](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45632701768077-Descontos-PIX-ou-Boleto-com-regras-personalizadas-avan%C3%A7adas) e crie a sua regra personalizada agora mesmo usando AI.
+* Melhoria: o método que obtém informações de configuração de cartão de crédito agora fará fallback no valor padrão do plugin, sem depender de ter que salvar novamente as configurações para desfrutar de campos novos (deveremos fazer isso com outras áreas em breve)
+* Correção de problema com classe do EnvioFacil, onde em alguns cenários poderia ser carregada mesmo sem a existência de classes essenciais do WooCommerce como WC_Shipping
+* Adicionamos o WooCommerce como dependência do plugin, evitando que instale o plugin sem ter o WooCommerce ativo
+* Melhoria: depreciamos campos do tipo tel a fim de forçar o teclado numérico, pois notamos que alguns navegadores/extensoes adicionavam dropdown para selecionar código do país/área. O teclado numérico segue a ser usado na experiência mobile.
+
 = 4.54.1 =
 * Correção: no checkout em blocos, quando um desconto era aplicado as parcelas do cartão não eram atualizadas, e a autenticação 3D falhava em alguns cenários pedindo para recarregar a página
 * Correção: no checkout em blocos, quando o usuário falhava em digitar uma das informações corretamente e o 3D falhava apontando o erro, mesmo que o comprador corrigisse o problema ainda não conseguiria finalizar o checkout
