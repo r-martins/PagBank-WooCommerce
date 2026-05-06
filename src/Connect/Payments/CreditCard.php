@@ -166,6 +166,52 @@ class CreditCard extends Common
     }
 
     /**
+     * Persist installment display/calculation meta from PagBank order/charge API response
+     * (same payload as POST /orders or webhooks). Avoids a duplicate fees/calculate call.
+     *
+     * @param array $charge Single element from response charges[].
+     */
+    public static function applyChargeInstallmentMeta(WC_Order $order, array $charge): void
+    {
+        if (($charge['payment_method']['type'] ?? '') !== 'CREDIT_CARD') {
+            return;
+        }
+
+        $rawValue = $charge['amount']['value'] ?? null;
+        if (! is_numeric($rawValue) || (float) $rawValue <= 0) {
+            return;
+        }
+
+        $decimals = wc_get_price_decimals();
+        $totalReais = max(0, (float) $rawValue / 100);
+
+        $order->update_meta_data('pagbank_cc_total_charged', wc_format_decimal($totalReais, $decimals));
+
+        $inst = (int) ($charge['payment_method']['installments'] ?? 1);
+        if ($inst < 1) {
+            $inst = 1;
+        }
+
+        $order->update_meta_data(
+            'pagbank_cc_installment_amount',
+            wc_format_decimal($totalReais / $inst, $decimals)
+        );
+
+        $interestRaw = $charge['amount']['fees']['buyer']['interest']['total'] ?? null;
+        $interestReais = (is_numeric($interestRaw) && (float) $interestRaw > 0)
+            ? max(0, (float) $interestRaw / 100)
+            : 0.0;
+
+        if ($interestReais > 0) {
+            $order->update_meta_data('_pagbank_cc_buyer_interest_total', wc_format_decimal($interestReais, $decimals));
+            $order->update_meta_data('pagbank_cc_interest_free', 'no');
+        } else {
+            $order->delete_meta_data('_pagbank_cc_buyer_interest_total');
+            $order->update_meta_data('pagbank_cc_interest_free', 'yes');
+        }
+    }
+
+    /**
     * Outputs the installment options to populate the select field on checkout
     * @return void
     */

@@ -5,6 +5,7 @@ namespace RM_PagBank\Traits;
 use Automattic\WooCommerce\Enums\OrderStatus;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Exception;
+use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
@@ -42,6 +43,7 @@ trait ProcessPayment
         $order->add_meta_data('pagbank_payment_response', $payment_response, true);
         $order->add_meta_data('pagbank_order_id', $order_data['id'] ?? null, true);
         if (isset($charge['payment_method']['type']) && $charge['payment_method']['type'] == 'CREDIT_CARD') {
+            CreditCard::applyChargeInstallmentMeta($order, $charge);
             $order->update_meta_data('pagbank_tid', $charge['payment_response']['tid'] ?? null);
             $order->update_meta_data('_pagbank_card_brand', $charge['payment_method']['card']['brand'] ?? null);
             $order->update_meta_data('_pagbank_card_first_digits', $charge['payment_method']['card']['first_digits'] ?? null);

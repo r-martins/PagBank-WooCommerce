@@ -24,6 +24,7 @@ use RM_PagBank\Connect\Blocks\Pix as PixBlock;
 use RM_PagBank\Cron\CancelExpiredPix;
 use RM_PagBank\Cron\ForceOrderUpdate;
 use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\CreditCardDisplayTitle;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
@@ -65,7 +66,9 @@ class Connect
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'recurringRestrictPaymentMethod']);
         add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
-        add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        add_filter('woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        add_filter('woocommerce_rest_prepare_shop_order_object', [CreditCardDisplayTitle::class, 'filterRestPrepareShopOrderObject'], 20, 3);
+        add_filter('woocommerce_order_get_payment_method_title', [CreditCardDisplayTitle::class, 'filterPaymentMethodTitle'], 10, 2);
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
         add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
@@ -956,10 +959,54 @@ class Connect
         }
         $cartTotal = (float) $cart->get_cart_contents_total() + (float) $cart->get_shipping_total();
         $shippingTotal = (float) $cart->get_shipping_total();
+        $discountContext = [
+            'method'            => $method,
+            'gateway_id'        => $c['gateway_id'],
+            'sub_method'        => $c['sub_method'],
+            'fee_id'            => $c['fee_id'],
+            'title'             => $c['title'],
+            'config_discount'   => $c['discount'],
+            'excludes_shipping' => $c['excludes'],
+            'cart_total'        => $cartTotal,
+            'shipping_total'    => $shippingTotal,
+        ];
+
+        /** 
+         * @since 4.55.0
+         * @param bool                         $should_apply Default true when gateway discount applies.
+         * @param \WC_Cart                     $cart
+         * @param array<string, mixed>         $discountContext Keys: method (pix|boleto), gateway_id, sub_method,
+         */
+        if (!apply_filters('pagbank_connect_should_apply_payment_method_discount', true, $cart, $discountContext)) {
+            return;
+        }
+
         $discount = Params::getDiscountValueForTotal($c['discount'], $cartTotal, $c['excludes'], $shippingTotal);
+
+        /** @since 4.55.0
+         *
+         * Override the PIX/Boleto discount amount (store currency). Context keys match those passed to
+         * pagbank_connect_should_apply_payment_method_discount.
+         *
+         * @param float                              $discount        Amount before cap (from gateway settings).
+         * @param \WC_Cart                           $cart
+         * @param array<string, mixed>               $discount_context
+         */
+        $discount = (float) apply_filters('pagbank_connect_payment_method_discount_amount', $discount, $cart, $discountContext);
+
+        $discount = max(0.0, $discount);
         if ($discount <= 0) {
             return;
         }
+
+        /** Do not exceed the base used for percentage discounts (shipping excluded when configured). */
+        $discountBaseCap = $c['excludes']
+            ? max(0.0, $cartTotal - $shippingTotal)
+            : max(0.0, $cartTotal);
+        if ($discountBaseCap > 0 && $discount > $discountBaseCap) {
+            $discount = $discountBaseCap;
+        }
+
         $discountLabel = __('Desconto', 'pagbank-connect') . ' ' . $c['title'];
         $cart->fees_api()->add_fee([
             'id'        => $c['fee_id'],

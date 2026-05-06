@@ -47,7 +47,7 @@ const Content = ( props ) => {
     let instructions = settings.instructions;
     let expiry = settings.expirationTime;
     let expiryText = sprintf( __( 'Você terá %s para pagar com seu código PIX.', 'rm-pagbank' ), expiry );
-    let discountText = settings.hasDiscount ? settings.discountText : '';
+    let discountText = settings.hasDiscount && settings.discountText ? settings.discountText : '';
 
     instructions = `${instructions} <br> ${expiryText} <br> ${discountText}`;
 

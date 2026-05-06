@@ -123,6 +123,8 @@ const PaymentInstructions = ({ billing }) => {
             <MaskedInput
                 name="rm-pagbank-card-number"
                 type="text"
+                inputMode="numeric"
+                autoComplete="cc-number"
                 className={'input-text card-number-input ' + cardBrand}
                 label={__('Número do cartão', 'rm-pagbank')}
                 mask={["9999 999999 99999", "9999 9999 9999 9999"]}
@@ -150,7 +152,8 @@ const PaymentInstructions = ({ billing }) => {
 
             <MaskedInput
                 name="rm-pagbank-card-cvc"
-                type="tel"
+                type="text"
+				inputMode="numeric"
                 className="input-text"
                 rowClass="form-row-last"
                 label={__('Código do cartão', 'rm-pagbank')}

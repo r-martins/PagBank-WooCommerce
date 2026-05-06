@@ -398,6 +398,7 @@ class Common
 			case 'credit_card':
 				$order->add_meta_data('_pagbank_card_installments', $response['charges'][0]['payment_method']['installments'] ?? null);
 				$order->add_meta_data('Parcelas', $response['charges'][0]['payment_method']['installments'] ?? null);
+				CreditCard::applyChargeInstallmentMeta($order, $response['charges'][0] ?? []);
 				$order->add_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null);
 				$order->add_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null);
 				$order->add_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null);

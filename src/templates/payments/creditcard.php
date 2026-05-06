@@ -15,7 +15,7 @@ $fields = array();
 
 $cvc_field = '<p class="form-row form-row-last">
 			<label for="' . esc_attr( Connect::DOMAIN ) . '-card-cvc">' . esc_html__( 'Card code', 'woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-			<input id="' . esc_attr( Connect::DOMAIN ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'woocommerce' ) . '" ' . $this->field_name( 'card-cvc' ) . ' style="width:100px" />
+			<input id="' . esc_attr( Connect::DOMAIN ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="text" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'woocommerce' ) . '" ' . $this->field_name( 'card-cvc' ) . ' style="width:100px" />
 		</p>';
 
 $default_fields = [
@@ -25,11 +25,11 @@ $default_fields = [
 			</p>',
     'card-number-field' => '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-number">' . esc_html__( 'Card number', 'woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocapitalize="off" spellcheck="false" type="tel" placeholder="&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;" ' . $this->field_name( 'card-number' ) . ' />
+                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocapitalize="off" spellcheck="false" type="text" placeholder="&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;" ' . $this->field_name( 'card-number' ) . ' />
                 </p>',
     'card-expiry-field' => '<p class="form-row form-row-first">
 				<label for="' . esc_attr( Connect::DOMAIN ) . '-card-expiry">' . esc_html__( 'Validade (MM/AA)', 'pagbank-connect') . '&nbsp;<span class="required">*</span></label>
-				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocapitalize="off" spellcheck="false" type="tel" placeholder="' . esc_attr__( 'MM / YY', 'woocommerce' ) . '" ' . $this->field_name( 'card-expiry' ) . ' maxlength="7" />
+				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocapitalize="off" spellcheck="false" type="text" placeholder="' . esc_attr__( 'MM / YY', 'woocommerce' ) . '" ' . $this->field_name( 'card-expiry' ) . ' maxlength="7" />
 			</p>',
     'card-cvc-field' => $cvc_field,
 ];
@@ -48,7 +48,7 @@ if (!is_wc_endpoint_url('add-payment-method')) {
 if (is_wc_endpoint_url('add-payment-method')) {
     $default_fields['card-cpf-cnpj'] = '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj">' . esc_html__( 'CPF/CNPJ', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
-                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj" class="input-text wc-credit-card-form-card-cpf-cnpj" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="tel" maxlength="18" placeholder="' . esc_attr__( 'documento do pagador', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-cpf-cnpj' ) . ' />
+                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj" class="input-text wc-credit-card-form-card-cpf-cnpj" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="text" maxlength="18" placeholder="' . esc_attr__( 'documento do pagador', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-cpf-cnpj' ) . ' />
                 </p>';
 }
 

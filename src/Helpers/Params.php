@@ -18,6 +18,49 @@ use WP_Error;
 class Params
 {
     /**
+     * @var array<string, mixed>|null
+     */
+    private static $ccFormFieldDefaults = null;
+
+    /**
+     * Defaults from admin form fields (same keys as stored in woocommerce_rm-pagbank-cc_settings).
+     *
+     * @return array<string, mixed>
+     */
+    private static function getCcFormFieldDefaults(): array
+    {
+        if (null !== self::$ccFormFieldDefaults) {
+            return self::$ccFormFieldDefaults;
+        }
+
+        $fieldsPath = dirname(__DIR__, 2) . '/admin/views/settings/cc-fields.php';
+        if (! is_readable($fieldsPath)) {
+            self::$ccFormFieldDefaults = [];
+
+            return self::$ccFormFieldDefaults;
+        }
+
+        /** @var array<string, array<string, mixed>> $fields */
+        $fields = include $fieldsPath;
+        if (! is_array($fields)) {
+            self::$ccFormFieldDefaults = [];
+
+            return self::$ccFormFieldDefaults;
+        }
+
+        $defaults = [];
+        foreach ($fields as $fieldKey => $fieldDef) {
+            if (is_array($fieldDef) && array_key_exists('default', $fieldDef)) {
+                $defaults[ (string) $fieldKey ] = $fieldDef['default'];
+            }
+        }
+
+        self::$ccFormFieldDefaults = $defaults;
+
+        return self::$ccFormFieldDefaults;
+    }
+
+    /**
      * Extract phone number and return an array with the phone object to be used in the request
      *
      * @see https://dev.pagseguro.uol.com.br/reference/phone-object
@@ -85,17 +128,29 @@ class Params
     }
 
     /**
-     * @param $key
-     * @param string $default
+     * Credit card gateway setting: saved value if present, else form field default from cc-fields.php, else $default.
      *
-     * @return mixed|string
+     * @param string $key Setting key (same as WooCommerce gateway option key).
+     * @param mixed  $default Final fallback when the key is absent from saved settings and has no form default.
+     *
+     * @return mixed
      */
-    public static function getCcConfig($key, string $default = '')
+    public static function getCcConfig(string $key, $default = '')
     {
-        $settings = get_option('woocommerce_rm-pagbank-cc_settings');
-        if (isset($settings[$key])){
-            return $settings[$key];
+        $settings = get_option('woocommerce_rm-pagbank-cc_settings', []);
+        if (! is_array($settings)) {
+            $settings = [];
         }
+
+        if (array_key_exists($key, $settings)) {
+            return $settings[ $key ];
+        }
+
+        $formDefaults = self::getCcFormFieldDefaults();
+        if (array_key_exists($key, $formDefaults)) {
+            return $formDefaults[ $key ];
+        }
+
         return $default;
     }
 
@@ -411,6 +466,20 @@ class Params
         $discountType = self::getDiscountType($discountConfig);
         if ( ! $discountType || is_wc_endpoint_url('order-pay')) {
             return '';
+        }
+
+        if ('pix' === $method || 'boleto' === $method) {
+            // Gateway notice reflects admin %/fixed amount only; omit when amount is customized via hook.
+            if (has_filter('pagbank_connect_payment_method_discount_amount')) {
+                $show_standard_discount_notice = apply_filters(
+                    'pagbank_connect_always_show_standard_discount_notice',
+                    false,
+                    $method
+                );
+                if (!$show_standard_discount_notice) {
+                    return '';
+                }
+            }
         }
 
         if ('FIXED' == $discountType){

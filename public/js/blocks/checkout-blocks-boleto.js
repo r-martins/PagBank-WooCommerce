@@ -47,7 +47,7 @@ const Content = ( props ) => {
     let instructions = settings.instructions;
     let expiry = settings.expirationTime;
     let expiryText = expiry === 1 ? __('Seu boleto vencerá amanhã.', 'rm-pagbank') : sprintf( __( 'Seu boleto vence em %d dias.', 'rm-pagbank' ), expiry );
-    let discountText = settings.hasDiscount ? settings.discountText : '';
+    let discountText = settings.hasDiscount && settings.discountText ? settings.discountText : '';
 
     instructions = `${instructions} <br> ${expiryText} <br> ${discountText}`;
 

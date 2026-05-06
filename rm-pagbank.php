@@ -11,10 +11,11 @@
  * Plugin Name:       PagBank Connect
  * Plugin URI:        https://pbintegracoes.com
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente e muito mais.
- * Version:           4.54.1
+ * Version:           4.55.0
  * Requires at least: 5.2
- * Tested up to:      6.9
+ * Tested up to:      7.0
  * Requires PHP:      7.4
+ * Requires Plugins:   woocommerce
  * Author:            PagBank Integrações (Ricardo Martins)
  * Author URI:        https://pbintegracoes.com
  * License:           GPL-3.0
@@ -33,7 +34,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.54.1' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.55.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
@@ -153,8 +154,14 @@ add_action('woocommerce_blocks_loaded', array(Connect::class, 'gatewayBlockSuppo
 add_filter('woocommerce_get_settings_checkout' , [Connect\Recurring::class, 'recurringSettingsFields'] , 10, 2 );
 add_filter('woocommerce_settings_checkout' , [Connect\Recurring::class, 'recurringHeaderSettingsSection'] , 10, 2 );
 
-//envio facil
-add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
+// Envio Facil shipping method must only be registered after WooCommerce shipping classes are loaded.
+add_action('plugins_loaded', function () {
+    if (!class_exists('WC_Shipping_Method')) {
+        return;
+    }
+
+    add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
+}, 20);
 
 //recurring and styles
 add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99999, 1);
