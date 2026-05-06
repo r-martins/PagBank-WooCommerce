@@ -468,6 +468,20 @@ class Params
             return '';
         }
 
+        if ('pix' === $method || 'boleto' === $method) {
+            // Gateway notice reflects admin %/fixed amount only; omit when amount is customized via hook.
+            if (has_filter('pagbank_connect_payment_method_discount_amount')) {
+                $show_standard_discount_notice = apply_filters(
+                    'pagbank_connect_always_show_standard_discount_notice',
+                    false,
+                    $method
+                );
+                if (!$show_standard_discount_notice) {
+                    return '';
+                }
+            }
+        }
+
         if ('FIXED' == $discountType){
 			return sprintf(
 				__('Um desconto de %s será aplicado.', 'pagbank-connect'),
