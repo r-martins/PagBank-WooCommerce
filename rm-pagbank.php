@@ -163,9 +163,17 @@ add_action('plugins_loaded', function () {
     add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 }, 20);
 
-//recurring and styles
-add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99999, 1);
-add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99999, 1);
+add_action(
+	'plugins_loaded',
+	static function (): void {
+		if ( ! class_exists( 'WC_Payment_Gateway_CC' ) ) {
+			return;
+		}
+		add_filter( 'woocommerce_enqueue_styles', [ Gateway::class, 'addStyles' ], 99999, 1 );
+		add_filter( 'woocommerce_enqueue_styles', [ Gateway::class, 'addStylesWoo' ], 99999, 1 );
+	},
+	20
+);
 
 //not needed so far...
 register_activation_hook(__FILE__, [Connect::class, 'activate']);
