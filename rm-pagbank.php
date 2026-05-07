@@ -11,7 +11,7 @@
  * Plugin Name:       PagBank Connect
  * Plugin URI:        https://pbintegracoes.com
  * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente e muito mais.
- * Version:           4.55.0
+ * Version:           4.55.1
  * Requires at least: 5.2
  * Tested up to:      7.0
  * Requires PHP:      7.4
@@ -34,7 +34,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.55.0' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.55.1' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
@@ -163,9 +163,17 @@ add_action('plugins_loaded', function () {
     add_filter('woocommerce_shipping_methods', [EnvioFacil::class, 'addMethod']);
 }, 20);
 
-//recurring and styles
-add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99999, 1);
-add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99999, 1);
+add_action(
+	'plugins_loaded',
+	static function (): void {
+		if ( ! class_exists( 'WC_Payment_Gateway_CC' ) ) {
+			return;
+		}
+		add_filter( 'woocommerce_enqueue_styles', [ Gateway::class, 'addStyles' ], 99999, 1 );
+		add_filter( 'woocommerce_enqueue_styles', [ Gateway::class, 'addStylesWoo' ], 99999, 1 );
+	},
+	20
+);
 
 //not needed so far...
 register_activation_hook(__FILE__, [Connect::class, 'activate']);

@@ -7,7 +7,7 @@ use RM_PagBank\Connect;
 $default_installments = $this->getDefaultInstallments();
 $installment_options = '<option value="">' . esc_html__('Informe um número de cartão', 'pagbank-connect') . '</option>';
 $html = '<fieldset id="rm-pagbank-installments-token">
-<p class="form-row form-row-full">
+<p class="form-row form-row-wide">
         <label for="' . esc_attr(Connect::DOMAIN) . '-card-installments-token">' . esc_html__('Parcelas', 'pagbank-connect') . '&nbsp;<span class="required">*</span></label>
         <select id="' . esc_attr(Connect::DOMAIN) . '-card-installments-token" class="input-text wc-credit-card-form-card-installments-token"  ' . $this->field_name('card-installments-token') . ' >
             {{installment_options}}

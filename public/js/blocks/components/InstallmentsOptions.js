@@ -4,7 +4,7 @@ import { __, _n } from '@wordpress/i18n';
 const InstallmentsOptions = ({ installments, ...props }) => {
     return (
         <div>
-            <p className="form-row form-row-full">
+            <p className="form-row form-row-wide">
                 <label htmlFor="rm-pagbank-card-installments">
                     {__('Parcelas', 'rm-pagbank')}
                 </label>

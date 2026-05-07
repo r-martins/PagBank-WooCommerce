@@ -54,6 +54,12 @@ li.payment_method_rm-pagbank label img {
 	clear: both;
 }
 
+#payment .payment_method_rm-pagbank-cc .wc-credit-card-form,
+#payment .payment_method_rm-pagbank .payment_box .ps_connect_method,
+#payment-method .rm-pagbank-cc {
+	word-break: normal;
+}
+
 #ps-connect-payment-boleto, #ps-connect-payment-cc, #ps-connect-payment-pix, #wc-rm-pagbank-cc-form {
 	border: 0;
 }

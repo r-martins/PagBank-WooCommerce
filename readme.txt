@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.55.0
+Stable tag: 4.55.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -239,6 +239,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.55.1 =
+* Correção: classe css no campo de Parcelas poderia quebrar em alguns cenários/tema no Chrome, necessitando customizações adicionais de CSS. Reportado por Lincoln da [Digital Forms](https://digitalforms.com.br/).
+* Correção: quando usado em conjunto com plugins que forçam a ordem de carregamento de classes (ex: Nitropack), um erro fatal (WC_PaymentGateway_CC not found) poderia ocorrer.
+
 = 4.55.0 =
 * Adicionado suporte ao WordPress 7.0
 * Melhoria: agora exibimos informações de parcelamento na tela de sucesso e e-mail, além de dar a opção de [personalizar a forma como o nome do meio de pagamento é exibido](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45603209754893-T%C3%ADtulo-do-cart%C3%A3o-e-placeholders) nas APIs, podendo incluir informações de parcelamento detalhadas para facilitar integrações
