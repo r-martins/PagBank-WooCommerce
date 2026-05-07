@@ -36,7 +36,7 @@ $default_fields = [
 
 // Only add installments field if not on add-payment-method page
 if (!is_wc_endpoint_url('add-payment-method')) {
-    $default_fields['card-installments'] = '<p class="form-row form-row-full">
+    $default_fields['card-installments'] = '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-installments">' . esc_html__( 'Parcelas', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
                     <select id="' . esc_attr( Connect::DOMAIN ) . '-card-installments" class="input-text wc-credit-card-form-card-installments"  ' . $this->field_name( 'card-installments' ) . ' >
                         {{installment_options}}
