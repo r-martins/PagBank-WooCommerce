@@ -122,8 +122,8 @@ class Recurring
 
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
-            if ($product->get_meta('_recurring_trial_length') > 0 && $product->get_meta('_recurring_enabled') == 'yes') {
-                return (int) $product->get_meta('_recurring_trial_length');
+            if ((int) $this->getRecurringMeta($product, '_recurring_trial_length') > 0 && $this->isProductRecurring($product)) {
+                return (int) $this->getRecurringMeta($product, '_recurring_trial_length');
             }
         }
 
@@ -255,10 +255,10 @@ class Recurring
         //get cicle and frequency from the first recurring product
         foreach ($cart->get_cart() as $cartItem) {
             $product = $cartItem['data'];
-            if ($product->get_meta('_recurring_enabled') == 'yes'){
-                $cycle = $product->get_meta('_frequency_cycle');
-                $frequency = $product->get_meta('_frequency');
-                $initialFee = (float)$product->get_meta('_initial_fee');
+            if ($this->isProductRecurring($product)){
+                $cycle = $this->getRecurringMeta($product, '_frequency_cycle');
+                $frequency = $this->getRecurringMeta($product, '_frequency');
+                $initialFee = (float) $this->getRecurringMeta($product, '_initial_fee');
                 $total -= $initialFee * $cartItem['quantity'];
                 if ($cycle == 1){
                     switch ($frequency){
@@ -304,7 +304,7 @@ class Recurring
         }
 
         if ($hasDiscount) {
-            $total -= (float)$product->get_meta('_recurring_discount_amount');
+            $total -= (float) $this->getRecurringMeta($product, '_recurring_discount_amount');
         }
 
         if ($hasTrial && $hasDiscount){
@@ -314,10 +314,10 @@ class Recurring
                 wc_price($total)
             );
 
-            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+            if ($this->getRecurringMeta($product, '_recurring_discount_cycles') > 1) {
                 $msgDiscount = sprintf(
                     __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
-                    $product->get_meta('_recurring_discount_cycles'),
+                    $this->getRecurringMeta($product, '_recurring_discount_cycles'),
                     wc_price($total)
                 );
             }
@@ -332,10 +332,10 @@ class Recurring
                 wc_price($total)
             );
 
-            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+            if ($this->getRecurringMeta($product, '_recurring_discount_cycles') > 1) {
                 $msgDiscount = sprintf(
                     __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
-                    $product->get_meta('_recurring_discount_cycles'),
+                    $this->getRecurringMeta($product, '_recurring_discount_cycles'),
                     wc_price($total)
                 );
             }
@@ -343,7 +343,7 @@ class Recurring
             $msg .= $msgDiscount;
         }
 
-        $initialFee = $product->get_meta('_initial_fee');
+        $initialFee = $this->getRecurringMeta($product, '_initial_fee');
         if ($initialFee > 0){
             $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', 'pagbank-connect'), wc_price($initialFee)) . '</p>';;
         }
@@ -361,7 +361,7 @@ class Recurring
             $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', 'pagbank-connect');
         }
 
-        $maxCycles = (int)$product->get_meta('_recurring_max_cycles');
+        $maxCycles = (int) $this->getRecurringMeta($product, '_recurring_max_cycles');
         if ($maxCycles > 0){
             $msg .= '<p>' . sprintf(__(' Esta assinatura será cobrada %s por %d ciclos.', 'pagbank-connect'),$frequency, $maxCycles) . '</p>';
         }
@@ -390,7 +390,7 @@ class Recurring
         $shipping_total = $order->get_shipping_total() ?? 0;
         foreach ($order->get_items() as $item){
             $product = $item->get_product();
-            if ($product->get_meta('_recurring_enabled') == 'yes'){
+            if ($product && $this->isProductRecurring($product)){
                 $total += $product->get_price();
             }
         }
@@ -452,8 +452,8 @@ class Recurring
 
     public function hasDiscount($product): bool
     {
-        return (float)$product->get_meta('_recurring_discount_amount') > 0
-        && (int)$product->get_meta('_recurring_discount_cycles') > 0;
+        return (float) $this->getRecurringMeta($product, '_recurring_discount_amount') > 0
+            && (int) $this->getRecurringMeta($product, '_recurring_discount_cycles') > 0;
     }
     
 
@@ -523,13 +523,47 @@ class Recurring
         if(!$product || !is_a($product, 'WC_Product')) {
             return false;
         }
-        
-        $is_recurring = $product->get_meta('_recurring_enabled') == 'yes';
-        if ($parentId = $product->get_parent_id()) {
-            //if the product is a variation, we need to check the parent product
-            $product_variable = wc_get_product($parentId);
-            $is_recurring = $product_variable->get_meta('_recurring_enabled') == 'yes';
+
+        return $this->getRecurringProduct($product)->get_meta('_recurring_enabled') === 'yes';
+    }
+
+    /**
+     * Returns the product that holds recurring configuration.
+     * For variations, returns the parent when recurring is enabled on the parent.
+     *
+     * @param \WC_Product|null $product
+     * @return \WC_Product|null
+     */
+    public function getRecurringProduct($product)
+    {
+        if (!$product || !is_a($product, 'WC_Product')) {
+            return null;
         }
-        return $is_recurring;
+
+        if ($parentId = $product->get_parent_id()) {
+            $parent = wc_get_product($parentId);
+            if ($parent && $parent->get_meta('_recurring_enabled') === 'yes') {
+                return $parent;
+            }
+        }
+
+        return $product;
+    }
+
+    /**
+     * Gets recurring meta from the product or its parent when it is a variation.
+     *
+     * @param \WC_Product|null $product
+     * @param string $key
+     * @return mixed
+     */
+    public function getRecurringMeta($product, string $key)
+    {
+        $recurringProduct = $this->getRecurringProduct($product);
+        if (!$recurringProduct) {
+            return '';
+        }
+
+        return $recurringProduct->get_meta($key);
     }
 }

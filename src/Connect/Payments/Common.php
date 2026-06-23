@@ -5,6 +5,7 @@ namespace RM_PagBank\Connect\Payments;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Customer;
 use RM_PagBank\Object\Item;
@@ -199,7 +200,11 @@ class Common
             $itemObj->setQuantity($item['quantity']);
 
             $amount = $item->get_subtotal('edit') / $item['quantity'];
-            if ($product->get_meta('_recurring_enabled') == 'yes' && $product->get_meta('_recurring_trial_length') > 0) {
+            $recurringHelper = new RecurringHelper();
+            if (
+                $recurringHelper->isProductRecurring($product)
+                && (int) $recurringHelper->getRecurringMeta($product, '_recurring_trial_length') > 0
+            ) {
                 $amount = $product->get_price();
             }
 
