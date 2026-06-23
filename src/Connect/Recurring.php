@@ -147,13 +147,17 @@ class Recurring
         $extra_fee = 0;
 
         // Percorra cada produto no carrinho
+        $recurringHelper = new RecurringHelper();
         foreach($cart->get_cart() as $cart_item) {
             $product = $cart_item['data'];
 
             // Verifique a propriedade do produto
-            if($product->get_meta('_initial_fee') && $product->get_meta('_recurring_enabled') == 'yes') {
+            if (
+                $recurringHelper->getRecurringMeta($product, '_initial_fee')
+                && $recurringHelper->isProductRecurring($product)
+            ) {
                 // Adicione a taxa extra se a propriedade do produto for verdadeira
-                $extra_fee += floatval($product->get_meta('_initial_fee'));
+                $extra_fee += floatval($recurringHelper->getRecurringMeta($product, '_initial_fee'));
             }
         }
 
@@ -177,18 +181,18 @@ class Recurring
         foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
             $product = $cart_item['data'];
 
-            if ($product->get_meta('_recurring_enabled') != 'yes') {
+            if (!$recurringHelper->isProductRecurring($product)) {
                 continue;
             }
 
-            if ($product->get_meta('_recurring_trial_length')) {
+            if ($recurringHelper->getRecurringMeta($product, '_recurring_trial_length')) {
                 $trial_price = 0;
                 $product->set_price( $trial_price );
                 continue;
             }
 
             if ($recurringHelper->hasDiscount($product)) {
-                $discount = $product->get_meta('_recurring_discount_amount');
+                $discount = $recurringHelper->getRecurringMeta($product, '_recurring_discount_amount');
                 $price = $product->get_price();
                 $product->set_price( $price - $discount );
             }
@@ -441,8 +445,8 @@ class Recurring
         $cartItems = $cart->get_cart();
         
         $product = wc_get_product($productId);
-        $productIsRecurring = $product->get_meta('_recurring_enabled') == 'yes';
         $recurringHelper = new RecurringHelper();
+        $productIsRecurring = $recurringHelper->isProductRecurring($product);
 
         $canClearCart = wc_string_to_bool(Params::getRecurringConfig('recurring_clear_cart'));
         $recurringCart = $productIsRecurring || $recurringHelper->isCartRecurring();
@@ -704,14 +708,19 @@ class Recurring
         
         $order = wc_get_order($orderId);
         foreach ($order->get_items() as $item){
-            $originalItem = wc_get_product($item->get_product_id());
-            if ($originalItem->get_meta('_recurring_enabled') == 'yes'){
-                $order->update_meta_data('_recurring_frequency', $originalItem->get_meta('_frequency'));
-                $order->update_meta_data('_recurring_cycle', $originalItem->get_meta('_frequency_cycle'));
-                $order->update_meta_data('_recurring_initial_fee', $originalItem->get_meta('_initial_fee'));
-                $order->update_meta_data('_recurring_discount_amount', $originalItem->get_meta('_recurring_discount_amount'));
-                $order->update_meta_data('_recurring_discount_cycles', $originalItem->get_meta('_recurring_discount_cycles'));
-                $order->update_meta_data('_recurring_max_cycles', $originalItem->get_meta('_recurring_max_cycles'));
+            $product = $item->get_product();
+            if (!$product) {
+                continue;
+            }
+
+            $recurringProduct = $recHelper->getRecurringProduct($product);
+            if ($recurringProduct && $recurringProduct->get_meta('_recurring_enabled') == 'yes'){
+                $order->update_meta_data('_recurring_frequency', $recurringProduct->get_meta('_frequency'));
+                $order->update_meta_data('_recurring_cycle', $recurringProduct->get_meta('_frequency_cycle'));
+                $order->update_meta_data('_recurring_initial_fee', $recurringProduct->get_meta('_initial_fee'));
+                $order->update_meta_data('_recurring_discount_amount', $recurringProduct->get_meta('_recurring_discount_amount'));
+                $order->update_meta_data('_recurring_discount_cycles', $recurringProduct->get_meta('_recurring_discount_cycles'));
+                $order->update_meta_data('_recurring_max_cycles', $recurringProduct->get_meta('_recurring_max_cycles'));
                 $order->save();
             }
         }
@@ -1807,8 +1816,8 @@ class Recurring
                 continue;
             }
             foreach($order->get_items() as $item) {
-                $originalItem = wc_get_product($item->get_product_id());
-                if (!$originalItem) {
+                $product = $item->get_product();
+                if (!$product) {
                     Functions::log(
                         'Produto original não encontrado para assinatura. Impossível atualizar restrições de conteúdo.',
                         'error',
@@ -1816,12 +1825,13 @@ class Recurring
                     );
                     continue;
                 }
-                if ($originalItem->get_meta('_recurring_enabled') != 'yes') {
+                $recurringProduct = $recHelper->getRecurringProduct($product);
+                if (!$recurringProduct || $recurringProduct->get_meta('_recurring_enabled') != 'yes') {
                     continue;
                 }
-                    
-                $restrictedPages = get_post_meta($originalItem->get_id(), '_recurring_restricted_pages', true) ?? [];
-                $restrictedCategories = get_post_meta($originalItem->get_id(), '_recurring_restricted_categories', true) ?? [];
+
+                $restrictedPages = get_post_meta($recurringProduct->get_id(), '_recurring_restricted_pages', true) ?? [];
+                $restrictedCategories = get_post_meta($recurringProduct->get_id(), '_recurring_restricted_categories', true) ?? [];
                 $allowedPages = array_merge($allowedPages, $restrictedPages);
                 $allowedCategories = array_merge($allowedCategories, $restrictedCategories);
             }
