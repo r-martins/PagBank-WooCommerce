@@ -5,6 +5,7 @@ namespace RM_PagBank\Connect\Payments;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\TaxId;
 use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\Boleto as BoletoObj;
@@ -92,9 +93,8 @@ class Boleto extends Common
             }
         }
         
-        // Clean taxId (remove non-numeric characters)
         if (!empty($taxId)) {
-            $taxId = Params::removeNonNumeric($taxId);
+            $taxId = TaxId::sanitizeForApi($taxId);
         }
         
         $holder = new Holder();

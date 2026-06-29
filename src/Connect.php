@@ -79,6 +79,8 @@ class Connect
         // Load plugin files
         self::includes();
 
+        \RM_PagBank\Compat\BrazilianCheckoutFields::init();
+
         // Add action links
         add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( self::class, 'addPluginActionLinks' ) );
 

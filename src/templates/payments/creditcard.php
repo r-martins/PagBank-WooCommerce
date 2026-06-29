@@ -48,7 +48,7 @@ if (!is_wc_endpoint_url('add-payment-method')) {
 if (is_wc_endpoint_url('add-payment-method')) {
     $default_fields['card-cpf-cnpj'] = '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj">' . esc_html__( 'CPF/CNPJ', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
-                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj" class="input-text wc-credit-card-form-card-cpf-cnpj" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="text" maxlength="18" placeholder="' . esc_attr__( 'documento do pagador', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-cpf-cnpj' ) . ' />
+                    <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj" class="input-text wc-credit-card-form-card-cpf-cnpj" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" type="text" maxlength="18" placeholder="' . esc_attr__( 'documento do pagador', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-cpf-cnpj' ) . ' />
                 </p>';
 }
 

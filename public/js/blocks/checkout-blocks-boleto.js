@@ -7,6 +7,7 @@ import { __, _n } from '@wordpress/i18n';
 import PaymentInstructions from './components/PaymentInstructions';
 import PaymentUnavailable from './components/PaymentUnavailable';
 import CustomerDocumentField from './components/CustomerDocumentField';
+import { sanitizeTaxIdForApi } from '../shared/tax-id';
 
 const settings = getSetting('rm-pagbank-boleto_data', {});
 const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'PagBank Connect Boleto', 'rm-pagbank-pix' );
@@ -81,7 +82,7 @@ const Content = ( props ) => {
                 type: emitResponse.responseTypes.SUCCESS,
                 meta: {
                     paymentMethodData: {
-                        'rm-pagbank-customer-document': customerDocumentValue.replace(/\D/g, ''),
+                        'rm-pagbank-customer-document': sanitizeTaxIdForApi(customerDocumentValue),
                     },
                 },
             };

@@ -6,6 +6,7 @@ use RM_PagBank\Connect\Payments\CreditCardToken;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\TaxId;
 use RM_PagBank\Traits\PaymentMethodIcon;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
@@ -335,7 +336,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                 if(isset($_POST['rm-pagbank-customer-document'])) {
                     $order->add_meta_data(
                         '_rm_pagbank_customer_document',
-                        htmlspecialchars($_POST['rm-pagbank-customer-document'], ENT_QUOTES, 'UTF-8'),
+                        TaxId::sanitizeForApi(wp_unslash($_POST['rm-pagbank-customer-document'])),
                         true
                     );
                 }
@@ -589,9 +590,17 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $payment_handle = wp_script_is('wc-jquery-payment', 'registered') ? 'wc-jquery-payment' : 'jquery-payment';
                 
                 wp_enqueue_script(
+                    'pagseguro-connect-tax-id',
+                    plugins_url('public/js/tax-id-legacy.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                    [],
+                    WC_PAGSEGURO_CONNECT_VERSION,
+                    true
+                );
+
+                wp_enqueue_script(
                     'pagseguro-connect-creditcard',
                     plugins_url('public/js/creditcard.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                    ['jquery', $payment_handle, $blockui_handle],
+                    ['jquery', $payment_handle, $blockui_handle, 'pagseguro-connect-tax-id'],
                     WC_PAGSEGURO_CONNECT_VERSION,
                     ['strategy' => 'defer', 'in_footer' => true]
                 );
@@ -945,11 +954,9 @@ class CreditCard extends WC_Payment_Gateway_CC
             }
 
             // Clean and validate CPF/CNPJ
-            $cpfCnpj = htmlspecialchars($_POST['rm-pagbank-card-cpf-cnpj'], ENT_QUOTES, 'UTF-8');
-            $cpfCnpj = preg_replace('/[^0-9]/', '', $cpfCnpj); // Remove all non-numeric characters
+            $cpfCnpj = TaxId::sanitizeForApi(wp_unslash($_POST['rm-pagbank-card-cpf-cnpj']));
 
-            // Validate CPF/CNPJ format
-            if (strlen($cpfCnpj) != 11 && strlen($cpfCnpj) != 14) {
+            if (!TaxId::isValidFormat($cpfCnpj)) {
                 wc_add_notice(__('CPF/CNPJ inválido.', 'pagbank-connect'), 'error');
                 return [
                     'result' => 'failure',

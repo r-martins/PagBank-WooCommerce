@@ -17,16 +17,31 @@ wp_enqueue_style(
     WC_PAGSEGURO_CONNECT_VERSION
 );
 
-// Load integrations settings fields
-$integrations_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/dokan-split-fields.php';
+$dokan_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/dokan-split-fields.php';
+$wcbcf_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/wcbcf-fields.php';
+$integrations_fields = array_merge($dokan_fields, $wcbcf_fields);
 
-// Get saved options
 $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings', []);
 
-// Check if Dokan is active
 $dokan_is_active = function_exists('dokan');
 
-// Display the settings form
+if (! function_exists('is_plugin_active')) {
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+$wcbcf_is_active = is_plugin_active(
+    'woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php'
+);
+
+$is_integration_field_active = static function (array $field) use ($dokan_is_active, $wcbcf_is_active): bool {
+    $integration = $field['integration'] ?? 'dokan';
+
+    if ($integration === 'wcbcf') {
+        return $wcbcf_is_active;
+    }
+
+    return $dokan_is_active;
+};
+
 ?>
 <input type="hidden" name="section" value="rm-pagbank-integrations" />
 <?php if (!$dokan_is_active): ?>
@@ -37,15 +52,23 @@ $dokan_is_active = function_exists('dokan');
         </p>
     </div>
 <?php endif; ?>
+<?php if (!$wcbcf_is_active): ?>
+    <div class="notice notice-warning inline" style="margin: 20px 0;">
+        <p>
+            <strong><?php esc_html_e('Atenção:', 'pagbank-connect'); ?></strong>
+            <?php esc_html_e('O plugin Brazilian Market on WooCommerce não está instalado ou não está ativo. A compatibilidade com CNPJ alfanumérico só terá efeito após instalar e ativar esse plugin.', 'pagbank-connect'); ?>
+        </p>
+    </div>
+<?php endif; ?>
 <table class="form-table">
         <?php
         foreach ($integrations_fields as $key => $field) {
-            // Use field ID if available, otherwise use key
             if (!isset($field['id'])) {
                 $field['id'] = $key;
             }
-            $field_id = $field['id']; // Use the field ID for HTML attributes
+            $field_id = $field['id'];
             $field_value = isset($integrations_options[$key]) ? $integrations_options[$key] : (isset($field['default']) ? $field['default'] : '');
+            $field_active = $is_integration_field_active($field);
             
             switch ($field['type']) {
                 case 'title':
@@ -63,7 +86,7 @@ $dokan_is_active = function_exists('dokan');
                     
                 case 'checkbox':
                     ?>
-                    <tr valign="top" <?php echo !$dokan_is_active ? 'style="opacity: 0.6;"' : ''; ?>>
+                    <tr valign="top" <?php echo !$field_active ? 'style="opacity: 0.6;"' : ''; ?>>
                         <th scope="row" class="titledesc">
                             <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['title']); ?></label>
                         </th>
@@ -78,13 +101,19 @@ $dokan_is_active = function_exists('dokan');
                                         id="<?php echo esc_attr($field_id); ?>" 
                                         value="1" 
                                         <?php checked($field_value, 'yes'); ?>
-                                        <?php disabled(!$dokan_is_active); ?>
+                                        <?php disabled(!$field_active); ?>
                                     />
                                     <?php echo wp_kses_post(isset($field['description']) ? $field['description'] : ''); ?>
-                                    <?php if (!$dokan_is_active && $key === 'dokan_split_enabled'): ?>
+                                    <?php if (!$field_active && $key === 'dokan_split_enabled'): ?>
                                         <p class="description" style="color: #d63638; margin-top: 5px;">
                                             <strong><?php esc_html_e('⚠', 'pagbank-connect'); ?></strong>
                                             <?php esc_html_e('Esta configuração será ignorada porque o Dokan não está ativo ou instalado.', 'pagbank-connect'); ?>
+                                        </p>
+                                    <?php endif; ?>
+                                    <?php if (!$field_active && $key === 'wcbcf_alnum_cnpj_compat'): ?>
+                                        <p class="description" style="color: #d63638; margin-top: 5px;">
+                                            <strong><?php esc_html_e('⚠', 'pagbank-connect'); ?></strong>
+                                            <?php esc_html_e('Esta configuração será ignorada porque o Brazilian Market on WooCommerce não está ativo ou instalado.', 'pagbank-connect'); ?>
                                         </p>
                                     <?php endif; ?>
                                 </label>
@@ -97,7 +126,7 @@ $dokan_is_active = function_exists('dokan');
                 case 'text':
                 case 'number':
                     ?>
-                    <tr valign="top" <?php echo !$dokan_is_active ? 'style="opacity: 0.6;"' : ''; ?>>
+                    <tr valign="top" <?php echo !$field_active ? 'style="opacity: 0.6;"' : ''; ?>>
                         <th scope="row" class="titledesc">
                             <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['title']); ?></label>
                         </th>
@@ -108,7 +137,7 @@ $dokan_is_active = function_exists('dokan');
                                 id="<?php echo esc_attr($field_id); ?>" 
                                 value="<?php echo esc_attr($field_value); ?>" 
                                 class="<?php echo esc_attr(isset($field['class']) ? $field['class'] : ''); ?>"
-                                <?php disabled(!$dokan_is_active); ?>
+                                <?php disabled(!$field_active); ?>
                                 <?php if (isset($field['custom_attributes']) && is_array($field['custom_attributes'])) {
                                     foreach ($field['custom_attributes'] as $attr => $attr_value) {
                                         echo esc_attr($attr) . '="' . esc_attr($attr_value) . '" ';
@@ -125,7 +154,7 @@ $dokan_is_active = function_exists('dokan');
                     
                 case 'select':
                     ?>
-                    <tr valign="top" <?php echo !$dokan_is_active ? 'style="opacity: 0.6;"' : ''; ?>>
+                    <tr valign="top" <?php echo !$field_active ? 'style="opacity: 0.6;"' : ''; ?>>
                         <th scope="row" class="titledesc">
                             <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['title']); ?></label>
                         </th>
@@ -134,7 +163,7 @@ $dokan_is_active = function_exists('dokan');
                                 name="<?php echo esc_attr($key); ?>" 
                                 id="<?php echo esc_attr($field_id); ?>" 
                                 class="<?php echo esc_attr(isset($field['class']) ? $field['class'] : ''); ?>"
-                                <?php disabled(!$dokan_is_active); ?>
+                                <?php disabled(!$field_active); ?>
                             >
                                 <?php foreach ($field['options'] as $option_key => $option_value): ?>
                                     <option value="<?php echo esc_attr($option_key); ?>" <?php selected($field_value, $option_key); ?>>

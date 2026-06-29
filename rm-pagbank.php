@@ -91,6 +91,7 @@ add_action('admin_init', function() {
         // Get all posted data first
         $integrations_settings = [];
         $fields = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/dokan-split-fields.php';
+        $fields = array_merge($fields, include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/wcbcf-fields.php');
         
         foreach ($fields as $key => $field) {
             // HTML form uses $key as name attribute, so we need to check $_POST[$key]
