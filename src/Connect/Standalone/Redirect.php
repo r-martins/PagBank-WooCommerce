@@ -5,6 +5,7 @@ use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\TaxId;
 use RM_PagBank\Traits\OrderInvoiceEmail;
 use RM_PagBank\Traits\PaymentMethodIcon;
 use RM_PagBank\Traits\PaymentUnavailable;
@@ -110,7 +111,7 @@ class Redirect extends WC_Payment_Gateway
         if(isset($_POST['rm-pagbank-customer-document'])) {
             $order->add_meta_data(
                 '_rm_pagbank_customer_document',
-                htmlspecialchars($_POST['rm-pagbank-customer-document'], ENT_QUOTES, 'UTF-8'),
+                TaxId::sanitizeForApi(wp_unslash($_POST['rm-pagbank-customer-document'])),
                 true
             );
         }

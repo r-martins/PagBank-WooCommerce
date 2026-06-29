@@ -6,6 +6,7 @@ use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
+use RM_PagBank\Helpers\TaxId;
 use RM_PagBank\Object\Address;
 use RM_PagBank\Object\Customer;
 use RM_PagBank\Object\Item;
@@ -120,7 +121,7 @@ class Common
         }
 
 
-        $taxId = Params::removeNonNumeric($taxId);
+        $taxId = TaxId::sanitizeForApi($taxId);
         
         if (!empty($taxId)) {
             $customer->setTaxId($taxId);

@@ -547,19 +547,9 @@ jQuery(document).ready(function ($) {
         jQuery(e.target).val(jQuery(e.target).val().toUpperCase());
     });
     
-    // CPF/CNPJ formatting
+    // CPF/CNPJ formatting (CPF numeric; CNPJ alphanumeric)
     jQuery(document).on('input change paste', '#rm-pagbank-card-cpf-cnpj', (e)=>{
-        let value = jQuery(e.target).val().replace(/[^0-9]/g, '');
-        let formattedValue = '';
-        
-        if (value.length <= 11) {
-            // CPF format: 000.000.000-00
-            formattedValue = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        } else {
-            // CNPJ format: 00.000.000/0000-00
-            formattedValue = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-        }
-        
+        const formattedValue = window.rmPagbankTaxId.formatTaxIdForDisplay(jQuery(e.target).val());
         jQuery(e.target).val(formattedValue);
     });
 // });

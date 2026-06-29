@@ -112,6 +112,20 @@ class Params
         return (int)$return;
     }
 
+    public static function getIntegrationsConfig(string $key, $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
+        if (! is_array($settings)) {
+            $settings = [];
+        }
+
+        if (array_key_exists($key, $settings)) {
+            return $settings[$key];
+        }
+
+        return $default;
+    }
+
     /**
      * @param $key
      * @param string $default

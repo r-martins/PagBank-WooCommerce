@@ -7,6 +7,7 @@ import {__} from '@wordpress/i18n';
 import PaymentUnavailable from './components/PaymentUnavailable';
 import CreditCardForm from "./components/CreditCardForm";
 import CustomerDocumentField from './components/CustomerDocumentField';
+import { sanitizeTaxIdForApi } from '../shared/tax-id';
 import RecurringInfo from './components/RecurringInfo';
 import RetryInput from './components/RetryInput';
 import SavedCardInstallments from './components/SavedCardInstallments';
@@ -488,7 +489,7 @@ const Content = ( props ) => {
                 meta: {
                     paymentMethodData: {
                         'payment_method': 'cc',
-                        'rm-pagbank-customer-document': customerDocumentValue.replace(/\D/g, ''),
+                        'rm-pagbank-customer-document': sanitizeTaxIdForApi(customerDocumentValue),
                         'rm-pagbank-card-encrypted': encryptedCard,
                         'rm-pagbank-card-installments': installments,
                         'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),

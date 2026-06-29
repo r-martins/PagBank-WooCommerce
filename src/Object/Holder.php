@@ -4,6 +4,7 @@
 namespace RM_PagBank\Object;
 
 use JsonSerializable;
+use RM_PagBank\Helpers\TaxId;
 
 /**
  * Class Holder
@@ -54,7 +55,7 @@ class Holder implements JsonSerializable
      */
     public function setTaxId(string $tax_id): void
     {
-        $this->tax_id = substr($tax_id, 0, 14);
+        $this->tax_id = substr(TaxId::sanitizeForApi($tax_id), 0, TaxId::CNPJ_LENGTH);
     }
 
     /**
