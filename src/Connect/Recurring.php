@@ -1632,8 +1632,8 @@ class Recurring
         $restrictedProductIds = [];
         $isPageRestricted = false;
         foreach ($restrictedProducts as $product) {
-            $restrictedPages = get_post_meta($product, '_recurring_restricted_pages', true);
-            $restrictedCategories = get_post_meta($product, '_recurring_restricted_categories', true);
+            $restrictedPages = $this->getProductMetaArray($product, '_recurring_restricted_pages');
+            $restrictedCategories = $this->getProductMetaArray($product, '_recurring_restricted_categories');
 
             if (in_array($pageId, $restrictedPages) || array_intersect($categoryId, $restrictedCategories)) {
                 $restrictedProductIds[] = $product;
@@ -1714,6 +1714,18 @@ class Recurring
      * Get all restricted products from cache or database
      * @return int[]|mixed|\WP_Post[]
      */
+    /**
+     * @param int|string $productId
+     * @param string $metaKey
+     *
+     * @return array
+     */
+    private function getProductMetaArray($productId, string $metaKey): array
+    {
+        $value = get_post_meta($productId, $metaKey, true);
+        return is_array($value) ? $value : [];
+    }
+
     protected function getProductsWithRestriction()
     {
         $restrictedProducts = get_transient('recurring_restricted_products');
@@ -1830,8 +1842,8 @@ class Recurring
                     continue;
                 }
 
-                $restrictedPages = get_post_meta($recurringProduct->get_id(), '_recurring_restricted_pages', true) ?? [];
-                $restrictedCategories = get_post_meta($recurringProduct->get_id(), '_recurring_restricted_categories', true) ?? [];
+                $restrictedPages = $this->getProductMetaArray($recurringProduct->get_id(), '_recurring_restricted_pages');
+                $restrictedCategories = $this->getProductMetaArray($recurringProduct->get_id(), '_recurring_restricted_categories');
                 $allowedPages = array_merge($allowedPages, $restrictedPages);
                 $allowedCategories = array_merge($allowedCategories, $restrictedCategories);
             }
