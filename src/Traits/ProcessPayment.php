@@ -38,6 +38,23 @@ trait ProcessPayment
         $status = $charge['status'] ?? '';
         $payment_response = $charge['payment_response'] ?? null;
         $charge_id = $charge['id'] ?? null;
+        $redirectStatus = $order_data['status'] ?? null; //redirect checkout status (if expirable)
+
+        // Checkout expired: never cancel (or overwrite) an order that was already paid
+        if (!$status && $redirectStatus === 'EXPIRED' && $order->is_paid()) {
+            Functions::log(
+                sprintf(
+                    __('Notificação de checkout expirado ignorada para o pedido %s pois o pedido já está pago.' . $cronMsg, 'pagbank-connect'),
+                    $order->get_id()
+                ),
+                'debug'
+            );
+            $order->add_order_note(
+                'PagBank: Checkout expirado, mas o pedido já estava pago. Cancelamento ignorado.' . $cronMsg
+            );
+            $order->save_meta_data();
+            return;
+        }
 
         $order->add_meta_data('pagbank_charge_id', $charge_id, true);
         $order->add_meta_data('pagbank_payment_response', $payment_response, true);
@@ -64,8 +81,7 @@ trait ProcessPayment
             $order->add_meta_data('pagbank_nsu', $charge['payment_response']['reference']);
         }
         
-        $redirectStatus = $order_data['status'] ?? null; //redirect checkout status (if expirable)
-        if (!$status && $redirectStatus == 'EXPIRED') {
+        if (!$status && $redirectStatus === 'EXPIRED') {
             $status = 'EXPIRED';
             $order->update_status(
                 OrderStatus::CANCELLED,
