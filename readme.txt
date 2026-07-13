@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.56.0
+Stable tag: 4.56.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -14,6 +14,11 @@ Autenticação 3D: menos chargeback + aprovações.
 == Description ==
 
 **Aceite PagBank (PagSeguro) (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
+
+# 🛑 **AVISO IMPORTANTE** ATENDENDO EXIGÊNCIAS DO PRÓPRIO PAGBANK, O CADASTRAMENTO DE NOVAS CONTAS ESTÁ SUSPENSO.
+
+Se você já tem uma Connect Key, pode usar nossas integrações normalmente. Caso contrário, busque outra opção enquanto resolvemos isso.
+
 
 **🌟[Parceiro oficial](https://developer.pagbank.com.br/docs/ricardo-martins-woocommerce) PagBank/PagSeguro desde 2014.**
 
@@ -239,6 +244,15 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.56.1 =
+* Corrige erro onde uma venda recorrente poderia falhar se contivesse um produto rec
+orrente que não era salvo desde a implementação do recurso de restrição de conteúdo (e
+m Nov/2024), mesmo que tal recurso não fosse utilizado. O erro 'Uncaught TypeError: ar
+ray_merge(): Argument #2 must be of type array, string given'  era logado e uma mensag
+em de erro fatal impedia a finalização da compra.
+* Correção: pedidos com checkout PagBank (pagar no pagbank) eram cancelados quando o
+ checkout expirava, mesmo que já tivessem sido pagos.
+
 = 4.56.0 =
 * Adicionado suporte a CNPJ alfanumérico no checkout em blocos
 * Adicionado modo de compatibilidade para Brazilian Market on WooCommerce suportar CNPJ alfanumérico
