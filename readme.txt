@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.56.1
+Stable tag: 4.57.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -71,6 +71,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Configure como quer exibir o [nome da loja na fatura do cartão de crédito](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura)
 * Diversas [opções de configuração de endereço](https://ajuda.pbintegracoes.com/hc/pt-br/articles/20835022998029-Configura%C3%A7%C3%B5es-de-Endere%C3%A7o-de-Entrega)
 * Suporte nativo a [High-Performance Order Storage (**HPOS**)](https://woo.com/document/high-performance-order-storage/)
+* Suporte a produtos fracionados/decimais
 * Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
 * **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
 * Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
@@ -244,6 +245,9 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.57.0 =
+* Adicionado suporte a produtos decimais/fracionados, incluindo produtos abaixo de um (ex: 0,854).
+
 = 4.56.1 =
 * Corrige erro onde uma venda recorrente poderia falhar se contivesse um produto rec
 orrente que não era salvo desde a implementação do recurso de restrição de conteúdo (e
