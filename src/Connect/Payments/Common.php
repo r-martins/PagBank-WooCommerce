@@ -186,6 +186,9 @@ class Common
      * Formats order items into Item objects with ID, name, quantity, and unit amount.
      *
      * Skips items with zero subtotal and handles recurring product pricing.
+     * PagBank requires integer quantity between 1 and 99999. When a plugin allows
+     * decimal qty < 1 (e.g. 0.854), int cast would become 0 and fail with 40002 —
+     * in that case we send quantity 1 and append the original qty to the item name.
      *
      * @param array<WC_Order_Item_Product> $get_items
      * @return Item[]
@@ -197,10 +200,23 @@ class Common
             $product = $item->get_product();
             $itemObj = new Item();
             $itemObj->setReferenceId($item['product_id']);
-            $itemObj->setName(Functions::sanitizeProductName($item['name']));
-            $itemObj->setQuantity($item['quantity']);
 
-            $amount = $item->get_subtotal('edit') / $item['quantity'];
+            $quantity = (float) $item['quantity'];
+            $name = $item['name'];
+            $subtotal = (float) $item->get_subtotal('edit');
+
+            // Decimal qty < 1 cannot be sent as PagBank quantity (min 1, integer only).
+            // Normalize to 1 and keep the original qty in the name; unit_amount then uses line subtotal.
+            if ($quantity > 0 && $quantity < 1) {
+                $qtyLabel = rtrim(rtrim(sprintf('%.4f', $quantity), '0'), '.');
+                $name = sprintf('%s (%s)', $name, $qtyLabel);
+                $quantity = 1;
+            }
+
+            $itemObj->setName(Functions::sanitizeProductName($name));
+            $itemObj->setQuantity((int) $quantity);
+            $amount = $quantity > 0 ? $subtotal / $quantity : $subtotal;
+
             $recurringHelper = new RecurringHelper();
             if (
                 $recurringHelper->isProductRecurring($product)
