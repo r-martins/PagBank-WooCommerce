@@ -306,12 +306,14 @@ class Api
 
     /**
      * Returns the 3D Secure session string to be used in the JS or empty string if not available/fails
+     *
+     * @param bool $useCache Whether to reuse a cached session. Pass false to force a fresh session from PagBank.
      * @return string
      */
-    public function get3DSession(): string
+    public function get3DSession(bool $useCache = true): string
     {
         try {
-            $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], 5);
+            $resp = $this->post('ws-sdk/checkout-sdk/sessions', [], $useCache ? 5 : 0);
             if (isset($resp['session'])) {
                 return $resp['session'];
             }

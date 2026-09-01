@@ -3,9 +3,9 @@ Contributors: martins56
 Tags: pagseguro, pagbank, pix, woocommerce, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.57.0
+Stable tag: 4.57.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -245,6 +245,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.57.1 =
+* Correção: validação da sessão 3D Secure poderia ficar 'presa' em casos onde a sessão 3d estava expirada.
+* Melhoria: renovamos a sessão 3d antes da finalização do pedido pra evitar que a sessão gerada esteja expirada
+
 = 4.57.0 =
 * Adicionado suporte a produtos decimais/fracionados, incluindo produtos abaixo de um (ex: 0,854).
 

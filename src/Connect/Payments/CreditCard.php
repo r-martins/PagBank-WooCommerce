@@ -4,6 +4,7 @@ namespace RM_PagBank\Connect\Payments;
 
 use Exception;
 use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Object\Amount;
@@ -335,6 +336,43 @@ class CreditCard extends Common
         $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
 
         return $card;
+    }
+
+    /**
+     * Outputs a fresh 3D Secure session (used via ajax immediately before authenticate3DS)
+     * @return void
+     */
+    public static function getAjax3DSession()
+    {
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+            wp_send_json_error(
+                [
+                    'error' => __(
+                        'Não foi possível atualizar a sessão 3D Secure. Chave de formulário inválida. '
+                        .'Recarregue a página e tente novamente.',
+                        'pagbank-connect'
+                    ),
+                ],
+                400
+            );
+        }
+
+        $api = new Api();
+        $session = $api->get3DSession(false);
+
+        if ($session === '') {
+            wp_send_json_error(
+                [
+                    'error' => __(
+                        'Não foi possível atualizar a sessão 3D Secure. Recarregue a página e tente novamente.',
+                        'pagbank-connect'
+                    ),
+                ],
+                400
+            );
+        }
+
+        wp_send_json(['session' => $session]);
     }
 
     /**
