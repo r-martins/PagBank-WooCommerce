@@ -209,6 +209,62 @@ jQuery(document).ready(function ($) {
 
     //region 3ds authentication
     let isSubmitting = false;
+
+    /**
+     * Fetches a fresh 3D Secure session from the server so PagSeguro.setUp does not use an expired one.
+     * @returns {Promise<string>}
+     */
+    const refresh3dSession = async function () {
+        const ajaxUrl = (typeof ajax_object !== 'undefined' && ajax_object.ajax_url)
+            ? ajax_object.ajax_url
+            : '';
+        if (!ajaxUrl || typeof rm_pagbank_nonce === 'undefined') {
+            return typeof pagseguro_connect_3d_session !== 'undefined' ? pagseguro_connect_3d_session : '';
+        }
+
+        try {
+            const response = await jQuery.ajax({
+                url: ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'ps_get_3d_session',
+                    nonce: rm_pagbank_nonce,
+                }
+            });
+            if (response && response.session) {
+                pagseguro_connect_3d_session = response.session;
+                console.debug('Sessão 3D atualizada', pagseguro_connect_3d_session);
+                return pagseguro_connect_3d_session;
+            }
+        } catch (e) {
+            console.debug('PagBank: falha ao atualizar sessão 3D', e);
+        }
+
+        return typeof pagseguro_connect_3d_session !== 'undefined' ? pagseguro_connect_3d_session : '';
+    };
+
+    /**
+     * PagBank SDK errors may include errorMessages[] or only a message (e.g. expired session 403).
+     * @param {*} err
+     * @returns {string}
+     */
+    const getPagSeguro3dsErrorMessage = function (err) {
+        const detail = err && err.detail ? err.detail : null;
+        if (detail && Array.isArray(detail.errorMessages) && detail.errorMessages.length) {
+            return detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
+        }
+        if (detail && detail.message) {
+            if (/expired session/i.test(detail.message)) {
+                return 'A sessão 3D Secure expirou. Recarregue a página e tente novamente.';
+            }
+            return detail.message;
+        }
+        if (err && err.message) {
+            return err.message;
+        }
+        return 'Tente novamente.';
+    };
+
     let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review, .wc-block-components-form, .wc-block-checkout__form, form#order_update, form#add_payment_method';
     if (!jQuery(checkoutFormIdentifiers).length) {
         console.debug('PagBank: checkout form not found');
@@ -315,11 +371,6 @@ jQuery(document).ready(function ($) {
         }
 
         //region 3ds authentication method
-        PagSeguro.setUp({
-            session: pagseguro_connect_3d_session,
-            env: pagseguro_connect_environment,
-        });
-
         var checkoutFormData = jQuery(this).serializeArray();
         // Convert the form data to an object
         var checkoutFormDataObj = {};
@@ -414,6 +465,13 @@ jQuery(document).ready(function ($) {
             css: {border: 0}
         });
 
+        await refresh3dSession();
+
+        PagSeguro.setUp({
+            session: pagseguro_connect_3d_session,
+            env: pagseguro_connect_environment,
+        });
+
         PagSeguro.authenticate3DS(request).then(result => {
             switch (result.status) {
                 case 'CHANGE_PAYMENT_METHOD':
@@ -460,14 +518,12 @@ jQuery(document).ready(function ($) {
                     break;
             }
         }).catch((err) => {
-            if (err instanceof PagSeguro.PagSeguroError ) {
-                console.error(err);
-                console.debug('PagBank: ' + err.detail);
-                let errMsgs = err.detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
-                alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
-                jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
-                return false;
-            }
+            console.error(err);
+            console.debug('PagBank:', err && err.detail ? err.detail : err);
+            const errMsgs = getPagSeguro3dsErrorMessage(err);
+            alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
+            jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').unblock();
+            return false;
         })
         //endregion
 

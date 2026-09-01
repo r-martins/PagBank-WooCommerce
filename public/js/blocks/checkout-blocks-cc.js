@@ -215,11 +215,60 @@ const Content = ( props ) => {
             return card.encryptedCard;
         }
 
+        let current3dSession = settings.ccThreeDSession;
+        const refresh3dSession = async function () {
+            const ajaxUrl = settings.ajax_url;
+            const nonce = settings.rm_pagbank_nonce;
+            if (!ajaxUrl || !nonce) {
+                return current3dSession;
+            }
+
+            try {
+                const body = new URLSearchParams();
+                body.append('action', 'ps_get_3d_session');
+                body.append('nonce', nonce);
+                const response = await fetch(ajaxUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    credentials: 'same-origin',
+                    body: body.toString(),
+                });
+                const data = await response.json();
+                if (data && data.session) {
+                    current3dSession = data.session;
+                    console.debug('Sessão 3D atualizada', current3dSession);
+                    return current3dSession;
+                }
+            } catch (e) {
+                console.debug('PagBank: falha ao atualizar sessão 3D', e);
+            }
+
+            return current3dSession;
+        }
+
+        const getPagSeguro3dsErrorMessage = function (err) {
+            const detail = err && err.detail ? err.detail : null;
+            if (detail && Array.isArray(detail.errorMessages) && detail.errorMessages.length) {
+                return detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
+            }
+            if (detail && detail.message) {
+                if (/expired session/i.test(detail.message)) {
+                    return 'A sessão 3D Secure expirou. Recarregue a página e tente novamente.';
+                }
+                return detail.message;
+            }
+            if (err && err.message) {
+                return err.message;
+            }
+            return 'Tente novamente.';
+        }
+
         const authenticate3DS = async function (request) {
 
             //region 3ds authentication method
+            const session = await refresh3dSession();
             PagSeguro.setUp({
-                session: settings.ccThreeDSession,
+                session: session,
                 env: settings.pagbankConnectEnvironment,
             });
 
@@ -262,12 +311,10 @@ const Content = ( props ) => {
                         break;
                 }
             }).catch((err) => {
-                if (err instanceof PagSeguro.PagSeguroError ) {
-                    console.error(err);
-                    console.debug('PagBank: ' + err.detail);
-                    let errMsgs = err.detail.errorMessages.map(error => pagBankParseErrorMessage(error)).join('\n');
-                    alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
-                }
+                console.error(err);
+                console.debug('PagBank:', err && err.detail ? err.detail : err);
+                const errMsgs = getPagSeguro3dsErrorMessage(err);
+                alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
                 canContinue = false;
                 return false;
             })
