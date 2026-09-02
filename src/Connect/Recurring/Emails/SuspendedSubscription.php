@@ -20,7 +20,8 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
      * @copyright 2023 Magenteiro
      */
     class SuspendedSubscription extends RecurringEmails {
-        public stdClass $subscription;
+        /** @var stdClass|null */
+        public $subscription;
 
         /**
 		 * Constructor.
@@ -108,6 +109,8 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_content_html() {
+			$subscription = $this->get_subscription_for_email( $this->subscription );
+
 			return wc_get_template_html(
 				$this->template_html,
 				array(
@@ -117,8 +120,8 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 					'sent_to_admin'      => true,
 					'plain_text'         => false,
 					'email'              => $this,
-					'subscription'       => $this->subscription,
-					'account_link'       => wc_get_page_permalink( 'myaccount' ) . 'rm-pagbank-subscriptions-update/'.$this->subscription->id,
+					'subscription'       => $subscription,
+					'account_link'       => wc_get_page_permalink( 'myaccount' ) . 'rm-pagbank-subscriptions-update/' . $subscription->id,
 				),
                 $this->template_base,
                 $this->template_base
@@ -131,6 +134,8 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_content_plain() {
+			$subscription = $this->get_subscription_for_email( $this->subscription );
+
 			return wc_get_template_html(
 				$this->template_plain,
 				array(
@@ -140,7 +145,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 					'sent_to_admin'      => true,
 					'plain_text'         => true,
 					'email'              => $this,
-                    'subscription'       => $this->subscription,
+                    'subscription'       => $subscription,
 				),
                 $this->template_base
 			);
