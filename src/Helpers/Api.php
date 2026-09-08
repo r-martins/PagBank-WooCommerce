@@ -72,7 +72,7 @@ class Api
 
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
+            throw $this->buildInvalidApiResponseException($response, (int) wp_remote_retrieve_response_code($resp));
         }
 
         if ($cacheMin > 0) {
@@ -119,7 +119,7 @@ class Api
 
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
+            throw $this->buildInvalidApiResponseException($response, (int) wp_remote_retrieve_response_code($resp));
         }
 
         if ($cacheMin > 0) {
@@ -200,13 +200,13 @@ class Api
         $response = $responseBody;
         $decoded_response = json_decode($response, true);
         if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            $response = $response === '' ? __('"Resposta vazia"', 'pagbank-connect') : $response;
+            $logBody = $response === '' ? __('"Resposta vazia"', 'pagbank-connect') : $response;
             Functions::log(
-                'Resposta inválida da API: '.$response,
+                'Resposta inválida da API: '.$logBody,
                 'error',
                 ['request' => $params, 'endpoint' => $endpoint]
             );
-            throw new Exception('Resposta inválida da API: ' . esc_attr($response));
+            throw $this->buildInvalidApiResponseException($response, (int) $responseCode);
         }
 
         Functions::log('Response from '.$endpoint.' (' . $responseCode . '-' . $responseMessage . '): ' . wp_json_encode($decoded_response, JSON_PRETTY_PRINT), 'debug');
@@ -214,6 +214,50 @@ class Api
             set_transient($transientKey, $decoded_response, $cacheMin * 60);
         }
         return $decoded_response;
+    }
+
+    /**
+     * Customer-facing message for non-JSON API bodies (e.g. Cloudflare HTML error pages).
+     * Full raw body must remain in the log only — never in checkout notices.
+     *
+     * @throws Exception
+     */
+    protected function buildInvalidApiResponseException(string $response, int $responseCode = 0): Exception
+    {
+        $looksLikeHtml = (bool) preg_match('/^\s*</', $response)
+            || stripos($response, '<html') !== false
+            || stripos($response, 'cloudflare') !== false
+            || stripos($response, '<!DOCTYPE') !== false;
+
+        if ($looksLikeHtml) {
+            $httpCode = $responseCode;
+            if (!$httpCode && preg_match('/\bError code (5\d{2})\b/i', $response, $matches)) {
+                $httpCode = (int) $matches[1];
+            } elseif (!$httpCode && preg_match('/\b(5\d{2}):\s*Web server/i', $response, $matches)) {
+                $httpCode = (int) $matches[1];
+            }
+
+            $message = __(
+                'Não foi possível concluir o pagamento devido a uma falha temporária de comunicação. Tente novamente em alguns minutos.',
+                'pagbank-connect'
+            );
+            if ($httpCode >= 500) {
+                $message .= ' (HTTP ' . $httpCode . ')';
+            }
+
+            return new Exception($message);
+        }
+
+        $snippet = trim(wp_strip_all_tags($response));
+        if ($snippet === '') {
+            $snippet = __('"Resposta vazia"', 'pagbank-connect');
+        } else {
+            $snippet = function_exists('mb_substr') ? mb_substr($snippet, 0, 200) : substr($snippet, 0, 200);
+        }
+
+        return new Exception(
+            __('Resposta inválida da API:', 'pagbank-connect') . ' ' . esc_attr($snippet)
+        );
     }
 
     /**
@@ -280,7 +324,7 @@ class Api
                 'body' => $body,
                 'http_code' => $code,
             ]);
-            throw new Exception('JSON inválido EF');
+            throw $this->buildInvalidApiResponseException($body, (int) $code);
         }
 
         Functions::log('[EnvioFácil][Api] Resposta EF ' . $endpoint . ': ' . wp_json_encode($decoded, JSON_PRETTY_PRINT), 'debug');
