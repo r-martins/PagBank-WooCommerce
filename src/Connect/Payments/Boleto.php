@@ -104,7 +104,9 @@ class Boleto extends Common
         } else {
             $holder->setName($this->order->get_billing_first_name() . ' ' . $this->order->get_billing_last_name());
         }
-        $holder->setTaxId($taxId);
+        if (!empty($taxId)) {
+            $holder->setTaxId($taxId);
+        }
         $holder->setEmail($this->order->get_billing_email());
 
         $address = $this->getBillingAddress();
