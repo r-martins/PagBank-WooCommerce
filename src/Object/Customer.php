@@ -17,13 +17,22 @@ class Customer implements JsonSerializable
 {
     private string $name;
     private string $email;
-    private string $tax_id;
+    private ?string $tax_id = null;
     private $phone; //type not declared because it can be an array or a Phone object and mixed types are not allowed in PHP 7.4
 
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return get_object_vars($this);
+        $data = get_object_vars($this);
+        // Omit unset optional fields so PagBank does not receive "tax_id": null
+        if ($this->tax_id === null) {
+            unset($data['tax_id']);
+        }
+        if ($this->phone === null) {
+            unset($data['phone']);
+        }
+
+        return $data;
     }
 
     /**
@@ -64,7 +73,7 @@ class Customer implements JsonSerializable
      */
     public function getTaxId(): string
     {
-        return $this->tax_id;
+        return $this->tax_id ?? '';
     }
 
     /**

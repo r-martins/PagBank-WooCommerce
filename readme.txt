@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.57.3
+Stable tag: 4.57.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
@@ -245,6 +245,9 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+= 4.57.4 =
+* Correção: quando CPF ou telefone não eram informados porque o campo foi omitido, o plugin poderia gerar um erro fatal (propriedade não inicializada) ao finalizar uma compra com Boleto.
+
 = 4.57.3 =
 * Correção: mensagens HTML de erro do Cloudflare poderiam ser exibidas no texto de erro no frontent.
 
