@@ -243,7 +243,7 @@ class RecurringsReport extends WC_Admin_Report
     {
 ?>
         <div class="wrap">
-            <h1><?php echo esc_html__('Relatórios - Assinaturas PagBank', 'pagbank-connect'); ?></h1>
+            <h1><?php echo esc_html__('Relatórios - Assinaturas', 'pagbank-connect'); ?></h1>
 
             <!-- Report Cards -->
             <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">

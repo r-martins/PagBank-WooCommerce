@@ -88,16 +88,47 @@ class Functions
     {
         $logger = wc_get_logger();
         $msg = $msg . PHP_EOL . var_export($additional, true);
-        $logger->log($level, $msg, ['source' => 'pagbank-connect']);
+        $logger->log($level, $msg, ['source' => 'pbintegracoes']);
     }
 
 	public static function getCcFlagUrl(string $brand): string
 	{
-		if (file_exists(WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/images/credit-cards/' . $brand . '.svg')) {
-			return plugins_url('public/images/credit-cards/' . $brand . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+		$file = self::normalizeCcBrandSlug($brand);
+		if ($file !== '' && file_exists(WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/images/credit-cards/' . $file . '.svg')) {
+			return plugins_url('public/images/credit-cards/' . $file . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
 		}
 
 		return '';
+	}
+
+	/**
+	 * Map PagBank / Vindi brand names to credit-cards/*.svg filenames.
+	 */
+	public static function normalizeCcBrandSlug(string $brand): string
+	{
+		$brand = strtolower(trim($brand));
+		if ($brand === '') {
+			return '';
+		}
+		$map = [
+			'american_express' => 'amex',
+			'americanexpress' => 'amex',
+			'amex' => 'amex',
+			'diners_club' => 'diners',
+			'dinersclub' => 'diners',
+			'dinnersclub' => 'diners',
+			'diners' => 'diners',
+			'mastercard' => 'mastercard',
+			'master' => 'mastercard',
+			'visa' => 'visa',
+			'elo' => 'elo',
+			'hipercard' => 'hipercard',
+			'hiper' => 'hipercard',
+			'jcb' => 'jcb',
+			'aura' => 'aura',
+		];
+
+		return $map[$brand] ?? preg_replace('/[^a-z0-9_-]/', '', $brand);
 	}
 
     public static function getFriendlyPaymentMethodName(string $method): string
@@ -305,21 +336,6 @@ class Functions
     }
 
     /**
-     * Validates if the generated QrCode is valid (BETA)
-     * @param $pixCode
-     *
-     * @return bool
-     */
-    public static function isValidPixCode($pixCode): bool
-    {
-        if (strpos($pixCode, 'br.gov.bcb.pix') !== false && strpos($pixCode, 'pagseguro.com') !== false) {
-            return true;
-        }
-        
-        return false;
-    }
-
-    /**
      * Adds a meta query filter to the main query
      * @return void
      */
@@ -392,11 +408,7 @@ class Functions
                 'status'       => 'pending',
                 'date_created' => '<'.$expiredDate,
                 'meta_query'   => [
-                    [
-                        'key'     => 'pagbank_payment_method',
-                        'value'   => 'pix',
-                        'compare' => '='
-                    ]
+                    OrderMeta::metaQueryEquals('payment_method', 'pix'),
                 ]
             ]);
         }
@@ -413,11 +425,7 @@ class Functions
             ],
             'meta_query'     => [
                 'relation' => 'AND',
-                [
-                    'key'     => 'pagbank_payment_method',
-                    'value'   => 'pix',
-                    'compare' => '='
-                ]
+                OrderMeta::metaQueryEquals('payment_method', 'pix'),
             ],
         );
 
@@ -477,11 +485,7 @@ class Functions
                 'orderby'      => 'date',
                 'order'        => 'ASC',
                 'meta_query'   => [
-                    [
-                        'key'     => 'pagbank_payment_method',
-                        'value'   => '',
-                        'compare' => '!='
-                    ]
+                    OrderMeta::metaQueryEquals('payment_method', '', '!='),
                 ]
             ]);
         }
@@ -499,11 +503,7 @@ class Functions
             ],
             'meta_query'     => [
                 'relation' => 'AND',
-                [
-                    'key'     => 'pagbank_payment_method',
-                    'value'   => '',
-                    'compare' => '!='
-                ]
+                OrderMeta::metaQueryEquals('payment_method', '', '!='),
             ],
         );
 

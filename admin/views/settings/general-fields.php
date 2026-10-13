@@ -8,7 +8,7 @@ return array(
         'title'       => esc_html( __( 'Connect Key', 'pagbank-connect' ) ),
         'type'        => 'text',
         'description' => esc_html(  __(
-			'Informe sua Connect Key, obtida após Obter as Credenciais. Este NÃO é o token PagBank.',
+			'Informe sua Connect Key, obtida após Obter as Credenciais. Este NÃO é o token PagBank/Vindi.',
 			'pagbank-connect'
 		) ),
         'default'     => '',
@@ -17,8 +17,9 @@ return array(
         'required'    => true,
         'validate' => 'validate-connectkey',
         'custom_attributes' => [
-            'maxlength' => 40,
-            'minlength' => 40,
+            // PagBank + Vindi (new) = 40 chars; legacy shorter CONVD… OK
+            'maxlength' => 64,
+            'minlength' => 20,
 		]
 	],
 	'general' => [
@@ -34,7 +35,7 @@ return array(
         'desc_tip' => true,
         'description' => esc_html(
             __(
-                'PagBank não aceita pedidos inferiores a R$1,00',
+                'O Gateway não aceita pedidos inferiores a R$1,00',
                 'pagbank-connect'
             )),
         'default' => 'no',
@@ -53,28 +54,20 @@ return array(
         'default' => 'no',
     ],
     'enable_proxy' => [
-        'title'       => esc_html(__('Notificações PagBank', 'pagbank-connect')),
+        'title'       => esc_html(__('Notificações', 'pagbank-connect')),
         'label'       => esc_html(__('Usar rota alternativa (Proxy)', 'pagbank-connect')),
         'type'        => 'checkbox',
         'desc_tip'    => false,
         'description' => __(
-            'Alguns provedores barram notificações enviadas pelo PagBank. Ao marcar essa opção,'
-            . ' a notificação será encaminhada por outra rota.',
+            'Alguns provedores barram notificações. Ao marcar essa opção, a notificação será encaminhada por outra rota. Com Connect Key Vindi, a rota alternativa já é aplicada automaticamente.',
             'pagbank-connect'
         ),
         'default'     => 'no',
     ],
-	'title' => [
-        'title'       => esc_html( __( 'Título Principal' , 'pagbank-connect' ) ),
-        'type'        => 'text',
-        'description' => esc_html( __( 'Nome do meio de pagamento a ser exibido no radio button do checkout.', 'pagbank-connect' ) ),
-        'default'     => esc_html( __( 'PagBank UOL', 'pagbank-connect' ) ),
-        'desc_tip'    => true,
-        'required'    => true,
-        'custom_attributes' => [
-            'maxlength' => 40,
-		]
-	],
+	// 'title' intentionally omitted from the form (was "Título Principal").
+	// Value stays in woocommerce_rm-pagbank_settings when already saved; new installs
+	// fall back to Gateway::$title / Params::getConfig defaults ("PB Integrações").
+	// Legacy only: getMethodTitle for rm-pagbank + ps_connect_method. Checkout uses cc/pix/boleto titles.
     'shipping_param' => [
         'title'		=> __('Endereço de Entrega', 'pagbank-connect'),
         'type'		=> 'select',
@@ -82,9 +75,9 @@ return array(
             .'target="_blank">' . __('Saiba mais', 'pagbank-connect') . '</a>',
         'default'	=> '',
         'options'	=> [
-            ''		    => __('Fornecer ao PagBank sempre que aplicável', 'pagbank-connect'),
+            ''		    => __('Fornecer ao Gateway sempre que aplicável', 'pagbank-connect'),
             'validate'	=> __('Não fornecer se estiver incompleto', 'pagbank-connect'),
-            'never'		=> __('Nunca fornecer ao PagBank', 'pagbank-connect'),
+            'never'		=> __('Nunca fornecer ao Gateway', 'pagbank-connect'),
         ],
     ],
     'show_payment_icons' => [
@@ -151,12 +144,12 @@ return array(
     ],
     'hide_items' => [
         'title' => esc_html(__( 'Ocultar itens do pedido', 'pagbank-connect')),
-        'label' => esc_html(__('Ocultar itens do pedido na requisição de pagamento enviada ao PagBank.', 'pagbank-connect')),
+        'label' => esc_html(__('Ocultar itens do pedido na requisição de pagamento enviada à API.', 'pagbank-connect')),
         'type'  => 'checkbox',
         'desc_tip' => true,
         'description' => esc_html(
             __(
-                'O uso deste recurso pode impactar negativamente a análise de risco do PagBank, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
+                'O uso deste recurso pode impactar negativamente a análise de risco, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
                 'pagbank-connect'
             )
         ),
@@ -165,12 +158,12 @@ return array(
 
     'hash_email_active' => [
         'title' => esc_html(__( 'Ocultar e-mail do comprador', 'pagbank-connect')),
-        'label' => esc_html(__('Envia o e-mail do comprador como hash@pagbankconnect.pag para o PagBank.', 'pagbank-connect')),
+        'label' => esc_html(__('Envia o e-mail do comprador como hash@pbintegracoes.cc para a API.', 'pagbank-connect')),
         'type'  => 'checkbox',
         'desc_tip' => true,
         'description' => esc_html(
             __(
-                'O uso deste recurso pode impactar negativamente a análise de risco do PagBank, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
+                'O uso deste recurso pode impactar negativamente a análise de risco, especialmente em casos de chargeback, e reduzir a taxa de aprovação.',
                 'pagbank-connect'
             )
         ),

@@ -1,23 +1,6 @@
-//add listener to the buttons in .ps-connect-buttons-container and display the fieldsets based on the button clicked
 jQuery(document).ready(function($) {
 
-    jQuery(document).on('click', '.ps-connect-buttons-container button', function(e) {
-        let methodName = jQuery(this).attr('id').replace('btn-pagseguro-', '')
-
-        //disable all fieldsets with .ps-connect-method
-        jQuery('.ps_connect_method').hide()
-        jQuery('.ps_connect_method').attr('disabled', true)
-
-        //enable the fieldset with the id of the button clicked
-        jQuery('#ps-connect-payment-' + methodName).show()
-        jQuery('#ps-connect-payment-' + methodName).removeAttr('disabled')
-
-        jQuery('.ps-connect-buttons-container button').removeClass('active')
-        jQuery(this).addClass('active')
-
-    })
-
-    // Update order summary when payment method changes in order to update the order total with pix discounts if any
+    // Update order summary when payment method changes (PIX/boleto discounts, etc.)
     jQuery(document.body).on('change', 'input[name="payment_method"]', function() {
         jQuery('body').trigger('update_checkout');
     });

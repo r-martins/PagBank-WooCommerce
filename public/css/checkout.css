@@ -5,18 +5,6 @@ Se desejar fazer alterações visuais, faça isso em Aparência > Personalizar >
 Do not modify this file.
 If you wish to make visual changes, do so in Appearance> Customize> Additional CSS and rewrite the rule you want to modify.
  */
-.payment_method_rm-pagbank .ps-connect-buttons-container button.ps-button.active{
-    filter: brightness(0.99); /* darkens the selected payment method */
-	border: 1px solid #ccc;
-}
-li.payment_method_rm-pagbank label{
-    /*display: flex;*/
-}
-
-li.payment_method_rm-pagbank label img{
-    max-width: calc(50px + 6vw);
-}
-
 .wc_payment_method.payment_method_rm-pagbank-pix > label:nth-child(2) > img:nth-child(1),
 .wc_payment_method.payment_method_rm-pagbank-cc > label:nth-child(2) > img:nth-child(1),
 .wc_payment_method.payment_method_rm-pagbank-boleto > label:nth-child(2) > img:nth-child(1),
@@ -28,45 +16,14 @@ label[for="payment_method_rm-pagbank-redirect"] > img:nth-child(1)
     max-height: 35px;
 }
 
-li.payment_method_rm-pagbank label img {
-    width: 8rem;
-}
-
-.ps-connect-buttons-container{
-	display: flex;
-}
-
-.payment_method_rm-pagbank .ps-connect-buttons-container button.ps-button{
-	flex-grow: 1;
-	border: 0;
-	margin: 0 0.5rem;
-	padding: 0.5rem;
-	cursor: pointer;
-	transition: filter 0.2s;
-	background-color: unset;
-	max-width: 5rem;
-}
-.ps-button svg {
-	/*filter: contrast(0%);*/
-}
-
-.ps_connect_method .form-row-full{
-	clear: both;
-}
-
 #payment .payment_method_rm-pagbank-cc .wc-credit-card-form,
-#payment .payment_method_rm-pagbank .payment_box .ps_connect_method,
 #payment-method .rm-pagbank-cc {
 	word-break: normal;
 }
 
-#ps-connect-payment-boleto, #ps-connect-payment-cc, #ps-connect-payment-pix, #wc-rm-pagbank-cc-form {
+#wc-rm-pagbank-cc-form {
 	border: 0;
 }
-
-/*#btn-pagseguro-cc, #btn-pagseguro-boleto, #btn-pagseguro-pix {*/
-/*    background-color: unset;*/
-/*}*/
 
 /*region pagbank cc flags*/
 #payment-method .rm-pagbank-cc .card-number-input.elo,
@@ -164,4 +121,3 @@ li.payment_method_rm-pagbank label img {
 .woocommerce-checkout #payment ul.payment_methods li.payment_method_rm-pagbank-redirect img {
     max-height: 24px;
 }
-

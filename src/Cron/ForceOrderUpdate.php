@@ -7,6 +7,7 @@ use RM_PagBank\Connect\Exception;
 use RM_PagBank\Connect\OrderProcessor;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class ForceOrderUpdate
@@ -28,13 +29,13 @@ class ForceOrderUpdate
         $orders = Functions::getPagBankPendingOrders();
 
         foreach ($orders as $order) {
-            $pagbankOrderId = $order->get_meta('pagbank_order_id');
+            $pagbankOrderId = OrderMeta::get($order, 'order_id');
             if (!$pagbankOrderId) {
                 continue;
             }
 
             $now = strtotime(gmdate('Y-m-d H:i:s'));
-            $lastCheck = (int)$order->get_meta('_pagbank_last_check');
+            $lastCheck = (int)OrderMeta::get($order, '_last_check');
 
             /** @var \WC_DateTime $createdAt */
             $createdAt = $order->get_date_created()->getTimestamp();
@@ -44,7 +45,7 @@ class ForceOrderUpdate
                 continue;
             }
 
-            $order->update_meta_data('_pagbank_last_check', $now);
+            OrderMeta::set($order, '_last_check', $now);
             $order->save();
 
             try {
@@ -65,7 +66,7 @@ class ForceOrderUpdate
     
     private static function shouldUpdateOrder($order, int $lastCheck, int $createdAt, int $now): bool
     {
-        $paymentMethod = $order->get_meta('pagbank_payment_method');
+        $paymentMethod = OrderMeta::get($order, 'payment_method');
         $hoursFromCreation = ($now - $createdAt) / 3600;
     
         if ($lastCheck === 0) {

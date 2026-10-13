@@ -1,6 +1,6 @@
-# PagBank Connect (PagSeguro) - Nova Geração
-## Com Descontos nas Taxas Oficiais
-*Por Ricardo Martins - Parceiro Oficial PagBank desde 2015.*
+# PB Integrações (antigo PagBank Integrações)
+## Integre com os principais meios de pagamento do Brasil.
+*Por Ricardo Martins - Parceiro Oficial dos melhores gateways nacionais desde 2014.*
 
 [![Versão mínima do PHP](https://img.shields.io/badge/php-%3E%3D%207.4-8892BF.svg?style=flat-square)](https://php.net/)
 [![Última versão](https://img.shields.io/github/v/release/r-martins/PagBank-WooCommerce)](https://github.com/r-martins/PagBank-WooCommerce)
@@ -11,32 +11,35 @@
 [![Deploy pro WordPress SVN](https://github.com/r-martins/PagBank-WooCommerce/actions/workflows/releaseToSvnWp.yaml/badge.svg)](https://github.com/r-martins/PagBank-WooCommerce/actions/workflows/releaseToSvnWp.yaml)
 
 
-Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
+Conheça a Nova Geração das nossas integrações com **Vindi e PagBank** (v. 5.0+).
 
-**Aceite Pix, Cartão de Crédito e Boleto de forma transparente e economize nas taxas oficiais.**
+Veja mais detalhes no nosso **[site oficial](https://pbintegracoes.com/woocommerce/?utm_source=github-woo)**.
 
-**Integrado com EnvioFácil (economize até 70% no frete ao usar PagBank)¹**
+**Aceite Pix, Cartão de Crédito, Boleto e Pagamentos Recorrentes** de forma transparente e economize nas taxas oficiais dos principais parceiros.
+
+**Integrado com EnvioFácil (economize até 70% no frete)¹**
+
 
 <details>
   <summary>Veja alguns Screenshots (clique aqui para expandir)</summary>
-  <img src="https://i.imgur.com/epgmWWr.jpg" alt="Cartão de Crédito na visão do cliente" title="Cartão de Crédito na visão do cliente"/>
-  <img src="https://i.imgur.com/FwTz73C.jpg" alt="PIX - Tela de Sucesso" title="PIX - Tela de Sucesso"/>
-  <img src="https://i.imgur.com/wE3YBXX.jpg" alt="Configurações de cartão de crédito" title="Configurações de cartão de crédito"/>
-  <img alt="PIX e Boleto - Configurações" src="https://i.imgur.com/nhwMhUO.jpg" title="PIX e Boleto - Configurações"/>
-  <img alt="Admin - Tela do Pedido" src="https://i.imgur.com/CIgTLnv.jpg" title="Admin - Tela do Pedido"/>
-  <img alt="Envio Fácil" src="https://i.imgur.com/nQlOBfx.jpg" title="Envio Fácil"/>  
-  <img alt="3D Secure" src="https://i.imgur.com/hqhgWfM.jpg" title="3D Secure"/>  
-  <img alt="Venda Recorrente com Woo" src="https://imgur.com/7pQNwkv.jpg" title="Pedidos Recorrentes"/>  
+  <img src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-1.png" alt="Cartão de Crédito na visão do cliente" title="Cartão de Crédito na visão do cliente"/>
+  <img src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-2.png" alt="PIX - Tela de Sucesso" title="PIX - Tela de Sucesso"/>
+  <img src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-3.png" alt="Configurações de cartão de crédito" title="Configurações de cartão de crédito"/>
+  <img alt="PIX e Boleto - Configurações" src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-4.png" title="PIX e Boleto - Configurações"/>
+  <img alt="Admin - Tela do Pedido" src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-5.png" title="Admin - Tela do Pedido"/>
+  <img alt="Envio Fácil" src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-6.png" title="Envio Fácil"/>  
+  <img alt="3D Secure" src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-7.png" title="3D Secure"/>  
+  <img alt="Venda Recorrente com Woo" src="https://cdn.jsdelivr.net/gh/r-martins/PbIntegracoes-Assets/screenshots/woocommerce/Screenshots%20Woo%20v5/screenshot-8.png" title="Pedidos Recorrentes"/>  
 </details>
 
 # Descrição
 
 <a href="https://www.youtube.com/watch?v=L9Oans5dZ7M"><img src="https://i.imgur.com/nyrybNq.jpg"/></a>
 
-Esta é a forma mais fácil de integrar sua loja com PagBank (PagSeguro).
+Esta é a forma mais fácil de integrar sua loja com Vindi, PagBank (PagSeguro) e outros gateways de pagamento (em breve).
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
 
-Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
+Criado por Ricardo Martins, esta é a 5ª geração das integrações disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de **1 bilhão de reais transacionados** em nossas integrações.
 
 # Instalação
 
@@ -49,17 +52,17 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 * Baixe o [arquivo zip](https://github.com/r-martins/PagBank-WooCommerce/archive/refs/heads/master.zip)
 * Crie um diretorio em wp-content/plugins chamado rm-pagbank
 * Descompacte o conteúdo do arquivo no diretório criado
-* Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
+* Navegue até Plugins > Plugins instalados, e ative o plugin PB Integrações
 * Ative o Checkout em Blocos *ou* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 * Rode o comando `npm install` e `npm run build` na raiz do plugin para compilar os arquivos frontend.
 
 ## Instalação automática
-* Navegue até Plugins > Adicionar Novo e procure por \"PagBank Ricardo Martins\"
+* Navegue até Plugins > Adicionar Novo e procure por \"PB Integrações\"
 * Clique no botão para instalar e ative o plugin
 * Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 # Configuração
-* Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
+* Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PB Integrações
 * Clique no PagBank Connect para acessar as configurações do módulo
 * Clique em \"Obter Credenciais\". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação.
 * Ao clicar no modelo de recebimento desejado, você será levado para o site do PagBank, onde deverá se logar com sua conta e autorizar nossa aplicação.
@@ -72,8 +75,8 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 
 * Ter WooCommerce 4.0 ou superior
 * PHP 7.4 ou superior
-* Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank (e obter a sua Connect Key)
-* [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/?utm_source=github&utm_medium=readme&utm_content=pre-requisitos) em sua conta PagBank.
+* Não é necessário ter conta na Vindi
+* Ter um CPF ou CNPJ válidos e ativos no Brasil e uma conta bancária de mesma titularidade para receber seus pagamentos
 * Usar checkout em Blocos do WooCommerce **ou** Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 # Perguntas Frequentes (FAQ)
@@ -149,5 +152,5 @@ Ao usar este plugin você concorda com os [Termos de Uso e Política de Privacid
 Para compilar os arquivos frontend digite `npm run build` no terminal, na raiz do plugin. Se desejar automatizar este processo, copie o arquivo `./git-hooks/post-checkout` para `.git/hooks/` e torne-o executável (`chmod +x .git/hooks/post-checkout`).
 
 ---
-¹ A Integração com Envio Fácil está disponível apenas para lojas com integração 14 ou 30 dias. Embora utilizemos as APIs do PagSeguro para isso, eles não encorajam o uso dessas APIs. Use com cautela. O PagSeguro não oferece suporte para esta integração.
+¹ A Integração com Envio Fácil está disponível para Connect Keys de 14 ou 30 dias (PagBank `CONPS14`/`CONPS30` ou Vindi `CONVD14`/`CONVD30`) e Vindi Flex (`CONVDFLX`). Sandbox e Minhas Taxas PagBank (`CONPSFLEX`) não são elegíveis. Embora utilizemos as APIs do PagSeguro para isso, eles não encorajam o uso dessas APIs. Use com cautela. O PagSeguro não oferece suporte para esta integração.
 

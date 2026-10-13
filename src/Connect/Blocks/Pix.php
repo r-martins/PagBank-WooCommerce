@@ -5,6 +5,7 @@ use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodTyp
 use RM_PagBank\Connect\Standalone\Pix as PixGateway;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
+use RM_PagBank\Partner\Branding;
 
 final class Pix extends AbstractPaymentMethodType
 {
@@ -78,12 +79,15 @@ final class Pix extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_data() {
+        $branding = new Branding();
+
         return array(
-            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pix via PagBank',
+            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pix',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'unavailableMessage' => $branding->paymentUnavailableBelowMinimumMessage(),
             'instructions' => $this->gateway->get_option('pix_instructions'),
             'expirationTime' => Params::convertMinutesToHumanTime((int)$this->gateway->get_option('pix_expiry_minutes')),
             'hasDiscount' => $this->gateway->get_option('pix_discount'),

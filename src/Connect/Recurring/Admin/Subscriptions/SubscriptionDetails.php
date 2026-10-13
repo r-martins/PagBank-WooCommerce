@@ -131,6 +131,14 @@ class SubscriptionDetails extends WP_List_Table
         $this->items[] = ['name' => 'Valor Recorrente', 'value' => $this->subscription->recurring_amount];
         $this->items[] = ['name' => 'Status', 'value' => $status];
 
+        $paymentInfoRow = Recurring::normalizePaymentInfo($this->subscription->payment_info ?? null);
+        if (!empty($paymentInfoRow['needs_retoken'])) {
+            $this->items[] = [
+                'name' => 'Retoken',
+                'value' => __('Aguardando atualização de cartão pelo cliente', 'pagbank-connect'),
+            ];
+        }
+
         if ($this->subscription->recurring_trial_period) {
             $this->items[] = ['name' => 'Período de testes (dias)', 'value' => $this->subscription->recurring_trial_period];
         }

@@ -1,7 +1,9 @@
 <?php
 namespace RM_PagBank\Connect\Recurring\Admin\Subscriptions;
 
+use RM_PagBank\Helpers\OrderMeta;
 use RM_PagBank\Helpers\Recurring;
+use RM_PagBank\Partner\Partner;
 use WP_List_Table;
 
 if ( ! class_exists ( 'WP_List_Table' ) ) {
@@ -30,6 +32,7 @@ class SubscriptionList extends WP_List_Table
             'id'                 => __('ID', 'rm-pagbank'),
             'initial_order_id'   => __('Pedido Inicial', 'rm-pagbank'),
             'view'                 => __('Visualizar', 'rm-pagbank'),
+            'partner'            => __('Partner', 'pagbank-connect'),
             'recurring_amount'   => __('Valor Recorrente', 'rm-pagbank'),
             'status'             => __('Status', 'rm-pagbank'),
             'recurring_type'     => __('Tipo Recorrente', 'rm-pagbank'),
@@ -77,6 +80,48 @@ class SubscriptionList extends WP_List_Table
     public function column_view($item)
     {
         return sprintf('<a href="?page=%s&action=%s&id=%s">Visualizar</a>', 'rm-pagbank-subscriptions-view', 'view', $item['id']);
+    }
+
+    public function column_partner($item)
+    {
+        $partner = $this->resolveSubscriptionPartner($item);
+        $isVindi = $partner === Partner::VINDI;
+        $file = $isVindi ? 'vindi/vindi-icon.svg' : 'pagseguro-icon.svg';
+        $name = $isVindi ? 'Vindi' : 'PagBank';
+        $url = plugins_url('public/images/' . $file, WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
+
+        return sprintf(
+            '<img src="%s" alt="%s" title="%s" style="height:18px;width:auto;vertical-align:middle;" />',
+            esc_url($url),
+            esc_attr($name),
+            esc_attr($name)
+        );
+    }
+
+    /**
+     * Prefer payment_info.partner (card saved with Vindi), then order meta, else PagBank.
+     *
+     * @param array<string,mixed> $item
+     */
+    private function resolveSubscriptionPartner(array $item): string
+    {
+        $paymentInfo = json_decode((string) ($item['payment_info'] ?? ''), true);
+        if (is_array($paymentInfo) && (($paymentInfo['partner'] ?? '') === Partner::VINDI)) {
+            return Partner::VINDI;
+        }
+
+        $orderId = (int) ($item['initial_order_id'] ?? 0);
+        if ($orderId > 0) {
+            $order = wc_get_order($orderId);
+            if ($order instanceof \WC_Order) {
+                $fromOrder = OrderMeta::readPartner($order);
+                if ($fromOrder !== '') {
+                    return $fromOrder;
+                }
+            }
+        }
+
+        return Partner::PAGBANK;
     }
 
     public function prepare_items()

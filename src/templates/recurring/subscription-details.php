@@ -23,6 +23,18 @@ if ( ! isset($subscription->id) || ! $subscription->id ) {
 }
 
 wc_print_notices();
+
+$paymentInfoDetails = Recurring::normalizePaymentInfo($subscription->payment_info ?? null);
+if (!empty($paymentInfoDetails['needs_retoken'])) {
+    $updateUrl = wc_get_endpoint_url('rm-pagbank-subscriptions-update', $subscription->id, wc_get_page_permalink('myaccount'));
+    echo '<div class="woocommerce-info">';
+    echo esc_html__(
+        'Atualize o cartão para continuar esta assinatura (o processador de pagamento da loja mudou).',
+        'pagbank-connect'
+    );
+    echo ' <a href="' . esc_url($updateUrl) . '">' . esc_html__('Atualizar cartão', 'pagbank-connect') . '</a>';
+    echo '</div>';
+}
 ?>
 <section class="woocommerce-order-details">
     <?php do_action( 'rm_pagbank_recurring_details_before_subscription_table', $subscription ); ?>

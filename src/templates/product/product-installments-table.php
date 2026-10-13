@@ -42,7 +42,7 @@ foreach ($installments as $installment) {
 ?>
 
 <div class="woocommerce pagbank-connect-installments">
-    <h2><?php echo esc_html(__('Parcelamento PagBank', 'pagbank-connect'));?></h2>
+    <h2><?php echo esc_html(__('Opções de Parcelamento', 'pagbank-connect'));?></h2>
     <table class="shop_table shop_table_responsive">
         <tbody>
             <?php if ($installmentInfo) {

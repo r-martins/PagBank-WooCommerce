@@ -27,7 +27,7 @@ $maxInterestFree--;
     <p><?php echo sprintf(
         __(
             'Em até <strong class="installment-x">%sx</strong> de <strong class="installment-amount">'
-            .'R$ %s</strong> sem juros no Cartão de Crédito com PagBank',
+            .'R$ %s</strong> sem juros no Cartão de Crédito',
             'pagbank-connect'
         ),
             $args[$maxInterestFree]->installments,

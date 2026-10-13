@@ -2,6 +2,8 @@
 
 namespace RM_PagBank\Connect;
 
+use RM_PagBank\Helpers\OrderMeta;
+
 /**
  * Class OrderMetaBoxes
  * 
@@ -48,7 +50,7 @@ class OrderMetaBoxes
         }
         
         $order = wc_get_order($order_id);
-        if (!$order || !$order->get_meta('_pagbank_split_applied')) {
+        if (!$order || !OrderMeta::get($order, '_split_applied')) {
             return;
         }
         
@@ -155,7 +157,7 @@ class OrderMetaBoxes
         }
         
         $order = wc_get_order($order_id);
-        if ($order && $order->get_meta('_pagbank_split_applied')) {
+        if ($order && OrderMeta::get($order, '_split_applied')) {
             add_meta_box(
                 'pagbank_split_details',
                 __('PagBank - Detalhes do Split', 'pagbank-connect'),
@@ -187,7 +189,7 @@ class OrderMetaBoxes
             return;
         }
 
-        $split_data = $order->get_meta('_pagbank_split_data');
+        $split_data = OrderMeta::get($order, '_split_data');
         if (!$split_data) {
             echo '<p>' . __('Dados de split não encontrados.', 'pagbank-connect') . '</p>';
             return;
@@ -326,7 +328,7 @@ class OrderMetaBoxes
         
         // Add button to view full split details
         // Show button if split is applied (either with split_id for credit card or with split_data for Pix)
-        $split_id = $order->get_meta('_pagbank_split_id');
+        $split_id = OrderMeta::get($order, '_split_id');
         if ($split_data || $split_id) {
             echo '<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">';
             echo '<button type="button" class="button button-secondary pagbank-view-split-details" data-order-id="' . esc_attr($order->get_id()) . '" data-split-id="' . esc_attr($split_id ?: '') . '" data-has-split-data="' . ($split_data ? '1' : '0') . '">';
@@ -377,7 +379,7 @@ class OrderMetaBoxes
             // If we have split_id, fetch from API (credit card payments)
             if ($split_id) {
                 // Check if we're in sandbox mode
-                $is_sandbox = $order->get_meta('pagbank_is_sandbox') == 1;
+                $is_sandbox = OrderMeta::get($order, 'is_sandbox') == 1;
                 
                 // Build split URL for fetchSplitDetails
                 // In production, fetchSplitDetails will use authenticated API
@@ -396,7 +398,7 @@ class OrderMetaBoxes
             } 
             // If no split_id but we have split_data saved (Pix payments), use saved data
             elseif ($has_split_data) {
-                $split_data = $order->get_meta('_pagbank_split_data');
+                $split_data = OrderMeta::get($order, '_split_data');
                 
                 if (!$split_data) {
                     throw new \Exception('Dados do split não encontrados no pedido.');

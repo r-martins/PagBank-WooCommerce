@@ -15,6 +15,7 @@ use RM_PagBank\Object\InstructionLines;
 use RM_PagBank\Object\PaymentMethod;
 use WC_Data_Exception;
 use WC_Order;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class Boleto
@@ -165,14 +166,15 @@ class Boleto extends Common
 	 */
 	public function getThankyouInstructions($order_id){
         $order = new WC_Order($order_id);
-        $boleto_barcode = $order->get_meta('pagbank_boleto_barcode');
-        $boleto_barcode_formatted = $order->get_meta('pagbank_boleto_barcode_formatted');
-        $boleto_due_date = $order->get_meta('pagbank_boleto_due_date');
-        $boleto_pdf = $order->get_meta('pagbank_boleto_pdf');
-        $boleto_png = $order->get_meta('pagbank_boleto_png');
+        $boleto_barcode = OrderMeta::get($order, 'boleto_barcode');
+        $boleto_barcode_formatted = OrderMeta::get($order, 'boleto_barcode_formatted');
+        $boleto_due_date = OrderMeta::get($order, 'boleto_due_date');
+        $boleto_pdf = OrderMeta::get($order, 'boleto_pdf');
+        $boleto_png = OrderMeta::get($order, 'boleto_png');
+        $is_vindi = OrderMeta::get($order, 'partner') === 'vindi';
         
         // Verificar se o charge está DECLINED
-        $charges = $order->get_meta('pagbank_order_charges');
+        $charges = OrderMeta::get($order, 'order_charges');
         $is_declined = false;
         if (!empty($charges) && is_array($charges)) {
             foreach ($charges as $charge) {
@@ -185,7 +187,7 @@ class Boleto extends Common
         
         // Verificar se há boleto válido (código de barras e links)
         $has_valid_boleto = !empty($boleto_barcode) || !empty($boleto_barcode_formatted);
-        $has_valid_links = !empty($boleto_pdf) || !empty($boleto_png);
+        $has_valid_links = !empty($boleto_pdf) || (!empty($boleto_png) && !$is_vindi);
         
         // Só exibir se não estiver DECLINED e houver boleto válido
         if ($is_declined || (!$has_valid_boleto && !$has_valid_links)) {

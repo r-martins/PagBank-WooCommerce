@@ -19,6 +19,8 @@ class Customer implements JsonSerializable
     private string $email;
     private ?string $tax_id = null;
     private $phone; //type not declared because it can be an array or a Phone object and mixed types are not allowed in PHP 7.4
+    /** @var Address|null Billing address — required by Vindi /v1/billing; omit for PagBank. */
+    private $address = null;
 
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
@@ -30,6 +32,9 @@ class Customer implements JsonSerializable
         }
         if ($this->phone === null) {
             unset($data['phone']);
+        }
+        if ($this->address === null) {
+            unset($data['address']);
         }
 
         return $data;
@@ -98,6 +103,19 @@ class Customer implements JsonSerializable
     public function setPhone($phone): void
     {
         $this->phone = $phone;
+    }
+
+    /**
+     * @return Address|null
+     */
+    public function getAddress()
+    {
+        return $this->address;
+    }
+
+    public function setAddress(Address $address): void
+    {
+        $this->address = $address;
     }
 
 }

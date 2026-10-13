@@ -5,6 +5,7 @@ use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodTyp
 use RM_PagBank\Connect\Standalone\Boleto as BoletoGateway;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
+use RM_PagBank\Partner\Branding;
 
 final class Boleto extends AbstractPaymentMethodType
 {
@@ -78,12 +79,15 @@ final class Boleto extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_data() {
+        $branding = new Branding();
+
         return array(
-            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Boleto via PagBank',
+            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Boleto',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'unavailableMessage' => $branding->paymentUnavailableBelowMinimumMessage(),
             'instructions' => $this->gateway->get_option('boleto_instructions'),
             'expirationTime' => (int)$this->gateway->get_option('boleto_expiry_days'),
             'hasDiscount' => $this->gateway->get_option('boleto_discount'),

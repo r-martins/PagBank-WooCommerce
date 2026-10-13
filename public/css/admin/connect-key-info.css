@@ -121,11 +121,26 @@
     margin-top: 10px;
     color: #d63638;
     font-size: 13px;
+    line-height: 1.45;
+}
+
+/* Sandbox / informational (not an error) */
+.rm-pagbank-connect-key-info.is-warning {
+    color: #b45309;
+}
+
+.rm-pagbank-connect-key-info .rm-pagbank-notice-icon {
+    margin-right: 4px;
 }
 
 .rm-pagbank-connect-key-info .dashicons-warning {
     vertical-align: middle;
     margin-right: 5px;
+}
+
+.rm-pagbank-connect-key-info code {
+    font-size: 12px;
+    word-break: break-all;
 }
 
 .rm-pagbank-doc-link {

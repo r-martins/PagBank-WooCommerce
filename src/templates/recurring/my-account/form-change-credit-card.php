@@ -65,6 +65,14 @@ $gateway = array_key_exists('rm-pagbank-cc',$available_gateways) ? $available_ga
                 ?>
                 <input type="hidden" <?php echo $gateway->field_name('card-encrypted');?> id="<?php echo esc_attr( Connect::DOMAIN )?>-card-encrypted" />
                 <input type="hidden" <?php echo $gateway->field_name('card-3d');?> id="<?php echo esc_attr( Connect::DOMAIN )?>-card-3d" />
+                <input type="hidden" name="rm-pagbank-payment-company-code" id="<?php echo esc_attr( Connect::DOMAIN ); ?>-payment-company-code" value="" />
+                <input type="hidden" name="rm-pagbank-payment-profile-id" id="rm-pagbank-payment-profile-id" value="" />
+                <input type="hidden" name="rm-pagbank-vindi-customer-id" id="rm-pagbank-vindi-customer-id" value="" />
+                <input type="hidden" name="rm-pagbank-card-3ds-payload" id="rm-pagbank-card-3ds-payload" value="" />
+                <?php
+                $recurringCents = (int) round((float) ($subscription->recurring_amount ?? 0) * 100);
+                ?>
+                <input type="hidden" id="rm-pagbank-change-card-amount-cents" value="<?php echo esc_attr((string) $recurringCents); ?>" />
                 <div class="clear"></div>
             </fieldset>
             <input type="hidden" name="ps_connect_method" value="cc"/>

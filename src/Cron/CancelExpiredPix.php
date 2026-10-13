@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 use Exception;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class responsible to cancel order with expired PIX payment
@@ -38,7 +39,11 @@ class CancelExpiredPix
 
             //send cancelled order email to customer
             $order->add_order_note(
-                __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
+                sprintf(
+                    /* translators: %s = Vindi or PagBank */
+                    __('%s: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
+                    \RM_PagBank\Partner\Branding::notePrefix($order)
+                ),
                 true
             );
         }
@@ -52,7 +57,7 @@ class CancelExpiredPix
      */
     private static function wasPixOrderPaid($order):bool
     {
-        $pagBankOrderId = $order->get_meta('pagbank_order_id');
+        $pagBankOrderId = OrderMeta::get($order, 'order_id');
         if (!$pagBankOrderId) {
             return false;
         }

@@ -1,3 +1,121 @@
+/**
+ * Parse BR money text (e.g. "R$ 1.234,56") to integer cents.
+ * parseFloat("60,67") === 60 — never use parseFloat on BR decimals directly.
+ * Defined on window: used inside document.ready and by handlers outside it.
+ */
+window.rmPagbankParseBrlToCents = function (raw) {
+    if (raw === null || raw === undefined) {
+        return 0;
+    }
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+        return Math.round(raw);
+    }
+    let s = String(raw).replace(/<[^>]*>/g, '').trim();
+    s = s.replace(/[^\d.,]/g, '');
+    if (!s) {
+        return 0;
+    }
+    if (s.indexOf(',') >= 0 && s.indexOf('.') >= 0) {
+        // 1.234,56 → 1234.56
+        s = s.replace(/\./g, '').replace(',', '.');
+    } else if (s.indexOf(',') >= 0) {
+        // 60,67 → 60.67
+        s = s.replace(',', '.');
+    }
+    const n = parseFloat(s);
+    if (!Number.isFinite(n)) {
+        return 0;
+    }
+    return Math.round(n * 100);
+};
+
+/**
+ * Map PAN → Vindi payment_company_code.
+ * Elo/Hipercard BINs overlap Visa/MC ranges — check BR brands before Visa.
+ * Codes: mastercard, visa, american_express, diners_club, elo, hipercard, jcb.
+ */
+window.rmPagbankDetectVindiPaymentCompanyCode = function (cardNumber) {
+    const number = String(cardNumber || '').replace(/\D/g, '');
+    if (!number) {
+        return 'mastercard';
+    }
+    const elo = new RegExp(
+        '^((451416)|(509091)|(636368)|(636297)|(504175)|(438935)|(40117[8-9])|(45763[1-2])|' +
+        '(457393)|(431274)|(50990[0-2])|(5099[7-9][0-9])|(50996[4-9])|(509[1-8][0-9][0-9])|' +
+        '(5090(0[0-2]|0[4-9]|1[2-9]|[24589][0-9]|3[1-9]|6[0-46-9]|7[0-24-9]))|' +
+        '(5067(0[0-24-8]|1[0-24-9]|2[014-9]|3[0-379]|4[0-9]|5[0-3]|6[0-5]|7[0-8]))|' +
+        '(6504(0[5-9]|1[0-9]|2[0-9]|3[0-9]))|' +
+        '(6504(8[5-9]|9[0-9])|6505(0[0-9]|1[0-9]|2[0-9]|3[0-8]))|' +
+        '(6505(4[1-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-8]))|' +
+        '(6507(0[0-9]|1[0-8]))|(65072[0-7])|(6509(0[1-9]|1[0-9]|20))|' +
+        '(6516(5[2-9]|6[0-9]|7[0-9]))|(6550(0[0-9]|1[0-9]))|' +
+        '(6550(2[1-9]|3[0-9]|4[0-9]|5[0-8])))\\d*$'
+    );
+    const hipercard = /^((606282)|(637095)|(637568)|(637599)|(637609)|(637612))\d*$/;
+    const amex = /^3[47]\d*$/;
+    const diners = /^(3(0[0-5]|095|6|[8-9]))\d*$/;
+    const jcb = /^(?:2131|1800|35\d{3})\d*$/;
+    const mastercard = /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)\d*$/;
+    const visa = /^4\d*$/;
+
+    // Order matters: Elo/Hipercard before Visa/Mastercard.
+    if (elo.test(number)) {
+        return 'elo';
+    }
+    if (hipercard.test(number)) {
+        return 'hipercard';
+    }
+    if (amex.test(number)) {
+        return 'american_express';
+    }
+    if (diners.test(number)) {
+        return 'diners_club';
+    }
+    if (jcb.test(number)) {
+        return 'jcb';
+    }
+    if (mastercard.test(number)) {
+        return 'mastercard';
+    }
+    if (visa.test(number)) {
+        return 'visa';
+    }
+    return 'mastercard';
+};
+
+window.rmPagbankResolveCheckoutAmountCents = function (selectedInstallments) {
+    if (typeof window.ps_cc_installments !== 'undefined' && Array.isArray(window.ps_cc_installments)) {
+        const row = window.ps_cc_installments.find(function (installment) {
+            return String(installment.installments) === String(selectedInstallments);
+        });
+        if (row && row.total_amount_raw !== undefined && row.total_amount_raw !== null) {
+            const raw = Number(row.total_amount_raw);
+            if (Number.isFinite(raw) && raw >= 100) {
+                return Math.round(raw);
+            }
+        }
+    }
+    // Subscription change-card page: no cart — use recurring amount from the form.
+    const changeCardAmount = Number(jQuery('#rm-pagbank-change-card-amount-cents').val() || 0);
+    if (Number.isFinite(changeCardAmount) && changeCardAmount >= 100) {
+        return Math.round(changeCardAmount);
+    }
+    if (typeof pagseguro_connect_cart_total_cents !== 'undefined') {
+        const injected = Number(pagseguro_connect_cart_total_cents);
+        if (Number.isFinite(injected) && injected >= 100) {
+            return Math.round(injected);
+        }
+        if (Number.isFinite(injected) && injected > 0) {
+            return Math.round(injected);
+        }
+    }
+    if (Number.isFinite(changeCardAmount) && changeCardAmount > 0) {
+        return Math.round(changeCardAmount);
+    }
+    const html = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value').last().html();
+    return window.rmPagbankParseBrlToCents(html);
+};
+
 jQuery(document).ready(function ($) {
     window.ps_cc_bin = '';
 
@@ -8,20 +126,85 @@ jQuery(document).ready(function ($) {
      */
     let encryptCard = function () {
         let cardHasChanged = (window.ps_cc_has_changed === true);
-        console.debug('PagBank: encryptCard', cardHasChanged);
+        console.debug('PB Integrações: encryptCard', cardHasChanged);
         let card, cc_number, cc_cvv;
         //replace trim and remove duplicated spaces from holder name
         let holder_name = jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' '); //dupl spaces
         holder_name = holder_name.trim().replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, ''); //specials
+        cc_number = cardHasChanged ? jQuery('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
+        cc_cvv = cardHasChanged ? jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
+
+        // Vindi: tokenize via public payment_profiles (never send PAN to our WS)
+        if (typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi') {
+            try {
+                const expiryRaw = (jQuery('#rm-pagbank-card-expiry').val() || '').toString();
+                const expiryParts = expiryRaw.split('/');
+                // Strip spaces BEFORE slice — " 44 " → slice(-2) would become "4 " → "4" (year 2004).
+                let expMonth = (expiryParts[0] || '').replace(/\D/g, '');
+                let expYear = (expiryParts[1] || '').replace(/\D/g, '').slice(-2);
+                expMonth = ('0' + expMonth).slice(-2);
+                if (!/^(0[1-9]|1[0-2])$/.test(expMonth) || !/^\d{2}$/.test(expYear)) {
+                    alert('Validade do cartão inválida. Use o formato MM/AA.');
+                    return false;
+                }
+                // Prefer MM/YYYY so sandbox does not pivot YY (e.g. 44 → 1944 → "expirado").
+                const cardExpiration = expMonth + '/20' + expYear;
+                const company = (typeof window.rmPagbankDetectVindiPaymentCompanyCode === 'function')
+                    ? window.rmPagbankDetectVindiPaymentCompanyCode(cc_number)
+                    : 'mastercard';
+                let auth = btoa(String(pagseguro_vindi_public_key) + ':');
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', pagseguro_vindi_payment_profiles_url, false);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Authorization', 'Basic ' + auth);
+                xhr.send(JSON.stringify({
+                    holder_name: holder_name,
+                    card_expiration: cardExpiration,
+                    card_number: cc_number,
+                    card_cvv: cc_cvv,
+                    payment_method_code: 'credit_card',
+                    payment_company_code: company
+                }));
+                if (xhr.status < 200 || xhr.status >= 300) {
+                    let detail = '';
+                    try {
+                        const errBody = JSON.parse(xhr.responseText);
+                        if (errBody && Array.isArray(errBody.errors)) {
+                            detail = errBody.errors.map(function (e) {
+                                return (e.parameter ? e.parameter + ': ' : '') + (e.message || '');
+                            }).filter(Boolean).join('\n');
+                        }
+                    } catch (parseErr) { /* ignore */ }
+                    alert('Erro ao tokenizar o cartão.' + (detail ? '\n' + detail : '\nVerifique os dados e tente novamente.'));
+                    return false;
+                }
+                let body = JSON.parse(xhr.responseText);
+                let token = body.payment_profile && (body.payment_profile.gateway_token || body.gateway_token);
+                if (!token) {
+                    alert('Erro ao tokenizar o cartão (token ausente).');
+                    return false;
+                }
+                jQuery('#rm-pagbank-card-encrypted').val(token);
+                jQuery('#rm-pagbank-payment-company-code').val(company);
+                window.ps_vindi_payment_company = company;
+                return true;
+            } catch (e) {
+                console.error(e);
+                alert('Erro ao tokenizar o cartão.\nVerifique se os dados digitados estão corretos.');
+                return false;
+            }
+        }
+
         try {
-            cc_number = cardHasChanged ? jQuery('#rm-pagbank-card-number').val().replace(/\s/g, '') : window.ps_cc_number;
-            cc_cvv = cardHasChanged ? jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '') : window.ps_cc_cvv;
+            const pbExpiry = (jQuery('#rm-pagbank-card-expiry').val() || '').toString().split('/');
+            const pbMonth = (pbExpiry[0] || '').replace(/\D/g, '');
+            const pbYear2 = (pbExpiry[1] || '').replace(/\D/g, '').slice(-2);
             card = PagSeguro.encryptCard({
                 publicKey: pagseguro_connect_public_key,
                 holder: holder_name,
                 number: cc_number,
-                expMonth: jQuery('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                expYear: '20' + jQuery('#rm-pagbank-card-expiry').val().split('/')[1].slice(-2).replace(/\s/g, ''),
+                expMonth: pbMonth,
+                expYear: '20' + pbYear2,
                 securityCode: cc_cvv,
             });
         } catch (e) {
@@ -205,6 +388,26 @@ jQuery(document).ready(function ($) {
 
     jQuery(document.body).on('updated_checkout', function (e) {
         jQuery(document.body).trigger('update_installments');
+        // Keep server cart total in sync for Vindi 3DS amount (centavos).
+        if (typeof ajax_object === 'undefined' || typeof rm_pagbank_nonce === 'undefined') {
+            return;
+        }
+        jQuery.ajax({
+            url: ajax_object.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'get_cart_total',
+                nonce: rm_pagbank_nonce,
+                ccBin: (window.ps_cc_bin || '555566').toString().replace(/\D/g, '').slice(0, 6) || '555566',
+            },
+            success: function (total) {
+                const reais = parseFloat(String(total).replace(',', '.'));
+                if (Number.isFinite(reais) && reais > 0) {
+                    window.pagseguro_connect_cart_total_cents = Math.round(reais * 100);
+                    console.debug('PB Integrações: cart total cents updated', window.pagseguro_connect_cart_total_cents);
+                }
+            }
+        });
     });
 
     //region 3ds authentication
@@ -237,10 +440,486 @@ jQuery(document).ready(function ($) {
                 return pagseguro_connect_3d_session;
             }
         } catch (e) {
-            console.debug('PagBank: falha ao atualizar sessão 3D', e);
+            console.debug('PB Integrações: falha ao atualizar sessão 3D', e);
         }
 
         return typeof pagseguro_connect_3d_session !== 'undefined' ? pagseguro_connect_3d_session : '';
+    };
+
+    const parseBrlToCents = window.rmPagbankParseBrlToCents;
+    const resolveCheckoutAmountCents = window.rmPagbankResolveCheckoutAmountCents;
+
+    /** Fields needed by Vindi 3DS AJAX — never send PAN/CVV/expiry to WordPress. */
+    const VINDI_CHECKOUT_SAFE_KEYS = [
+        'billing_first_name', 'billing_last_name', 'billing_email', 'billing_phone', 'billing_cellphone',
+        'billing_address_1', 'billing_address_2', 'billing_number', 'billing_neighborhood',
+        'billing_city', 'billing_state', 'billing_postcode', 'billing_country',
+        'billing_cpf', 'billing_cnpj', 'rm-pagbank-customer-document', 'rm-pagbank-card-holder-name',
+    ];
+
+    const pickBillingCheckoutFields = function (formDataObj) {
+        const out = {};
+        if (!formDataObj || typeof formDataObj !== 'object') {
+            return out;
+        }
+        VINDI_CHECKOUT_SAFE_KEYS.forEach(function (key) {
+            if (formDataObj[key] !== undefined && formDataObj[key] !== null && formDataObj[key] !== '') {
+                out[key] = formDataObj[key];
+            }
+        });
+        return out;
+    };
+
+    /** After tokenize: keep only masked PAN/CVV in the DOM so checkout POST never carries full card data. */
+    const obfuscateSensitiveCardFields = function () {
+        if (window.ps_cc_has_changed === false) {
+            return;
+        }
+        let card_number = jQuery('#rm-pagbank-card-number').val() || '';
+        if (card_number && card_number.indexOf('*') === -1) {
+            window.ps_cc_number = card_number.replace(/\s/g, '');
+            window.ps_cc_cvv = (jQuery('#rm-pagbank-card-cvc').val() || '').replace(/\s/g, '');
+            jQuery('#rm-pagbank-card-cvc').val('***');
+            let obfuscated = '';
+            for (let i = 0; i < card_number.length; i++) {
+                obfuscated += (i > 6 && i < card_number.length - 4) ? '*' : card_number[i];
+            }
+            jQuery('#rm-pagbank-card-number').val(obfuscated);
+        }
+        window.ps_cc_has_changed = false;
+    };
+
+    const vindiAjax = function (action, body) {
+        const ajaxUrl = (typeof ajax_object !== 'undefined' && ajax_object.ajax_url)
+            ? ajax_object.ajax_url
+            : '';
+        return jQuery.ajax({
+            url: ajaxUrl + (ajaxUrl.indexOf('?') >= 0 ? '&' : '?') + 'action=' + encodeURIComponent(action)
+                + '&nonce=' + encodeURIComponent(rm_pagbank_nonce),
+            method: 'POST',
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: JSON.stringify(body || {}),
+        }).then(function (resp) {
+            if (resp && resp.success) {
+                return resp.data;
+            }
+            const msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Falha na autenticação 3D Secure.';
+            return jQuery.Deferred().reject(new Error(msg)).promise();
+        }, function (xhr) {
+            let msg = 'Falha na autenticação 3D Secure.';
+            try {
+                const resp = xhr.responseJSON;
+                if (resp && resp.data && resp.data.message) {
+                    msg = resp.data.message;
+                } else if (xhr.responseText) {
+                    const parsed = JSON.parse(xhr.responseText);
+                    if (parsed && parsed.data && parsed.data.message) {
+                        msg = parsed.data.message;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            return jQuery.Deferred().reject(new Error(msg)).promise();
+        });
+    };
+
+    const runVindiDdc = function (setup) {
+        return new Promise(function (resolve, reject) {
+            const vindiOrigin = (typeof pagseguro_vindi_mpi_origin !== 'undefined' && pagseguro_vindi_mpi_origin)
+                ? pagseguro_vindi_mpi_origin
+                : 'https://sandbox-mpi.vindi.com.br';
+            // PDF: listen on MPI Vindi origin. Cardinal may also postMessage during Cruise Collect.
+            const allowedOrigins = [
+                vindiOrigin,
+                'https://sandbox-mpi.vindi.com.br',
+                'https://mpi.vindi.com.br',
+                'https://centinelapistag.cardinalcommerce.com',
+                'https://centinelapi.cardinalcommerce.com',
+            ];
+            let settled = false;
+
+            const finish = function (ok, err) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(timeout);
+                window.removeEventListener('message', onMessage);
+                if (ok) {
+                    resolve(true);
+                } else {
+                    reject(err || new Error('Falha na coleta de dados do dispositivo (3DS).'));
+                }
+            };
+
+            // PDF: only call enroll after Status===true. Do not soft-continue (causes AUTHENTICATION_SKIPPED).
+            const timeout = setTimeout(function () {
+                console.warn('PagBank Vindi 3DS: DDC timeout sem Status=true', { vindiOrigin });
+                finish(false, new Error(
+                    'Não foi possível coletar os dados do dispositivo (3DS). '
+                    + 'Desative bloqueadores de anúncio/privacidade nesta página e tente novamente.'
+                ));
+            }, 15000);
+
+            function originAllowed(origin) {
+                if (allowedOrigins.indexOf(origin) !== -1) {
+                    return true;
+                }
+                try {
+                    const host = new URL(origin).hostname;
+                    return /(^|\.)vindi\.com\.br$|(^|\.)cardinalcommerce\.com$/i.test(host);
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function onMessage(event) {
+                if (!originAllowed(event.origin)) {
+                    return;
+                }
+                let data = event.data;
+                try {
+                    if (typeof data === 'string') {
+                        data = JSON.parse(data);
+                    }
+                } catch (e) {
+                    return;
+                }
+                if (!data || typeof data !== 'object') {
+                    return;
+                }
+                console.debug('PagBank Vindi 3DS: DDC message', event.origin, data);
+                // Official Vindi PDF: data.Status === true
+                const statusOk = data.Status === true || data.Status === 'true' || data.Status === 'True';
+                if (statusOk) {
+                    finish(true);
+                    return;
+                }
+                // Cardinal profile.completed with Status true already covered; Status false = fail DDC.
+                if (data.MessageType === 'profile.completed' && data.Status === false) {
+                    finish(false, new Error(
+                        'Coleta de dados do dispositivo (3DS) incompleta. '
+                        + 'Desative bloqueadores e tente novamente.'
+                    ));
+                }
+            }
+
+            window.addEventListener('message', onMessage);
+
+            // Fresh iframe each attempt (reuse can keep aborted Cardinal session).
+            let oldIframe = document.getElementById('rm-pagbank-vindi-ddc-iframe');
+            if (oldIframe) {
+                oldIframe.remove();
+            }
+            const iframe = document.createElement('iframe');
+            iframe.id = 'rm-pagbank-vindi-ddc-iframe';
+            iframe.name = 'rm-pagbank-vindi-ddc-iframe';
+            iframe.setAttribute('aria-hidden', 'true');
+            // 1x1 visible to layout (display:none can block some Collect scripts / Notification).
+            iframe.style.cssText = 'width:1px;height:1px;border:0;position:absolute;left:0;top:0;opacity:0;pointer-events:none;';
+            document.body.appendChild(iframe);
+
+            let form = document.getElementById('rm-pagbank-vindi-ddc-form');
+            if (form) {
+                form.remove();
+            }
+            form = document.createElement('form');
+            form.id = 'rm-pagbank-vindi-ddc-form';
+            form.method = 'POST';
+            form.target = 'rm-pagbank-vindi-ddc-iframe';
+            form.action = setup.device_data_collection_url;
+            form.style.display = 'none';
+            // PDF sample: JWT only (no Bin).
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'JWT';
+            input.value = setup.access_token;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    };
+
+    const runVindiChallenge = function (enroll) {
+        return new Promise(function (resolve, reject) {
+            const timeout = setTimeout(function () {
+                window.removeEventListener('message', onMessage);
+                cleanup();
+                reject(new Error('Timeout no desafio 3D Secure.'));
+            }, 120000);
+
+            function cleanup() {
+                const wrap = document.getElementById('rm-pagbank-vindi-challenge-wrap');
+                if (wrap) {
+                    wrap.remove();
+                }
+                const form = document.getElementById('rm-pagbank-vindi-stepup-form');
+                if (form) {
+                    form.remove();
+                }
+            }
+
+            function onMessage(event) {
+                const data = event.data || {};
+                if (!data || data.source !== 'rm-pagbank-vindi-3ds') {
+                    return;
+                }
+                clearTimeout(timeout);
+                window.removeEventListener('message', onMessage);
+                cleanup();
+                if (!data.TransactionId) {
+                    reject(new Error('Challenge 3DS sem TransactionId.'));
+                    return;
+                }
+                resolve(String(data.TransactionId));
+            }
+
+            window.addEventListener('message', onMessage);
+            cleanup();
+            const wrap = document.createElement('div');
+            wrap.id = 'rm-pagbank-vindi-challenge-wrap';
+            wrap.style.cssText = 'position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;';
+            const iframe = document.createElement('iframe');
+            iframe.id = 'rm-pagbank-vindi-stepup-iframe';
+            iframe.name = 'rm-pagbank-vindi-stepup-iframe';
+            iframe.width = '400';
+            iframe.height = '400';
+            iframe.style.cssText = 'background:#fff;border:0;border-radius:4px;max-width:95vw;max-height:90vh;';
+            wrap.appendChild(iframe);
+            document.body.appendChild(wrap);
+
+            const form = document.createElement('form');
+            form.id = 'rm-pagbank-vindi-stepup-form';
+            form.method = 'POST';
+            form.target = 'rm-pagbank-vindi-stepup-iframe';
+            form.action = enroll.step_up_url;
+            form.style.display = 'none';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'JWT';
+            input.value = enroll.access_token;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    };
+
+    const buildThreeDsPayload = function (authResult) {
+        const info = (authResult && authResult.consumer_authentication_information)
+            ? authResult.consumer_authentication_information
+            : {};
+        const out = {
+            status: authResult.status || 'AUTHENTICATION_SUCCESSFUL',
+            liability_shift: !!authResult.liability_shift,
+        };
+        if (info.eci || info.cavv || info.xid) {
+            out.consumer_authentication_information = {
+                eci: info.eci || '',
+                cavv: info.cavv || '',
+                xid: info.xid || '',
+            };
+            if (info.directory_server_transaction_id) {
+                out.consumer_authentication_information.directory_server_transaction_id = info.directory_server_transaction_id;
+            }
+        }
+        if (authResult.authentication_transaction_id) {
+            out.authentication_transaction_id = authResult.authentication_transaction_id;
+        }
+        return out;
+    };
+
+    /**
+     * Vindi 3DS: persist profile → setup → DDC → enroll → (challenge → validate) → place order.
+     */
+    const runVindi3dsPipeline = async function (cartTotal, selectedInstallments, checkoutFormDataObj) {
+        const token = jQuery('#rm-pagbank-card-encrypted').val();
+        const company = jQuery('#rm-pagbank-payment-company-code').val()
+            || window.ps_vindi_payment_company
+            || 'mastercard';
+        if (!token) {
+            throw new Error('Token do cartão ausente.');
+        }
+
+        const billingOnly = pickBillingCheckoutFields(checkoutFormDataObj);
+        const profileData = await vindiAjax('rm_pagbank_vindi_payment_profile', {
+            gateway_token: token,
+            payment_company_code: company,
+            checkout: billingOnly,
+        });
+        const profileId = profileData.payment_profile_id;
+        jQuery('#rm-pagbank-payment-profile-id').val(String(profileId));
+        if (profileData.customer_id) {
+            jQuery('#rm-pagbank-vindi-customer-id').val(String(profileData.customer_id));
+        }
+
+        const doSetupDdcEnroll = async function () {
+            const setupData = await vindiAjax('rm_pagbank_vindi_3ds_setup', {
+                payment_profile_id: profileId,
+            });
+            const setup = setupData.setup;
+            if (!setup || !setup.session_id || !setup.access_token || !setup.device_data_collection_url) {
+                throw new Error('Resposta de setup 3DS inválida.');
+            }
+            await runVindiDdc(setup);
+            console.debug('PagBank Vindi 3DS enroll amount (cents)', cartTotal);
+            const enrollData = await vindiAjax('rm_pagbank_vindi_3ds_enroll', {
+                session_id: setup.session_id,
+                amount: cartTotal,
+                installments: selectedInstallments * 1,
+                device_info: {
+                    user_agent: navigator.userAgent,
+                    screen_height: window.screen.height,
+                    screen_width: window.screen.width,
+                    color_depth: window.screen.colorDepth || 24,
+                    timezone_offset: new Date().getTimezoneOffset() * -1,
+                    language: navigator.language || 'pt-BR',
+                    java_enabled: false,
+                },
+                checkout: billingOnly,
+            });
+            let enroll = (enrollData && (enrollData.enroll || enrollData)) || {};
+            if (enroll.enroll && typeof enroll.enroll === 'object') {
+                enroll = enroll.enroll;
+            }
+            console.debug('PagBank Vindi 3DS enroll result', enroll);
+            return enroll;
+        };
+
+        let enroll = await doSetupDdcEnroll();
+        // AUTHENTICATION_SKIPPED = DDC incomplete OR amount below MPI minimum (see enroll.reason).
+        if (String(enroll.status || '').toUpperCase() === 'AUTHENTICATION_SKIPPED'
+            && String(enroll.reason || '').toUpperCase() !== 'BELOW_MINIMUM_AMOUNT') {
+            console.warn('PagBank Vindi 3DS: AUTHENTICATION_SKIPPED — retry setup/DDC/enroll once', enroll);
+            enroll = await doSetupDdcEnroll();
+        }
+
+        const enrollStatus = String(enroll.status || '').toUpperCase();
+        const enrollReason = String(
+            enroll.reason
+            || enroll.skip_reason
+            || enroll.authentication_reason
+            || ''
+        ).toUpperCase();
+        const isBelowMinimum = enrollReason === 'BELOW_MINIMUM_AMOUNT'
+            || enrollReason.indexOf('BELOW_MINIMUM') !== -1;
+        const challengeRequired = !isBelowMinimum && (
+            enroll.challenge_required === true
+            || enroll.challenge_required === 'true'
+            || enrollStatus === 'PENDING_AUTHENTICATION'
+        );
+        // Vindi docs: veres N/U or card_enrolled false → accept without 3DS or ask another card.
+        // AUTHENTICATION_FAILED with enrolled card (veres Y) must not use allow-continue.
+        // Never treat BELOW_MINIMUM as “card not enrolled”.
+        const notEnrolledIn3ds = !isBelowMinimum && (
+            enroll.card_enrolled === false
+            || enroll.veres_enrolled === 'N'
+            || enroll.veres_enrolled === 'U'
+            || enroll.veres_enrolled === 'B' // merchant / issuer bypass — not a real liability shift
+            || (enrollStatus === 'AUTHENTICATION_FAILED'
+                && enroll.veres_enrolled !== 'Y'
+                && enroll.card_enrolled !== true)
+        );
+        const authFailedWhileEnrolled = !isBelowMinimum
+            && enrollStatus === 'AUTHENTICATION_FAILED'
+            && !notEnrolledIn3ds;
+        const authOk = enroll.liability_shift === true
+            || enrollStatus === 'AUTHENTICATION_SUCCESSFUL'
+            || enrollStatus === 'SUCCESSFUL'
+            || enrollStatus === 'Y'
+            || enrollStatus === 'A';
+        const allowContinueWithout3ds = (typeof pagseguro_connect_cc_3ds_allow_continue !== 'undefined'
+            && pagseguro_connect_cc_3ds_allow_continue === 'yes');
+        const isChangeCardPage = (typeof pagseguro_connect_change_card_page !== 'undefined'
+            && (pagseguro_connect_change_card_page === true || pagseguro_connect_change_card_page === 'true'));
+
+        const continueWithout3ds = function (reason) {
+            console.warn('PagBank Vindi 3DS: ' + reason + ' — concluindo sem 3DS');
+            jQuery('#rm-pagbank-payment-profile-id').val('');
+            jQuery('#rm-pagbank-vindi-customer-id').val('');
+            jQuery('#rm-pagbank-card-3ds-payload').val('');
+            jQuery('#rm-pagbank-card-3d').val('');
+            // Re-tokenize from in-memory PAN (DOM may already be masked).
+            window.ps_cc_has_changed = false;
+            if (encryptCard() === false) {
+                throw new Error('Não foi possível tokenizar o cartão para concluir sem 3DS.');
+            }
+            return true;
+        };
+
+        // Reason wins over status — MPI may return BELOW_MINIMUM with FAILED/SKIPPED + card_enrolled false.
+        if (isBelowMinimum) {
+            // Change-card is only saving a profile (no charge now) — always allow without 3DS.
+            if (!allowContinueWithout3ds && !isChangeCardPage) {
+                throw new Error(
+                    'Valor abaixo do mínimo para 3D Secure. A loja não permite concluir sem autenticação. '
+                    + 'Use outro método de pagamento ou aumente o valor do pedido.'
+                );
+            }
+            // MPI will not run 3DS — charge with a fresh gateway_token (private profile consumed the first one).
+            return continueWithout3ds('BELOW_MINIMUM_AMOUNT (amount cents=' + cartTotal + ')');
+        }
+
+        if (enrollStatus === 'AUTHENTICATION_SKIPPED') {
+            throw new Error(
+                '3D Secure pulado (AUTHENTICATION_SKIPPED'
+                + (enroll.reason ? ': ' + enroll.reason : '')
+                + '). Valor enviado: '
+                + cartTotal
+                + ' centavos. Desative bloqueadores e tente novamente.'
+            );
+        }
+
+        if (authFailedWhileEnrolled && !challengeRequired) {
+            throw new Error('Autenticação 3D Secure falhou. Use outro cartão ou método de pagamento.');
+        }
+
+        if (notEnrolledIn3ds && !challengeRequired) {
+            if (allowContinueWithout3ds) {
+                return continueWithout3ds('cartão fora do 3DS (veres=' + (enroll.veres_enrolled || '?') + ')');
+            }
+            throw new Error('Este cartão não tem suporte a 3D Secure. Use outro cartão ou método de pagamento.');
+        }
+
+        let authResult = enroll;
+        if (challengeRequired) {
+            if (!enroll.step_up_url || !enroll.access_token) {
+                throw new Error('Desafio 3DS solicitado sem URL do emissor. Status: ' + (enroll.status || 'desconhecido'));
+            }
+            const txId = await runVindiChallenge(enroll);
+            const cardType = (company === 'american_express') ? 'american_express'
+                : (company === 'mastercard') ? 'mastercard'
+                : (company === 'elo') ? 'elo'
+                : (company === 'hipercard') ? 'hipercard'
+                : (company === 'diners_club') ? 'diners_club'
+                : (company === 'jcb') ? 'jcb'
+                : 'visa';
+            const validateData = await vindiAjax('rm_pagbank_vindi_3ds_validate', {
+                authentication_transaction_id: txId,
+                card_type: cardType,
+            });
+            authResult = (validateData && (validateData.validate || validateData)) || {};
+            if (authResult.validate && typeof authResult.validate === 'object') {
+                authResult = authResult.validate;
+            }
+            const validateStatus = String(authResult.status || '').toUpperCase();
+            const validateOk = authResult.liability_shift === true
+                || validateStatus === 'AUTHENTICATION_SUCCESSFUL'
+                || validateStatus === 'SUCCESSFUL';
+            if (!validateOk) {
+                throw new Error('Autenticação 3D Secure falhou. Status: ' + (authResult.status || 'desconhecido'));
+            }
+        } else if (!authOk) {
+            throw new Error(
+                'Autenticação 3D Secure não concluída. Status: '
+                + (enroll.status || 'ausente')
+                + '. Tente novamente.'
+            );
+        }
+
+        const threeDs = buildThreeDsPayload(authResult);
+        jQuery('#rm-pagbank-card-3ds-payload').val(JSON.stringify(threeDs));
+        jQuery('#rm-pagbank-card-3d').val(authResult.authentication_transaction_id || 'vindi_3ds');
+        return true;
     };
 
     /**
@@ -267,7 +946,7 @@ jQuery(document).ready(function ($) {
 
     let checkoutFormIdentifiers = 'form.woocommerce-checkout, form#order_review, .wc-block-components-form, .wc-block-checkout__form, form#order_update, form#add_payment_method';
     if (!jQuery(checkoutFormIdentifiers).length) {
-        console.debug('PagBank: checkout form not found');
+        console.debug('PB Integrações: checkout form not found');
         return true;
     }
     let originalSubmitHandler = () => {};
@@ -282,7 +961,7 @@ jQuery(document).ready(function ($) {
     }
 
     let pagBankSubmitHandler = async function (e) {
-        console.debug('PagBank: submit');
+        console.debug('PB Integrações: submit');
 
         if (isSubmitting) {
             return true;
@@ -302,15 +981,39 @@ jQuery(document).ready(function ($) {
 
         const cc_payment_token = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
         if (cc_payment_token && cc_payment_token !== 'new') {
-            console.debug('PagBank: cartão salvo selecionado, não criptografar.');
+            console.debug('PB Integrações: cartão salvo selecionado, não criptografar.');
             isSubmitting = true;
             jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
             jQuery(checkoutFormIdentifiers).trigger('submit');
             return true;
         }
 
+        let has3dSession = typeof pagseguro_connect_3d_session !== 'undefined' && pagseguro_connect_3d_session;
+        let is3dsEnabled = pagseguro_connect_3ds_enabled;
+        let isRetryEnabled = pagseguro_connect_3ds_retry_enabled;
+        let canRetry = jQuery('#rm-pagbank-card-retry-with-3ds')?.is(':checked');
+        const isVindi = typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi';
+
+        // 2nd submit after Vindi 3DS (same card): keep profile/token — do not re-tokenize.
+        // If the shopper changed PAN/CVV (or checkout just failed), force a fresh pipeline.
+        const vindi3dsAlreadyDone = isVindi && is3dsEnabled
+            && typeof pagbank3dAuthorized !== 'undefined' && pagbank3dAuthorized === true
+            && !!jQuery('#rm-pagbank-payment-profile-id').val()
+            && window.ps_cc_has_changed === false;
+        if (vindi3dsAlreadyDone) {
+            obfuscateSensitiveCardFields();
+            isSubmitting = true;
+            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+            jQuery(checkoutFormIdentifiers).trigger('submit');
+            return true;
+        }
+        if (isVindi && window.ps_cc_has_changed === true
+            && typeof window.clearVindiCardAuthState === 'function') {
+            window.clearVindiCardAuthState();
+        }
+
         if (window.ps_cc_has_changed !== false) {
-            console.debug('Pagbank: cartao mudou NOVO');
+            console.debug('PB Integrações: cartao mudou NOVO');
             let card_number = jQuery('#rm-pagbank-card-number').val();
             window.ps_cc_number = card_number.replace(/\s/g, '');
             window.ps_cc_cvv = jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
@@ -319,11 +1022,69 @@ jQuery(document).ready(function ($) {
         if (encryptCard() === false) {
             return false;
         }
+        // Mask PAN/CVV in the DOM before any WordPress AJAX or checkout POST.
+        obfuscateSensitiveCardFields();
 
-        let has3dSession = typeof pagseguro_connect_3d_session !== 'undefined' && pagseguro_connect_3d_session;
-        let is3dsEnabled = pagseguro_connect_3ds_enabled;
-        let isRetryEnabled = pagseguro_connect_3ds_retry_enabled;
-        let canRetry = jQuery('#rm-pagbank-card-retry-with-3ds')?.is(':checked');
+        let selectedInstallments = jQuery('#rm-pagbank-card-installments').val();
+        if (selectedInstallments === "" || selectedInstallments === undefined) {
+            selectedInstallments = 1;
+        }
+
+        let cartTotal = resolveCheckoutAmountCents(selectedInstallments);
+        console.debug('PB Integrações: checkout amount cents', cartTotal);
+
+        // Vindi 3DS pipeline (classic checkout)
+        if (isVindi && is3dsEnabled) {
+            const allowContinueWithout3ds = (typeof pagseguro_connect_cc_3ds_allow_continue !== 'undefined'
+                && pagseguro_connect_cc_3ds_allow_continue === 'yes');
+            // Change-card / add-payment-method: not a charge — never block on MPI minimum.
+            const isChangeCardPage = (typeof pagseguro_connect_change_card_page !== 'undefined'
+                && (pagseguro_connect_change_card_page === true || pagseguro_connect_change_card_page === 'true'));
+
+            // MPI does not authenticate below R$ 1,00 — same policy as “cartão fora do 3DS”.
+            if (cartTotal < 100) {
+                if (!allowContinueWithout3ds && !isChangeCardPage) {
+                    alert('Este pedido está abaixo do valor mínimo para 3D Secure. Use outro método de pagamento ou aumente o valor do carrinho.');
+                    return false;
+                }
+                isSubmitting = true;
+                jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
+                jQuery(checkoutFormIdentifiers).trigger('submit');
+                return true;
+            }
+
+            var checkoutFormDataVindi = jQuery(this).serializeArray();
+            var checkoutFormDataObjVindi = {};
+            jQuery.each(checkoutFormDataVindi, function (i, field) {
+                checkoutFormDataObjVindi[field.name] = field.value;
+            });
+            checkoutFormDataObjVindi = pickBillingCheckoutFields(checkoutFormDataObjVindi);
+
+            jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').block({
+                message: 'Autenticação 3D em andamento',
+                overlayCSS: {
+                    background: '#fff',
+                    opacity: 0.6
+                },
+                css: {border: 0}
+            });
+
+            try {
+                await runVindi3dsPipeline(cartTotal, selectedInstallments, checkoutFormDataObjVindi);
+                pagbank3dAuthorized = true;
+                jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').unblock();
+                isSubmitting = true;
+                jQuery('form.woocommerce-checkout, form#order_review').on('submit', originalSubmitHandler);
+                jQuery('form.woocommerce-checkout, form#order_review').trigger('submit');
+                return true;
+            } catch (err) {
+                console.error(err);
+                alert((err && err.message) ? err.message : 'Falha na autenticação 3D Secure.');
+                pagbank3dAuthorized = false;
+                jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').unblock();
+                return false;
+            }
+        }
 
         // If 3ds and 3ds_retry is not enabled, continue
         if (!is3dsEnabled && !isRetryEnabled || !has3dSession) {
@@ -348,20 +1109,6 @@ jQuery(document).ready(function ($) {
             return true;
         }
 
-        let selectedInstallments = jQuery('#rm-pagbank-card-installments').val();
-        if (selectedInstallments === "" || selectedInstallments === undefined) {
-            selectedInstallments = 1;
-        }
-
-        let cartTotal;
-        if (typeof window.ps_cc_installments === 'undefined') {
-            cartTotal = jQuery('.order-total bdi, .product-total bdi').last().html();
-            cartTotal = cartTotal.replace(/[^0-9,]/g, '');
-            cartTotal = Math.round(parseFloat(cartTotal.toString()).toFixed(2) * 100);
-        } else {
-            cartTotal = window.ps_cc_installments.find((installment, idx, installments)=> installments[idx].installments == selectedInstallments).total_amount_raw;
-        }
-
         //if cart total is less than 100, don't continue with 3ds
         if (cartTotal < 100) {
             isSubmitting = true;
@@ -378,7 +1125,10 @@ jQuery(document).ready(function ($) {
             checkoutFormDataObj[field.name] = field.value;
         });
 
-        let expiryVal = jQuery('#rm-pagbank-card-expiry').val();
+        let expiryVal = jQuery('#rm-pagbank-card-expiry').val() || '';
+        const expiryPartsPb = expiryVal.split('/');
+        const expMonthPb = (expiryPartsPb[0] || '').replace(/\D/g, '');
+        const expYearPb = (expiryPartsPb[1] || '').replace(/\D/g, '').slice(-2);
 
         let request = {
             data: {
@@ -387,8 +1137,8 @@ jQuery(document).ready(function ($) {
                     installments: selectedInstallments*1,
                     card: {
                         number: window.ps_cc_number || jQuery('#rm-pagbank-card-number').val().replace(/\s/g, ''),
-                        expMonth: jQuery('#rm-pagbank-card-expiry').val().split('/')[0].replace(/\s/g, ''),
-                        expYear: expiryVal.includes('/') ? '20' + expiryVal.split('/')[1].slice(-2).replace(/\s/g, '') : '',
+                        expMonth: expMonthPb,
+                        expYear: expYearPb ? '20' + expYearPb : '',
                         holder: {
                             name: jQuery('#rm-pagbank-card-holder-name').val().trim().replace(/\s+/g, ' ').replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')
                         }
@@ -484,7 +1234,7 @@ jQuery(document).ready(function ($) {
                     if (result.authenticationStatus === 'AUTHENTICATED') {
                         //O cliente foi autenticado com sucesso, dessa forma o pagamento foi autorizado.
                         jQuery('#rm-pagbank-card-3d').val(result.id);
-                        console.debug('PagBank: 3DS Autenticado ou Sem desafio');
+                        console.debug('PB Integrações: 3DS Autenticado ou Sem desafio');
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
                         isSubmitting = true;
@@ -500,7 +1250,7 @@ jQuery(document).ready(function ($) {
                     //A autenticação 3DS não ocorreu, isso pode ter ocorrido por falhas na comunicação com emissor ou bandeira, ou algum controle que não possibilitou a geração do 3DS id, essa transação não terá um retorno de status de autenticação e seguirá como uma transação sem 3DS.
                     //O cliente pode seguir adiante sem 3Ds (exceto débito)
                     if (pagseguro_connect_cc_3ds_allow_continue === 'yes') {
-                        console.debug('PagBank: 3DS não suportado pelo cartão. Continuando sem 3DS.');
+                        console.debug('PB Integrações: 3DS não suportado pelo cartão. Continuando sem 3DS.');
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
 
@@ -514,12 +1264,12 @@ jQuery(document).ready(function ($) {
                     return false;
                 case 'REQUIRE_CHALLENGE':
                     //É um status intermediário que é retornando em casos que o banco emissor solicita desafios, é importante para identificar que o desafio deve ser exibido.
-                    console.debug('PagBank: REQUIRE_CHALLENGE - O desafio está sendo exibido pelo banco.');
+                    console.debug('PB Integrações: REQUIRE_CHALLENGE - O desafio está sendo exibido pelo banco.');
                     break;
             }
         }).catch((err) => {
             console.error(err);
-            console.debug('PagBank:', err && err.detail ? err.detail : err);
+            console.debug('PB Integrações:', err && err.detail ? err.detail : err);
             const errMsgs = getPagSeguro3dsErrorMessage(err);
             alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
             jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').unblock();
@@ -537,7 +1287,7 @@ jQuery(document).ready(function ($) {
     //endregion
 
     jQuery(checkoutFormIdentifiers).off('checkout_place_order').on('checkout_place_order', async function (e) {
-        console.debug('PagBank: checkout_place_order');
+        console.debug('PB Integrações: checkout_place_order');
         
         const cc_payment_token = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
         //if not pagseguro connect or not credit card, return
@@ -548,7 +1298,19 @@ jQuery(document).ready(function ($) {
         {
             return true;
         }
-        
+
+        const isVindi = typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi';
+        const vindiReady = isVindi && window.ps_cc_has_changed === false && (
+            (typeof pagbank3dAuthorized !== 'undefined' && pagbank3dAuthorized === true)
+            || !!jQuery('#rm-pagbank-payment-profile-id').val()
+            || !!jQuery('#rm-pagbank-card-encrypted').val()
+        );
+        // Vindi: token/profile already set by submit handler — do not create a second public payment_profile.
+        if (vindiReady) {
+            obfuscateSensitiveCardFields();
+            isSubmitting = false;
+            return true;
+        }
 
          /*region Encrypt card and obfuscates before submit*/
         if (encryptCard() === false) {
@@ -558,23 +1320,7 @@ jQuery(document).ready(function ($) {
         //obfuscates cvv
         // saves in window the card number and cvv, so we can reuse it if the first attempt fails for some reason
         // pagbank requires a new encryption for each attempt, and we don't want to ask the customer to type again
-        if (window.ps_cc_has_changed !== false) {
-            let card_number = jQuery('#rm-pagbank-card-number').val();
-            window.ps_cc_number = card_number.replace(/\s/g, '');
-            window.ps_cc_cvv = jQuery('#rm-pagbank-card-cvc').val().replace(/\s/g, '');
-    
-            jQuery('#rm-pagbank-card-cvc').val('***');
-            //obfuscates card number between 8th and last 4 digits
-            let obfuscated_card_number = '';
-            for (let i = 0; i < card_number.length; i++) {
-                if (i > 6 && i < card_number.length - 4)
-                    obfuscated_card_number += '*';
-                else
-                    obfuscated_card_number += card_number[i];
-            }
-            jQuery('#rm-pagbank-card-number').val(obfuscated_card_number);
-            window.ps_cc_has_changed = false;
-        }
+        obfuscateSensitiveCardFields();
         /*endregion*/
         
         isSubmitting = false;
@@ -583,14 +1329,36 @@ jQuery(document).ready(function ($) {
     
 });
 
+    /** Drop stale Vindi profile / 3DS payload so a new PAN re-runs enroll. */
+    window.clearVindiCardAuthState = function () {
+        if (typeof pagbank3dAuthorized !== 'undefined') {
+            pagbank3dAuthorized = false;
+        }
+        jQuery('#rm-pagbank-payment-profile-id').val('');
+        jQuery('#rm-pagbank-vindi-customer-id').val('');
+        jQuery('#rm-pagbank-card-3ds-payload').val('');
+        jQuery('#rm-pagbank-card-3d').val('');
+        jQuery('#rm-pagbank-card-encrypted').val('');
+    };
+
 // jQuery(document.body).on('init_checkout', ()=>{
     jQuery(document).on('keyup change paste', '#rm-pagbank-card-number', (e)=>{
         window.ps_cc_has_changed = true;
-        if ('undefined' !== typeof pagseguro_connect_3d_session) {
+        // PagBank session OR Vindi profile from a prior attempt — never reuse after PAN edit.
+        if ('undefined' !== typeof pagseguro_connect_3d_session
+            || (typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi')) {
+            window.clearVindiCardAuthState();
+        } else if (typeof pagbank3dAuthorized !== 'undefined') {
             pagbank3dAuthorized = false;
         }
         let cardNumber = jQuery(e.target).val();
-        let ccBin = cardNumber.replace(/\s/g, '').substring(0, 6);
+        let digits = cardNumber.replace(/\D/g, '');
+        let ccBin = digits.substring(0, 6);
+        if (digits.length >= 6 && typeof window.rmPagbankDetectVindiPaymentCompanyCode === 'function') {
+            const company = window.rmPagbankDetectVindiPaymentCompanyCode(digits);
+            jQuery('#rm-pagbank-payment-company-code').val(company);
+            window.ps_vindi_payment_company = company;
+        }
         if (ccBin !== window.ps_cc_bin && ccBin.length === 6 && !pagseguro_connect_change_card_page) {
             window.ps_cc_bin = ccBin;
             jQuery(document.body).trigger('update_installments');
@@ -598,6 +1366,9 @@ jQuery(document).ready(function ($) {
     });
     jQuery(document).on('keyup change paste', '#rm-pagbank-card-cvc', (e)=>{
         window.ps_cc_has_changed = true;
+        if (typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi') {
+            window.clearVindiCardAuthState();
+        }
     });
     jQuery(document).on('input change paste', '#rm-pagbank-card-holder-name', (e)=>{
         jQuery(e.target).val(jQuery(e.target).val().toUpperCase());
@@ -615,18 +1386,15 @@ jQuery(document).ready(function ($) {
         //if error, show error message
         let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
         let total = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value').last().html();
-        //extract amount from total, removing html elements
-        total = total.replace(/<[^>]*>?/gm, '');
-        //remove ,
-        total = total.replace(/,/g, '');
-        //replace , with .
-        total = total.replace(/\./g, ',');
-        //remove non numbers and . ,
-        total = total.replace(/[^0-9,]/g, '');
-    
-    
-        //convert to cents
-        let orderTotal = parseFloat(total).toFixed(2) * 100;
+        let orderTotal = (typeof window.rmPagbankParseBrlToCents === 'function')
+            ? window.rmPagbankParseBrlToCents(total)
+            : 0;
+        if (typeof pagseguro_connect_cart_total_cents !== 'undefined') {
+            const injected = Number(pagseguro_connect_cart_total_cents);
+            if (Number.isFinite(injected) && injected >= 100) {
+                orderTotal = Math.round(injected);
+            }
+        }
         if (orderTotal < 100) {
             let select = jQuery(selector_installments);
             select.parent().hide();
@@ -684,8 +1452,20 @@ jQuery(document).ready(function ($) {
     });
 
 jQuery(document.body).on('checkout_error', function(event, error_data) {
+    // After a declined charge, drop profile/3DS so the next attempt re-tokenizes + re-enrolls.
+    // Keep ps_cc_has_changed=false when the PAN is still masked in the DOM — encryptCard
+    // will reuse window.ps_cc_number from the previous successful tokenize.
+    if (typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi') {
+        if (typeof window.clearVindiCardAuthState === 'function') {
+            window.clearVindiCardAuthState();
+        } else if (typeof pagbank3dAuthorized !== 'undefined') {
+            pagbank3dAuthorized = false;
+        }
+    }
+
     let method = jQuery('input[name="payment_method"]:checked').val();
-    if (error_data.includes('Vamos tentar com validação 3DS') && method === 'rm-pagbank-cc') {
+    const errText = (typeof error_data === 'string') ? error_data : String(error_data || '');
+    if (errText.includes('Vamos tentar com validação 3DS') && method === 'rm-pagbank-cc') {
         const retry3dsInput = '<div class="rm-pagbank-retry-select">' +
             '<input type="checkbox" id="rm-pagbank-card-retry-with-3ds" class="rm-pagbank-checkbox" name="rm-pagbank-card-retry-with-3ds" value="1" checked>' +
             '<label for="rm-pagbank-card-retry-with-3ds">Tentar novamente com Validação 3DS</label>' +

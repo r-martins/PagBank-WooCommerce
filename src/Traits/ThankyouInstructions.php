@@ -6,6 +6,7 @@ use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Helpers\OrderMeta;
 
 trait ThankyouInstructions
 {
@@ -18,7 +19,7 @@ trait ThankyouInstructions
     public function addThankyouInstructions($order_id)
     {
         $order = wc_get_order($order_id);
-        switch ($order->get_meta('pagbank_payment_method')) {
+        switch (OrderMeta::get($order, 'payment_method')) {
             case 'boleto':
                 $method = new Boleto($order);
                 break;
@@ -32,7 +33,7 @@ trait ThankyouInstructions
         if (!empty($method)) {
             $method->getThankyouInstructions($order_id);
         }
-        if ($order->get_meta('_pagbank_recurring_initial')) {
+        if (OrderMeta::get($order, '_recurring_initial')) {
             $recurring = new Recurring();
             $recurring->getThankyouInstructions($order);
         }

@@ -32,7 +32,16 @@ echo sprintf(
         'pagbank-connect'
     ),
     $subscription->id,
-    $subscription->suspended_reason . "\n\n");
+    $subscription->suspended_reason . "\n\n"
+);
+
+$paymentInfoPlain = \RM_PagBank\Helpers\Recurring::normalizePaymentInfo($subscription->payment_info ?? null);
+if (!empty($paymentInfoPlain['needs_retoken'])) {
+    echo esc_html__(
+        'Não vamos tentar cobrar de novo até você atualizar o cartão na área da assinatura (Atualizar cartão).',
+        'pagbank-connect'
+    ) . "\n\n";
+}
 
 /*
  * @hooked WC_Emails::order_details() Shows the order details table.

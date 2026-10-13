@@ -30,7 +30,9 @@ if ($has_valid_pix):
     <?php if ($has_qr_code): ?>
     <p><?php _e('Escaneie o código abaixo com o aplicativo de seu banco.', 'pagbank-connect');?></p>
     <div class="pix-qr-container">
-        <img src="<?php echo esc_url($qr_code);?>" class="pix-qr" alt="PIX QrCode" title="Escaneie o código com o aplicativo de seu banco."/>
+        <a href="<?php echo esc_url($qr_code); ?>" target="_blank" rel="noopener noreferrer" title="<?php echo esc_attr__('Abrir QrCode em nova aba', 'pagbank-connect'); ?>">
+            <img src="<?php echo esc_url($qr_code);?>" class="pix-qr" alt="PIX QrCode" title="Escaneie o código com o aplicativo de seu banco."/>
+        </a>
     </div>
     <?php endif; ?>
     <?php if ($has_qr_code_text): ?>

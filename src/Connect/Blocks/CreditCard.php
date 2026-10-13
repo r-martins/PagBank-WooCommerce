@@ -8,6 +8,8 @@ use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
 use RM_PagBank\Connect;
 use RM_PagBank\Connect\Gateway;
+use RM_PagBank\Partner\Branding;
+use RM_PagBank\Partner\Capabilities;
 
 final class CreditCard extends AbstractPaymentMethodType
 {
@@ -84,27 +86,49 @@ final class CreditCard extends AbstractPaymentMethodType
     public function get_payment_method_data() {
         $recHelper = new Recurring();
         $api = new Api();
+        $branding = new Branding();
+        $caps = new Capabilities($api->partner());
+        $isVindi = $api->partner()->isVindi();
 
-        return array(
-            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Cartão de Crédito via PagBank',
+        $data = array(
+            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Cartão de Crédito',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
+            'partner' => $isVindi ? 'vindi' : 'pagbank',
             'publicKey'  => Params::getConfig('public_key'),
-            'ccThreeDEnabled'  => wc_string_to_bool(Params::getCcConfig('cc_3ds', 'no')),
-            'ccThreeDCanRetry'  => wc_string_to_bool(Params::getCcConfig('cc_3ds_retry', 'yes')),
-            'ccThreeDSession'  => $api->get3DSession(),
+            'ccThreeDEnabled'  => $caps->has3ds() && wc_string_to_bool(Params::getCcConfig('cc_3ds', 'no')),
+            'ccThreeDCanRetry'  => !$isVindi && wc_string_to_bool(Params::getCcConfig('cc_3ds_retry', 'yes')),
+            'ccThreeDSession'  => $isVindi ? '' : $api->get3DSession(),
             'ccThreeDAllowContinue'  => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
             'pagbankConnectEnvironment'  => $api->getIsSandbox() ? 'SANDBOX' : 'PROD',
             'isCartRecurring' => $recHelper->isCartRecurring(),
             'recurringTerms' => wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong'),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'unavailableMessage' => $branding->paymentUnavailableBelowMinimumMessage(),
             'allowSaveCard' => wc_string_to_bool($this->get_setting('cc_allow_save_card', 'no')),
             'defaultInstallments' => is_checkout() && !is_order_received_page() && !$recHelper->isCartRecurring() ? $this->gateway->getDefaultInstallments() : null,
             'ajax_url' => admin_url('admin-ajax.php'),
             'rm_pagbank_nonce' => wp_create_nonce('rm_pagbank_nonce'),
             'savedTokens' => $this->getSavedTokensWithBin()
         );
+
+        if ($isVindi) {
+            $data['vindiPublicKey'] = '';
+            $data['vindiPaymentProfilesUrl'] = '';
+            $data['vindiMpiOrigin'] = $api->getIsSandbox()
+                ? 'https://sandbox-mpi.vindi.com.br'
+                : 'https://mpi.vindi.com.br';
+            try {
+                $tok = $api->get('tokenize/config', [], 30);
+                $data['vindiPublicKey'] = (string) ($tok['public_api_key'] ?? '');
+                $data['vindiPaymentProfilesUrl'] = (string) ($tok['payment_profiles_url'] ?? '');
+            } catch (\Throwable $e) {
+                // tokenize/config failure surfaces at checkout when customer tries to pay
+            }
+        }
+
+        return $data;
     }
 
     /**

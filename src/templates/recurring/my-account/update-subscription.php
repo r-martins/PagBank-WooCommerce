@@ -16,8 +16,19 @@
 /** @var WC_Order $initialOrder */
 
 use RM_PagBank\Connect\Recurring\RecurringDashboard;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 
 defined( 'ABSPATH' ) || exit;
+
+$paymentInfoUpdate = RecurringHelper::normalizePaymentInfo($subscription->payment_info ?? null);
+if (!empty($paymentInfoUpdate['needs_retoken'])) {
+    echo '<div class="woocommerce-info">';
+    echo esc_html__(
+        'Sua loja mudou o processador de cartões. Cadastre um novo cartão abaixo para reativar a assinatura. Não cobramos de novo até você concluir esta etapa.',
+        'pagbank-connect'
+    );
+    echo '</div>';
+}
 ?>
 
 <table class="woocommerce-table woocommerce-table--order-details shop_table order_details">

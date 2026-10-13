@@ -9,10 +9,12 @@ use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Functions;
 use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
+use RM_PagBank\Helpers\TaxId;
 use stdClass;
 use WC_Emails;
 use WC_Order;
 use wpdb;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class Recurring
@@ -524,7 +526,7 @@ class Recurring
 
         $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
 
-        $trialLength = (int) $order->get_meta('_pagbank_recurring_trial_length');
+        $trialLength = (int) OrderMeta::get($order, '_recurring_trial_length');
         if ($trialLength) {
             $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle, $trialLength);
         }
@@ -736,32 +738,58 @@ class Recurring
      */
     public function getPaymentInfo(WC_Order $order):array
     {
-        $paymentMethod = $order->get_meta('pagbank_payment_method');
+        $paymentMethod = OrderMeta::get($order, 'payment_method');
         $paymentInfo = [
             'method' => $paymentMethod,
         ];
-        
+        $api = new Api();
+        $isVindi = $api->partner()->isVindi()
+            || ((string) OrderMeta::get($order, 'partner') === 'vindi');
+
         if ($paymentMethod == 'credit_card') {
-            $initialChargeInfo = $order->get_meta('pagbank_order_charges');
-            if ( ! isset($initialChargeInfo[0])){
+            $initialChargeInfo = OrderMeta::get($order, 'order_charges');
+            $chargeCard = is_array($initialChargeInfo[0]['payment_method']['card'] ?? null)
+                ? $initialChargeInfo[0]['payment_method']['card']
+                : null;
+            $profileId = (int) (
+                ($chargeCard['id'] ?? null)
+                ?: ($initialChargeInfo[0]['payment_method']['payment_profile_id'] ?? null)
+                ?: OrderMeta::get($order, '_payment_profile_id')
+            );
+
+            if ($chargeCard) {
+                $paymentInfo['card'] = [
+                    'holder_name' => $chargeCard['holder']['name']
+                        ?? (string) OrderMeta::get($order, '_card_holder_name'),
+                    'number' => ($chargeCard['first_digits'] ?? OrderMeta::get($order, '_card_first_digits') ?: '')
+                        . '******'
+                        . ($chargeCard['last_digits'] ?? OrderMeta::get($order, 'card_last4') ?: ''),
+                    'expiration_date' => ($chargeCard['exp_month'] ?? '') . '/' . ($chargeCard['exp_year'] ?? ''),
+                    'brand' => $chargeCard['brand']
+                        ?? (string) OrderMeta::get($order, '_payment_company_code'),
+                    'id' => $profileId > 0 ? $profileId : ($chargeCard['id'] ?? null),
+                ];
+            } elseif ($isVindi && $profileId > 0) {
+                // Vindi first charge may omit PagBank-shaped card in charges — use profile meta.
+                $paymentInfo['card'] = [
+                    'holder_name' => (string) OrderMeta::get($order, '_card_holder_name'),
+                    'number' => (string) (OrderMeta::get($order, '_card_first_digits') ?: '')
+                        . '******'
+                        . (string) (OrderMeta::get($order, 'card_last4') ?: ''),
+                    'expiration_date' => '',
+                    'brand' => (string) (OrderMeta::get($order, '_payment_company_code') ?: 'card'),
+                    'id' => $profileId,
+                ];
+            } else {
                 Functions::log('Não foi possível carregar as informações do pagamento inicial para gerar os '
                     .'detalhes da recorrência.', 'critical', ['order id' => $order->get_id()] );
                 return [];
             }
-            $chargeInfo = $initialChargeInfo[0]['payment_method'];
-            $paymentInfo['card'] = [
-                'holder_name' => $chargeInfo['card']['holder']['name'],
-                'number' => $chargeInfo['card']['first_digits'] . '******' . $chargeInfo['card']['last_digits'],
-                'expiration_date' => $chargeInfo['card']['exp_month'] . '/' .
-                    $chargeInfo['card']['exp_year'],
-                'brand' => $chargeInfo['card']['brand'],
-                'id' => $chargeInfo['card']['id'] ?? null,
-            ];
         }
 
         if ($paymentMethod == 'credit_card_token') {
             $paymentInfo['method'] = 'credit_card';
-            $cardInfo = $order->get_meta('pagbank_order_recurring_card');
+            $cardInfo = OrderMeta::get($order, 'order_recurring_card');
             if ( ! isset($cardInfo['id'])){
                 Functions::log('Não foi possível carregar as informações do pagamento inicial para gerar os '
                     .'detalhes da recorrência.', 'critical', ['order id' => $order->get_id()] );
@@ -776,6 +804,14 @@ class Recurring
                 'brand' => $cardInfo['brand'],
                 'id' => $cardInfo['id']
             ];
+        }
+
+        if ($isVindi && !empty($paymentInfo['card']['id'])) {
+            $paymentInfo['partner'] = 'vindi';
+            $vindiCustomerId = (int) OrderMeta::get($order, '_vindi_customer_id');
+            if ($vindiCustomerId > 0) {
+                $paymentInfo['vindi_customer_id'] = $vindiCustomerId;
+            }
         }
         
         return $paymentInfo;
@@ -1099,7 +1135,7 @@ class Recurring
      */
     public function filterRecurringOrderActions($actions, $order): array
     {
-        if ($order->get_meta('_pagbank_is_recurring') && isset($actions['pay'])) {
+        if (OrderMeta::get($order, '_is_recurring') && isset($actions['pay'])) {
             unset($actions['pay']);
         }
         
@@ -1212,6 +1248,71 @@ class Recurring
             do_action('pagbank_recurring_subscription_suspended_by_payment_failure', $subscription);
             return;
         }
+    }
+
+    /**
+     * Suspend when store Connect Key partner ≠ subscription payment partner (PagBank↔Vindi).
+     * Marks needs_retoken; sends suspended e-mail once; does not burn payment retries.
+     *
+     * @return bool True when suspension was applied (or already waiting for retoken)
+     */
+    public function suspendForPartnerMismatch(\stdClass $subscription): bool
+    {
+        $info = RecurringHelper::normalizePaymentInfo($subscription->payment_info ?? null);
+        if (!empty($info['needs_retoken']) && $subscription->status === 'SUSPENDED') {
+            Functions::log(
+                sprintf(
+                    'Assinatura #%d aguarda atualização de cartão (needs_retoken). Cobrança ignorada.',
+                    $subscription->id
+                ),
+                'info'
+            );
+            return true;
+        }
+
+        $reason = __(
+            'Mudamos nosso processador de cartões. Por favor, atualize o cartão para continuar sua assinatura.',
+            'pagbank-connect'
+        );
+
+        $info['needs_retoken'] = true;
+        $retryKeep = isset($subscription->retry_attempts_remaining)
+            ? (int) $subscription->retry_attempts_remaining
+            : (int) Params::getRecurringConfig('recurring_retry_attempts', '3');
+        if ($retryKeep < 1) {
+            // Avoid cron canceling for "0 retries" while waiting for customer retoken.
+            $retryKeep = (int) Params::getRecurringConfig('recurring_retry_attempts', '3');
+            if ($retryKeep < 1) {
+                $retryKeep = 3;
+            }
+        }
+
+        $updated = $this->updateSubscription($subscription, [
+            'payment_info' => wp_json_encode($info),
+            'status' => 'SUSPENDED',
+            'suspended_at' => gmdate('Y/m/d H:i:s'),
+            'suspended_reason' => $reason,
+            'retry_attempts_remaining' => $retryKeep,
+            // Far-future bill: cron keeps picking due SUSPENDED rows; we skip via needs_retoken.
+            // Keep next_bill_at in the past/near so admin sees it as waiting, without daily charge spam.
+            'next_bill_at' => (new RecurringHelper())->calculateNextBillingDate('D', 7)->format('Y-m-d H:i:s'),
+        ]);
+
+        if ($updated) {
+            $subscription->status = 'SUSPENDED';
+            $subscription->suspended_reason = $reason;
+            $subscription->payment_info = wp_json_encode($info);
+            do_action('pagbank_recurring_subscription_suspended_by_payment_failure', $subscription);
+            Functions::log(
+                sprintf(
+                    'Assinatura #%d suspensa por mismatch de partner (PagBank×Vindi). Cliente deve atualizar o cartão.',
+                    $subscription->id
+                ),
+                'info'
+            );
+        }
+
+        return $updated || !empty($info['needs_retoken']);
     }
 
     /**
@@ -1508,39 +1609,212 @@ class Recurring
     {
         $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         $order = wc_get_order($subscription->initial_order_id);
-        $order->add_meta_data(
-            '_pagbank_card_encrypted',
-            htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
-            true
-        );
-        $method = new CreditCardToken($order);
-        $params = $method->prepare();
+        if (!$order) {
+            $this->addNotice(__('Pedido inicial da assinatura não encontrado.', 'pagbank-connect'), $fromAdmin, 'error');
+            return;
+        }
 
         $api = new Api();
         try {
-            $resp = $api->post('ws/tokens/cards', $params);
-            if (isset($resp['error_messages'])) {
-                throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
+            if ($api->partner()->isVindi()) {
+                // PagBank→Vindi migration / Vindi store: retoken via payment_profiles (never tokens/cards).
+                $paymentInfo = $this->changePaymentMethodViaVindiProfile($order);
+            } else {
+                OrderMeta::set($order, '_card_encrypted', htmlspecialchars((string) ($_POST['rm-pagbank-card-encrypted'] ?? ''), ENT_QUOTES, 'UTF-8'), true);
+                $method = new CreditCardToken($order);
+                $params = $method->prepare();
+                $resp = $api->post('ws/tokens/cards', $params);
+                if (isset($resp['error_messages'])) {
+                    throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
+                }
+                $method->process_response($order, $resp);
+                OrderMeta::set($order, 'payment_method', $method->code);
+                $paymentInfo = $this->getPaymentInfo($order);
             }
-            $method->process_response($order, $resp);
         } catch (Exception $e) {
-            $message = sprintf(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'), $e->getMessage());
+            $message = sprintf(
+                __('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'),
+                $e->getMessage()
+            );
             $this->addNotice($message, $fromAdmin, 'error');
             return;
         }
-        $order->update_meta_data('pagbank_payment_method', $method->code);
-        $paymentInfo = $this->getPaymentInfo($order);
-        $update = $this->updateSubscription($subscription, [
-            'payment_info' => json_encode($paymentInfo),
-        ]);
 
-        if ($update){
+        if ($paymentInfo === [] || empty($paymentInfo['card']['id'])) {
+            $this->addNotice(
+                __('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'),
+                $fromAdmin,
+                'error'
+            );
+            return;
+        }
+
+        unset($paymentInfo['needs_retoken']);
+        $updateData = [
+            'payment_info' => wp_json_encode($paymentInfo),
+        ];
+        // After PagBank→Vindi retoken (or any card update while suspended for mismatch), resume charging.
+        if ($subscription->status === 'SUSPENDED') {
+            $updateData['status'] = 'ACTIVE';
+            $updateData['suspended_reason'] = '';
+            $updateData['next_bill_at'] = gmdate('Y-m-d H:i:s', time() + 120);
+            $updateData['retry_attempts_remaining'] = (int) Params::getRecurringConfig('recurring_retry_attempts', '3');
+        }
+
+        $update = $this->updateSubscription($subscription, $updateData);
+
+        if ($update) {
             $this->addNotice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
             do_action('pagbank_recurring_subscription_payment_method_changed', $subscription->id);
             return;
         }
-        
-        $this->addNotice(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'), $fromAdmin, 'error');
+
+        $this->addNotice(
+            __('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'),
+            $fromAdmin,
+            'error'
+        );
+    }
+
+    /**
+     * Persist gateway_token as Vindi payment_profile and build subscription payment_info.
+     * Used when the store is on Vindi (including PagBank-originated subscriptions being retokenized).
+     *
+     * @return array{method:string,partner:string,card:array<string,mixed>}
+     * @throws \RM_PagBank\Connect\Exception
+     */
+    private function changePaymentMethodViaVindiProfile(WC_Order $order): array
+    {
+        // Only reuse a profile id posted by the current request (e.g. checkout 3DS).
+        // Never reuse the initial order's stored profile — change-card must create a new one from gateway_token.
+        $existingProfileId = (int) ($_POST['rm-pagbank-payment-profile-id'] ?? 0);
+
+        $company = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-payment-company-code'] ?? '')));
+        if ($company === '') {
+            $company = (string) (OrderMeta::get($order, '_payment_company_code') ?: 'mastercard');
+        }
+
+        $holderName = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-card-holder-name'] ?? '')));
+        $customerName = trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name());
+        if ($customerName === '') {
+            $customerName = $holderName !== '' ? $holderName : 'Cliente';
+        }
+
+        $profile = [];
+        $profileId = $existingProfileId;
+        $customerId = (int) ($_POST['rm-pagbank-vindi-customer-id'] ?? 0);
+        if ($customerId <= 0) {
+            $customerId = (int) OrderMeta::get($order, '_vindi_customer_id');
+        }
+        $api = new Api();
+
+        if ($profileId <= 0) {
+            $gatewayToken = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-card-encrypted'] ?? '')));
+            if ($gatewayToken === '') {
+                throw new \RM_PagBank\Connect\Exception([[
+                    'code' => 'TOKEN_MISSING',
+                    'description' => __('Token do cartão ausente.', 'pagbank-connect'),
+                ]], 40000);
+            }
+
+            $phone = preg_replace('/\D+/', '', (string) $order->get_billing_phone());
+            if ($phone !== '' && strpos($phone, '55') !== 0) {
+                $phone = '55' . $phone;
+            }
+
+            $registryCode = TaxId::sanitizeForApi((string) $order->get_meta('_rm_pagbank_customer_document'));
+            if ($registryCode === '' && !empty($_POST['rm-pagbank-card-cpf-cnpj'])) {
+                $registryCode = TaxId::sanitizeForApi(wp_unslash((string) $_POST['rm-pagbank-card-cpf-cnpj']));
+            }
+
+            $resp = $api->post('payment_profiles', [
+                'gateway_token' => $gatewayToken,
+                'payment_company_code' => $company,
+                'payment_method_code' => 'credit_card',
+                'customer' => [
+                    'name' => $customerName,
+                    'email' => strtolower(trim((string) $order->get_billing_email())),
+                    'registry_code' => $registryCode,
+                    'mobile_phone' => $phone,
+                ],
+            ]);
+
+            if (isset($resp['error_messages']) || !empty($resp['error'])) {
+                throw new \RM_PagBank\Connect\Exception(
+                    $resp['error_messages'] ?? [[
+                        'code' => (string) ($resp['error'] ?? 'PROFILE_ERROR'),
+                        'description' => (string) ($resp['message'] ?? 'Falha ao salvar cartão na Vindi.'),
+                    ]],
+                    40000
+                );
+            }
+
+            $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
+            $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
+            $customerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? $customerId);
+        }
+
+        if ($profileId <= 0) {
+            throw new \RM_PagBank\Connect\Exception([[
+                'code' => 'PROFILE_ID_MISSING',
+                'description' => __('Não foi possível obter o ID do perfil de pagamento.', 'pagbank-connect'),
+            ]], 40000);
+        }
+
+        $last4 = (string) ($profile['card_number_last_four'] ?? '');
+        if ($last4 === '') {
+            $last4 = (string) (OrderMeta::get($order, 'card_last4') ?: '****');
+        }
+        $bin = (string) ($profile['card_number_first_six'] ?? '');
+        if ($bin === '') {
+            $bin = (string) (OrderMeta::get($order, '_card_first_digits') ?: '******');
+        }
+        $brand = strtolower((string) (
+            ($profile['payment_company']['code'] ?? null)
+            ?: (OrderMeta::get($order, '_payment_company_code') ?: $company)
+        ));
+        $holder = (string) ($profile['holder_name'] ?? '');
+        if ($holder === '') {
+            $holder = $holderName !== '' ? $holderName : $customerName;
+        }
+
+        $expMonth = '';
+        $expYear = '';
+        $cardExpiration = (string) ($profile['card_expiration'] ?? '');
+        if ($cardExpiration !== '' && preg_match('/^(\d{4})-(\d{2})/', $cardExpiration, $m)) {
+            $expYear = $m[1];
+            $expMonth = $m[2];
+        } elseif (!empty($_POST['rm-pagbank-card-expiry'])) {
+            $parts = explode('/', (string) wp_unslash($_POST['rm-pagbank-card-expiry']));
+            $expMonth = str_pad(preg_replace('/\D+/', '', $parts[0] ?? ''), 2, '0', STR_PAD_LEFT);
+            $yy = preg_replace('/\D+/', '', $parts[1] ?? '');
+            $expYear = '20' . substr($yy, -2);
+        }
+
+        OrderMeta::set($order, '_payment_profile_id', $profileId);
+        if ($customerId > 0) {
+            OrderMeta::set($order, '_vindi_customer_id', $customerId);
+        }
+        OrderMeta::set($order, 'payment_method', 'credit_card');
+        OrderMeta::set($order, 'partner', 'vindi');
+        $order->save();
+
+        $paymentInfo = [
+            'method' => 'credit_card',
+            'partner' => 'vindi',
+            'card' => [
+                'holder_name' => $holder,
+                'number' => $bin . '******' . substr($last4, -4),
+                'expiration_date' => ($expMonth !== '' && $expYear !== '') ? ($expMonth . '/' . $expYear) : '',
+                'brand' => $brand,
+                'id' => $profileId,
+            ],
+        ];
+        if ($customerId > 0) {
+            $paymentInfo['vindi_customer_id'] = $customerId;
+        }
+
+        return $paymentInfo;
     }
 
     // endregion
@@ -1691,7 +1965,7 @@ class Recurring
     
     public function updateUserRestrictionsAfterOrderIsPaid($order, $orderData)
     {
-        $isRecurring = $order->get_meta('_pagbank_is_recurring');
+        $isRecurring = OrderMeta::get($order, '_is_recurring');
         $userId = $order->get_customer_id();
         if ($isRecurring && $userId) {
             $this->updateUserRestrictions($userId);
@@ -1762,10 +2036,7 @@ class Recurring
                 'limit'       => -1,
                 'meta_query' => [
                     'relation' => 'AND',
-                    [
-                        'key' => '_pagbank_recurring_initial',
-                        'value' => '1',
-                    ]
+                    OrderMeta::metaQueryEquals('_recurring_initial', '1'),
                 ]
             ]);
         }
@@ -1778,11 +2049,7 @@ class Recurring
             'order'          => 'DESC',
             'meta_query'     => [
                 'relation' => 'AND',
-                [
-                    'key'     => '_pagbank_recurring_initial',
-                    'value'   => '1',
-                    'compare' => '='
-                ],
+                OrderMeta::metaQueryEquals('_recurring_initial', '1'),
                 [
                     'key'     => '_customer_user',
                     'value'   => $userId,
@@ -1975,12 +2242,12 @@ class Recurring
         
         $count = 0;
         foreach ($orders as $order) {
-            if($order->get_meta('pagbank_is_sandbox') !== "1"){
+            if(OrderMeta::get($order, 'is_sandbox') !== "1"){
                 continue;
             }
 
             // Add meta_data to mark as removed
-            $order->add_meta_data('_pagbank_recurring_removed', 1, true);
+            OrderMeta::set($order, '_recurring_removed', 1, true);
             $order->save();
 
             // Delete subscription from pagbank_recurring table
@@ -2007,18 +2274,10 @@ class Recurring
             'limit'        => -1,
             'relation' => 'AND',
             'meta_query'   => [
-                [
-                    'key'     => '_pagbank_recurring_initial',
-                    'value'   => '1',
-                ],
-                [
-                    'key'     => 'pagbank_is_sandbox',
-                    'value'   => '1',
-                ],
-                [
-                    'key'     => '_pagbank_recurring_removed',
-                    'compare' => 'NOT EXISTS',
-                ],
+                'relation' => 'AND',
+                OrderMeta::metaQueryEquals('_recurring_initial', '1'),
+                OrderMeta::metaQueryEquals('is_sandbox', '1'),
+                OrderMeta::metaQueryExists('_recurring_removed', false),
             ]
             ]);
         }
@@ -2033,20 +2292,9 @@ class Recurring
             'order'          => 'DESC',
             'meta_query'     => [
                 'relation' => 'AND',
-                [
-                    'key'     => '_pagbank_recurring_initial',
-                    'value'   => '1',
-                    'compare' => '='
-                ],
-                [
-                    'key'     => 'pagbank_is_sandbox',
-                    'value'   => '1',
-                    'compare' => '=' // ou 'LIKE' se não funcionar
-                ],
-                [
-                    'key'     => '_pagbank_recurring_removed',
-                    'compare' => 'NOT EXISTS',
-                ],
+                OrderMeta::metaQueryEquals('_recurring_initial', '1'),
+                OrderMeta::metaQueryEquals('is_sandbox', '1'),
+                OrderMeta::metaQueryExists('_recurring_removed', false),
             ],
         );
 

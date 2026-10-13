@@ -19,6 +19,7 @@ use RM_PagBank\Object\PaymentMethod;
 use RM_PagBank\Object\Recurring;
 use WC_Order;
 use WC_Payment_Tokens;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class CreditCard
@@ -58,10 +59,50 @@ class CreditCard extends Common
         $paymentMethod = new PaymentMethod();
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
-        $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
-        $paymentMethod->setSoftDescriptor(Params::getCcConfig('cc_soft_descriptor'));
+        $paymentMethod->setInstallments(intval(OrderMeta::get($this->order, 'card_installments')));
+        $api = new Api();
+        // Soft descriptor is PagBank-only; Vindi configures statement descriptor in their admin.
+        if (!$api->partner()->isVindi()) {
+            $paymentMethod->setSoftDescriptor(Params::getCcConfig('cc_soft_descriptor'));
+        }
         $card = $this->getCardDetails();
         $paymentMethod->setCard($card);
+
+        if ($api->partner()->isVindi()) {
+            $profileId = (int) OrderMeta::get($this->order, '_payment_profile_id');
+            if ($profileId <= 0) {
+                try {
+                    $fromCard = $card->getPaymentProfileId();
+                    if ($fromCard > 0) {
+                        $profileId = $fromCard;
+                    }
+                } catch (\Throwable $e) {
+                    // Card.payment_profile_id may be uninitialized
+                }
+            }
+            $wantSave = OrderMeta::get($this->order, '_save_card') === 'yes'
+                || OrderMeta::get($this->order, '_recurring_initial');
+            if ($profileId > 0) {
+                $paymentMethod->setPaymentProfileId($profileId);
+                $card->setPaymentProfileId($profileId);
+                OrderMeta::set($this->order, '_payment_profile_id', $profileId, true);
+            }
+            // Never discard when charging a known profile or when the shopper asked to save the card.
+            $paymentMethod->setDiscardCreditCard(!($profileId > 0 || $wantSave));
+            $vindiCustomerId = (int) OrderMeta::get($this->order, '_vindi_customer_id');
+            if ($vindiCustomerId > 0) {
+                $paymentMethod->setCustomerId($vindiCustomerId);
+            }
+            $threeDsRaw = OrderMeta::get($this->order, '_card_3ds_payload');
+            if (is_string($threeDsRaw) && $threeDsRaw !== '') {
+                $decoded = json_decode($threeDsRaw, true);
+                if (is_array($decoded) && $decoded !== []) {
+                    // Explicit PB type — API maps 1:1 to Vindi payment_method_code credit_card_3ds.
+                    $paymentMethod->setType('CREDIT_CARD_3DS');
+                    $paymentMethod->setThreeDs($decoded);
+                }
+            }
+        }
 
         // Check if split with liable will be applied
         $hasSplitWithLiable = false;
@@ -70,15 +111,17 @@ class CreditCard extends Common
         }
 
         //3ds - Cannot be used with split transactions that have liable configuration
-        if ($hasSplitWithLiable && $this->order->get_meta('_pagbank_card_3ds_id')) {
+        // Vindi 3DS uses payment_method.three_ds + payment_profile_id; PagBank uses authentication_method id
+        if ($hasSplitWithLiable && OrderMeta::get($this->order, '_card_3ds_id')) {
             // Log that 3DS is being skipped due to split
             Functions::log('3DS authentication skipped for order ' . $this->order->get_id() . ' due to split transaction with liable configuration', 'info');
-        } elseif (!$hasSplitWithLiable 
-            && $this->order->get_meta('_pagbank_card_3ds_id')
+        } elseif (!$hasSplitWithLiable
+            && !$api->partner()->isVindi()
+            && OrderMeta::get($this->order, '_card_3ds_id')
             && (wc_string_to_bool(Params::getCcConfig('cc_3ds')) || wc_string_to_bool(Params::getCcConfig('cc_3ds_retry')))) {
             $authMethod = new AuthenticationMethod();
             $authMethod->setType('THREEDS');
-            $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
+            $authMethod->setId(OrderMeta::get($this->order, '_card_3ds_id'));
             $paymentMethod->setAuthenticationMethod($authMethod);
         }
         
@@ -88,7 +131,7 @@ class CreditCard extends Common
             $selectedInstallments = $paymentMethod->getInstallments();
             $installments = Params::getInstallments(
                 $this->order->get_total(),
-                $this->order->get_meta('_pagbank_card_first_digits')
+                OrderMeta::get($this->order, '_card_first_digits')
             );
             $installment = Params::extractInstallment($installments, $selectedInstallments);
             if ($installment['fees']) {
@@ -106,7 +149,7 @@ class CreditCard extends Common
 
         //region Recurring initial or subsequent order
         $recurring = new Recurring();
-        if ($this->order->get_meta('_pagbank_recurring_initial')) {
+        if (OrderMeta::get($this->order, '_recurring_initial')) {
             $recurring->setType('INITIAL');
             $charge->setRecurring($recurring);
             $card->setStore(true);
@@ -120,7 +163,7 @@ class CreditCard extends Common
 //            }
         }
         
-        if ($this->order->get_meta('_pagbank_is_recurring') === true) {
+        if (OrderMeta::get($this->order, '_is_recurring') === true) {
             $recurring->setType('SUBSEQUENT');
             $charge->setRecurring($recurring);
         }
@@ -162,8 +205,8 @@ class CreditCard extends Common
      */
     protected function isRecurringCharge(): bool
     {
-        return (bool) $this->order->get_meta('_pagbank_recurring_initial')
-            || wc_string_to_bool((string) $this->order->get_meta('_pagbank_is_recurring'));
+        return (bool) OrderMeta::get($this->order, '_recurring_initial')
+            || wc_string_to_bool((string) OrderMeta::get($this->order, '_is_recurring'));
     }
 
     /**
@@ -174,7 +217,8 @@ class CreditCard extends Common
      */
     public static function applyChargeInstallmentMeta(WC_Order $order, array $charge): void
     {
-        if (($charge['payment_method']['type'] ?? '') !== 'CREDIT_CARD') {
+        $chargeType = (string) ($charge['payment_method']['type'] ?? '');
+        if (!in_array($chargeType, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true)) {
             return;
         }
 
@@ -186,16 +230,14 @@ class CreditCard extends Common
         $decimals = wc_get_price_decimals();
         $totalReais = max(0, (float) $rawValue / 100);
 
-        $order->update_meta_data('pagbank_cc_total_charged', wc_format_decimal($totalReais, $decimals));
+        OrderMeta::set($order, 'cc_total_charged', wc_format_decimal($totalReais, $decimals));
 
         $inst = (int) ($charge['payment_method']['installments'] ?? 1);
         if ($inst < 1) {
             $inst = 1;
         }
 
-        $order->update_meta_data(
-            'pagbank_cc_installment_amount',
-            wc_format_decimal($totalReais / $inst, $decimals)
+        OrderMeta::set($order, 'cc_installment_amount', wc_format_decimal($totalReais / $inst, $decimals)
         );
 
         $interestRaw = $charge['amount']['fees']['buyer']['interest']['total'] ?? null;
@@ -204,11 +246,11 @@ class CreditCard extends Common
             : 0.0;
 
         if ($interestReais > 0) {
-            $order->update_meta_data('_pagbank_cc_buyer_interest_total', wc_format_decimal($interestReais, $decimals));
-            $order->update_meta_data('pagbank_cc_interest_free', 'no');
+            OrderMeta::set($order, '_cc_buyer_interest_total', wc_format_decimal($interestReais, $decimals));
+            OrderMeta::set($order, 'cc_interest_free', 'no');
         } else {
-            $order->delete_meta_data('_pagbank_cc_buyer_interest_total');
-            $order->update_meta_data('pagbank_cc_interest_free', 'yes');
+            OrderMeta::delete($order, '_cc_buyer_interest_total');
+            OrderMeta::set($order, 'cc_interest_free', 'yes');
         }
     }
 
@@ -301,7 +343,7 @@ class CreditCard extends Common
     {
         $card = new Card();
         //if subsequent recurring order...
-        if ($this->order->get_meta('_pagbank_is_recurring') === true)
+        if (OrderMeta::get($this->order, '_is_recurring') === true)
         {
             //get card data from subscription
             global $wpdb;
@@ -309,31 +351,73 @@ class CreditCard extends Common
             $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0%d;";
             $recurring = $wpdb->get_row( $wpdb->prepare( $sql, $initialSubOrderId ) );
             $paymentInfo = json_decode($recurring->payment_info);
-            $card->setId($paymentInfo->card->id ?: '');
             $holder = new Holder();
-            $holder->setName($paymentInfo->card->holder_name);
+            $holder->setName($paymentInfo->card->holder_name ?? '');
             $card->setHolder($holder);
             $card->setStore(true);
+
+            $cardId = $paymentInfo->card->id ?? '';
+            $api = new Api();
+            $isVindiCard = $api->partner()->isVindi()
+                || (($paymentInfo->partner ?? '') === 'vindi');
+            if ($isVindiCard) {
+                $profileId = (int) $cardId;
+                if ($profileId > 0) {
+                    $card->setPaymentProfileId($profileId);
+                    OrderMeta::set($this->order, '_payment_profile_id', $profileId, true);
+                }
+                $vindiCustomerId = (int) ($paymentInfo->vindi_customer_id ?? 0);
+                if ($vindiCustomerId > 0) {
+                    OrderMeta::set($this->order, '_vindi_customer_id', $vindiCustomerId, true);
+                }
+                return $card;
+            }
+
+            $card->setId($cardId ?: '');
             return $card;
         }
         
         $holder = new Holder();
-        $holder->setName($this->order->get_meta('_pagbank_card_holder_name'));
+        $holder->setName(OrderMeta::get($this->order, '_card_holder_name'));
         $card->setHolder($holder);
-        $token_id = $this->order->get_meta('_pagbank_card_token_id');
+        $token_id = OrderMeta::get($this->order, '_card_token_id');
         if($token_id && !empty($token_id) && 'new' !== $token_id){
             $tokenCc = self::getCcToken($token_id);
-            $this->order->add_meta_data(
-                'pagbank_card_last4',
-                $tokenCc->get_last4(),
-                true
-            );
-            $this->order->add_meta_data('_pagbank_card_first_digits', $tokenCc->get_meta( 'cc_bin' ), true);
+            OrderMeta::set($this->order, 'card_last4', $tokenCc->get_last4(), true);
+            OrderMeta::set($this->order, '_card_first_digits', $tokenCc->get_meta( 'cc_bin' ), true);
+            $api = new Api();
+            if ($api->partner()->isVindi()) {
+                $profileId = (int) ($tokenCc->get_meta('vindi_payment_profile_id') ?: $tokenCc->get_token());
+                if ($profileId > 0) {
+                    $card->setPaymentProfileId($profileId);
+                    $holderName = (string) $tokenCc->get_meta('holder_name');
+                    if ($holderName !== '') {
+                        $holder->setName($holderName);
+                        $card->setHolder($holder);
+                    }
+                    return $card;
+                }
+            }
             $card->setId($tokenCc->get_token() ?: '');
             return $card;
         }
         //non recurring...
-        $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
+        $api = new Api();
+        if ($api->partner()->isVindi()) {
+            $profileId = (int) OrderMeta::get($this->order, '_payment_profile_id');
+            if ($profileId > 0) {
+                $card->setPaymentProfileId($profileId);
+                return $card;
+            }
+            $token = OrderMeta::get($this->order, '_card_gateway_token');
+            if (!$token) {
+                // fallback: reuse encrypted field if store posted gateway_token there during transition
+                $token = OrderMeta::get($this->order, '_card_encrypted');
+            }
+            $card->setGatewayToken((string) $token);
+            return $card;
+        }
+        $card->setEncrypted(OrderMeta::get($this->order, '_card_encrypted'));
 
         return $card;
     }

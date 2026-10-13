@@ -24,7 +24,7 @@ function handleSuccessBehaviorPagbank(){
                     const jsCode = JSON.parse(pagbankVars.successBehaviorJs);
                     eval(jsCode);
                 }catch (e) {
-                    console.error("PagBank: JavaScript Personalizado contém erros.", e);
+                    console.error("PB Integrações: JavaScript Personalizado contém erros.", e);
                 }
                 break;
         }

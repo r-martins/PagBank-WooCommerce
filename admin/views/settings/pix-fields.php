@@ -3,27 +3,34 @@ if (!defined('ABSPATH')) {
     exit;
 } // Exit if accessed directly
 
+use RM_PagBank\Partner\PartnerDetector;
+
+$pixEnabledDescription = '';
+if (!(PartnerDetector::fromSettings())->isVindi()) {
+    $pixEnabledDescription = __('ℹ️ Lembre-se de <a href="https://minhaconta.pagbank.com.br/conta-digital/pix" target="_blank">gerar uma chave aleatória PIX no painel PagBank</a>, ou os códigos PIX gerados serão inválidos.
+        <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido" target="_blank">Saiba mais.</a>', 'pagbank-connect');
+}
+
 return array(
 	'enabled'            => [
         'title'       => __( 'Habilitar', 'pagbank-connect'),
         'label'       => __( 'Habilitar', 'pagbank-connect' ),
         'type'        => 'checkbox',
-        'description' =>  __('ℹ️ Lembre-se de <a href="https://minhaconta.pagbank.com.br/conta-digital/pix" target="_blank">gerar uma chave aleatória PIX no painel PagBank</a>, ou os códigos PIX gerados serão inválidos.
-        <a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido" target="_blank">Saiba mais.</a>'),
+        'description' => $pixEnabledDescription,
         'default'     => 'yes'
 	],
 	'title'              => [
         'title'       => __( 'Título Principal', 'pagbank-connect' ),
         'type'        => 'safe_text',
         'description' => __( 'Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect' ),
-        'default'     => __( 'PIX via PagBank', 'pagbank-connect' ),
+        'default'     => __( 'PIX', 'pagbank-connect' ),
         'desc_tip'    => true,
         'class' => 'pix_attr'
 	],
 	'pix_instructions'       => [
         'title'       => __( 'Instruções', 'pagbank-connect' ),
         'type'        => 'textarea',
-        'description' => __( 'Instruções que serão adicionadas à sua página de sucesso.', 'pagbank-connect' ),
+        'description' => __( 'Instruções que serão adicionadas à sua página de checkout ao selecionar este método.', 'pagbank-connect' ),
         'default'     => __( 'O QrCode será exibido na finalização do pedido.', 'pagbank-connect' ),
         'desc_tip'    => true,
         'class'       => 'pix_attr'

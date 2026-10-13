@@ -20,6 +20,7 @@ use WC_Order;
 use WC_Payment_Token_CC;
 use WC_Payment_Tokens;
 use WP_Error;
+use RM_PagBank\Helpers\OrderMeta;
 
 /** Standalone Credit Card */
 class CreditCard extends WC_Payment_Gateway_CC
@@ -41,13 +42,13 @@ class CreditCard extends WC_Payment_Gateway_CC
         $this->icon = plugins_url('public/images/cc.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
         $this->method_title = $this->get_option(
             'title',
-            __('Cartão de Crédito via PagBank', 'pagbank-connect')
+            __('Cartão de Crédito', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Receba pagamentos com Cartão de Crédito via PagBank (por Ricardo Martins)',
+            'Receba pagamentos com Cartão de Crédito (por Ricardo Martins)',
             'pagbank-connect'
         );
-        $this->title = $this->get_option('title', __('Cartão de Crédito via PagBank', 'pagbank-connect'));
+        $this->title = $this->get_option('title', __('Cartão de Crédito', 'pagbank-connect'));
         $this->description = $this->get_option('description');
 
 
@@ -117,12 +118,85 @@ class CreditCard extends WC_Payment_Gateway_CC
             return;
         }
 
-        parent::save_payment_method_checkbox();
+        $html = sprintf(
+            '<p class="form-row woocommerce-SavedPaymentMethods-saveNew">
+				<input id="wc-%1$s-new-payment-method" name="wc-%1$s-new-payment-method" type="checkbox" value="true" style="width:auto;" />
+				<label for="wc-%1$s-new-payment-method" style="display:inline;">%2$s</label>
+			</p>',
+            esc_attr($this->id),
+            esc_html__('Salvar para uso futuro', 'pagbank-connect')
+        );
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo apply_filters('woocommerce_payment_gateway_save_new_payment_method_option_html', $html, $this);
     }
 
     public function init_form_fields()
     {
         $this->form_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/cc-fields.php';
+        $this->adjustVindi3dsFormFields();
+    }
+
+    /**
+     * Vindi: hide PagBank-only soft-decline retry; keep “allow continue” (card not enrolled in 3DS).
+     * Show enable checkbox or “open ticket” notice when credit_card_3ds is unavailable.
+     */
+    private function adjustVindi3dsFormFields(): void
+    {
+        $detector = \RM_PagBank\Partner\PartnerDetector::fromSettings();
+        if (!$detector->isVindi()) {
+            return;
+        }
+
+        // PagBank soft-decline → retry with 3DS does not apply to Vindi MPI enroll.
+        unset($this->form_fields['cc_3ds_retry']);
+
+        if (isset($this->form_fields['cc_3ds_allow_continue'])) {
+            $this->form_fields['cc_3ds_allow_continue']['description'] = __(
+                'Alguns cartões não participam do 3D Secure (emissor/bandeira fora do programa). <br/>'
+                . 'Ao marcar, o cliente pode concluir a compra sem 3DS nesses casos. <br/>'
+                . 'Desmarcado (padrão): a compra é bloqueada e o cliente precisa usar outro cartão ou método.',
+                'pagbank-connect'
+            );
+        }
+
+        if (isset($this->form_fields['cc_soft_descriptor'])) {
+            $this->form_fields['cc_soft_descriptor'] = [
+                'title' => __('Identificador na Fatura', 'pagbank-connect'),
+                'type' => 'title',
+                'description' => __(
+                    'Com Connect Key Vindi, o nome na fatura é configurado no painel da Vindi em '
+                    . '<strong>Configurações → Métodos de Pagamento → Cartão de Crédito</strong>.',
+                    'pagbank-connect'
+                ),
+            ];
+        }
+
+        $caps = new \RM_PagBank\Partner\Capabilities($detector);
+        if ($caps->has3ds()) {
+            return;
+        }
+
+        unset($this->form_fields['cc_3ds']);
+        $notice = sprintf(
+            /* translators: %s = HTML link to Vindi support */
+            __('3D Secure não está ativo em sua conta Vindi. %s para solicitar.', 'pagbank-connect'),
+            '<a href="' . esc_url('https://vindi.com.br/atendimento/abrir-chamado/') . '" target="_blank" rel="noopener noreferrer">'
+            . esc_html__('Abra um chamado', 'pagbank-connect')
+            . '</a>'
+        );
+        // Insert notice where cc_3ds was (before save card).
+        $rebuilt = [];
+        foreach ($this->form_fields as $key => $field) {
+            if ($key === 'cc_allow_save_card') {
+                $rebuilt['cc_3ds_unavailable'] = [
+                    'title' => __('Autenticação 3D', 'pagbank-connect'),
+                    'type' => 'title',
+                    'description' => $notice,
+                ];
+            }
+            $rebuilt[$key] = $field;
+        }
+        $this->form_fields = $rebuilt;
     }
 
     public function admin_options() {
@@ -144,33 +218,8 @@ class CreditCard extends WC_Payment_Gateway_CC
      */
     public function validate_connect_key_field($key, $connect_key)
     {
-        $api = new Api();
-        $api->setConnectKey($connect_key);
-
-        try {
-            $ret = $api->post('ws/public-keys', ['type' => 'card']);
-            if (isset($ret['public_key'])) {
-                $this->update_option('public_key', $ret['public_key']);
-                $this->update_option('public_key_created_at', $ret['created_at']);
-                $isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
-                $this->update_option('is_sandbox', $isSandbox);
-            }
-
-            if (isset($ret['error_messages'])){
-                //implode error_messages showing code and description
-                $error_messages = array_map(function($error){
-                    return $error['code'] . ' - ' . $error['description'];
-                }, $ret['error_messages']);
-                WC_Admin_Settings::add_error(implode('<br/>', $error_messages));
-                $connect_key = '';
-            }
-        } catch (Exception $e) {
-            WC_Admin_Settings::add_error($e->getMessage());
-            $connect_key = '';
-        }
-
-        return $connect_key;
-
+        $gateway = new \RM_PagBank\Connect\Gateway();
+        return $gateway->validate_connect_key_field($key, $connect_key);
     }
 
     /**
@@ -244,7 +293,7 @@ class CreditCard extends WC_Payment_Gateway_CC
         }
 
         if ($isCartRecurring) {
-            $order->add_meta_data('_pagbank_recurring_initial', true);
+            OrderMeta::set($order, '_recurring_initial', true);
         }
 
         // region Add note if customer changed payment method
@@ -253,12 +302,26 @@ class CreditCard extends WC_Payment_Gateway_CC
 
         $recurringTrialPeriod = $recurringHelper->getCartRecurringTrial();
         if ($recurringTrialPeriod) {
-            $order->add_meta_data('_pagbank_recurring_trial_length', $recurringTrialPeriod);
+            OrderMeta::set($order, '_recurring_trial_length', $recurringTrialPeriod, false);
         }
 
         $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
         $is_saved_token = $token_id !== null && $token_id !== 'new';
         $is_trial_zero = $recurringTrialPeriod && $order->get_total() == 0;
+
+        // Detect "save card" before prepare() so Vindi discard_credit_card is already false.
+        $shouldSaveToken = false;
+        if (isset($_POST['wc-rm-pagbank-cc-new-payment-method'])
+            && wc_bool_to_string($_POST['wc-rm-pagbank-cc-new-payment-method']) === 'yes') {
+            $shouldSaveToken = true;
+        }
+        if (isset($_POST['rm-pagbank-cc-new-payment-method-in-block'])
+            && wc_bool_to_string($_POST['rm-pagbank-cc-new-payment-method-in-block']) === 'yes') {
+            $shouldSaveToken = true;
+        }
+        if ($shouldSaveToken) {
+            OrderMeta::set($order, '_save_card', 'yes', true);
+        }
 
         if ($is_trial_zero) {
             $payment_method .= '_token';
@@ -271,61 +334,101 @@ class CreditCard extends WC_Payment_Gateway_CC
                     ?: filter_var($_POST['rm-pagbank-card-installments'], FILTER_SANITIZE_NUMBER_INT); 
                 $token_id = isset($_POST['wc-rm-pagbank-cc-payment-token']) ? wc_clean($_POST['wc-rm-pagbank-cc-payment-token']) : null;
                 if($is_saved_token){
-                    $order->add_meta_data(
-                        '_pagbank_card_token_id',
-                        $token_id,
-                        true
-                    );
+                    OrderMeta::set($order, '_card_token_id', $token_id, true);
                     $installments = filter_input(INPUT_POST, 'rm-pagbank-card-installments-token', FILTER_SANITIZE_NUMBER_INT)
-                    ?: filter_var($_POST['rm-pagbank-card-installments-token'], FILTER_SANITIZE_NUMBER_INT); 
+                    ?: filter_var($_POST['rm-pagbank-card-installments-token'], FILTER_SANITIZE_NUMBER_INT);
+                    // Vindi: copy payment_profile_id from Woo token onto the order for billing + email match.
+                    try {
+                        $tokenCc = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($token_id);
+                        if ($tokenCc && (new Api())->partner()->isVindi()) {
+                            $profileId = (int) ($tokenCc->get_meta('vindi_payment_profile_id') ?: $tokenCc->get_token());
+                            if ($profileId > 0) {
+                                OrderMeta::set($order, '_payment_profile_id', $profileId, true);
+                            }
+                            $doc = (string) $tokenCc->get_meta('customer_document');
+                            if ($doc !== '' && !$order->get_meta('_rm_pagbank_customer_document')) {
+                                $order->add_meta_data('_rm_pagbank_customer_document', $doc, true);
+                            }
+                            $holder = (string) $tokenCc->get_meta('holder_name');
+                            if ($holder !== '') {
+                                OrderMeta::set($order, '_card_holder_name', $holder, true);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // getCcToken validates ownership; fall through to prepare/charge error handling.
+                    }
                 }
-                $order->add_meta_data(
-                    'pagbank_card_installments',
-                    $installments,
-                    true
-                );
+                OrderMeta::set($order, 'card_installments', $installments, true);
 
                 //the first is used in non-block checkout
                 $ccNumber = filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT)
                     ?: filter_var($_POST['rm-pagbank-card-number'], FILTER_SANITIZE_NUMBER_INT);
                     
-                $order->add_meta_data(
-                    'pagbank_card_last4',
-                    substr($ccNumber, -4),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_first_digits',
-                    substr($ccNumber, 0, 6),
-                    true
-                );
+                OrderMeta::set($order, 'card_last4', substr($ccNumber, -4), true);
+                OrderMeta::set($order, '_card_first_digits', substr($ccNumber, 0, 6), true);
 
 
-                $order->add_meta_data(
-                    '_pagbank_card_encrypted',
-                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
-                    true
-                );
+                OrderMeta::set($order, '_card_encrypted', htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'), true);
+                OrderMeta::set($order, '_card_gateway_token', htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'), true);
                 $holderName = htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8');
                 $holderName = preg_replace('/\s+/', ' ', trim($holderName));
                 $holderName = preg_replace('/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/', '', $holderName);
-                $order->add_meta_data(
-                    '_pagbank_card_holder_name',
-                    $holderName,
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_3ds_id',
-                    isset($_POST['rm-pagbank-card-3d'])
+                OrderMeta::set($order, '_card_holder_name', $holderName, true);
+                OrderMeta::set($order, '_card_3ds_id', isset($_POST['rm-pagbank-card-3d'])
                         ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
-                        : false,
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_retry_with_3ds',
-                    isset($_POST['rm-pagbank-card-retry-with-3ds'])
+                        : false);
+                OrderMeta::set($order, '_card_retry_with_3ds', isset($_POST['rm-pagbank-card-retry-with-3ds'])
                         ? htmlspecialchars($_POST['rm-pagbank-card-retry-with-3ds'], ENT_QUOTES, 'UTF-8')
-                        : false,
-                );
+                        : false);
+
+                if (!empty($_POST['rm-pagbank-payment-profile-id'])) {
+                    OrderMeta::set($order, '_payment_profile_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-payment-profile-id'])), true);
+                } else {
+                    // BELOW_MINIMUM / retry clears the hidden field — do not reuse a discarded profile from a prior attempt.
+                    OrderMeta::delete($order, '_payment_profile_id');
+                }
+                if (!empty($_POST['rm-pagbank-vindi-customer-id'])) {
+                    OrderMeta::set($order, '_vindi_customer_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-vindi-customer-id'])), true);
+                } else {
+                    OrderMeta::delete($order, '_vindi_customer_id');
+                }
+                if (!empty($_POST['rm-pagbank-payment-company-code'])) {
+                    OrderMeta::set($order, '_payment_company_code', sanitize_text_field(wp_unslash($_POST['rm-pagbank-payment-company-code'])), true);
+                }
+                if (!empty($_POST['rm-pagbank-card-3ds-payload'])) {
+                    $threeDsPayload = wp_unslash($_POST['rm-pagbank-card-3ds-payload']);
+                    $decodedThreeDs = json_decode($threeDsPayload, true);
+                    if (is_array($decodedThreeDs)) {
+                        OrderMeta::set($order, '_card_3ds_payload', wp_json_encode($decodedThreeDs), true);
+                    }
+                } else {
+                    OrderMeta::delete($order, '_card_3ds_payload');
+                }
+
+                // Vindi: when 3DS is required and “Permitir concluir” is off, reject charges without a 3DS payload.
+                $apiVindi3ds = new Api();
+                if (
+                    $apiVindi3ds->partner()->isVindi()
+                    && wc_string_to_bool(Params::getCcConfig('cc_3ds', 'no'))
+                    && !wc_string_to_bool(Params::getCcConfig('cc_3ds_allow_continue', 'no'))
+                    && (float) $order->get_total() >= 1.0
+                ) {
+                    $capsVindi3ds = new \RM_PagBank\Partner\Capabilities($apiVindi3ds->partner());
+                    $threeDsStored = OrderMeta::get($order, '_card_3ds_payload');
+                    if ($capsVindi3ds->has3ds() && (!is_string($threeDsStored) || $threeDsStored === '')) {
+                        wc_add_notice(
+                            __(
+                                '3D Secure é obrigatório para cartão nesta loja. Use um cartão com suporte a 3DS ou outro método de pagamento.',
+                                'pagbank-connect'
+                            ),
+                            'error'
+                        );
+                        return [
+                            'result' => 'fail',
+                            'redirect' => '',
+                        ];
+                    }
+                }
 
                 $order->add_meta_data(
                     '_rm_pagbank_checkout_blocks',
@@ -345,11 +448,95 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $params = $method->prepare();
                 break;
             case 'cc_token':
-                $order->add_meta_data(
-                    '_pagbank_card_encrypted',
-                    htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
-                    true
-                );
+                OrderMeta::set($order, '_card_encrypted', htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'), true);
+                OrderMeta::set($order, '_card_gateway_token', htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'), true);
+                if (!empty($_POST['rm-pagbank-card-holder-name'])) {
+                    $holderName = htmlspecialchars($_POST['rm-pagbank-card-holder-name'], ENT_QUOTES, 'UTF-8');
+                    $holderName = preg_replace('/\s+/', ' ', trim($holderName));
+                    $holderName = preg_replace('/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/', '', $holderName);
+                    OrderMeta::set($order, '_card_holder_name', $holderName, true);
+                }
+                if (!empty($_POST['rm-pagbank-payment-company-code'])) {
+                    OrderMeta::set($order, '_payment_company_code', sanitize_text_field(wp_unslash($_POST['rm-pagbank-payment-company-code'])), true);
+                }
+                if (!empty($_POST['rm-pagbank-customer-document'])) {
+                    $order->add_meta_data(
+                        '_rm_pagbank_customer_document',
+                        TaxId::sanitizeForApi(wp_unslash($_POST['rm-pagbank-customer-document'])),
+                        true
+                    );
+                }
+                if (!empty($_POST['rm-pagbank-payment-profile-id'])) {
+                    OrderMeta::set($order, '_payment_profile_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-payment-profile-id'])), true);
+                } else {
+                    OrderMeta::delete($order, '_payment_profile_id');
+                }
+                if (!empty($_POST['rm-pagbank-vindi-customer-id'])) {
+                    OrderMeta::set($order, '_vindi_customer_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-vindi-customer-id'])), true);
+                } else {
+                    OrderMeta::delete($order, '_vindi_customer_id');
+                }
+                $ccNumber = filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT)
+                    ?: filter_var($_POST['rm-pagbank-card-number'] ?? '', FILTER_SANITIZE_NUMBER_INT);
+                if ($ccNumber) {
+                    OrderMeta::set($order, 'card_last4', substr((string) $ccNumber, -4), true);
+                    OrderMeta::set($order, '_card_first_digits', substr((string) $ccNumber, 0, 6), true);
+                }
+
+                $apiTrial = new Api();
+                if ($apiTrial->partner()->isVindi()) {
+                    // Trial R$0: persist Vindi payment_profile (never tokens/cards).
+                    $method = new CreditCardToken($order);
+                    if ($is_saved_token) {
+                        $tokenCc = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($token_id);
+                        $profileId = (int) ($tokenCc->get_meta('vindi_payment_profile_id') ?: $tokenCc->get_token());
+                        $holder_name = (string) $tokenCc->get_meta('holder_name');
+                        $brand = (string) $tokenCc->get_card_type();
+                        $resp = [
+                            'id' => $profileId > 0 ? (string) $profileId : ($tokenCc->get_token() ?: ''),
+                            'holder' => ['name' => $holder_name],
+                            'first_digits' => $tokenCc->get_meta('cc_bin'),
+                            'last_digits' => $tokenCc->get_last4(),
+                            'exp_month' => $tokenCc->get_expiry_month(),
+                            'exp_year' => $tokenCc->get_expiry_year(),
+                            'brand' => $brand,
+                        ];
+                        if ($profileId > 0) {
+                            OrderMeta::set($order, '_payment_profile_id', $profileId, true);
+                        }
+                        OrderMeta::set($order, 'payment_method', $method->code, true);
+                        $order->set_payment_method(Connect::DOMAIN);
+                        break;
+                    }
+
+                    $this->saveCcToken($order);
+                    $profileId = (int) OrderMeta::get($order, '_payment_profile_id');
+                    $expMonth = '';
+                    $expYear = '';
+                    if (!empty($_POST['rm-pagbank-card-expiry'])) {
+                        $parts = explode('/', (string) wp_unslash($_POST['rm-pagbank-card-expiry']));
+                        $expMonth = str_pad(preg_replace('/\D+/', '', $parts[0] ?? ''), 2, '0', STR_PAD_LEFT);
+                        $yy = preg_replace('/\D+/', '', $parts[1] ?? '');
+                        $expYear = '20' . substr($yy, -2);
+                    }
+                    $resp = [
+                        'id' => (string) $profileId,
+                        'holder' => [
+                            'name' => (string) (OrderMeta::get($order, '_card_holder_name') ?: ''),
+                        ],
+                        'first_digits' => (string) (OrderMeta::get($order, '_card_first_digits') ?: ''),
+                        'last_digits' => (string) (OrderMeta::get($order, 'card_last4') ?: ''),
+                        'exp_month' => $expMonth,
+                        'exp_year' => $expYear,
+                        'brand' => (string) (OrderMeta::get($order, '_payment_company_code') ?: 'card'),
+                    ];
+                    OrderMeta::set($order, 'payment_method', $method->code, true);
+                    $order->set_payment_method(Connect::DOMAIN);
+                    // Profile already persisted — skip tokens/cards makeRequest below.
+                    $is_saved_token = true;
+                    break;
+                }
+
                 $method = new CreditCardToken($order);
                 if ($is_saved_token) {
                     $tokenCc = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($token_id);
@@ -367,7 +554,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                         'brand' => $brand,
                     ];
                    
-                    $order->add_meta_data('pagbank_payment_method', $method->code, true);
+                    OrderMeta::set($order, 'payment_method', $method->code, true);
                     $order->set_payment_method(Connect::DOMAIN);
                     break;
                 }
@@ -382,15 +569,13 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'redirect' => '',
                 );
         }
-        $shouldSaveToken = false;
-        if ( isset( $_POST['wc-rm-pagbank-cc-new-payment-method'] ) && wc_bool_to_string($_POST['wc-rm-pagbank-cc-new-payment-method']) == 'yes' ) {
-            $shouldSaveToken = true;
-        }
-        if ( isset( $_POST['rm-pagbank-cc-new-payment-method-in-block'] ) && wc_bool_to_string($_POST['rm-pagbank-cc-new-payment-method-in-block']) === 'yes' ) {
-            $shouldSaveToken = true;
-        }
-        if ( $shouldSaveToken ) {
+        // Persist card after order meta is set; rebuild Vindi charge so discard_credit_card stays false.
+        if ($shouldSaveToken) {
             $this->saveCcToken($order);
+            if ($payment_method === 'cc' && (new Api())->partner()->isVindi()) {
+                $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
+                $params = $method->prepare();
+            }
         }
 
         if (!$is_trial_zero || ($is_trial_zero && !$is_saved_token)) {
@@ -410,7 +595,8 @@ class CreditCard extends WC_Payment_Gateway_CC
                     $additional_error .= $charge['payment_response']['message'] . ' ('
                         . $charge['payment_response']['code'] . '). ';
 
-                $retryWith3ds = !wc_string_to_bool($this->get_option('cc_3ds'))
+                $retryWith3ds = !(new Api())->partner()->isVindi()
+                    && !wc_string_to_bool($this->get_option('cc_3ds'))
                     && wc_string_to_bool($this->get_option('cc_3ds_retry'))
                     && $this->codeCanRetryPayment((string) $charge['payment_response']['code']);
                 if ($retryWith3ds) {
@@ -438,7 +624,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
-        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
+        $order->add_order_note(\RM_PagBank\Partner\Branding::notePrefix($order) . ': Pedido criado com sucesso!', $shouldNotify);
 
         // sends the new order email
         if ($shouldNotify) {
@@ -454,13 +640,18 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     /**
-     * Token ID PagBank|Woo
+     * Token ID PagBank|Woo — Vindi uses payment_profile id (no /tokens/cards).
      * @param WC_Order $order
      * @throws \RM_PagBank\Connect\Exception
      */
     public function saveCcToken($order)
     {
         $api = new Api();
+        if ($api->partner()->isVindi()) {
+            $this->saveVindiCcToken($order, $api);
+            return $order;
+        }
+
         $ccToken = new CreditCardToken($order);
         $params = $ccToken->prepare();
 
@@ -484,6 +675,131 @@ class CreditCard extends WC_Payment_Gateway_CC
         // Assoc with order
         $order->add_payment_token( $token );
         return $order;
+    }
+
+    /**
+     * Persist Vindi payment_profile and store as WooCommerce CC token.
+     *
+     * @throws \RM_PagBank\Connect\Exception
+     */
+    private function saveVindiCcToken(WC_Order $order, Api $api): void
+    {
+        $userId = get_current_user_id();
+
+        $profileId = (int) OrderMeta::get($order, '_payment_profile_id');
+        $profile = [];
+
+        if ($profileId <= 0) {
+            $gatewayToken = (string) (OrderMeta::get($order, '_card_gateway_token')
+                ?: OrderMeta::get($order, '_card_encrypted'));
+            if ($gatewayToken === '') {
+                throw new \RM_PagBank\Connect\Exception([[
+                    'code' => 'TOKEN_MISSING',
+                    'description' => __('Token do cartão ausente para salvar.', 'pagbank-connect'),
+                ]], 40000);
+            }
+
+            $company = (string) (OrderMeta::get($order, '_payment_company_code') ?: 'mastercard');
+            if ($company === '' && !empty($_POST['rm-pagbank-payment-company-code'])) {
+                $company = sanitize_text_field(wp_unslash($_POST['rm-pagbank-payment-company-code']));
+            }
+
+            $customerName = trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name());
+            if ($customerName === '') {
+                $customerName = (string) OrderMeta::get($order, '_card_holder_name') ?: 'Cliente';
+            }
+            $phone = preg_replace('/\D+/', '', (string) $order->get_billing_phone());
+            if ($phone !== '' && strpos($phone, '55') !== 0) {
+                $phone = '55' . $phone;
+            }
+
+            $payload = [
+                'gateway_token' => $gatewayToken,
+                'payment_company_code' => $company !== '' ? $company : 'mastercard',
+                'payment_method_code' => 'credit_card',
+                'customer' => [
+                    'name' => $customerName,
+                    'email' => strtolower(trim((string) $order->get_billing_email())),
+                    'registry_code' => TaxId::sanitizeForApi((string) $order->get_meta('_rm_pagbank_customer_document')),
+                    'mobile_phone' => $phone,
+                ],
+            ];
+
+            $resp = $api->post('payment_profiles', $payload);
+            if (isset($resp['error_messages']) || !empty($resp['error'])) {
+                $msg = $resp['error_messages'] ?? [[
+                    'code' => (string) ($resp['error'] ?? 'PROFILE_ERROR'),
+                    'description' => (string) ($resp['message'] ?? 'Falha ao salvar cartão na Vindi.'),
+                ]];
+                throw new \RM_PagBank\Connect\Exception($msg, 40000);
+            }
+
+            $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
+            $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
+            if ($profileId <= 0) {
+                throw new \RM_PagBank\Connect\Exception([[
+                    'code' => 'PROFILE_ID_MISSING',
+                    'description' => __('Não foi possível obter o ID do perfil de pagamento.', 'pagbank-connect'),
+                ]], 40000);
+            }
+
+            OrderMeta::set($order, '_payment_profile_id', $profileId, true);
+            $customerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? 0);
+            if ($customerId > 0) {
+                OrderMeta::set($order, '_vindi_customer_id', $customerId, true);
+            }
+        }
+
+        // Woo token only for logged-in customers (My Account saved cards).
+        if ($userId <= 0) {
+            return;
+        }
+
+        $last4 = (string) ($profile['card_number_last_four'] ?? '');
+        if ($last4 === '') {
+            $last4 = (string) (OrderMeta::get($order, 'card_last4') ?: '****');
+        }
+        $bin = (string) ($profile['card_number_first_six'] ?? '');
+        if ($bin === '') {
+            $bin = (string) OrderMeta::get($order, '_card_first_digits');
+        }
+        $brand = strtolower((string) (
+            ($profile['payment_company']['code'] ?? null)
+            ?: (OrderMeta::get($order, '_payment_company_code') ?: 'card')
+        ));
+        $holder = (string) ($profile['holder_name'] ?? '');
+        if ($holder === '') {
+            $holder = (string) OrderMeta::get($order, '_card_holder_name');
+        }
+
+        $expMonth = '12';
+        $expYear = (int) gmdate('Y') + 3;
+        $cardExpiration = (string) ($profile['card_expiration'] ?? '');
+        if ($cardExpiration !== '' && preg_match('/^(\d{4})-(\d{2})/', $cardExpiration, $m)) {
+            $expYear = (int) $m[1];
+            $expMonth = $m[2];
+        } elseif (!empty($_POST['rm-pagbank-card-expiry'])) {
+            $parts = explode('/', (string) wp_unslash($_POST['rm-pagbank-card-expiry']));
+            $expMonth = str_pad(preg_replace('/\D+/', '', $parts[0] ?? ''), 2, '0', STR_PAD_LEFT);
+            $yy = preg_replace('/\D+/', '', $parts[1] ?? '');
+            $expYear = (int) ('20' . substr($yy, -2));
+        }
+
+        $token = new WC_Payment_Token_CC();
+        $token->set_token((string) $profileId);
+        $token->set_gateway_id($this->id);
+        $token->set_user_id($userId);
+        $token->set_card_type($brand);
+        $token->set_last4(substr($last4, -4));
+        $token->set_expiry_month($expMonth);
+        $token->set_expiry_year($expYear);
+        $token->update_meta_data('holder_name', $holder);
+        $token->update_meta_data('cc_bin', $bin);
+        $token->update_meta_data('partner', 'vindi');
+        $token->update_meta_data('vindi_payment_profile_id', $profileId);
+        $token->update_meta_data('customer_document', $order->get_meta('_rm_pagbank_customer_document'));
+        $token->save();
+        $order->add_payment_token($token);
     }
 
     /**
@@ -615,7 +931,49 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'before'
                 );
 
-                if ( (wc_string_to_bool($this->get_option('cc_3ds')) || wc_string_to_bool($this->get_option('cc_3ds_retry')))
+                $partner = $api->partner()->isVindi() ? 'vindi' : 'pagbank';
+                wp_add_inline_script(
+                    'pagseguro-connect-creditcard',
+                    'var pagseguro_connect_partner = \''.$partner.'\';',
+                    'before'
+                );
+                if ($api->partner()->isVindi()) {
+                    try {
+                        $tok = $api->get('tokenize/config', [], 30);
+                        $pub = esc_js((string) ($tok['public_api_key'] ?? ''));
+                        $url = esc_js((string) ($tok['payment_profiles_url'] ?? ''));
+                        wp_add_inline_script(
+                            'pagseguro-connect-creditcard',
+                            "var pagseguro_vindi_public_key = '{$pub}'; var pagseguro_vindi_payment_profiles_url = '{$url}';",
+                            'before'
+                        );
+                    } catch (Exception $e) {
+                        Functions::log('tokenize/config failed: ' . $e->getMessage(), 'error');
+                    }
+                    $mpiOrigin = $api->getIsSandbox()
+                        ? 'https://sandbox-mpi.vindi.com.br'
+                        : 'https://mpi.vindi.com.br';
+                    wp_add_inline_script(
+                        'pagseguro-connect-creditcard',
+                        'var pagseguro_vindi_mpi_origin = \'' . esc_js($mpiOrigin) . '\';',
+                        'before'
+                    );
+                }
+
+                $caps = new \RM_PagBank\Partner\Capabilities($api->partner());
+                $can3ds = $caps->has3ds() && (wc_string_to_bool($this->get_option('cc_3ds')) || wc_string_to_bool($this->get_option('cc_3ds_retry')));
+
+                if ($can3ds) {
+                    wp_add_inline_script(
+                        'pagseguro-connect-creditcard',
+                        'var pagseguro_connect_cc_3ds_allow_continue = \''
+                        . esc_js(Params::getCcConfig('cc_3ds_allow_continue', 'no'))
+                        . '\';',
+                        'before'
+                    );
+                }
+
+                if ( $can3ds && !$api->partner()->isVindi()
                     && !$recHelper->isSubscriptionUpdatePage() && !is_wc_endpoint_url('add-payment-method')) {
                     $threeDSession = $api->get3DSession();
                     wp_add_inline_script(
@@ -623,29 +981,43 @@ class CreditCard extends WC_Payment_Gateway_CC
                         'var pagseguro_connect_3d_session = \''.$threeDSession.'\';',
                         'before'
                     );
-                    wp_add_inline_script(
-                        'pagseguro-connect-creditcard',
-                        'var pagseguro_connect_cc_3ds_allow_continue = \''.Params::getCcConfig('cc_3ds_allow_continue', 'no').'\';',
-                        'before'
-                    );
                     // add user notice
                     if ($threeDSession === '' && Params::getCcConfig('cc_3ds_allow_continue', 'no') === 'no') {
-                        wc_add_notice(__('Erro ao obter a sessão 3D Secure PagBank. Contate o administrador da loja '
+                        wc_add_notice(__('Erro ao obter a sessão 3D Secure. Contate o administrador da loja '
                             .'para verificar Connect Key. Por favor recarregue a página.', 'pagbank-connect'), 'error');
                     }
                 }
 
-                $retryWith3ds = wc_string_to_bool($this->get_option('cc_3ds_retry')) ? 'true' : 'false';
+                $retryWith3ds = ($can3ds && !$api->partner()->isVindi() && wc_string_to_bool($this->get_option('cc_3ds_retry'))) ? 'true' : 'false';
                 wp_add_inline_script(
                     'pagseguro-connect-creditcard',
                     "var pagseguro_connect_3ds_retry_enabled = {$retryWith3ds};",
                     'before'
                 );
 
-                $enable3ds = wc_string_to_bool($this->get_option('cc_3ds')) ? 'true' : 'false';
+                $enable3ds = ($can3ds && wc_string_to_bool($this->get_option('cc_3ds'))) ? 'true' : 'false';
                 wp_add_inline_script(
                     'pagseguro-connect-creditcard',
                     "var pagseguro_connect_3ds_enabled = {$enable3ds};",
+                    'before'
+                );
+
+                $cartCents = 0;
+                if ($recHelper->isSubscriptionUpdatePage()) {
+                    // Change-card has no cart — use subscription recurring amount for 3DS enroll.
+                    $subId = $recHelper->getSubscriptionIdFromUpdatePage();
+                    if ($subId > 0) {
+                        $sub = (new \RM_PagBank\Connect\Recurring())->getSubscription($subId);
+                        if ($sub && isset($sub->recurring_amount)) {
+                            $cartCents = (int) round((float) $sub->recurring_amount * 100);
+                        }
+                    }
+                } elseif (function_exists('WC') && WC()->cart) {
+                    $cartCents = (int) round((float) WC()->cart->get_total('edit') * 100);
+                }
+                wp_add_inline_script(
+                    'pagseguro-connect-creditcard',
+                    'var pagseguro_connect_cart_total_cents = ' . $cartCents . ';',
                     'before'
                 );
 
@@ -964,11 +1336,94 @@ class CreditCard extends WC_Payment_Gateway_CC
                 ];
             }
 
-            // Get encrypted card data
+            // Get encrypted card data / Vindi gateway_token
             $encryptedCard = htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8');
 
-            // Call PagBank API to create token using the API class
             $api = new Api();
+            if ($api->partner()->isVindi()) {
+                $company = !empty($_POST['rm-pagbank-payment-company-code'])
+                    ? sanitize_text_field(wp_unslash($_POST['rm-pagbank-payment-company-code']))
+                    : 'mastercard';
+                $customer = new \WC_Customer(get_current_user_id());
+                $name = trim($customer->get_billing_first_name() . ' ' . $customer->get_billing_last_name());
+                if ($name === '') {
+                    $name = $holderName;
+                }
+                $phone = preg_replace('/\D+/', '', (string) $customer->get_billing_phone());
+                if ($phone !== '' && strpos($phone, '55') !== 0) {
+                    $phone = '55' . $phone;
+                }
+                $resp = $api->post('payment_profiles', [
+                    'gateway_token' => $encryptedCard,
+                    'payment_company_code' => $company,
+                    'payment_method_code' => 'credit_card',
+                    'customer' => [
+                        'name' => $name,
+                        'email' => strtolower(trim((string) $customer->get_email())),
+                        'registry_code' => $cpfCnpj,
+                        'mobile_phone' => $phone,
+                    ],
+                ]);
+                if (isset($resp['error_messages']) || !empty($resp['error'])) {
+                    throw new \RM_PagBank\Connect\Exception(
+                        $resp['error_messages'] ?? [[
+                            'code' => (string) ($resp['error'] ?? 'PROFILE_ERROR'),
+                            'description' => (string) ($resp['message'] ?? 'Falha ao salvar cartão.'),
+                        ]],
+                        40000
+                    );
+                }
+                $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
+                $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
+                if ($profileId <= 0) {
+                    return [
+                        'result' => 'failure',
+                        'redirect' => wc_get_endpoint_url('add-payment-method')
+                    ];
+                }
+                delete_transient($transient_key_user);
+
+                $last4 = (string) ($profile['card_number_last_four'] ?? '****');
+                $bin = (string) ($profile['card_number_first_six'] ?? '');
+                $brand = strtolower((string) ($profile['payment_company']['code'] ?? $company));
+                $expMonth = '12';
+                $expYear = (int) gmdate('Y') + 3;
+                $cardExpiration = (string) ($profile['card_expiration'] ?? '');
+                if ($cardExpiration !== '' && preg_match('/^(\d{4})-(\d{2})/', $cardExpiration, $m)) {
+                    $expYear = (int) $m[1];
+                    $expMonth = $m[2];
+                }
+
+                $token = new WC_Payment_Token_CC();
+                $token->set_gateway_id($this->id);
+                $token->set_user_id(get_current_user_id());
+                $token->set_token((string) $profileId);
+                $token->set_card_type($brand);
+                $token->set_last4(substr($last4, -4));
+                $token->set_expiry_month($expMonth);
+                $token->set_expiry_year($expYear);
+                $token->update_meta_data('holder_name', (string) ($profile['holder_name'] ?? $holderName));
+                $token->update_meta_data('cc_bin', $bin);
+                $token->update_meta_data('partner', 'vindi');
+                $token->update_meta_data('vindi_payment_profile_id', $profileId);
+                $token->update_meta_data('customer_document', $cpfCnpj, true);
+                if (empty($existing_tokens)) {
+                    $token->set_default(true);
+                }
+                if ($token->save()) {
+                    return [
+                        'result' => 'success',
+                        'redirect' => wc_get_endpoint_url('payment-methods')
+                    ];
+                }
+                wc_add_notice(__('Falha ao salvar o método de pagamento.', 'pagbank-connect'), 'error');
+                return [
+                    'result' => 'failure',
+                    'redirect' => wc_get_endpoint_url('add-payment-method')
+                ];
+            }
+
+            // PagBank: create token via tokens/cards
             $params = [
                 'encrypted' => $encryptedCard
             ];

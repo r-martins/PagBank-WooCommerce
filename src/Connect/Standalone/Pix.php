@@ -15,6 +15,7 @@ use RM_PagBank\Traits\ThankyouInstructions;
 use WC_Payment_Gateway;
 use WC_Data_Exception;
 use WP_Error;
+use RM_PagBank\Helpers\OrderMeta;
 
 /** Standalone Pix */
 class Pix extends WC_Payment_Gateway
@@ -42,10 +43,10 @@ class Pix extends WC_Payment_Gateway
 
         $this->method_title = $this->get_option(
             'title',
-            __('Pix via PagBank', 'pagbank-connect')
+            __('Pix', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Receba pagamentos com Pix via PagBank (por Ricardo Martins)',
+            'Receba pagamentos com Pix (por Ricardo Martins)',
             'pagbank-connect'
         );
 
@@ -53,7 +54,7 @@ class Pix extends WC_Payment_Gateway
         $this->init_form_fields();
         $this->init_settings();
 
-        $this->title = $this->get_option('title', __('Pix via PagBank', 'pagbank-connect'));
+        $this->title = $this->get_option('title', __('Pix', 'pagbank-connect'));
         $this->description = $this->get_option('description');
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -73,6 +74,26 @@ class Pix extends WC_Payment_Gateway
     public function init_form_fields()
     {
         $this->form_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/pix-fields.php';
+
+        $detector = \RM_PagBank\Partner\PartnerDetector::fromSettings();
+        if (!$detector->isVindi()) {
+            return;
+        }
+
+        if (!isset($this->form_fields['pix_expiry_minutes'])) {
+            return;
+        }
+
+        $yapayUrl = 'https://intermediador.yapay.com.br/settings/sales';
+        $this->form_fields['pix_expiry_minutes']['description'] = sprintf(
+            /* translators: %s = URL to Vindi/Yapay PIX sales settings */
+            __(
+                'minutos<br/><em>Obs.: o valor acima é apenas visual. A real validade do PIX é configurada '
+                . '<a href="%s" target="_blank" rel="noopener noreferrer">aqui</a>.</em>',
+                'pagbank-connect'
+            ),
+            esc_url($yapayUrl)
+        );
     }
 
     public function admin_options() {
@@ -131,7 +152,11 @@ class Pix extends WC_Payment_Gateway
 
         $order->add_meta_data(
             '_rm_pagbank_checkout_blocks',
-            wc_bool_to_string(isset($_POST['wc-rm-pagbank-pix-new-payment-method'])),
+            wc_bool_to_string(
+                isset($_POST['wc-rm-pagbank-pix-new-payment-method'])
+                || isset($_POST['rm-pagbank-customer-document'])
+                || $order->get_created_via() === 'store-api'
+            ),
             true
         );
 
@@ -155,7 +180,7 @@ class Pix extends WC_Payment_Gateway
 
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
-        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
+        $order->add_order_note(\RM_PagBank\Partner\Branding::notePrefix($order) . ': Pedido criado com sucesso!', $shouldNotify);
 
 
         $woocommerce->cart->empty_cart();
@@ -213,7 +238,7 @@ class Pix extends WC_Payment_Gateway
             return;
         }
         
-        $payment_method_meta = $order->get_meta('pagbank_payment_method');
+        $payment_method_meta = OrderMeta::get($order, 'payment_method');
         if ($payment_method_meta !== 'pix') {
             return; // Not a PIX order, exit immediately
         }
@@ -232,11 +257,11 @@ class Pix extends WC_Payment_Gateway
             return;
         }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
-        if ($order->get_meta('pagbank_payment_method') === 'pix' && in_array($email->id, $emailIds)) {
-            $pixQrCode = $order->get_meta('pagbank_pix_qrcode');
-            $pixQrCodeExpiration = $order->get_meta('pagbank_pix_qrcode_expiration');
+        if (OrderMeta::get($order, 'payment_method') === 'pix' && in_array($email->id, $emailIds)) {
+            $pixQrCode = \RM_PagBank\Helpers\PixQr::getDisplayUrl($order);
+            $pixQrCodeExpiration = OrderMeta::get($order, 'pix_qrcode_expiration');
             $pixQrCodeExpiration = $pixQrCodeExpiration ? Functions::formatDate($pixQrCodeExpiration) : '';
-            $pixQrCodeText = $order->get_meta('pagbank_pix_qrcode_text');
+            $pixQrCodeText = OrderMeta::get($order, 'pix_qrcode_text');
 
             ob_start();
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/pix-payment-details.php';
