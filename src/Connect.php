@@ -30,6 +30,7 @@ use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring;
 use WC_Order;
 use WP_Query;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class Connect
@@ -56,6 +57,8 @@ class Connect
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_ps_get_3d_session', [CreditCard::class, 'getAjax3DSession']);
         add_action('wp_ajax_nopriv_ps_get_3d_session', [CreditCard::class, 'getAjax3DSession']);
+        \RM_PagBank\Connect\Payments\VindiThreeDs::register();
+        \RM_PagBank\Helpers\PixQr::register();
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
@@ -64,10 +67,17 @@ class Connect
         add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
         add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
         add_action('update_option', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged'], 10, 3);
-//        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
         add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'recurringRestrictPaymentMethod']);
-        add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
+        add_action('admin_notices', [\RM_PagBank\Admin\MigrationNotice::class, 'render']);
+        add_action('current_screen', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens']);
+        // Fallback: remove immediately before the notice would print (priority 10).
+        add_action('admin_notices', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens'], 1);
+        add_action('admin_enqueue_scripts', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens'], 1);
+        add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'filterGatewaysByPartner'], 20);
+        // Order-pay: keep only PIX/boleto when that method's discount fee is already on the order.
+        add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'restrictGatewaysOnOrderPayWithMethodDiscount'], 25);
+        add_action('woocommerce_checkout_create_order_fee_item', [__CLASS__, 'stampPaymentMethodDiscountFeeMeta'], 10, 4);
         add_filter('woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
         add_filter('woocommerce_rest_prepare_shop_order_object', [CreditCardDisplayTitle::class, 'filterRestPrepareShopOrderObject'], 20, 3);
         add_filter('woocommerce_order_get_payment_method_title', [CreditCardDisplayTitle::class, 'filterPaymentMethodTitle'], 10, 2);
@@ -178,8 +188,9 @@ class Connect
     public static function addGateway(array $gateways): array
     {
         $section = sanitize_text_field($_GET['section'] ?? '');
+        $caps = new \RM_PagBank\Partner\Capabilities();
 
-        if ($section !== self::DOMAIN) {//plugin's config page (then its not standalone)
+        if ($section !== self::DOMAIN) {// checkout / other settings sections → standalone gateways
             $pix = new StandalonePix();
             $gateways[] = $pix;
 
@@ -189,8 +200,10 @@ class Connect
             $boleto = new StandaloneBoleto();
             $gateways[] = $boleto;
 
-            $redirect = new StandaloneRedirect();
-            $gateways[] = $redirect;
+            if ($caps->hasHostedCheckout()) {
+                $redirect = new StandaloneRedirect();
+                $gateways[] = $redirect;
+            }
 
             return $gateways;
         }
@@ -198,6 +211,150 @@ class Connect
         $gateways[] = new Gateway();
 
         return $gateways;
+    }
+
+    /**
+     * Hide PagBank-only methods when Connect Key is Vindi (checkout + leftovers).
+     *
+     * @param array $gateways
+     * @return array
+     */
+    public static function filterGatewaysByPartner($gateways)
+    {
+        if (!is_array($gateways)) {
+            return $gateways;
+        }
+        $caps = new \RM_PagBank\Partner\Capabilities();
+        if (!$caps->hasHostedCheckout() && isset($gateways['rm-pagbank-redirect'])) {
+            unset($gateways['rm-pagbank-redirect']);
+        }
+        return $gateways;
+    }
+
+    /**
+     * Persist cart fee id on the order fee line so order-pay can detect PIX/boleto discounts reliably.
+     *
+     * @param \WC_Order_Item_Fee $item
+     * @param string             $fee_key Cart fee id (e.g. pagbank_pix_discount).
+     * @param object             $fee
+     * @param WC_Order           $order
+     */
+    public static function stampPaymentMethodDiscountFeeMeta($item, $fee_key, $fee, $order): void
+    {
+        if (!in_array($fee_key, [Pix::DISCOUNT_FEE_ID, Boleto::DISCOUNT_FEE_ID], true)) {
+            return;
+        }
+        if (!is_object($item) || !method_exists($item, 'add_meta_data')) {
+            return;
+        }
+        $item->add_meta_data('_pb_discount_fee_id', $fee_key, true);
+    }
+
+    /**
+     * On /order-pay, if the order already has our PIX or boleto discount fee, hide our other gateways
+     * so the customer cannot switch to card (etc.) while keeping the method-specific discount.
+     * Does not remove third-party gateways. Does not run outside order-pay (recurring checkout untouched).
+     *
+     * @param array<string, \WC_Payment_Gateway> $gateways
+     * @return array<string, \WC_Payment_Gateway>
+     */
+    public static function restrictGatewaysOnOrderPayWithMethodDiscount($gateways)
+    {
+        if (!is_array($gateways) || !function_exists('is_wc_endpoint_url') || !is_wc_endpoint_url('order-pay')) {
+            return $gateways;
+        }
+
+        $order = self::getOrderPayOrder();
+        if (!$order instanceof WC_Order) {
+            return $gateways;
+        }
+
+        $feeId = self::getPaymentMethodDiscountFeeIdOnOrder($order);
+        if ($feeId === null) {
+            return $gateways;
+        }
+
+        $keepGatewayId = $feeId === Pix::DISCOUNT_FEE_ID
+            ? self::DOMAIN . '-pix'
+            : self::DOMAIN . '-boleto';
+
+        $ourGatewayIds = [
+            self::DOMAIN,
+            self::DOMAIN . '-pix',
+            self::DOMAIN . '-cc',
+            self::DOMAIN . '-boleto',
+            self::DOMAIN . '-redirect',
+        ];
+
+        foreach (array_keys($gateways) as $id) {
+            if (!in_array($id, $ourGatewayIds, true)) {
+                continue;
+            }
+            if ($id !== $keepGatewayId) {
+                unset($gateways[$id]);
+            }
+        }
+
+        return $gateways;
+    }
+
+    /**
+     * @return WC_Order|null
+     */
+    private static function getOrderPayOrder(): ?WC_Order
+    {
+        global $wp;
+        $orderId = 0;
+        if (isset($wp->query_vars['order-pay'])) {
+            $orderId = absint($wp->query_vars['order-pay']);
+        }
+        if (!$orderId && function_exists('get_query_var')) {
+            $orderId = absint(get_query_var('order-pay'));
+        }
+        if (!$orderId) {
+            return null;
+        }
+        $order = wc_get_order($orderId);
+        return $order instanceof WC_Order ? $order : null;
+    }
+
+    /**
+     * Detect which method-specific discount fee (if any) is on the order.
+     *
+     * @return string|null Pix::DISCOUNT_FEE_ID, Boleto::DISCOUNT_FEE_ID, or null
+     */
+    public static function getPaymentMethodDiscountFeeIdOnOrder(WC_Order $order): ?string
+    {
+        $known = [Pix::DISCOUNT_FEE_ID, Boleto::DISCOUNT_FEE_ID];
+
+        foreach ($order->get_items('fee') as $item) {
+            $meta = method_exists($item, 'get_meta') ? $item->get_meta('_pb_discount_fee_id', true) : '';
+            if (is_string($meta) && in_array($meta, $known, true)) {
+                return $meta;
+            }
+            if (!empty($item->legacy_fee_key) && in_array($item->legacy_fee_key, $known, true)) {
+                return (string) $item->legacy_fee_key;
+            }
+        }
+
+        // Orders placed before meta stamp: match the fee name we generate at checkout.
+        $pixLabel = __('Desconto', 'pagbank-connect') . ' ' . Params::getPixConfig('title', __('PIX', 'pagbank-connect'));
+        $boletoLabel = __('Desconto', 'pagbank-connect') . ' ' . Params::getBoletoConfig('title', __('Boleto', 'pagbank-connect'));
+
+        foreach ($order->get_items('fee') as $item) {
+            if ((float) $item->get_total() >= 0) {
+                continue;
+            }
+            $name = $item->get_name();
+            if ($name === $pixLabel) {
+                return Pix::DISCOUNT_FEE_ID;
+            }
+            if ($name === $boletoLabel) {
+                return Boleto::DISCOUNT_FEE_ID;
+            }
+        }
+
+        return null;
     }
 
     public static function addPluginActionLinks( $links ): array
@@ -224,7 +381,14 @@ class Connect
             ],
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'block_checkout' => Functions::isBlockCheckoutInUse(),
-            'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
+            'connect_key' => (static function () {
+                $key = (string) Params::getConfig('connect_key');
+                if ($key === '' || stripos($key, 'CON') !== 0) {
+                    return 'Missing';
+                }
+                // PagBank + Vindi (new) = 40 chars; legacy shorter CONVD… still OK
+                return strlen($key) >= 20 ? 'Good' : 'Wrong size';
+            })(),
             'enable_proxy' => Params::getConfig('enable_proxy', "no"),
             // Use same defaults as admin form_fields when option not saved yet
             'settings' => [
@@ -318,7 +482,7 @@ class Connect
         {
             $method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
             $method = Functions::getFriendlyPaymentMethodName($method);
-            $title = Params::getConfig('title') . ' - ' . $method;
+            $title = Params::getConfig('title', __('PB Integrações', 'pagbank-connect')) . ' - ' . $method;
         }
 
         return $title;
@@ -456,8 +620,6 @@ class Connect
                 unset($boletoSettings['boleto_title']);
             }
 
-            $generalSettings['standalone'] = 'yes';
-
             if (isset($generalSettings['hide_id_unavailable'])) {
                 $generalSettings['hide_if_unavailable'] = $generalSettings['hide_id_unavailable'];
             }
@@ -568,6 +730,21 @@ class Connect
             dbDelta($sql);
             update_option('pagbank_db_version', '4.29');
         }
+
+        // Remove legacy installment option "external" (PagBank account settings) → buyer.
+        if (version_compare((string) $stored_version, '5.0.0', '<')) {
+            foreach (['woocommerce_rm-pagbank-cc_settings', 'woocommerce_rm-pagbank_settings'] as $optionName) {
+                $settings = get_option($optionName);
+                if (!is_array($settings)) {
+                    continue;
+                }
+                if (($settings['cc_installment_options'] ?? '') === 'external') {
+                    $settings['cc_installment_options'] = 'buyer';
+                    update_option($optionName, $settings);
+                }
+            }
+            update_option('pagbank_db_version', '5.0.0');
+        }
     }
 
     public static function uninstall()
@@ -650,7 +827,6 @@ class Connect
                     $cc->id = Connect::DOMAIN . '-cc';
                     return [$cc->id => $cc];
             });
-            return [Connect::DOMAIN => new Gateway()];
         }
     }
 
@@ -664,125 +840,6 @@ class Connect
             return [$cc->id => $cc];
         }
         return $gateways;
-    }
-
-    /**
-     * Check if the last pix order has a valid pix key
-     * @return void
-     */
-    public static function checkPixOrderKeys()
-    {
-        $userId = get_current_user_id();
-        $isPixEnabled = Params::getPixConfig('enabled') == 'yes';
-        
-        //yes, we coul've used transient, but litespeed cache can mess with it if not properly configured
-        $alreadyChecked = get_option('pagbank_pix_lastorder_checked', 0) > (time() - 3600); // 60 minutes
-        
-        // Check if the notice has been dismissed for this user
-        if (!$isPixEnabled || get_user_meta($userId, 'pagbank_dismiss_pix_order_keys_notice', true) || $alreadyChecked) {
-            return;
-        }
-
-        $validationFailed = true;
-
-        //enable meta query filter
-        Functions::addMetaQueryFilter();
-
-        //workaround for the global $post variable not being affected by WP_Query (see #PB-829)
-        global $post;
-        $original_post = $post;
-        
-        //get the pix key from the last pix order
-        // Check if HPOS is enabled
-        if (Functions::isHposEnabled()) {
-            // HPOS is enabled
-            $lastPixOrder = wc_get_orders([
-                'limit' => 1,
-                'orderby' => 'date',
-                'order' => 'DESC',
-                'meta_query' => [
-                    'relation' => 'AND',
-                    [
-                        'key' => 'pagbank_payment_method',
-                        'value' => 'pix',
-                    ],
-                    [
-                        'key' => 'pagbank_is_sandbox',
-                        'value' => '0',
-                    ]
-                ]
-            ]);
-        } else {
-            // HPOS is disabled
-            $args = array(
-                'post_type'      => 'shop_order',
-                'posts_per_page' => 1,
-                'post_status'    => 'any',
-                'orderby'        => 'date',
-                'order'          => 'DESC',
-                'meta_query'     => array(
-                    'relation' => 'AND',
-                    array(
-                        'key'     => 'pagbank_payment_method',
-                        'value'   => 'pix',
-                        'compare' => '='
-                    ),
-                    array(
-                        'key'     => 'pagbank_is_sandbox',
-                        'value'   => '0',
-                        'compare' => '='
-                    )
-                ),
-            );
-
-            $query = new WP_Query($args);
-
-            $lastPixOrder = [];
-            if ($query->have_posts()) {
-                while ($query->have_posts()) {
-                    $query->the_post();
-                    $order_id = get_the_ID();
-                    $order = wc_get_order($order_id);
-                    $lastPixOrder[] = $order;
-                }
-                wp_reset_postdata();
-                $post = $original_post; // Reset the global post data 
-            }
-        }
-
-        if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
-            // Update the transient to prevent checking again for 30 minutes
-            update_option('pagbank_pix_lastorder_checked', time() );
-            return;
-        }
-
-        $pixKey = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode_text');
-        $validationFailed = Functions::isValidPixCode($pixKey) === false;
-
-        if ($validationFailed) {
-            $qrCodeImg = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode');
-            $helpUrl = 'https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido';
-            $openTicket = 'https://bit.ly/ticketnovo';
-            $orderLink = admin_url('post.php?post=' . $lastPixOrder[0]->get_id() . '&action=edit');
-            $orderId = $lastPixOrder[0]->get_id();
-            ?>
-            <div class="notice notice-error is-dismissible pagbank-pix-notice">
-                <p><?php echo sprintf(
-                        __(
-                            'O último código <a href="%s">código PIX</a> gerado no pedido <a href="%s">%s</a> parece inválido. Isso ocorre porque você provavelmente não possui chaves PIX aleatórias cadastradas no PagBank. <a href="%s">Clique aqui</a> para saber mais.',
-                            'pagbank-connect'
-                        ),
-                        $qrCodeImg,
-                        $orderLink,
-                        $orderId,
-                        $helpUrl
-                    ); ?></p>
-            </div>
-            <?php
-        }
-
-        // Update the transient to prevent checking again
-        update_option('pagbank_pix_lastorder_checked', time());
     }
 
     /**
@@ -936,7 +993,7 @@ class Connect
                 'enabled'    => Params::getPixConfig('enabled') === 'yes',
                 'discount'   => Params::getPixConfig('pix_discount', 0),
                 'excludes'   => Params::getPixConfig('pix_discount_excludes_shipping', 'no') === 'yes',
-                'title'      => Params::getPixConfig('title', __('PIX via PagBank', 'pagbank-connect')),
+                'title'      => Params::getPixConfig('title', __('PIX', 'pagbank-connect')),
                 'gateway_id' => 'rm-pagbank-pix',
                 'sub_method' => 'pix',
                 'fee_id'     => Pix::DISCOUNT_FEE_ID,
@@ -945,7 +1002,7 @@ class Connect
                 'enabled'    => Params::getBoletoConfig('enabled') === 'yes',
                 'discount'   => Params::getBoletoConfig('boleto_discount', 0),
                 'excludes'   => Params::getBoletoConfig('boleto_discount_excludes_shipping', 'no') === 'yes',
-                'title'      => Params::getBoletoConfig('title', __('Boleto via PagBank', 'pagbank-connect')),
+                'title'      => Params::getBoletoConfig('title', __('Boleto', 'pagbank-connect')),
                 'gateway_id' => 'rm-pagbank-boleto',
                 'sub_method' => 'boleto',
                 'fee_id'     => Boleto::DISCOUNT_FEE_ID,
@@ -1090,7 +1147,7 @@ class Connect
         // Obter o pedido com base no pagbank_order_id e id
         $order = wc_get_order($order_id);
 
-        if (!$order || $order->get_meta('pagbank_order_id') !== $pagbank_order_id) {
+        if (!$order || OrderMeta::get($order, 'order_id') !== $pagbank_order_id) {
             wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
         }
 
@@ -1099,7 +1156,7 @@ class Connect
 
         $orderData = Api::getOrderData($pagbank_order_id);
         $md5 = md5(serialize($orderData));
-        if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
+        if (OrderMeta::get($order, '_last_update_md5') == $md5) {
             $order->add_order_note(
                 __('Pedido atualizado manualmente mas nada mudou desde o último update.', 'pagbank-connect'),
                 false,

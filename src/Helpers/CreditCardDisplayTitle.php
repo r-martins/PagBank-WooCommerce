@@ -4,6 +4,7 @@ namespace RM_PagBank\Helpers;
 
 use RM_PagBank\Connect;
 use WC_Order;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Customer vs API payment method titles with installment placeholders for PagBank credit card orders.
@@ -35,7 +36,7 @@ class CreditCardDisplayTitle
 
     public static function isPagbankCreditCardOrder(WC_Order $order): bool
     {
-        if ($order->get_meta('pagbank_payment_method') !== 'credit_card') {
+        if (OrderMeta::get($order, 'payment_method') !== 'credit_card') {
             return false;
         }
 
@@ -58,16 +59,16 @@ class CreditCardDisplayTitle
      */
     public static function buildPlaceholderValues(WC_Order $order): array
     {
-        $installments = (int) $order->get_meta('_pagbank_card_installments');
+        $installments = (int) OrderMeta::get($order, '_card_installments');
         if ($installments < 1) {
-            $installments = (int) $order->get_meta('pagbank_card_installments');
+            $installments = (int) OrderMeta::get($order, 'card_installments');
         }
         if ($installments < 1) {
             $installments = 1;
         }
 
         $totalFloat = null;
-        $metaTotal = $order->get_meta('pagbank_cc_total_charged');
+        $metaTotal = OrderMeta::get($order, 'cc_total_charged');
         if ($metaTotal !== '' && $metaTotal !== null && is_numeric($metaTotal)) {
             $totalFloat = (float) $metaTotal;
         }
@@ -76,7 +77,7 @@ class CreditCardDisplayTitle
         }
 
         $perFloat = null;
-        $instMeta = $order->get_meta('pagbank_cc_installment_amount');
+        $instMeta = OrderMeta::get($order, 'cc_installment_amount');
         if ($instMeta !== '' && $instMeta !== null && is_numeric($instMeta)) {
             $perFloat = (float) $instMeta;
         }
@@ -94,7 +95,7 @@ class CreditCardDisplayTitle
             wc_get_price_thousand_separator()
         );
 
-        $brand = (string) $order->get_meta('_pagbank_card_brand');
+        $brand = (string) OrderMeta::get($order, '_card_brand');
         if ($brand !== '') {
             $brand = function_exists('wc_strtoupper') ? wc_strtoupper($brand) : strtoupper($brand);
         }
@@ -120,7 +121,7 @@ class CreditCardDisplayTitle
             wc_get_price_thousand_separator()
         );
 
-        $interestFreeMeta = $order->get_meta('pagbank_cc_interest_free');
+        $interestFreeMeta = OrderMeta::get($order, 'cc_interest_free');
         if ($interestFreeMeta === 'yes') {
             $yesNo = __('sem juros', 'pagbank-connect');
         } elseif ($interestFreeMeta === 'no') {
@@ -186,12 +187,12 @@ class CreditCardDisplayTitle
 
     public static function getBuyerInterestAmount(WC_Order $order): float
     {
-        $stored = $order->get_meta('_pagbank_cc_buyer_interest_total');
+        $stored = OrderMeta::get($order, '_cc_buyer_interest_total');
         if ($stored !== '' && $stored !== null && is_numeric($stored)) {
             return max(0, (float) $stored);
         }
 
-        $charges = $order->get_meta('pagbank_order_charges');
+        $charges = OrderMeta::get($order, 'order_charges');
         if (!is_array($charges) || !isset($charges[0]) || !is_array($charges[0])) {
             return 0.0;
         }

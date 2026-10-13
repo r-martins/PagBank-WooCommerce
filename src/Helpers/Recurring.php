@@ -7,10 +7,12 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use RM_PagBank\Connect;
+use RM_PagBank\Partner\Partner;
 use stdClass;
 use WC_Cart;
 use WC_Order;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\OrderMeta;
 
 class Recurring
 {
@@ -412,7 +414,7 @@ class Recurring
         $ordersNumber = count($orders);
 
         // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
-        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+        if (OrderMeta::get($initialOrder, '_recurring_trial_length') < 1){
             $ordersNumber = $ordersNumber + 1;
         }
 
@@ -439,7 +441,7 @@ class Recurring
         $ordersNumber = count($orders);
 
         // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
-        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+        if (OrderMeta::get($initialOrder, '_recurring_trial_length') < 1){
             $ordersNumber = $ordersNumber + 1;
         }
 
@@ -500,6 +502,29 @@ class Recurring
         // Friendly permalinks
         $endpoint = $wp->request;
         return stripos($endpoint, 'rm-pagbank-subscriptions-update') !== false;
+    }
+
+    /**
+     * Subscription ID on my-account update-card endpoint, or 0.
+     */
+    public function getSubscriptionIdFromUpdatePage(): int
+    {
+        if (!$this->isSubscriptionUpdatePage()) {
+            return 0;
+        }
+        global $wp, $wp_rewrite;
+        if (!$wp_rewrite->using_permalinks()) {
+            return (int) ($_GET['rm-pagbank-subscriptions-update'] ?? 0);
+        }
+        if (isset($wp->query_vars['rm-pagbank-subscriptions-update'])) {
+            return (int) $wp->query_vars['rm-pagbank-subscriptions-update'];
+        }
+        // Fallback: …/rm-pagbank-subscriptions-update/123
+        if (preg_match('#rm-pagbank-subscriptions-update/(\d+)#', (string) ($wp->request ?? ''), $m)) {
+            return (int) $m[1];
+        }
+
+        return 0;
     }
 
     public static function subscriptionActionUrl($endpoint, $subscription)
@@ -565,5 +590,81 @@ class Recurring
         }
 
         return $recurringProduct->get_meta($key);
+    }
+
+    /**
+     * Partner that owns the subscription payment instrument (card/token).
+     * Legacy rows without partner field are treated as PagBank.
+     *
+     * @param array|object|string|null $paymentInfo JSON string, decoded array/object, or null
+     * @return string Partner::VINDI|Partner::PAGBANK
+     */
+    public static function subscriptionPaymentPartner($paymentInfo): string
+    {
+        $info = self::normalizePaymentInfo($paymentInfo);
+        if (($info['partner'] ?? '') === Partner::VINDI) {
+            return Partner::VINDI;
+        }
+        if ((int) ($info['vindi_customer_id'] ?? 0) > 0) {
+            return Partner::VINDI;
+        }
+
+        return Partner::PAGBANK;
+    }
+
+    /**
+     * True when Connect Key partner differs from the subscription's payment partner.
+     *
+     * @param array|object|string|null $paymentInfo
+     */
+    public static function isRecurringPartnerMismatch($paymentInfo): bool
+    {
+        $api = new Api();
+        $storeIsVindi = $api->partner()->isVindi();
+        $subPartner = self::subscriptionPaymentPartner($paymentInfo);
+
+        return $storeIsVindi !== ($subPartner === Partner::VINDI);
+    }
+
+    /**
+     * @param array|object|string|null $paymentInfo
+     */
+    public static function paymentInfoNeedsRetoken($paymentInfo): bool
+    {
+        $info = self::normalizePaymentInfo($paymentInfo);
+
+        return !empty($info['needs_retoken']);
+    }
+
+    /**
+     * @param array|object|string|null $paymentInfo
+     * @return array<string, mixed>
+     */
+    public static function normalizePaymentInfo($paymentInfo): array
+    {
+        if (is_string($paymentInfo)) {
+            $decoded = json_decode($paymentInfo, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        if (is_object($paymentInfo)) {
+            $decoded = json_decode(wp_json_encode($paymentInfo), true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        if (is_array($paymentInfo)) {
+            return $paymentInfo;
+        }
+
+        return [];
+    }
+
+    /**
+     * True when API error indicates missing Vindi payment profile / token on a mismatched sub.
+     */
+    public static function isMissingPaymentProfileError(string $message): bool
+    {
+        $message = strtolower($message);
+
+        return strpos($message, 'payment_profile_id') !== false
+            || strpos($message, 'gateway_token') !== false;
     }
 }

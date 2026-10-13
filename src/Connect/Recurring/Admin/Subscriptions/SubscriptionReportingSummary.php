@@ -52,7 +52,7 @@ class SubscriptionReportingSummary
         $data = $this->basic(); 
         $this->styleReportingBasic(); ?>
         <div class="wrap">
-            <h1><?php echo esc_html(__('Relatórios de Assinaturas - PagBank', 'rm-pagbank')); ?></h1>
+            <h1><?php echo esc_html(__('Relatórios de Assinaturas', 'rm-pagbank')); ?></h1>
             <div class="report-cards">
                 <div class="report-card">
                     <strong><?php echo esc_html(__('Assinaturas Ativas', 'rm-pagbank')); ?></strong>

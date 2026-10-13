@@ -15,6 +15,7 @@ use RM_PagBank\Traits\ThankyouInstructions;
 use WC_Payment_Gateway;
 use WC_Data_Exception;
 use WP_Error;
+use RM_PagBank\Helpers\OrderMeta;
 
 /** Standalone Pix */
 class Redirect extends WC_Payment_Gateway
@@ -69,6 +70,26 @@ class Redirect extends WC_Payment_Gateway
     public function init_form_fields()
     {
         $this->form_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/redirect-fields.php';
+
+        $detector = \RM_PagBank\Partner\PartnerDetector::fromSettings();
+        if (!$detector->isVindi()) {
+            return;
+        }
+
+        $this->form_fields = [
+            'vindi_unavailable' => [
+                'title' => __('Checkout PagBank', 'pagbank-connect'),
+                'type' => 'title',
+                'description' => __(
+                    'Indisponível com Connect Key Vindi. O checkout hospedado (redirecionamento para o PagBank) '
+                    . 'só funciona com chaves PagBank (<code>CON…</code>). Com Vindi, use PIX, boleto ou cartão na loja.',
+                    'pagbank-connect'
+                ),
+            ],
+        ];
+        if ($this->get_option('enabled') === 'yes') {
+            $this->update_option('enabled', 'no');
+        }
     }
 
     public function admin_options() {
@@ -128,7 +149,7 @@ class Redirect extends WC_Payment_Gateway
 
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
-        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
+        $order->add_order_note(\RM_PagBank\Partner\Branding::notePrefix($order) . ': Pedido criado com sucesso!', $shouldNotify);
 
 
         $woocommerce->cart->empty_cart();
@@ -173,9 +194,9 @@ class Redirect extends WC_Payment_Gateway
             return;
         }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
-        if ($order->get_meta('pagbank_payment_method') === 'redirect' && in_array($email->id, $emailIds)) {
-            $redirectLink = $order->get_meta('pagbank_redirect_url');
-            $checkoutExpires = $order->get_meta('pagbank_redirect_expiration');
+        if (OrderMeta::get($order, 'payment_method') === 'redirect' && in_array($email->id, $emailIds)) {
+            $redirectLink = OrderMeta::get($order, 'redirect_url');
+            $checkoutExpires = OrderMeta::get($order, 'redirect_expiration');
             $checkoutExpires = $checkoutExpires ? Functions::formatDate($checkoutExpires) : '';
             ob_start();
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/redirect-payment-details.php';
@@ -226,8 +247,8 @@ class Redirect extends WC_Payment_Gateway
     public static function getOrderReceivedURL($order_received_url, $order)
     {
         if ($order->get_payment_method() === Connect::DOMAIN . '-redirect'
-        && $order->get_status() == 'pending' && !empty($order->get_meta('pagbank_redirect_url'))) {
-            $order_received_url = $order->get_meta('pagbank_redirect_url');
+        && $order->get_status() == 'pending' && !empty(OrderMeta::get($order, 'redirect_url'))) {
+            $order_received_url = OrderMeta::get($order, 'redirect_url');
         }
         return $order_received_url; 
     }
@@ -242,7 +263,7 @@ class Redirect extends WC_Payment_Gateway
     public static function changePaymentLink($pay_url, $order)
     {
         if ($order->get_payment_method() === Connect::DOMAIN . '-redirect') {
-            $pay_url = $order->get_meta('pagbank_redirect_url');
+            $pay_url = OrderMeta::get($order, 'redirect_url');
         }
         return $pay_url;
     }

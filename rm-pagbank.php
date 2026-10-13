@@ -4,19 +4,19 @@
  *
  * @package           PagSeguroConnect
  * @author            Ricardo Martins
- * @copyright         2024 Ricardo Martins
+ * @copyright         2026 Ricardo Martins
  * @license           GPL-3.0
  *
  * @wordpress-plugin
- * Plugin Name:       PagBank Connect
+ * Plugin Name:       PB Integrações (antigo PagBank Connect)
  * Plugin URI:        https://pbintegracoes.com
- * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente e muito mais.
- * Version:           4.57.4
+ * Description:       Integra seu WooCommerce com Vindi, PagBank e os melhores provedores de pagamento (com descontos nas taxas oficiais), e com suporte a PIX transparente, Recorrência e muito mais.
+ * Version:           5.0.0
  * Requires at least: 5.2
  * Tested up to:      7.1
  * Requires PHP:      7.4
  * Requires Plugins:   woocommerce
- * Author:            PagBank Integrações (Ricardo Martins)
+ * Author:            PB Integrações (antigo PagBank Integrações)
  * Author URI:        https://pbintegracoes.com
  * License:           GPL-3.0
  * License URI:       https://opensource.org/license/gpl-3/
@@ -34,7 +34,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.57.4' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '5.0.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
@@ -46,6 +46,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 add_action('init', [Connect::class, 'init']);
 add_action('init', [Connect\Recurring::class, 'addManageSubscriptionEndpoints']);
 add_action('after_setup_theme', [Connect::class, 'loadTextDomain']);
+add_action('admin_init', [\RM_PagBank\Admin\MigrationNotice::class, 'maybeDismiss']);
 
 // Initialize Order Meta Boxes
 add_action('init', [Connect\OrderMetaBoxes::class, 'init']);

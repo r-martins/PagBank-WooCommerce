@@ -238,36 +238,33 @@ class Params
     }
 
 	/**
-	 * Get the max installments without interest based on order total and config options
-	 * Will return '' if the option is set to get from the PagBank Config, 0 if the option is set to buyer,
-	 * a fixed number if the option is set to fixed or the calculated number based on the order total
+	 * Get the max installments without interest based on order total and config options.
+	 * Returns 0 for buyer interest (default), a fixed number for "fixed",
+	 * or the calculated number based on order total for "min_total".
+	 * Legacy saved value "external" is treated as buyer.
+	 *
 	 * @param $orderTotal
 	 *
-	 * @return false|float|int|string
+	 * @return int
 	 */
 	public static function getMaxInstallmentsNoInterest($orderTotal)
     {
-        $installment_option = self::getCcConfig('cc_installment_options', 'external');
-        if ('external' == $installment_option){
-            return '';
-        }
-
-        if ('buyer' == $installment_option) {
+        $installment_option = self::getCcConfig('cc_installment_options', 'buyer');
+        // Removed option "external" (PagBank account settings) — treat as buyer.
+        if ($installment_option === '' || $installment_option === 'external' || $installment_option === 'buyer') {
             return 0;
         }
 
-        if ('fixed' == $installment_option) {
-            return (int)self::getCcConfig('cc_installment_options_fixed', 3);
+        if ($installment_option === 'fixed') {
+            return (int) self::getCcConfig('cc_installment_options_fixed', 3);
         }
 
-//        if ('min_total' == $installment_option) {
-            $min_total = (int)self::getCcConfig('cc_installments_options_min_total', 50);
-            $min_total = max(5, $min_total); //avoiding blanks
-            $orderTotal = floatval($orderTotal);
-            $installments = floor($orderTotal / $min_total);
-            $installments = $installments == 1 ? 0 : $installments; //1 is not acceptable as a value by the api
-            return $installments > 18 ? 18 : $installments;
-//        }
+        $min_total = (int) self::getCcConfig('cc_installments_options_min_total', 50);
+        $min_total = max(5, $min_total); //avoiding blanks
+        $orderTotal = floatval($orderTotal);
+        $installments = floor($orderTotal / $min_total);
+        $installments = $installments == 1 ? 0 : $installments; //1 is not acceptable as a value by the api
+        return $installments > 18 ? 18 : $installments;
     }
 
     /**

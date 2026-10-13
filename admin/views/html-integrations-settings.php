@@ -19,6 +19,13 @@ wp_enqueue_style(
 
 $dokan_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/dokan-split-fields.php';
 $wcbcf_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/wcbcf-fields.php';
+
+// Dokan split is PagBank-only
+$caps = new \RM_PagBank\Partner\Capabilities();
+if (!$caps->hasSplit()) {
+    $dokan_fields = [];
+}
+
 $integrations_fields = array_merge($dokan_fields, $wcbcf_fields);
 
 $integrations_options = get_option('woocommerce_rm-pagbank-integrations_settings', []);

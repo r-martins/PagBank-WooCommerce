@@ -4,6 +4,8 @@ namespace RM_PagBank\Connect\Blocks;
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use RM_PagBank\Connect\Standalone\Redirect as RedirectGateway;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Partner\Branding;
+use RM_PagBank\Partner\Capabilities;
 
 final class Redirect extends AbstractPaymentMethodType
 {
@@ -36,7 +38,11 @@ final class Redirect extends AbstractPaymentMethodType
      * @return boolean
      */
     public function is_active() {
-        return $this->gateway->is_available();
+        $caps = new Capabilities();
+        if (!$caps->hasHostedCheckout()) {
+            return false;
+        }
+        return $this->gateway && $this->gateway->is_available();
     }
 
     /**
@@ -77,12 +83,15 @@ final class Redirect extends AbstractPaymentMethodType
      * @return array
      */
     public function get_payment_method_data() {
+        $branding = new Branding();
+
         return array(
-            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pagar via PagBank',
+            'title'        => isset( $this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pagar no PagBank',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
             'supports'  => array_filter( $this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
+            'unavailableMessage' => $branding->paymentUnavailableBelowMinimumMessage(),
             'instructions' => $this->gateway->get_option('redirect_instructions'),
             'expirationTime' => Params::convertMinutesToHumanTime((int)$this->gateway->get_option('redirect_expiry_minutes')),
             'hasDiscount' => $this->gateway->get_option('redirect_discount'),

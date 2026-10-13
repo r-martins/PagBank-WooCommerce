@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var string $boleto_due_date */
 /** @var string $boleto_pdf */
 /** @var string $boleto_png */
+/** @var bool $is_vindi */
 
 use RM_PagBank\Connect;
 
@@ -23,7 +24,7 @@ use RM_PagBank\Connect;
 // Verificar se há boleto válido antes de exibir
 $has_barcode = !empty($boleto_barcode) || !empty($boleto_barcode_formatted);
 $has_pdf = !empty($boleto_pdf);
-$has_png = !empty($boleto_png);
+$has_png = !empty($boleto_png) && empty($is_vindi);
 $has_valid_boleto = $has_barcode || $has_pdf || $has_png;
 
 if ($has_valid_boleto):

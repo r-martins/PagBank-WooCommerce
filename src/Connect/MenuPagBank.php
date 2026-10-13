@@ -23,21 +23,90 @@ class MenuPagBank
      */
     public static function addPagBankMenu()
     {
-        $iconSvg = <<<SVG
-<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2"><path d="M9.172.034c-1.77.172-3.847 1-5.299 2.113a10.638 10.638 0 0 0-1.749 1.736C-.15 6.809-.632 10.677.858 14.033c.252.569.475.973.826 1.5.395.594.66.914 1.231 1.487 1.276 1.282 2.431 1.976 4.152 2.498 1.412.428 3.066.53 4.533.279a10.08 10.08 0 0 0 4.533-2.03 11.96 11.96 0 0 0 1.535-1.534c2.454-3.101 2.877-7.225 1.101-10.727-.492-.97-1.01-1.679-1.819-2.492-1.19-1.197-2.41-1.933-4.183-2.524-.966-.321-1.693-.451-2.65-.472-.349-.008-.774 0-.945.016m1.662.649a8 8 0 0 1 6.665 5.503c.273.85.351 1.394.351 2.437 0 .535-.013.853-.035.875-.023.024-.111-.034-.283-.185-.795-.7-1.747-1.08-2.848-1.135l-.416-.022-.158-.203a8.737 8.737 0 0 0-1.091-1.084 7.123 7.123 0 0 0-3.552-1.522c-.464-.066-1.378-.064-1.867.003a7.11 7.11 0 0 0-4.068 2.017c-.565.56-.896.998-1.294 1.714l-.199.357-.024-.224c-.042-.393.005-1.49.083-1.931A7.647 7.647 0 0 1 2.8 5.117a8.083 8.083 0 0 1 2.783-3.166 9.15 9.15 0 0 1 1.844-.897C8.066.842 8.618.73 9.4.655a9.27 9.27 0 0 1 1.434.028M9.067 5.934a6.42 6.42 0 0 1 1.892.446 6.339 6.339 0 0 1 1.504.846c.282.21 1.07.964 1.07 1.023 0 .021-.078.058-.175.082-.469.115-1.107.428-1.541.754-1.612 1.213-2.248 3.287-1.582 5.165a4.652 4.652 0 0 0 2.4 2.63c.173.082.356.159.407.171.05.013.091.035.091.05 0 .048-.635.562-.966.783a6.468 6.468 0 0 1-6.156.583 6.605 6.605 0 0 1-3.346-3.184c-1.575-3.235-.212-7.128 3.054-8.72a6.425 6.425 0 0 1 3.348-.629m6.369 2.978c.802.205 1.442.58 1.981 1.162 1.592 1.72 1.343 4.392-.543 5.826-.307.233-.953.545-1.357.655-.31.085-.38.091-.984.091-.603 0-.673-.006-.983-.091-.408-.111-1.051-.422-1.366-.662a4.026 4.026 0 0 1-1.553-2.627 4.48 4.48 0 0 1 .082-1.476 4.006 4.006 0 0 1 3.295-2.957 4.755 4.755 0 0 1 1.428.079" fill="#010101"/></svg>
-SVG;
+        // WP admin menu: data-URI base64 SVG with fill="#010101" (recolored by color scheme).
+        $iconSvg = '';
+        $iconFile = WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/images/pbicon.svg';
+        if (is_readable($iconFile)) {
+            $iconSvg = self::prepareMenuIconSvg((string) file_get_contents($iconFile));
+        }
 
-        $icon = 'data:image/svg+xml;base64,' . base64_encode($iconSvg);
+        $icon = $iconSvg !== ''
+            ? 'data:image/svg+xml;base64,' . base64_encode($iconSvg)
+            : 'dashicons-money-alt';
 
         add_menu_page(
-            'PagBank Connect', // Page title
-            'PagBank', // Menu title
+            'PB Integrações', // Page title
+            'PB Integrações', // Menu title
             'manage_woocommerce', // Required capability to view the menu
             'rm-pagbank', // Page slug
             [MenuPagBank::class, 'defaultPagBankMenuAction'], // Function that renders the menu page
             $icon, // Menu icon
             56.1 // Position in the menu
         );
+    }
+
+    /**
+     * Affinity often exports mask+PNG and multi-color fills; WP menu needs a silhouette SVG.
+     * Opaque pixels (any fill) become the admin color — white/"empty" fills are NOT holes.
+     * Cutouts must be real transparency (no path, or fill none / evenodd holes).
+     */
+    private static function prepareMenuIconSvg(string $svg): string
+    {
+        $svg = preg_replace('/<\?xml[^>]*\?>/', '', $svg) ?? $svg;
+        $svg = preg_replace('/<!DOCTYPE[^>]*>/i', '', $svg) ?? $svg;
+        // Empty Affinity mask hides the icon entirely.
+        $svg = preg_replace('/<defs>.*?<\/defs>/s', '', $svg) ?? $svg;
+        $svg = preg_replace('/\s*mask="url\([^"]+\)"/', '', $svg) ?? $svg;
+
+        // Drop "fake holes": Affinity white/near-white fills (opaque → would become solid ink in WP).
+        $svg = preg_replace(
+            '/<(path|rect|circle|ellipse|polygon|polyline)[^>]*?(?:fill\s*:\s*#(?:fff(?:fff)?|f{3,6}|e{3,6}|d{3,6})|fill="#(?:fff(?:fff)?|f{3,6}|e{3,6}|d{3,6})")[^>]*?\/?>/i',
+            '',
+            $svg
+        ) ?? $svg;
+        $svg = preg_replace(
+            '/<(path|rect|circle|ellipse|polygon|polyline)[^>]*?(?:fill\s*:\s*#(?:fff(?:fff)?|f{3,6}|e{3,6}|d{3,6})|fill="#(?:fff(?:fff)?|f{3,6}|e{3,6}|d{3,6})")[^>]*?>.*?<\/\1>/is',
+            '',
+            $svg
+        ) ?? $svg;
+
+        // Keep fill:none / fill="none" (true transparency). Recolor only real ink.
+        $svg = preg_replace_callback(
+            '/fill\s*:\s*#([0-9a-fA-F]{3,8})/',
+            static function (array $m): string {
+                return self::isNearWhiteHex($m[1]) ? 'fill:none' : 'fill:#010101';
+            },
+            $svg
+        ) ?? $svg;
+        $svg = preg_replace_callback(
+            '/fill="#([0-9a-fA-F]{3,8})"/',
+            static function (array $m): string {
+                return self::isNearWhiteHex($m[1]) ? 'fill="none"' : 'fill="#010101"';
+            },
+            $svg
+        ) ?? $svg;
+
+        $svg = preg_replace('/\bwidth="100%"/', 'width="20"', $svg) ?? $svg;
+        $svg = preg_replace('/\bheight="100%"/', 'height="20"', $svg) ?? $svg;
+
+        return trim($svg);
+    }
+
+    /** Treat light greys/whites as transparent (Affinity “empty” areas). */
+    private static function isNearWhiteHex(string $hex): bool
+    {
+        $hex = strtolower($hex);
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) !== 6 || !ctype_xdigit($hex)) {
+            return false;
+        }
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        return $r >= 0xcc && $g >= 0xcc && $b >= 0xcc;
     }
     
     public static function defaultPagBankMenuAction()
@@ -95,7 +164,7 @@ SVG;
                 'manage_woocommerce',
                 'rm-pagbank-logs',
                 function () {
-                    wp_safe_redirect(admin_url('admin.php?page=wc-status&tab=logs&source=pagbank-connect'));
+                    wp_safe_redirect(admin_url('admin.php?page=wc-status&tab=logs&source=pbintegracoes'));
                     exit;
                 }
             );
@@ -147,7 +216,7 @@ SVG;
         $SubscriptionReportingSummary->renderPagbankReportingBasic();
 
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html(__('Assinaturas PagBank', 'pagbank-connect')) . '</h1>';
+        echo '<h1>' . esc_html(__('Assinaturas', 'pagbank-connect')) . '</h1>';
         $subscriptionsListTable->display();
         echo '</div>';
     }
@@ -222,6 +291,16 @@ SVG;
         }
         if ($nextSubscriptionId) {
             echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . intval($nextSubscriptionId) . '" class="button">' . esc_html( __('Ver Próxima Assinatura', 'pagbank-connect') ) . '</a>';
+        }
+
+        $paymentInfoAdmin = \RM_PagBank\Helpers\Recurring::normalizePaymentInfo($subscription->payment_info ?? null);
+        if (!empty($paymentInfoAdmin['needs_retoken'])) {
+            echo '<div class="notice notice-warning"><p>';
+            echo esc_html__(
+                'Aguardando atualização de cartão pelo cliente (assinatura criada em outro processador / Connect Key atual incompatível).',
+                'pagbank-connect'
+            );
+            echo '</p></div>';
         }
 
         echo '<h2>' . esc_html( __('Detalhes da Assinatura', 'pagbank-connect') ) . '</h2>';

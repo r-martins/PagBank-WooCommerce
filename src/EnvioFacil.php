@@ -29,7 +29,10 @@ class EnvioFacil extends WC_Shipping_Method
 	public function __construct( $instance_id = 0 ) {
 		$this->id                 = self::CODE;
 		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect' );  // Title shown in admin
-		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect' ); // Description shown in admin
+		$this->method_description = __(
+			'Use taxas diferenciadas com Correios e transportadoras. Disponível com Connect Key PagBank (CONPS14/CONPS30) ou Vindi (CONVD14/CONVD30/CONVDFLX).',
+			'pagbank-connect'
+		);
 
 		$this->enabled            = $this->get_option('enabled');
 		$this->title              = "PagBank Envio Fácil";
@@ -65,12 +68,25 @@ class EnvioFacil extends WC_Shipping_Method
 			return false;
 		}
 
-		$connectKey = substr(Params::getConfig('connect_key'), 0, 7);
-		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
+		if (!self::isEligibleConnectKey((string) Params::getConfig('connect_key'))) {
 			return false;
 		}
 
 		return parent::is_available($package);
+	}
+
+	/**
+	 * Envio Fácil: integração 14/30 dias ou Flex Vindi. Sandbox não.
+	 */
+	public static function isEligibleConnectKey(string $connectKey): bool
+	{
+		$key = strtoupper(trim($connectKey));
+		if ($key === '' || strpos($key, 'SANDBOX') !== false) {
+			return false;
+		}
+
+		// PagBank 14/30; Vindi 14/30/Flex. Minhas Taxas PagBank (CONPSFLEX) permanece fora.
+		return (bool) preg_match('/^(CONPS14|CONPS30|CONVD14|CONVD30|CONVDFLX)/', $key);
 	}
 
 	/**
@@ -588,11 +604,13 @@ class EnvioFacil extends WC_Shipping_Method
 		echo wp_kses_post( wpautop( $this->get_method_description() ) );
         echo wp_kses(
             __(
-                'Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas '
-                .'credenciais connect. <strong>Chaves Sandbox ou Minhas Taxas não são elegíveis.</strong>',
+                'Para utilizar o Envio Fácil, use uma Connect Key de integração <strong>14 ou 30 dias</strong> '
+                .'(PagBank <code>CONPS14</code>/<code>CONPS30</code> ou Vindi <code>CONVD14</code>/<code>CONVD30</code>) '
+                .'ou Vindi Flex (<code>CONVDFLX</code>). '
+                .'<strong>Chaves Sandbox e Minhas Taxas PagBank (CONPSFLEX) não são elegíveis.</strong>',
                 'pagbank-connect'
             ),
-            'strong'
+            ['strong' => [], 'code' => []]
         );
         echo '<p>'.esc_html(
                 __(
@@ -626,12 +644,13 @@ class EnvioFacil extends WC_Shipping_Method
         ) : '0';
 		$value = $value == '1' ? 'yes' : 'no';
 
-		$connectKey = Params::getConfig('connect_key');
-		if (strpos($connectKey, 'CONPS14') === false && strpos($connectKey, 'CONPS30') === false && $value == 'yes') {
+		$connectKey = (string) Params::getConfig('connect_key');
+		if ($value === 'yes' && !self::isEligibleConnectKey($connectKey)) {
 			WC_Admin_Settings::add_error(
 				__(
-					'Para utilizar o PagBank Envio Fácil, você precisa obter suas credenciais connect. '
-					.'Chaves Sandbox ou Minhas Taxas não são elegíveis.',
+					'Para utilizar o Envio Fácil, use uma Connect Key de 14 ou 30 dias '
+					.'(CONPS14/CONPS30 ou CONVD14/CONVD30) ou CONVDFLX. '
+					.'Chaves Sandbox e Minhas Taxas PagBank (CONPSFLEX) não são elegíveis.',
 					'pagbank-connect'
 				)
 			);
@@ -639,7 +658,9 @@ class EnvioFacil extends WC_Shipping_Method
 		}
 
 		return $value;
-	}    public function validate_adjustment_fee_field($key, $value) {
+	}
+
+    public function validate_adjustment_fee_field($key, $value) {
         return Functions::validateDiscountValue($value, true);
     }
     

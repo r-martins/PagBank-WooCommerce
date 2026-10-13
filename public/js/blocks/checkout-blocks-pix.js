@@ -53,13 +53,15 @@ const Content = ( props ) => {
     instructions = `${instructions} <br> ${expiryText} <br> ${discountText}`;
 
     if (settings.paymentUnavailable) {
+        const unavailableMessage = settings.unavailableMessage
+            || __('Não disponível para pedidos inferiores a R$1,00', 'rm-pagbank');
         useEffect( () => {
             const unsubscribe = onPaymentSetup(() => {
-                console.error('PagBank indisponível para pedidos inferiores a R$1,00.');
+                console.error(unavailableMessage);
                 return {
                     type: emitResponse.responseTypes.ERROR,
                     messageContext: emitResponse.noticeContexts.PAYMENTS,
-                    message: __('PagBank indisponível para pedidos inferiores a R$1,00.', 'rm-pagbank'),
+                    message: unavailableMessage,
                 };
             });
 
@@ -70,7 +72,7 @@ const Content = ( props ) => {
 
         return (
             <div className="rm-pagbank-pix">
-                <PaymentUnavailable />
+                <PaymentUnavailable message={unavailableMessage} />
             </div>
         );
     }

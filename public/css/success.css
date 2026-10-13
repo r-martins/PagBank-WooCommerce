@@ -8,6 +8,11 @@ If you wish to make visual changes, do so in Appearance> Customize> Additional C
 .pix-qr-container{
     max-width: 200px;
 }
+.pix-qr-container .pix-qr{
+    display: block;
+    width: 100%;
+    height: auto;
+}
 .code-container{
     display: flex;
     margin-bottom: 30px;

@@ -18,6 +18,7 @@ use WC_Order_Item_Product;
 use WC_Order_Item_Shipping;
 use WC_Product;
 use WP_Error;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Related to recurring orders and its creations
@@ -47,6 +48,13 @@ class RecurringOrder
             Functions::log('Pedido inicial não encontrado pra assinatura ' . esc_attr($subscription->id) . '. Recorrência não foi processada.', 'error', [
                 'subscription' => $subscription->id,
             ]);
+            return;
+        }
+
+        // PagBank subscription + Vindi Connect Key (or inverse): wait for card update — do not charge or cancel.
+        if (Recurring::isRecurringPartnerMismatch($subscription->payment_info ?? null)) {
+            $recurring = new \RM_PagBank\Connect\Recurring();
+            $recurring->suspendForPartnerMismatch($subscription);
             return;
         }
 
@@ -138,14 +146,12 @@ class RecurringOrder
                 $initialOrder->get_meta('_recurring_cycle'),
             )
         );
-        $order->add_meta_data('_pagbank_is_recurring', true);
+        OrderMeta::set($order, '_is_recurring', true);
         $this->addMetaFromOriginalOrder($order, $initialOrder);
 
         $order->add_meta_data(
             '_rm_pagbank_checkout_blocks',
-            $initialOrder->get_meta('_rm_pagbank_checkout_blocks'),
-            true
-        );
+            $initialOrder->get_meta('_rm_pagbank_checkout_blocks'), true);
 
         if($initialOrder->get_meta('_rm_pagbank_customer_document')) {
             $order->add_meta_data(
@@ -208,26 +214,25 @@ class RecurringOrder
                 $params = $method->prepare();
                 break;
             case 'credit_card':
-                $order->add_meta_data(
-                    'pagbank_card_installments',
-                    1,
-                    true
-                );
-                $order->add_meta_data(
-                    'pagbank_card_last4',
-                    substr($paymentInfo->card->number, -4),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_first_digits',
-                    substr($paymentInfo->card->number, 0, 6),
-                    true
-                );
-                $order->add_meta_data(
-                    '_pagbank_card_holder_name',
-                    $paymentInfo->card->holder_name,
-                    true
-                );
+                OrderMeta::set($order, 'card_installments', 1, true);
+                OrderMeta::set($order, 'card_last4', substr($paymentInfo->card->number, -4), true);
+                OrderMeta::set($order, '_card_first_digits', substr($paymentInfo->card->number, 0, 6), true);
+                OrderMeta::set($order, '_card_holder_name', $paymentInfo->card->holder_name, true);
+                // Only treat card.id as Vindi payment_profile when the subscription was saved on Vindi.
+                if (Recurring::subscriptionPaymentPartner($paymentInfo) === \RM_PagBank\Partner\Partner::VINDI) {
+                    $profileId = (int) ($paymentInfo->card->id ?? 0);
+                    if ($profileId > 0) {
+                        OrderMeta::set($order, '_payment_profile_id', $profileId, true);
+                    }
+                    $vindiCustomerId = (int) ($paymentInfo->vindi_customer_id ?? 0);
+                    if ($vindiCustomerId > 0) {
+                        OrderMeta::set($order, '_vindi_customer_id', $vindiCustomerId, true);
+                    }
+                }
+                if (Recurring::isRecurringPartnerMismatch($paymentInfo)) {
+                    $recurring->suspendForPartnerMismatch($subscription);
+                    return 0;
+                }
                 $method = new CreditCard($order);
                 $params = $method->prepare();
                 break;
@@ -242,7 +247,7 @@ class RecurringOrder
                 );
         }
 
-        $order->add_meta_data('pagbank_payment_method', $method->code, true);
+        OrderMeta::set($order, 'payment_method', $method->code, true);
         
         try {
             $api = new Api();
@@ -253,6 +258,18 @@ class RecurringOrder
             }
 
         } catch (Exception $e) {
+            // Partner mismatch (or API asking for Vindi profile on a PagBank card): suspend + retoken, never cancel.
+            if (
+                Recurring::isRecurringPartnerMismatch($paymentInfo)
+                || (
+                    Recurring::isMissingPaymentProfileError($e->getMessage())
+                    && (new Api())->partner()->isVindi()
+                    && Recurring::subscriptionPaymentPartner($paymentInfo) !== \RM_PagBank\Partner\Partner::VINDI
+                )
+            ) {
+                $recurring->suspendForPartnerMismatch($subscription);
+                throw $e;
+            }
             $recurring->cancelSubscription($subscription, $e->getMessage(), 'FAILURE');
             throw $e;
         }

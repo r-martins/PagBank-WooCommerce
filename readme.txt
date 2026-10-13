@@ -1,28 +1,37 @@
-=== PagBank / PagSeguro Connect para WooCommerce ===
+=== PagBank / PagSeguro e Vindi para WooCommerce ===
 Contributors: martins56
 Tags: pagseguro, pagbank, pix, woocommerce, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.57.4
+Stable tag: 5.0.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
-PagBank com PIX, Cartão de Crédito, Boleto, Recorrência + Envio Fácil e com Menos Taxas no PagSeguro.
-Autenticação 3D: menos chargeback + aprovações.
+PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
+Conecte. Converta. Cresça. 99% de aprovação.
 
 == Description ==
 
-**Aceite PagBank (PagSeguro) (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
+**Aceite PagBank ou Vindi (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
-# 🛑 **AVISO IMPORTANTE** ATENDENDO EXIGÊNCIAS DO PRÓPRIO PAGBANK, O CADASTRAMENTO DE NOVAS CONTAS ESTÁ SUSPENSO.
+# 🛑 **AVISO IMPORTANTE:** É HORA DE MIGRAR, VENDER AINDA MAIS E PAGAR AINDA MENOS
 
-Se você já tem uma Connect Key, pode usar nossas integrações normalmente. Caso contrário, busque outra opção enquanto resolvemos isso.
+Devido a uma mudança estratégica, o PagBank decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014).
+
+Por isso, agora oferecemos a nova parceria com a Vindi Pagamentos.
+
+Mesma integração. Mesma equipe. Mesmos recursos (e mais por vir). 
+
+Taxas *muito* menores. E claro, mais aprovação.
+
+Você só precisará atualizar para última versão (5.x ou superior) e [obter uma nova connect key](https://pbintegracoes.com/autorizar) gratuitamente.
 
 
-**🌟[Parceiro oficial](https://developer.pagbank.com.br/docs/ricardo-martins-woocommerce) PagBank/PagSeguro desde 2014.**
 
-**Economize nas taxas PagBank.** Receba no crédito à vista **a partir de 3,05% + R$0,00** de taxa de intermediação e PIX na hora por 0,99%. [Veja tabela completa](https://pbintegracoes.com/compare/?utm_source=readme&utm_content=tabela-comparativa).
+**🌟Parceiro dos melhores gateways de pagamento desde 2014.**
+
+**Economize nas taxas e converta ainda mais.** Receba no crédito à vista **a partir de 2,99% + R$0,00** de taxa de intermediação e PIX na hora por 0,60%. [Veja tabela completa](https://pbintegracoes.com/taxas/?utm_source=readme&utm_content=taxas).
 
 O **melhor plugin de pagamentos** do Brasil.
 
@@ -39,11 +48,11 @@ Veja nosso [**passo a passo de instalação**](https://pbintegracoes.com/woocomm
 **🏆 TOP 1 em pagamentos WooCommerce no Brasil! 100% Gratuito!**
 
 === ⚡️Taxas menores pra você, mais lucro pra crescer===
-Ao invés de pagar 3,99% + R$0,40 ou 4,99% + R$0,40 por transação aprovada no Cartão de Crédito, você pode optar por:
-1. **Recebimento em 30 dias**: **3,05% + R$0,00** por transação aprovada no Cartão de Crédito (mais popular)
-2. **Recebimento em 14 dias**: 3,97% + R$0,00 por transação aprovada no Cartão de Crédito
-3. **PIX**: sempre 0,99% com recebimento na hora
-4. **Boleto**: sempre 1,99% com recebimento em 2 dias
+Economize milhares de reais ao ano em taxas de transação e receba direto na conta bancária de sua escolha.
+1. **Recebimento em 30 dias**: **2,99% + R$0,00** por transação aprovada no Cartão de Crédito (mais popular)
+2. **Recebimento em 14 dias**: 3,89% + R$0,00 por transação aprovada no Cartão de Crédito
+3. **PIX**: 0,60% ou 0,70% (min R$0,10) com recebimento em até 1 dia útil
+4. **Boleto**: sempre 2,49% com recebimento em 2 dias
 
 Se você tiver taxas negociadas ou condições negociadas melhores que estas, você também pode utilizá-las.
 
@@ -60,7 +69,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Atualização de pedidos automática, inclusive com [confirmação de pagamento instantâneo PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) com [comportamento configurável](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
 * Infinitas [**opções de parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento) ∞
 * 💳 [Salvar Cartão](https://ajuda.pbintegracoes.com/hc/pt-br/articles/38366350272397-Salvar-Cart%C3%A3o-de-Cr%C3%A9dito-no-WooCommerce) - Permite que seus clientes salvem o token do cartão de crédito para compras futuras, sem precisar digitar os dados novamente.
-* **Divisão de Pagamentos** entre contas (Split). Seja sócio das lojas que você cria. Ou crie Marketplaces com WooCommerce e Dokan (integração nativa).
+* **Divisão de Pagamentos** entre contas (Split). Seja sócio das lojas que você cria. Ou crie Marketplaces com WooCommerce e Dokan (integração nativa). Em breve na Vindi também.
 
 == ⚡️ RECURSOS ADICIONAIS ==
 * Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo) e [Regras personalizadas de desconto](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45632701768077-Descontos-PIX-ou-Boleto-com-regras-personalizadas-avan%C3%A7adas)
@@ -75,12 +84,12 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Exibição de [informações de **parcelas na página de produto** em 3 formatos diferentes](https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produto)
 * **Hooks** disponíveis para facilitar integrações e modificações que você queira fazer sem sobrescrever o plugin. [Veja documentação](https://ajuda.pbintegracoes.com/hc/pt-br/articles/27339148022669-Hooks-Filtros-e-A%C3%A7%C3%B5es-Dispon%C3%ADveis).
 * Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
-* Use a mesma conta PagBank e a mesma Connect Key para integrar **várias lojas** WooCommerce, sem precisar de uma Connect Key para cada loja.
+* Use a mesma conta PagBank/Vindi e a mesma Connect Key para integrar **várias lojas** WooCommerce, sem precisar de uma Connect Key para cada loja.
 * Integração com Marketplace Dokan para divisão de pagamentos entre múltiplos vendedores (split, multivendor). [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/40558023581965-Dokan-Split-Divis%C3%A3o-de-Pagamentos-para-Marketplace).
 
 https://www.youtube.com/watch?v=R7nyqVCo9fU
 
-Criado por Ricardo Martins (**Parceiro oficial PagBank/PagSeguro desde 2014**), esta é a 4ª geração das integrações PagSeguro, disponibilizadas desde 2014 no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e mais de 200 milhões de reais transacionados em nossas integrações.
+Criado por Ricardo Martins (**Parceiro oficial dos principais gateways e provedores de pagamento desde 2014**), esta é a 5ª geração do nosso plugin para WooCommerce, disponibilizadas também no Magento, e desde 2019 no WooCommerce. Mais de 20 mil lojas atendidas e **mais de 1 bilhão de reais transacionados** em nossas integrações.
 
 Além disso, você também pode aceitar **pagamentos recorrentes** e criar clubes de assinatura sem depender de plugins de terceiros.
 
@@ -91,17 +100,17 @@ https://www.youtube.com/watch?v=FOPwBTRryNM
 
 Nossa integração possui [autenticação 3D Secure](https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375922278157-Autentica%C3%A7%C3%A3o-3DS-Sua-prote%C3%A7%C3%A3o-contra-Chargeback), que reduz drasticamente seus custos com chargebacks, e aumenta significativamente a **taxa de aprovação**.
 
-Tudo pra você vender mais com PagBank(PagSeguro) sem sequer precisar se preocupar em contratar um serviço de antifraude.
+Tudo pra você vender mais com PagBank(PagSeguro) ou Vindi sem sequer precisar se preocupar em contratar um serviço de antifraude.
 
 
 * Termos de uso e softwares terceiros
-Ao instalar o plugin PagBank Connect, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
+Ao instalar nosso plugin, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
 
 
 == Installation ==
 
 === Instalação automática via painel ===
-* Navegue até Plugins > Adicionar Novo e procure por "PagBank Ricardo Martins"
+* Navegue até Plugins > Adicionar Novo e procure por "PB Integrações"
 * Clique no botão para instalar e ative o plugin
 * Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
@@ -114,8 +123,8 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 === Instalação manual ===
 * Baixe o [arquivo zip](https://codeload.github.com/r-martins/PagBank-WooCommerce/zip/refs/heads/master) e descompacte ele em sua máquina
 * Faça upload dos arquivos na pasta /wp-content/plugins/pagbank-connect, usando seu FTP
-* Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
-* Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Navegue até Plugins > Plugins instalados, e ative o plugin PB Integrações
+* Se você não estiver usando o [checkout em blocos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097182009741-Suporte-ao-Checkout-em-Blocos) (nativo do Woo), instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank/Vindi.
 * No terminal, navegue até a pasta do plugin (wp-content/plugins/pagbank-connect) e rode `npm install` para instalar as dependências do plugin. Em seguida, rode `npm run build` para compilar os arquivos do plugin.
 
 === A gente instala pra você 🙀 ===
@@ -124,11 +133,10 @@ Se você preferir, podemos instalar e configurar o plugin para você sem nenhum 
 [SOLICITAR INSTALAÇÃO GRATUITA](https://pbintegracoes.com/woocommerce/agenteinstala/?utm_source=readme&utm_content=agenteinstala). 
 
 === Configuração ===
-* Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
-* Clique no PagBank Connect para acessar as configurações do módulo
-* Clique em "Obter Connect Key". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então autorizar nossa aplicação sem nenhum custo ou mensalidade.
+* Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PB Integrações
+* Clique no menu PB Integrações > Configurações para acessar as configurações do módulo
+* Clique em "Obter Connect Key". Você será levado para nosso site, onde poderá escolher o modelo de recebimento (14 ou 30 dias) e então criar uma conta gratuitamente (sem mensalidade ou taxas fixas).
 * No nosso site, selecione o modelo de recebimento desejado (14 ou 30 dias - ou suas condições negociadas) e preencha as informações do responsável técnico por sua loja.
-* Você será levado para o site do PagBank, onde poderá se logar e autorizar nossa aplicação em sua conta.
 * Em seguida, sua *Connect Key* será exibida e enviada para o e-mail informado no passo anterior. Use ela nas configurações da sua loja.
 * Salve as configurações e sua loja está pronta para vender.
 * Se desejar, configure [opções de parcelamento](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento), e validade do boleto e código pix de acordo com suas necessidades.
@@ -139,13 +147,13 @@ Se você preferir, podemos instalar e configurar o plugin para você sem nenhum 
 
 * Ter WooCommerce 4.0 ou superior
 * PHP 7.4 ou superior
-* Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank
-* [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/?utm_source=readme&utm_content=pre-requisitos) em sua conta PagBank.
-* Usar o Checkout em Blocos (nativo) **ou** Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Não é necessário ter conta na Vindi
+* Ter um CPF ou CNPJ válidos e ativos no Brasil e uma conta bancária de mesma titularidade para receber seus pagamentos
+* Usar o Checkout em Blocos (nativo) **ou** Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank/Vindi.
 
 = Como funcionam os descontos nas taxas? =
 
-Ao usar nossas integrações no modelo de recebimento em 14 ou 30 dias, ao invés de pagar 4,99% ou 3,99%, você pagará 3,97% ou 3,05% respectivamente e estará isento da taxa de R$0,40 por transação. Sem mensalidades.
+Ao usar nossas integrações você paga menos que as taxas oficiais dos parceiros com quem integra, graças ao modelo de parceria que temos com os principais gateways e provedores do mercado.
 
 Taxas menores também são aplicadas para transações parceladas, PIX e Boleto. PIX e Boleto também possuem prazos menores de recebimento.
 
@@ -245,6 +253,11 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.0.0 =
+* Adicionado suporte à Vindi Pagamentos com taxas ainda menores. 🎉
+* Correção: um pedido finalizado com PIX ou Boleto e que possui desconto, pode carregar o desconto se o usuário usar o /order-pay para realizar o pagamento com outro meio que não teria o desconto.
+
 = 4.57.4 =
 * Correção: quando CPF ou telefone não eram informados porque o campo foi omitido, o plugin poderia gerar um erro fatal (propriedade não inicializada) ao finalizar uma compra com Boleto.
 

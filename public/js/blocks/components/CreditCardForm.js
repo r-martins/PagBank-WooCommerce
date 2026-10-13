@@ -28,8 +28,8 @@ const PaymentInstructions = ({ billing }) => {
     });
 	const detectCardBrand = (number) => {
 		const visaRegex = /^4[0-9]{0,}$/;
-		const mastercardRegex = /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$/;
-		const amexRegex = /^3([47]\d*)?$/;
+		const mastercardRegex = /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)\d*$/;
+		const amexRegex = /^3[47]\d*$/;
 		const dinersRegex = /^(3(0[0-5]|095|6|[8-9]))\d*$/;
 		const jcbRegex = /^(?:2131|1800|35\d{3})\d{0,}$/;
 		const auraRegex = /^5078\d*$/;
@@ -47,15 +47,32 @@ const PaymentInstructions = ({ billing }) => {
 			'(6550(2[1-9]|3[0-9]|4[0-9]|5[0-8])))\\d*$'
 		);
 
-		if (mastercardRegex.test(number)) return 'mastercard';
+		if (eloRegex.test(number)) return 'elo';
+		if (hiperRegex.test(number)) return 'hipercard';
 		if (amexRegex.test(number)) return 'amex';
 		if (dinersRegex.test(number)) return 'diners';
 		if (jcbRegex.test(number)) return 'jcb';
 		if (auraRegex.test(number)) return 'aura';
-		if (hiperRegex.test(number)) return 'hipercard';
-		if (eloRegex.test(number)) return 'elo';
+		if (mastercardRegex.test(number)) return 'mastercard';
 		if (visaRegex.test(number)) return 'visa';
 		return '';
+	};
+
+	/** UI brand → Vindi payment_company_code (always send on public/private payment_profiles). */
+	const toVindiPaymentCompanyCode = (brand) => {
+		const map = {
+			mastercard: 'mastercard',
+			visa: 'visa',
+			amex: 'american_express',
+			american_express: 'american_express',
+			diners: 'diners_club',
+			diners_club: 'diners_club',
+			dinnersclub: 'diners_club',
+			elo: 'elo',
+			hipercard: 'hipercard',
+			jcb: 'jcb',
+		};
+		return map[brand] || 'mastercard';
 	};
 
 	const fetchInstallments = (bin, force = false) => {
@@ -88,8 +105,10 @@ const PaymentInstructions = ({ billing }) => {
 	useEffect(() => {
 		const digits = creditCardNumber.replace(/\D/g, '');
 		if (digits.length >= 6) {
-			setCardBrand(detectCardBrand(digits));
+			const brand = detectCardBrand(digits);
+			setCardBrand(brand);
 			setCcBin(digits.substring(0, 6));
+			window.ps_vindi_payment_company = toVindiPaymentCompanyCode(brand);
 		}
 	}, [creditCardNumber]);
 
@@ -129,7 +148,12 @@ const PaymentInstructions = ({ billing }) => {
                 label={__('Número do cartão', 'rm-pagbank')}
                 mask={["9999 999999 99999", "9999 9999 9999 9999"]}
                 placeholder="•••• •••• •••• ••••"
-                onChange={e => setCreditCardNumber(e.target.value)}
+                onChange={e => {
+                    setCreditCardNumber(e.target.value);
+                    // Invalidate classic/blocks PAN cache so a retry never reuses the previous card.
+                    window.ps_cc_number = '';
+                    window.ps_cc_has_changed = true;
+                }}
             />
 
             <MaskedInput
@@ -159,6 +183,10 @@ const PaymentInstructions = ({ billing }) => {
                 label={__('Código do cartão', 'rm-pagbank')}
                 mask="999[9]"
                 placeholder="CVC"
+                onChange={() => {
+                    window.ps_cc_cvv = '';
+                    window.ps_cc_has_changed = true;
+                }}
             />
 
             {installments.hasOwnProperty('error') || installments == 0 ? null :

@@ -103,6 +103,10 @@ $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_f
         ?>
         <input type="hidden" <?php echo $this->field_name('card-encrypted');?>" id="<?php echo esc_attr( Connect::DOMAIN )?>-card-encrypted" />
         <input type="hidden" <?php echo $this->field_name('card-3d');?>" id="<?php echo esc_attr( Connect::DOMAIN )?>-card-3d" />
+        <input type="hidden" name="rm-pagbank-payment-profile-id" id="rm-pagbank-payment-profile-id" value="" />
+        <input type="hidden" name="rm-pagbank-vindi-customer-id" id="rm-pagbank-vindi-customer-id" value="" />
+        <input type="hidden" name="rm-pagbank-card-3ds-payload" id="rm-pagbank-card-3ds-payload" value="" />
+        <input type="hidden" name="rm-pagbank-payment-company-code" id="rm-pagbank-payment-company-code" value="" />
         <?php do_action( 'woocommerce_credit_card_form_end', Connect::DOMAIN ); ?>
         <?php if ($isCartRecurring) :?>
             <p class="form-row form-row-wide">

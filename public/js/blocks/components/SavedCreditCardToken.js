@@ -31,7 +31,7 @@ const SavedCreditCardToken = () => {
           onChange={handleCheckboxChange}
         />
         <span className="woocommerce-form__label-text">
-          {__("Salvar cartão para futuras compras", "pagbank-connect")}
+          {__("Salvar para uso futuro", "pagbank-connect")}
         </span>
       </label>
     </div>

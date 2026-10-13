@@ -67,6 +67,10 @@ class Exception extends \Exception
         $exactMatchesNoPrefix = [
             'charges[0].payment_method.authentication_method.id' => __('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect'),
             'charges[0].payment_method.card.encrypted' => __('Criptografia do cartão', 'pagbank-connect'),
+            'customer.tax_id' => __('CPF/CNPJ', 'pagbank-connect'),
+            'customer.registry_code' => __('CPF/CNPJ', 'pagbank-connect'),
+            'registry_code' => __('CPF/CNPJ', 'pagbank-connect'),
+            'tax_id' => __('CPF/CNPJ', 'pagbank-connect'),
             ''
         ];
 
@@ -76,7 +80,6 @@ class Exception extends \Exception
 
         // Exact matches - using array for better performance and readability
         $exactMatches = [
-            'customer.tax_id' => __('CPF/CNPJ', 'pagbank-connect'),
             'charges[0].payment_method.boleto.due_date' => __('Data de vencimento do boleto', 'pagbank-connect'),
             'customer.name' => __('Nome do Cliente', 'pagbank-connect'),
             'customer.phones[0].number' => __('Telefone', 'pagbank-connect'),
@@ -162,6 +165,9 @@ class Exception extends \Exception
                     );
                     break;
                 case 'must not be blank':
+                case 'não pode ficar em branco':
+                case 'nao pode ficar em branco':
+                case 'cannot be blank':
                     return __(
                         'Valor obrigatório.',
                         'pagbank-connect'

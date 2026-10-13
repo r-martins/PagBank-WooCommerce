@@ -19,7 +19,7 @@ $installments = $args[count($args)-1];
     <p><?php echo sprintf(
         __(
             'Em até <strong class="installment-x">%sx</strong> de <strong class="installment-amount">'
-            .'R$ %s</strong> no Cartão de Crédito com PagBank',
+            .'R$ %s</strong> no Cartão de Crédito',
             'pagbank-connect'
         ),
             $installments->installments,

@@ -15,7 +15,9 @@ use JsonSerializable;
 class Card implements JsonSerializable
 {
     protected string $id;
-    protected string $encrypted;
+    protected string $encrypted = '';
+    protected string $gateway_token = '';
+    protected int $payment_profile_id;
     protected string $network_token;
     protected int $exp_month;
     protected int $exp_year;
@@ -28,7 +30,45 @@ class Card implements JsonSerializable
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return get_object_vars($this);
+        $data = get_object_vars($this);
+        if ($this->gateway_token === '') {
+            unset($data['gateway_token']);
+        }
+        if ($this->encrypted === '') {
+            unset($data['encrypted']);
+        }
+        if (!isset($this->payment_profile_id)) {
+            unset($data['payment_profile_id']);
+        }
+        if (!isset($this->id)) {
+            unset($data['id']);
+        }
+        if (!isset($this->network_token)) {
+            unset($data['network_token']);
+        }
+        if (!isset($this->exp_month)) {
+            unset($data['exp_month']);
+        }
+        if (!isset($this->exp_year)) {
+            unset($data['exp_year']);
+        }
+        if (!isset($this->security_code)) {
+            unset($data['security_code']);
+        }
+        if (!isset($this->store)) {
+            unset($data['store']);
+        }
+        if (!isset($this->holder)) {
+            unset($data['holder']);
+        }
+        if (!isset($this->token_data)) {
+            unset($data['token_data']);
+        }
+        if (!isset($this->authentication_method)) {
+            unset($data['authentication_method']);
+        }
+
+        return $data;
     }
 
     /**
@@ -61,6 +101,26 @@ class Card implements JsonSerializable
     public function setEncrypted(string $encrypted): void
     {
         $this->encrypted = $encrypted;
+    }
+
+    public function getGatewayToken(): string
+    {
+        return $this->gateway_token ?? '';
+    }
+
+    public function setGatewayToken(string $gateway_token): void
+    {
+        $this->gateway_token = $gateway_token;
+    }
+
+    public function getPaymentProfileId(): int
+    {
+        return $this->payment_profile_id;
+    }
+
+    public function setPaymentProfileId(int $payment_profile_id): void
+    {
+        $this->payment_profile_id = $payment_profile_id;
     }
 
     /**

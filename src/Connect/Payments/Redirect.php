@@ -17,6 +17,7 @@ use RM_PagBank\Object\PaymentMethodsConfigs;
 use RM_PagBank\Object\Shipping;
 use WC_Data_Exception;
 use WC_Order;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class Redirect
@@ -153,7 +154,7 @@ class Redirect extends Common
 	 */
 	public function getThankyouInstructions($order_id){
         $order = new WC_Order($order_id);
-        $redirect_link = $order->get_meta('pagbank_redirect_link');
+        $redirect_link = OrderMeta::get($order, 'redirect_link');
         require_once dirname(__FILE__) . '/../../templates/redirect-instructions.php';
     }
     

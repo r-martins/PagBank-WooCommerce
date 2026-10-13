@@ -7,6 +7,7 @@ use RM_PagBank\Object\Receiver;
 use RM_PagBank\Object\Split;
 use WC_Order;
 use WC_Order_Item;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class DokanSplitManager
@@ -23,6 +24,11 @@ class DokanSplitManager
      */
     public static function shouldApplySplit(WC_Order $order): bool
     {
+        $caps = new \RM_PagBank\Partner\Capabilities();
+        if (!$caps->hasSplit()) {
+            return false;
+        }
+
         // Check if Dokan is active
         if (!function_exists('dokan')) {
             // Dokan não está ativo
@@ -252,7 +258,7 @@ class DokanSplitManager
         // Iniciando construção de split para pedido
         
         $vendors = self::getOrderVendors($order);
-        $isCreditCard = $payment_method_type === 'CREDIT_CARD';
+        $isCreditCard = in_array($payment_method_type, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true);
         $gateway_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
         $marketplaceReason = $gateway_settings['split_marketplace_reason'] ?? 'Comissão do Marketplace';
         
@@ -506,8 +512,8 @@ class DokanSplitManager
         }
 
         // Check if order has split
-        $has_split = $order->get_meta('_pagbank_split_applied');
-        $split_id = $order->get_meta('_pagbank_split_id');
+        $has_split = OrderMeta::get($order, '_split_applied');
+        $split_id = OrderMeta::get($order, '_split_id');
         $parent_order = null;
         
         // If not found in current order, check parent order (Dokan suborder case)
@@ -516,8 +522,8 @@ class DokanSplitManager
             if ($parent_order_id) {
                 $parent_order = wc_get_order($parent_order_id);
                 if ($parent_order) {
-                    $has_split = $parent_order->get_meta('_pagbank_split_applied');
-                    $split_id = $parent_order->get_meta('_pagbank_split_id');
+                    $has_split = OrderMeta::get($parent_order, '_split_applied');
+                    $split_id = OrderMeta::get($parent_order, '_split_id');
                     
                     \RM_PagBank\Helpers\Functions::log(
                         sprintf(
@@ -595,9 +601,9 @@ class DokanSplitManager
             );
             
             // Mark custody as released in the current order
-            $order->update_meta_data('_pagbank_custody_released', true);
-            $order->update_meta_data('_pagbank_custody_released_date', current_time('mysql'));
-            $order->update_meta_data('_pagbank_custody_released_vendor', $vendor_account_id);
+            OrderMeta::set($order, '_custody_released', true);
+            OrderMeta::set($order, '_custody_released_date', current_time('mysql'));
+            OrderMeta::set($order, '_custody_released_vendor', $vendor_account_id);
             $order->save();
             
             return true;

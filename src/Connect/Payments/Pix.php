@@ -8,6 +8,7 @@ use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\QrCode;
 use WC_Data_Exception;
 use WC_Order;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Class Pix
@@ -69,12 +70,12 @@ class Pix extends Common
 	 **/
 	public function getThankyouInstructions($order_id){
         $order = new WC_Order($order_id);
-        $qr_code = $order->get_meta('pagbank_pix_qrcode');
-        $qr_code_text = $order->get_meta('pagbank_pix_qrcode_text');
-        $qr_code_exp = $order->get_meta('pagbank_pix_qrcode_expiration');
+        $qr_code = \RM_PagBank\Helpers\PixQr::getDisplayUrl($order);
+        $qr_code_text = OrderMeta::get($order, 'pix_qrcode_text');
+        $qr_code_exp = OrderMeta::get($order, 'pix_qrcode_expiration');
         
         // Verificar se o charge está DECLINED
-        $charges = $order->get_meta('pagbank_order_charges');
+        $charges = OrderMeta::get($order, 'order_charges');
         $is_declined = false;
         if (!empty($charges) && is_array($charges)) {
             foreach ($charges as $charge) {

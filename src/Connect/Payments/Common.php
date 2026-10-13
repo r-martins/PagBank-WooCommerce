@@ -14,6 +14,7 @@ use RM_PagBank\Object\Phone;
 use WC_Customer;
 use WC_Order;
 use WC_Order_Item_Product;
+use RM_PagBank\Helpers\OrderMeta;
 
 /**
  * Common methods shared between payment methods
@@ -77,11 +78,38 @@ class Common
         return Params::getConfig('hash_email_active') === 'yes';
     }
 
+    /**
+     * True when this order will charge a Vindi payment_profile (saved card or 3DS profile).
+     */
+    protected function orderUsesVindiPaymentProfile(): bool
+    {
+        if ((int) OrderMeta::get($this->order, '_payment_profile_id') > 0) {
+            return true;
+        }
+        $tokenId = OrderMeta::get($this->order, '_card_token_id');
+        if (!$tokenId || $tokenId === 'new') {
+            return false;
+        }
+        try {
+            $api = new Api();
+            if (!$api->partner()->isVindi()) {
+                return false;
+            }
+            $token = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($tokenId);
+            if (!$token) {
+                return false;
+            }
+            return (int) ($token->get_meta('vindi_payment_profile_id') ?: $token->get_token()) > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     protected function getHashEmail()
     {
         $email = strtolower($this->order->get_billing_email());
         $hash = hash('md5', $email);
-        return "{$hash}@pagbankconnect.pag";
+        return "{$hash}@pbintegracoes.cc";
     }
 	/**
 	 * Populates the customer object with data from the order
@@ -94,13 +122,15 @@ class Common
         $firstName = substr($this->order->get_billing_first_name(), 0, 60);
         $lastName = substr($this->order->get_billing_last_name(), 0, 59);
         $customer->setName($firstName . ' ' . $lastName);
-        $customer->setEmail($this->isHashEmail() ? $this->getHashEmail() : $this->order->get_billing_email());
+        // Vindi payment_profile.id is bound to the customer email used at profile create.
+        // Hashing (or mismatch) makes billing reject the profile as "identificador não encontrado".
+        $hashEmail = $this->isHashEmail() && !$this->orderUsesVindiPaymentProfile();
+        $customer->setEmail($hashEmail ? $this->getHashEmail() : $this->order->get_billing_email());
         
         $taxId = null;
-        
-        if (wc_string_to_bool($this->order->get_meta('_rm_pagbank_checkout_blocks'))) {
-            $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
-        }
+
+        // Blocks and classic may both store document on this meta — prefer it whenever present.
+        $taxId = $this->order->get_meta('_rm_pagbank_customer_document');
 
         if(empty($taxId)){
             //cpf or cnpj
@@ -136,6 +166,12 @@ class Common
             $customer->setPhone([
                 $phone,
             ]);
+        }
+        // Vindi /v1/billing requires customer.address. Virtual/subscription renewals often
+        // omit shipping (no shipping method), so attach billing address on the customer.
+        $api = new Api();
+        if ($api->partner()->isVindi()) {
+            $customer->setAddress($this->getBillingAddress());
         }
         return $customer;
     }
@@ -389,6 +425,10 @@ class Common
 
     public function getEnableProxy(): bool
     {
+        $caps = new \RM_PagBank\Partner\Capabilities();
+        if ($caps->forceNotificationProxy()) {
+            return true;
+        }
         return Params::getConfig('enable_proxy', false);
     }
 
@@ -402,56 +442,91 @@ class Common
      */
     public function process_response(WC_Order $order, array $response) {
 
-        switch ($order->get_meta('pagbank_payment_method')){
+        $api = new Api();
+        OrderMeta::set($order, 'partner', $api->partner()->getPartner(), true);
+        OrderMeta::set($order, 'connect_key_fp', $api->partner()->fingerprint(), true);
+
+        switch (OrderMeta::get($order, 'payment_method')){
             case 'pix':
-                $order->add_meta_data('pagbank_pix_qrcode', $response['qr_codes'][0]['links'][0]['href'] ?? null, true);
-                $order->add_meta_data('pagbank_pix_qrcode_text', $response['qr_codes'][0]['text'] ?? null, true);
-                $order->add_meta_data('pagbank_pix_qrcode_expiration', $response['qr_codes'][0]['expiration_date'] ?? null, true);
+                OrderMeta::set($order, 'pix_qrcode', $response['qr_codes'][0]['links'][0]['href'] ?? null, true);
+                OrderMeta::set($order, 'pix_qrcode_text', $response['qr_codes'][0]['text'] ?? null, true);
+                OrderMeta::set($order, 'pix_qrcode_expiration', $response['qr_codes'][0]['expiration_date'] ?? null, true);
                 $order->set_props(['payment_method' => 'rm-pagbank-pix']);
                 break;
             case 'boleto':
-                $order->add_meta_data('pagbank_boleto_png', $response['charges'][0]['links'][1]['href'] ?? null, true);
-                $order->add_meta_data('pagbank_boleto_pdf', $response['charges'][0]['links'][0]['href'] ?? null, true);
-                $order->add_meta_data('pagbank_boleto_due_date', $response['charges'][0]['payment_method']['boleto']['due_date'] ?? null, true);
-                $order->add_meta_data('pagbank_boleto_barcode_formatted', $response['charges'][0]['payment_method']['boleto']['formatted_barcode'] ?? null, true);
-                $order->add_meta_data('pagbank_boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode'] ?? null, true);
+                $boletoPdf = $response['charges'][0]['links'][0]['href'] ?? ($response['links'][0]['href'] ?? null);
+                $boletoPng = $response['charges'][0]['links'][1]['href'] ?? null;
+                // Vindi/Yapay: print_url is a single download page — no separate PNG; avoid duplicate "Imprimir".
+                if ($api->partner()->isVindi()) {
+                    $boletoPng = null;
+                }
+                OrderMeta::set($order, 'boleto_png', $boletoPng, true);
+                OrderMeta::set($order, 'boleto_pdf', $boletoPdf, true);
+                OrderMeta::set($order, 'boleto_due_date', $response['charges'][0]['payment_method']['boleto']['due_date'] ?? null, true);
+                OrderMeta::set($order, 'boleto_barcode_formatted', $response['charges'][0]['payment_method']['boleto']['formatted_barcode']
+                        ?? ($response['boleto']['formatted_barcode'] ?? null), true);
+                OrderMeta::set($order, 'boleto_barcode', $response['charges'][0]['payment_method']['boleto']['barcode']
+                        ?? ($response['boleto']['barcode'] ?? null), true);
                 $order->set_props(['payment_method' => 'rm-pagbank-boleto']);
                 break;
 			case 'credit_card':
-				$order->add_meta_data('_pagbank_card_installments', $response['charges'][0]['payment_method']['installments'] ?? null);
+				OrderMeta::set($order, '_card_installments', $response['charges'][0]['payment_method']['installments'] ?? null);
 				$order->add_meta_data('Parcelas', $response['charges'][0]['payment_method']['installments'] ?? null);
 				CreditCard::applyChargeInstallmentMeta($order, $response['charges'][0] ?? []);
-				$order->add_meta_data('_pagbank_card_brand', $response['charges'][0]['payment_method']['card']['brand'] ?? null);
-				$order->add_meta_data('_pagbank_card_first_digits', $response['charges'][0]['payment_method']['card']['first_digits'] ?? null);
-				$order->add_meta_data('_pagbank_card_last_digits', $response['charges'][0]['payment_method']['card']['last_digits'] ?? null);
-				$order->add_meta_data('_pagbank_card_holder', $response['charges'][0]['payment_method']['card']['holder']['name'] ?? null);
-				$order->add_meta_data('_pagbank_card_exp_month', $response['charges'][0]['payment_method']['card']['exp_month'] ?? null);
-				$order->add_meta_data('_pagbank_card_exp_year', $response['charges'][0]['payment_method']['card']['exp_year'] ?? null);
-				$order->add_meta_data('_pagbank_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null);
-				$order->add_meta_data('_pagbank_card_3ds_status', $response['charges'][0]['payment_method']['authentication_method']['status'] ?? null);
+				$card = is_array($response['charges'][0]['payment_method']['card'] ?? null)
+					? $response['charges'][0]['payment_method']['card']
+					: [];
+				$brand = (string) ($card['brand'] ?? OrderMeta::get($order, '_payment_company_code') ?: '');
+				$first = (string) ($card['first_digits'] ?? OrderMeta::get($order, '_card_first_digits') ?: '');
+				$last = (string) ($card['last_digits'] ?? OrderMeta::get($order, 'card_last4') ?: '');
+				$holder = (string) ($card['holder']['name'] ?? OrderMeta::get($order, '_card_holder_name') ?: '');
+				OrderMeta::set($order, '_card_brand', $brand !== '' ? $brand : null, false);
+				OrderMeta::set($order, '_card_first_digits', $first !== '' ? $first : null, false);
+				OrderMeta::set($order, '_card_last_digits', $last !== '' ? $last : null, false);
+				if ($last !== '') {
+					OrderMeta::set($order, 'card_last4', substr($last, -4, false), true);
+				}
+				OrderMeta::set($order, '_card_holder', $holder !== '' ? $holder : null);
+				OrderMeta::set($order, '_card_exp_month', $card['exp_month'] ?? null, false);
+				OrderMeta::set($order, '_card_exp_year', $card['exp_year'] ?? null, false);
+				OrderMeta::set($order, '_card_response_reference', $response['charges'][0]['payment_response']['reference'] ?? null, false);
+				$threeDsMeta = $this->resolveCard3dsMeta($order, $response['charges'][0] ?? []);
+				OrderMeta::set($order, '_card_3ds_status', $threeDsMeta['status'], false);
+				if ($threeDsMeta['id'] !== null) {
+					OrderMeta::set($order, '_card_3ds_id', $threeDsMeta['id'], false);
+				}
                 $order->set_props(['payment_method' => 'rm-pagbank-cc']);
 				break;
             case 'redirect':
-                $order->add_meta_data('pagbank_redirect_url', $response['links'][1]['href'] ?? null, true);
-                $order->add_meta_data('pagbank_redirect_expiration', $response['expiration_date'] ?? null, false);
-                $order->add_meta_data('pagbank_checkout_id', $response['id'] ?? null, true);
+                OrderMeta::set($order, 'redirect_url', $response['links'][1]['href'] ?? null, true);
+                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? null, false);
+                OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
                 $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
                 break;
                 
         }
         if (isset($response['id']) && substr($response['id'], 0, 4) != 'CHEC'){ //if not a pagbank checkout code
-            $order->add_meta_data('pagbank_order_id', $response['id'], true);
+            OrderMeta::set($order, 'order_id', $response['id'], true);
         }
-		$order->add_meta_data('pagbank_order_charges', $response['charges'] ?? null, true);
-		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
+        $chargeId = $response['charges'][0]['id']
+            ?? ($response['partner_charge_id'] ?? null);
+        if ($chargeId !== null && $chargeId !== '') {
+            OrderMeta::set($order, 'charge_id', (string) $chargeId, true);
+        }
+        $billId = $response['partner_bill_id'] ?? null;
+        if ($billId !== null && $billId !== '') {
+            OrderMeta::set($order, 'partner_bill_id', (string) $billId, true);
+        }
+		OrderMeta::set($order, 'order_charges', $response['charges'] ?? null, true);
+		OrderMeta::set($order, 'is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 		
 		// Save split data if present (for Pix, split data comes directly in response)
 		if (!empty($response['qr_codes'][0]['splits'])) {
-		    $order->add_meta_data('_pagbank_split_data', $response['qr_codes'][0]['splits'], true);
-		    $order->add_meta_data('_pagbank_split_applied', true, true);
+		    OrderMeta::set($order, '_split_data', $response['qr_codes'][0]['splits'], true);
+		    OrderMeta::set($order, '_split_applied', true, true);
 		} elseif (!empty($response['charges'][0]['payment_method']['splits'])) {
-		    $order->add_meta_data('_pagbank_split_data', $response['charges'][0]['payment_method']['splits'], true);
-		    $order->add_meta_data('_pagbank_split_applied', true, true);
+		    OrderMeta::set($order, '_split_data', $response['charges'][0]['payment_method']['splits'], true);
+		    OrderMeta::set($order, '_split_applied', true, true);
 		}
 		
 		// For credit card payments, split details come via a link (SPLIT)
@@ -461,7 +536,7 @@ class Common
 		        if (isset($link['rel']) && $link['rel'] === 'SPLIT' && !empty($link['href'])) {
 		            // Extract split_id from href (last part of URL)
 		            $split_id = basename(parse_url($link['href'], PHP_URL_PATH));
-		            $order->add_meta_data('_pagbank_split_id', $split_id, true);
+		            OrderMeta::set($order, '_split_id', $split_id, true);
 		            Functions::log('Split ID encontrado no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
 		            
 		            // Fetch split details from the API
@@ -469,8 +544,8 @@ class Common
 		                $split_details = self::fetchSplitDetails($link['href']);
 		                if (!empty($split_details)) {
 		                    // Save split data in the same format as Pix
-		                    $order->add_meta_data('_pagbank_split_data', $split_details, true);
-		                    $order->add_meta_data('_pagbank_split_applied', true, true);
+		                    OrderMeta::set($order, '_split_data', $split_details, true);
+		                    OrderMeta::set($order, '_split_applied', true, true);
 		                    Functions::log('Detalhes do split obtidos e salvos para o pedido ' . $order->get_id(), 'info');
 		                }
 		            } catch (\Exception $e) {
@@ -481,7 +556,7 @@ class Common
 		    }
 		}
 
-		$order->update_status('pending', 'PagBank: Pagamento Pendente');
+		$order->update_status('pending', \RM_PagBank\Partner\Branding::notePrefix($order) . ': Pagamento Pendente');
 
         do_action('pagbank_connect_after_proccess_response', $order, $response);
 	}
@@ -563,6 +638,51 @@ class Common
         }
 
         return $split_data;
+    }
+
+    /**
+     * Resolve 3DS status/id for admin display (PagBank authentication_method or Vindi three_ds / CREDIT_CARD_3DS).
+     *
+     * @param \WC_Order $order
+     * @param array<string, mixed> $charge
+     * @return array{status: ?string, id: ?string}
+     */
+    private function resolveCard3dsMeta($order, array $charge): array
+    {
+        $pm = is_array($charge['payment_method'] ?? null) ? $charge['payment_method'] : [];
+        $auth = is_array($pm['authentication_method'] ?? null) ? $pm['authentication_method'] : [];
+        $threeDs = is_array($pm['three_ds'] ?? null) ? $pm['three_ds'] : [];
+
+        $status = isset($auth['status']) ? (string) $auth['status'] : '';
+        $id = isset($auth['id']) ? (string) $auth['id'] : '';
+
+        if ($status === '' && isset($threeDs['status'])) {
+            $status = (string) $threeDs['status'];
+        }
+        if ($id === '' && isset($threeDs['authentication_transaction_id'])) {
+            $id = (string) $threeDs['authentication_transaction_id'];
+        }
+
+        if (($status === '' || $id === '') && (string) ($pm['type'] ?? '') === 'CREDIT_CARD_3DS') {
+            $payloadRaw = OrderMeta::get($order, '_card_3ds_payload');
+            $payload = is_string($payloadRaw) ? json_decode($payloadRaw, true) : null;
+            if (is_array($payload)) {
+                if ($status === '' && !empty($payload['status'])) {
+                    $status = (string) $payload['status'];
+                }
+                if ($id === '' && !empty($payload['authentication_transaction_id'])) {
+                    $id = (string) $payload['authentication_transaction_id'];
+                }
+            }
+            if ($status === '') {
+                $status = 'AUTHENTICATED';
+            }
+        }
+
+        return [
+            'status' => $status !== '' ? $status : null,
+            'id' => $id !== '' ? $id : null,
+        ];
     }
 
     public function getThankyouInstructions($order_id){

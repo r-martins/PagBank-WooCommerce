@@ -17,7 +17,7 @@ return array(
         'title'       => __('Título Principal', 'pagbank-connect'),
         'type'        => 'safe_text',
         'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),
-        'default'     => __('Cartão de Crédito via PagBank', 'pagbank-connect'),
+        'default'     => __('Cartão de Crédito', 'pagbank-connect'),
         'desc_tip'    => true,
     ],
     'cc_installment_options'                     => [
@@ -29,9 +29,9 @@ return array(
             'pagbank-connect'
         ),
         'desc_tip'    => false,
+        'default'     => 'buyer',
         'options'     => [
-            'external'  => __('Obedecer configurações da conta PagBank (padrão)', 'pagbank-connect'),
-            'buyer'     => __('Juros por conta do comprador', 'pagbank-connect'),
+            'buyer'     => __('Juros por conta do comprador (padrão)', 'pagbank-connect'),
             'fixed'     => __('Até X parcelas sem juros', 'pagbank-connect'),
             'min_total' => __('Até X parcelas sem juros dependendo do valor da parcela', 'pagbank-connect'),
         ],
@@ -121,7 +121,7 @@ return array(
     'cc_soft_descriptor'                       => [
         'title'             => __('Identificador na Fatura', 'pagbank-connect'),
         'type'              => 'text',
-        'default'           => 'CompraViaPagBank',
+        'default'           => 'CompraOnline',
         'description'       => __(
             'Nome que será exibido na fatura do Cliente. <a href="https://'
             .'ajuda.pbintegracoes.com/hc/pt-br/articles/19945038495629-Identificador-na-fatura" '
@@ -144,7 +144,7 @@ return array(
         'title'       => __('Título na API (REST)', 'pagbank-connect'),
         'type'        => 'safe_text',
         'description' => __('Texto de payment_method_title na API WooCommerce.<br><small><a target="_blank" href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/45603209754893-T%C3%ADtulo-do-cart%C3%A3o-e-placeholders/?utm_source=wordpressadmin">Placeholders disponíveis.</a></small>', 'pagbank-connect'),
-        'default'     => __('Cartão de Crédito via PagBank', 'pagbank-connect'),
+        'default'     => __('Cartão de Crédito', 'pagbank-connect'),
         'desc_tip'    => false,
     ],
     'cc_3ds'                                   => [
@@ -157,15 +157,16 @@ return array(
             .'A autenticação 3D Secure é um protocolo de segurança que adiciona uma camada extra de proteção '
             .'para compras online, <br/> e evita que chargebacks de compras não reconhecidas sejam '
             .'cobrados do lojista.',
-        'default'     => 'yes',
+        'default'     => 'no',
     ],
     'cc_3ds_allow_continue'                    => [
         'title'       => __('Quando 3D não for suportado', 'pagbank-connect'),
         'label'       => __('Permitir concluir', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Alguns cartões não possuem suporte a autenticação 3D. <br/>'
-            .'Ao marcar esta opção, o cliente poderá concluir a compra mesmo que o cartão não suporte tal recurso <br/>'
-            .'ou se a obtenção da sessão 3D Secure junto ao PagBank falhar.',
+            .'Ao marcar esta opção, o cliente poderá concluir a compra mesmo que o cartão não suporte tal recurso. <br/>'
+            .'PagBank: também se a sessão 3D Secure falhar. Vindi: cartão fora do 3DS (veres_enrolled N/U). <br/>'
+            .'Desmarcado (padrão): a compra é bloqueada — o cliente precisa de outro cartão ou método.',
         'default'     => 'no',
     ],
     'cc_3ds_retry' => [

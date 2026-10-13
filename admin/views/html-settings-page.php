@@ -12,36 +12,29 @@ use RM_PagBank\Connect\Gateway;
 /** @var Gateway $this */
 ?>
 <fieldset name="PagSeguro">
-    <?php 
-    // Exibir mensagens de erro do WC_Admin_Settings
-    // Como o método show_messages() não está funcionando corretamente, 
-    // vamos exibir as mensagens manualmente usando reflexão
+    <?php
+    // WC_Admin_Settings::show_messages() already printed errors (or success) above the form.
+    // It uses if/elseif, so when there are errors the success message is skipped — print
+    // success only in that case. Do not re-print errors (that duplicated notices on save).
     $reflection = new ReflectionClass('WC_Admin_Settings');
     $errors_property = $reflection->getProperty('errors');
     $errors_property->setAccessible(true);
     $errors = $errors_property->getValue();
-    
-    if (!empty($errors)) {
-        foreach($errors as $error) {
-            echo '<div class="notice notice-error"><p><strong>' . esc_html($error) . '</strong></p></div>';
-        }
-    }
-    
-    // Exibir mensagens de sucesso também
+
     $messages_property = $reflection->getProperty('messages');
     $messages_property->setAccessible(true);
     $messages = $messages_property->getValue();
-    
-    if (!empty($messages)) {
-        foreach($messages as $message) {
+
+    if (!empty($errors) && !empty($messages)) {
+        foreach ($messages as $message) {
             echo '<div class="notice notice-success"><p><strong>' . esc_html($message) . '</strong></p></div>';
         }
     }
     ?>
     <div class="pslogo-container">
-        <img src="<?php echo esc_url(plugins_url('public/images/pagseguro-icon.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo" alt="PagBank Icon"/>
+        <img src="<?php echo esc_url(plugins_url('public/images/pb-cart.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE));?>" class="pslogo" alt="PB Integrações"/>
         <?php
-        echo '<h2>' . esc_html( __('PagBank Connect') );
+        echo '<h2>' . esc_html( __('PB Integrações', 'pagbank-connect') );
         wc_back_link( __( 'Voltar para Pagamentos', 'pagbank-connect' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
         ?>
     </div>
@@ -64,9 +57,9 @@ use RM_PagBank\Connect\Gateway;
     </nav>
     <?php if (!$show_integrations && $this->id === 'rm-pagbank'): ?>
         <h3><?php esc_html_e('Credenciais', 'pagbank-connect') ?></h3>
-        <p><?php esc_html_e('Para utilizar o PagBank Connect, você precisa autorizar nossa aplicação e obter suas credenciais connect.', 'pagbank-connect') ?></p>
-        <a href="https://pbintegracoes.com/connect/autorizar/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key', 'pagbank-connect') ?></a>
-        <a href="https://pbintegracoes.com/connect/sandbox/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
+        <p><?php esc_html_e('Para utilizar o PB Integrações, você precisa obter (gratuitamente) suas credenciais connect.', 'pagbank-connect') ?></p>
+        <a href="https://pbintegracoes.com/autorizar/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key', 'pagbank-connect') ?></a>
+        <a href="https://pbintegracoes.com/sandbox/?utm_source=wordpressadmin" onclick="window.open(this.href, '_blank'); return false;" class="button button-secondary"><?php esc_html_e('Obter Connect Key para Testes', 'pagbank-connect') ?></a>
         <a href="https://ajuda.pbintegracoes.com/hc/pt-br/?utm_source=wordpressadmin" target="_blank" class="button button-secondary" title="<?php esc_html_e('Ir para central de ajuda. Lá você pode encontrar resposta para a maioria dos problemas e perguntas, ou entrar em contato conosco.', 'pagbank-connect');?>"><?php esc_html_e('Obter ajuda', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=shipping&section=rm_enviofacil' ) ?>" class="button button-secondary" title="<?php esc_html_e('Economize no Frete com Envio Fácil', 'pagbank-connect');?>"><?php esc_html_e('📦 Envio Fácil', 'pagbank-connect') ?></a>
     <?php endif; ?>

@@ -12,6 +12,7 @@ import RecurringInfo from './components/RecurringInfo';
 import RetryInput from './components/RetryInput';
 import SavedCardInstallments from './components/SavedCardInstallments';
 import SavedCreditCardToken from './components/SavedCreditCardToken';
+import { clearVindiBlocksCardCache, runVindiBlocksCheckout } from './vindiCheckout';
 const { useSelect } = window.wp.data;
 const { checkoutStore } = window.wc?.wcBlocksData || {};
 const settings = getSetting('rm-pagbank-cc_data', {});
@@ -69,13 +70,15 @@ const Content = ( props ) => {
     const cartTotalRef = useRef(billing?.cartTotal?.value ?? 0);
     const latestBillingRef = useRef(billing);
     if (settings.paymentUnavailable) {
+        const unavailableMessage = settings.unavailableMessage
+            || __('Não disponível para pedidos inferiores a R$1,00', 'rm-pagbank');
         useEffect( () => {
             const unsubscribe = onPaymentSetup(() => {
-                console.error('PagBank indisponível para pedidos inferiores a R$1,00.');
+                console.error(unavailableMessage);
                 return {
                     type: emitResponse.responseTypes.ERROR,
                     messageContext: emitResponse.noticeContexts.PAYMENTS,
-                    message: __('PagBank indisponível para pedidos inferiores a R$1,00.', 'rm-pagbank'),
+                    message: unavailableMessage,
                 };
             });
 
@@ -86,7 +89,7 @@ const Content = ( props ) => {
 
         return (
             <div className="rm-pagbank-cc">
-                <PaymentUnavailable />
+                <PaymentUnavailable message={unavailableMessage} />
             </div>
         );
     }
@@ -94,10 +97,26 @@ const Content = ( props ) => {
     let canContinue = false;
     let encryptedCard = null;
     let card3d = '';
+    let vindiPaymentProfileId = '';
+    let vindiCustomerId = '';
+    let vindiThreeDsPayload = '';
+    let vindiCompanyCode = '';
+    const isVindi = settings.partner === 'vindi';
 
     useEffect( () => {
         return onCheckoutFail((response) => {
-            console.error('PagBank: checkout fail', response);
+            console.error('PB Integrações: checkout fail', response);
+            // Same as classic: never reuse profile/3DS/token cache after a declined charge.
+            canContinue = false;
+            encryptedCard = null;
+            card3d = '';
+            vindiPaymentProfileId = '';
+            vindiCustomerId = '';
+            vindiThreeDsPayload = '';
+            vindiCompanyCode = '';
+            if (isVindi) {
+                clearVindiBlocksCardCache();
+            }
             showRetryInput = settings.ccThreeDCanRetry
                 && response.processingResponse.paymentDetails.message.includes('Vamos tentar com validação 3DS');
             return {
@@ -240,7 +259,7 @@ const Content = ( props ) => {
                     return current3dSession;
                 }
             } catch (e) {
-                console.debug('PagBank: falha ao atualizar sessão 3D', e);
+                console.debug('PB Integrações: falha ao atualizar sessão 3D', e);
             }
 
             return current3dSession;
@@ -284,7 +303,7 @@ const Content = ( props ) => {
                         if (result.authenticationStatus === 'AUTHENTICATED') {
                             //O cliente foi autenticado com sucesso, dessa forma o pagamento foi autorizado.
                             card3d = result.id;
-                            console.debug('PagBank: 3DS Autenticado ou Sem desafio');
+                            console.debug('PB Integrações: 3DS Autenticado ou Sem desafio');
                             canContinue = true;
                             return Promise.resolve(true);
                         }
@@ -296,7 +315,7 @@ const Content = ( props ) => {
                         //A autenticação 3DS não ocorreu, isso pode ter ocorrido por falhas na comunicação com emissor ou bandeira, ou algum controle que não possibilitou a geração do 3DS id, essa transação não terá um retorno de status de autenticação e seguirá como uma transação sem 3DS.
                         //O cliente pode seguir adiante sem 3Ds (exceto débito)
                         if (settings.ccThreeDAllowContinue === 'yes') {
-                            console.debug('PagBank: 3DS não suportado pelo cartão. Continuando sem 3DS.');
+                            console.debug('PB Integrações: 3DS não suportado pelo cartão. Continuando sem 3DS.');
                             canContinue = true;
                             card3d = false;
                             return Promise.resolve(true);
@@ -306,13 +325,13 @@ const Content = ( props ) => {
                         return Promise.resolve(false);
                     case 'REQUIRE_CHALLENGE':
                         //É um status intermediário que é retornando em casos que o banco emissor solicita desafios, é importante para identificar que o desafio deve ser exibido.
-                        console.debug('PagBank: REQUIRE_CHALLENGE - O desafio está sendo exibido pelo banco.');
+                        console.debug('PB Integrações: REQUIRE_CHALLENGE - O desafio está sendo exibido pelo banco.');
                         canContinue = false;
                         break;
                 }
             }).catch((err) => {
                 console.error(err);
-                console.debug('PagBank:', err && err.detail ? err.detail : err);
+                console.debug('PB Integrações:', err && err.detail ? err.detail : err);
                 const errMsgs = getPagSeguro3dsErrorMessage(err);
                 alert('Falha na requisição de autenticação 3D.\n' + errMsgs);
                 canContinue = false;
@@ -321,11 +340,62 @@ const Content = ( props ) => {
         }
 
         const unsubscribe = onCheckoutValidation(async () => {
-            console.debug('PagBank: submit');
-            console.debug('PagBank: encrypting card');
+            console.debug('PB Integrações: submit');
+            canContinue = false;
+            encryptedCard = null;
+            card3d = '';
+            vindiPaymentProfileId = '';
+            vindiCustomerId = '';
+            vindiThreeDsPayload = '';
+            vindiCompanyCode = '';
+
+            if (isVindi) {
+                try {
+                    let selectedInstallments = document.getElementById('rm-pagbank-card-installments')?.value;
+                    if (selectedInstallments === "" || selectedInstallments === null || selectedInstallments === undefined) {
+                        selectedInstallments = 1;
+                    }
+                    const latestBillingData = latestBillingRef.current;
+                    let amountCents = Number(latestBillingData?.cartTotal?.value ?? cartTotalRef.current ?? 0);
+                    if (selectedInstallments > 1) {
+                        const selectedInstallmentData = window.ps_cc_installments?.find(
+                            (installment, idx, installments) => installments[idx].installments == selectedInstallments
+                        );
+                        if (selectedInstallmentData?.total_amount_raw) {
+                            amountCents = selectedInstallmentData.total_amount_raw;
+                        }
+                    }
+                    const result = await runVindiBlocksCheckout({
+                        settings,
+                        billing: latestBillingData || billing,
+                        amountCents,
+                        installments: selectedInstallments,
+                    });
+                    vindiCompanyCode = result.company || '';
+                    if (result.paymentProfileId) {
+                        vindiPaymentProfileId = String(result.paymentProfileId);
+                        vindiCustomerId = result.vindiCustomerId ? String(result.vindiCustomerId) : '';
+                        vindiThreeDsPayload = result.threeDsPayload || '';
+                        card3d = result.card3d || 'vindi_3ds';
+                        encryptedCard = '';
+                    } else {
+                        encryptedCard = result.gatewayToken;
+                        card3d = false;
+                    }
+                    canContinue = true;
+                } catch (err) {
+                    console.error('PagBank Vindi blocks checkout', err);
+                    alert(err && err.message ? err.message : 'Erro ao processar cartão Vindi.');
+                    canContinue = false;
+                    encryptedCard = false;
+                }
+                return;
+            }
+
+            console.debug('PB Integrações: encrypting card');
             encryptedCard = encryptCard();
             if (encryptedCard === false) {
-                console.error('PagBank: error on encrypting card');
+                console.error('PB Integrações: error on encrypting card');
                 return;
             }
 
@@ -346,7 +416,7 @@ const Content = ( props ) => {
             }
 
             //if 3ds is enabled, start 3ds verification
-            console.debug('PagBank: initing 3ds verification');
+            console.debug('PB Integrações: initing 3ds verification');
             async function start3dsVerification() {
                 let selectedInstallments = document.getElementById('rm-pagbank-card-installments')?.value;
                 if (selectedInstallments === "" || selectedInstallments === null || selectedInstallments === undefined) {
@@ -507,7 +577,7 @@ const Content = ( props ) => {
     useEffect( () => {
         const unsubscribe = onPaymentSetup(() => {
             if (encryptedCard === false) {
-                console.error('PagBank: error on encrypting card');
+                console.error('PB Integrações: error on encrypting card');
                 return {
                     type: emitResponse.responseTypes.ERROR,
                     messageContext: emitResponse.noticeContexts.PAYMENTS,
@@ -516,7 +586,7 @@ const Content = ( props ) => {
             }
 
             if (canContinue === false) {
-                console.error('PagBank: error during 3ds verification');
+                console.error('PB Integrações: error during 3ds verification');
                 return {
                     type: emitResponse.responseTypes.ERROR,
                     messageContext: emitResponse.noticeContexts.PAYMENTS,
@@ -537,13 +607,17 @@ const Content = ( props ) => {
                     paymentMethodData: {
                         'payment_method': 'cc',
                         'rm-pagbank-customer-document': sanitizeTaxIdForApi(customerDocumentValue),
-                        'rm-pagbank-card-encrypted': encryptedCard,
+                        'rm-pagbank-card-encrypted': encryptedCard || '',
                         'rm-pagbank-card-installments': installments,
                         'rm-pagbank-card-number': ccNumber.replace(/\D/g, ''),
                         'rm-pagbank-card-holder-name': ccHolderName,
-                        'rm-pagbank-card-3d': card3d,
+                        'rm-pagbank-card-3d': card3d || '',
                         'rm-pagbank-card-retry-with-3ds': card3dRetry?.checked,
                         'rm-pagbank-cc-new-payment-method-in-block': newPaymentMethod?.checked,
+                        'rm-pagbank-payment-profile-id': vindiPaymentProfileId,
+                        'rm-pagbank-vindi-customer-id': vindiCustomerId,
+                        'rm-pagbank-card-3ds-payload': vindiThreeDsPayload,
+                        'rm-pagbank-payment-company-code': vindiCompanyCode || (window.ps_vindi_payment_company || ''),
                     },
                 },
             };

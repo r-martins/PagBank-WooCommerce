@@ -21,6 +21,11 @@ class GeneralSplitManager
      */
     public static function shouldApplySplit(WC_Order $order): bool
     {
+        $caps = new \RM_PagBank\Partner\Capabilities();
+        if (!$caps->hasSplit()) {
+            return false;
+        }
+
         // Check if general split payments is enabled
         $gateway = new \RM_PagBank\Connect\Gateway();
         $split_enabled = $gateway->get_option('split_payments_enabled', 'no');
@@ -89,7 +94,7 @@ class GeneralSplitManager
         
         $gateway = new \RM_PagBank\Connect\Gateway();
         $receivers_config = $gateway->get_option('split_payments_receivers', []);
-        $isCreditCard = $payment_method_type === 'CREDIT_CARD';
+        $isCreditCard = in_array($payment_method_type, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true);
         
         $split = new Split();
         $split->setMethod(Split::METHOD_PERCENTAGE);

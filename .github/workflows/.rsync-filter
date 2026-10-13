@@ -15,3 +15,5 @@
 - *phpmd.xml
 - *phpcs.xml
 - */git-hooks/*
+- */docs/*
+- */tests/*

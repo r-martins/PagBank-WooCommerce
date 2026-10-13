@@ -6,6 +6,9 @@ use Exception;
 use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Api;
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Partner\Branding;
+use RM_PagBank\Partner\Cutoff;
+use RM_PagBank\Partner\PartnerDetector;
 use RM_PagBank\Traits\PaymentUnavailable;
 use RM_PagBank\Traits\ProcessPayment;
 use RM_PagBank\Traits\StaticResources;
@@ -26,6 +29,12 @@ class Gateway extends WC_Payment_Gateway_CC
     use StaticResources;
     use ThankyouInstructions;
 
+    /** WC re-inits payment gateways often; avoid stacking identical save hooks. */
+    private static bool $saveHookRegistered = false;
+
+    /** @var bool */
+    private static bool $iconsColorWarningShown = false;
+
     public function __construct()
     {
         $this->id = Connect::DOMAIN;
@@ -34,9 +43,10 @@ class Gateway extends WC_Payment_Gateway_CC
 			plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
 		);
         $this->method_title = __('PagBank Connect por Ricardo Martins', 'pagbank-connect');
-		$this->method_description = __(
-			'Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).',
-			'pagbank-connect'
+		$this->method_description = sprintf(
+			/* translators: %s = PagBank support cutoff date (e.g. 5/nov/2026) */
+			__('Aceite PIX, Cartão e Boleto de forma transparente com Vindi (ou PagBank até %s).', 'pagbank-connect'),
+			Cutoff::SHORT
 		);
 		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', 'pagbank-connect'));
 		$this->description = $this->get_option('description');
@@ -45,7 +55,12 @@ class Gateway extends WC_Payment_Gateway_CC
         $this->init_form_fields();
         $this->init_settings();
 
-        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+        // Register once: WC_Payment_Gateways::init() instantiates this gateway repeatedly
+        // and would otherwise stack process_admin_options (duplicate notices on save).
+        if (!self::$saveHookRegistered) {
+            add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+            self::$saveHookRegistered = true;
+        }
 
         add_action('wp_enqueue_styles', [$this, 'addStyles']);
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
@@ -61,12 +76,26 @@ class Gateway extends WC_Payment_Gateway_CC
      */
     public function process_admin_options()
     {
+        $connectKey = isset($_POST[$this->get_field_key('connect_key')])
+            ? sanitize_text_field(wp_unslash($_POST[$this->get_field_key('connect_key')]))
+            : (string) $this->get_option('connect_key', '');
+        $caps = new \RM_PagBank\Partner\Capabilities(
+            \RM_PagBank\Partner\PartnerDetector::fromKey($connectKey)
+        );
+        if (!$caps->hasSplit()) {
+            unset($_POST[$this->get_field_key('split_payments_enabled')]);
+            $this->update_option('split_payments_enabled', 'no');
+        }
+
         // Process split_payments_receivers field manually before parent processes
         $field_key = $this->get_field_key('split_payments_receivers');
         
         // Check if split payments is enabled
         $split_enabled_key = $this->get_field_key('split_payments_enabled');
         $split_enabled = isset($_POST[$split_enabled_key]) ? 'yes' : 'no';
+        if (!$caps->hasSplit()) {
+            $split_enabled = 'no';
+        }
         
         // Temporarily remove the custom field from form_fields to prevent parent from processing it
         $custom_field = null;
@@ -270,10 +299,46 @@ class Gateway extends WC_Payment_Gateway_CC
         $fields = [];
         $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
         $this->form_fields = array_merge(...$fields);
+
+        $this->maybeHideSplitFields();
+    }
+
+    /**
+     * Split is PagBank-only — hide admin fields when Connect Key is Vindi.
+     */
+    private function maybeHideSplitFields(): void
+    {
+        $settings = get_option('woocommerce_' . Connect::DOMAIN . '_settings', []);
+        $key = is_array($settings) ? (string) ($settings['connect_key'] ?? '') : '';
+        if ($key === '' && !empty($_POST[$this->get_field_key('connect_key')])) {
+            $key = sanitize_text_field(wp_unslash($_POST[$this->get_field_key('connect_key')]));
+        }
+
+        $caps = new \RM_PagBank\Partner\Capabilities(
+            \RM_PagBank\Partner\PartnerDetector::fromKey($key)
+        );
+        if ($caps->hasSplit()) {
+            return;
+        }
+
+        foreach ([
+            'split_payments_section',
+            'split_payments_enabled',
+            'split_payments_primary_account_id',
+            'split_payments_receivers',
+        ] as $field) {
+            unset($this->form_fields[$field]);
+        }
     }
 
     public function admin_options() {
         $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+        // Drop stale split flag when viewing settings under a Vindi key
+        $caps = new \RM_PagBank\Partner\Capabilities();
+        if (!$caps->hasSplit() && $this->get_option('split_payments_enabled', 'no') === 'yes') {
+            $this->update_option('split_payments_enabled', 'no');
+        }
 
         include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/html-settings-page.php';
 //        parent::admin_options();
@@ -463,6 +528,21 @@ class Gateway extends WC_Payment_Gateway_CC
     public function validate_split_payments_enabled_field($key, $value): string
     {
         $split_enabled = $value ? 'yes' : 'no';
+
+        $connectKey = isset($_POST[$this->get_field_key('connect_key')])
+            ? sanitize_text_field(wp_unslash($_POST[$this->get_field_key('connect_key')]))
+            : (string) $this->get_option('connect_key', '');
+        $caps = new \RM_PagBank\Partner\Capabilities(
+            \RM_PagBank\Partner\PartnerDetector::fromKey($connectKey)
+        );
+        if (!$caps->hasSplit()) {
+            if ($split_enabled === 'yes') {
+                WC_Admin_Settings::add_error(
+                    __('Divisão de pagamentos não está disponível com Connect Key Vindi.', 'pagbank-connect')
+                );
+            }
+            return 'no';
+        }
         
         // Check mutual exclusivity with Dokan Split
         $integrations_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
@@ -492,20 +572,52 @@ class Gateway extends WC_Payment_Gateway_CC
     {
         //check if it looks like a token (contains lower case and dashes)
         if (preg_match('/[a-z-]/', $connect_key)) {
-            WC_Admin_Settings::add_error(__('Parece que você informou o Token PagBank no lugar da Connect Key. Clique em Obter Connect Key para obter a sua gratuitamente e ainda economizar nas taxas oficiais.', 'pagbank-connect'));
+            WC_Admin_Settings::add_error(__('Parece que você informou o token do adquirente (PagBank/Vindi) no lugar da Connect Key. Clique em Obter Connect Key para obter a sua.', 'pagbank-connect'));
             return '';
         }
 
         $api = new Api();
         $api->setConnectKey($connect_key);
-        
+        $detector = $api->partner();
+
         try {
+            if ($detector->isVindi()) {
+                $ret = $api->get('connectInfo', [], 0);
+                if (!empty($ret['error']) || (($ret['status'] ?? '') !== 'VALID' && ($ret['status'] ?? '') !== 'UNAUTHORIZED' && empty($ret['partner']))) {
+                    // UNAUTHORIZED still means key was recognized as Vindi; VALID is ideal
+                    if (($ret['status'] ?? '') === 'INVALID' || !empty($ret['error'])) {
+                        WC_Admin_Settings::add_error(__('Validação da Connect Key Vindi falhou.', 'pagbank-connect'));
+                        return '';
+                    }
+                }
+                if (($ret['status'] ?? '') === 'INVALID') {
+                    WC_Admin_Settings::add_error(__('Connect Key Vindi inválida.', 'pagbank-connect'));
+                    return '';
+                }
+                $this->update_option('is_sandbox', $detector->isSandbox());
+                $this->update_option('pagbank_partner', 'vindi');
+                if (!empty($ret['template_code'])) {
+                    $this->update_option('template_code', $ret['template_code']);
+                }
+                // Clear PagBank public key — Vindi uses tokenize/config
+                $this->update_option('public_key', '');
+                // Split / hosted checkout are PagBank-only
+                $this->update_option('split_payments_enabled', 'no');
+                // Flag recurring re-token if switching from PagBank
+                $prev = $this->get_option('pagbank_partner', 'pagbank');
+                if ($prev === 'pagbank') {
+                    update_option('rm_pagbank_recurring_needs_retoken', 'yes');
+                }
+                return $connect_key;
+            }
+
             $ret = $api->post('ws/public-keys', ['type' => 'card']);
             if (isset($ret['public_key'])) {
                 $this->update_option('public_key', $ret['public_key']);
                 $this->update_option('public_key_created_at', $ret['created_at']);
 				$isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
 				$this->update_option('is_sandbox', $isSandbox);
+                $this->update_option('pagbank_partner', 'pagbank');
             }
 
             if (isset($ret['error_messages'])){
@@ -675,14 +787,22 @@ class Gateway extends WC_Payment_Gateway_CC
 
     public function validate_icons_color_field($key, $icon_color)
     {
-        //Validate if dynamic icon is accessible
-        delete_transient('rm_pagbank_dynamic_ico_accessible');
+        // Re-probe once per request even if save handlers run more than once.
+        if (!self::$iconsColorWarningShown) {
+            delete_transient('rm_pagbank_dynamic_ico_accessible');
+        }
         $isDynamicIcoAccessible = Params::getIsDynamicIcoAccessible();
         if (!$isDynamicIcoAccessible) {
-            WC_Admin_Settings::add_error(__('A personalização da cor dos ícones foi desativada, pois alguma configuração de sua loja ou ambiente impede ele de ser utilizado/acessado. Se estiver em ambiente local, ignore esta mensagem.', 'pagbank-connect'));
+            if (!self::$iconsColorWarningShown) {
+                WC_Admin_Settings::add_error(__(
+                    'A personalização da cor dos ícones foi desativada, pois alguma configuração de sua loja ou ambiente impede ele de ser utilizado/acessado. Se estiver em ambiente local, ignore esta mensagem.',
+                    'pagbank-connect'
+                ));
+                self::$iconsColorWarningShown = true;
+            }
             $icon_color = 'gray';
         }
-        
+
         return $icon_color;
     }
 
@@ -730,7 +850,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
         // Fetch fresh data from the API
         $api = new Api();
-        $info = $api->getConnectInfo();
+        $info = $api->getConnectInfo($force_refresh);
 
         // Cache the result if it's valid
         if (! empty($info) && empty($info['error_messages'])) {
@@ -767,10 +887,12 @@ class Gateway extends WC_Payment_Gateway_CC
     {
         // Retrieve plugin settings
         $settings = get_option('woocommerce_' . $this->id . '_settings');
-        $connect_key = $settings['connect_key'] ?? '';
-        $last_four = strlen($connect_key) == 40 ? substr($connect_key, -4) : null;
+        $connect_key = trim((string) ($settings['connect_key'] ?? ''));
+        // PagBank + Vindi (new) = 40 chars (API ConnectKeyGenerator); legacy shorter CONVD… OK.
+        // Never gate the UI on a single length — use fingerprint (last 4).
+        $last_four = strlen($connect_key) >= 4 ? substr($connect_key, -4) : '';
 
-        if (empty($connect_key) || !$last_four) {
+        if ($connect_key === '' || $last_four === '' || stripos($connect_key, 'CON') !== 0) {
             return null;
         }
 
@@ -785,7 +907,7 @@ class Gateway extends WC_Payment_Gateway_CC
         // Get cached or fresh Connect info
         $info = $this->getCachedConnectInfo($transient_key, $force_refresh);
 
-        if (!$info) {
+        if (!$info || !is_array($info)) {
             return null;
         }
 
@@ -793,15 +915,35 @@ class Gateway extends WC_Payment_Gateway_CC
         $dateFormat = get_option('date_format');
         $status   = strtoupper($info['status'] ?? 'UNKNOWN');
         $email    = esc_html($info['authorizerEmail'] ?? 'N/A');
-        $accountId    = esc_html($info['accountId'] ?? 'N/A');
+        $accountId    = esc_html((string) ($info['accountId'] ?? 'N/A'));
         $expires  = esc_html(isset($info['expiresAt']) && $info['expiresAt'] ? date_i18n($dateFormat, strtotime($info['expiresAt'])) : '-');
         $isSandbox = !empty($info['isSandbox']);
         $sandbox  = $isSandbox ? 'Sim' : 'Não';
         $sandbox = !isset($info['isSandbox']) ? 'Desconhecido' : $sandbox;
-        $message  = "Conta PagBank: $email <br>";
+        $branding = new Branding(PartnerDetector::fromKey($connect_key));
+        $message  = $branding->accountLabel() . ": $email <br>";
         $message .= "Account ID: $accountId <br>";
+        if (!empty($info['partner'])) {
+            $message .= 'Partner: ' . esc_html((string) $info['partner']) . ' <br>';
+        }
+        if (!empty($info['template_code'])) {
+            $message .= 'Template: ' . esc_html((string) $info['template_code']) . ' <br>';
+        }
         $message .= !$isSandbox ? "Expira em: $expires <br>" : null;
         $message .= "Sandbox: $sandbox <br>";
+        if (array_key_exists('private_key_ok', $info) && $info['private_key_ok'] !== null) {
+            $message .= 'Private key: ' . (!empty($info['private_key_ok']) ? 'OK' : 'FALHA') . ' <br>';
+        }
+        if (array_key_exists('public_key_ok', $info) && $info['public_key_ok'] !== null) {
+            $message .= 'Public key: ' . (!empty($info['public_key_ok']) ? 'OK' : 'FALHA') . ' <br>';
+        }
+        $webhookError = (string) ($info['webhook_error'] ?? '');
+        $isSandboxManualWebhook = ($webhookError === 'sandbox_manual_webhook');
+        if ($isSandboxManualWebhook) {
+            $message .= 'Webhook Vindi: configurar manualmente (sandbox) <br>';
+        } elseif (array_key_exists('webhook_ok', $info) && $info['webhook_ok'] !== null) {
+            $message .= 'Webhook Vindi: ' . (!empty($info['webhook_ok']) ? 'OK' : 'FALHA') . ' <br>';
+        }
         $message .= !$isSandbox ? "* renova automaticamente" : null;
         // Tooltip with detailed connect information
         $tooltip = esc_attr($message);
@@ -835,24 +977,24 @@ class Gateway extends WC_Payment_Gateway_CC
         $html .= '<span class="dashicons dashicons-info" data-tip="' . $tooltip . '"></span>';
         $html .= '</div>';
 
-       if ($isSandbox) {
+        if ($isSandbox) {
+            $html .= $branding->sandboxAdminNoticeHtml();
+        }
+
+        // Sandbox: partner webhook API unavailable — guide manual panel setup (not an auto-recreate error).
+        if ($isSandboxManualWebhook) {
+            $html .= $branding->sandboxManualWebhookNoticeHtml((string) ($info['webhook_url'] ?? ''));
+        } elseif (isset($info['webhook_ok']) && $info['webhook_ok'] === false) {
             $html .= '<div class="rm-pagbank-connect-key-info">';
             $html .= '<span class="dashicons dashicons-warning"></span>';
-            $html .= '<strong>' . __('Sandbox ativo', 'pagbank-connect') . ': </strong> '
-                . __('você está testando o PagBank. Pedidos feitos neste ambiente não aparecerão no PagBank.', 'pagbank-connect')
-                . '<br>';
-
-            $html .= '<a href="' . esc_url('https://developer.pagbank.com.br/docs/simulador') . '" target="_blank" class="rm-pagbank-doc-link">';
-            $html .= __('Documentação do Simulador', 'pagbank-connect');
-            $html .= '</a><br>';
-
-            $html .= '<a href="' . esc_url('https://ajuda.pbintegracoes.com/hc/pt-br/articles/22375426666253-Cart%C3%B5es-de-Cr%C3%A9dito-para-Testes-PagBank') . '" target="_blank" class="rm-pagbank-doc-link">';
-            $html .= __('Cartões de Teste', 'pagbank-connect');
-            $html .= '</a>';
-
+            $html .= '<strong>' . esc_html__('Webhook Vindi ausente', 'pagbank-connect') . ': </strong> ';
+            $html .= esc_html__(
+                'As notificações de pagamento podem não chegar à loja. Clique em Atualizar ao lado de Conectado para tentar recriar o webhook, ou contate o suporte PB Integrações.',
+                'pagbank-connect'
+            );
             $html .= '</div>';
         }
-       
+
         return $html;
     }
     /**

@@ -15,6 +15,7 @@ use RM_PagBank\Traits\ThankyouInstructions;
 use WC_Payment_Gateway;
 use WC_Data_Exception;
 use WP_Error;
+use RM_PagBank\Helpers\OrderMeta;
 
 /** Standalone Pix */
 class Boleto extends WC_Payment_Gateway
@@ -40,10 +41,10 @@ class Boleto extends WC_Payment_Gateway
         $this->icon = plugins_url('public/images/boleto.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
         $this->method_title = $this->get_option(
             'title',
-            __('Boleto via PagBank', 'pagbank-connect')
+            __('Boleto', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Receba pagamentos com Boleto via PagBank (por Ricardo Martins)',
+            'Receba pagamentos com Boleto (por Ricardo Martins)',
             'pagbank-connect'
         );
 
@@ -51,7 +52,7 @@ class Boleto extends WC_Payment_Gateway
         $this->init_form_fields();
         $this->init_settings();
 
-        $this->title = $this->get_option('title', __('Boleto via PagBank', 'pagbank-connect'));
+        $this->title = $this->get_option('title', __('Boleto', 'pagbank-connect'));
         $this->description = $this->get_option('description');
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -70,6 +71,32 @@ class Boleto extends WC_Payment_Gateway
     public function init_form_fields()
     {
         $this->form_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/boleto-fields.php';
+
+        $detector = \RM_PagBank\Partner\PartnerDetector::fromSettings();
+        if (!$detector->isVindi()) {
+            return;
+        }
+
+        $yapayUrl = 'https://intermediador.yapay.com.br/settings/sales';
+        $notice = sprintf(
+            /* translators: %s = URL to Vindi/Yapay sales settings */
+            __(
+                'As linhas de instrução e logo podem ser configuradas '
+                . '<a href="%s" target="_blank" rel="noopener noreferrer">aqui</a> '
+                . '(Configurações &gt; Transação de Vendas).',
+                'pagbank-connect'
+            ),
+            esc_url($yapayUrl)
+        );
+
+        if (isset($this->form_fields['boleto_line_1'])) {
+            $this->form_fields['boleto_line_1'] = [
+                'title' => __('Instruções do boleto', 'pagbank-connect'),
+                'type' => 'title',
+                'description' => $notice,
+            ];
+        }
+        unset($this->form_fields['boleto_line_2']);
     }
 
     public function admin_options() {
@@ -129,7 +156,7 @@ class Boleto extends WC_Payment_Gateway
 
         // some notes to customer (or keep them private if order is pending)
         $shouldNotify = $order->get_status('edit') !== 'pending';
-        $order->add_order_note('PagBank: Pedido criado com sucesso!', $shouldNotify);
+        $order->add_order_note(\RM_PagBank\Partner\Branding::notePrefix($order) . ': Pedido criado com sucesso!', $shouldNotify);
 
 
         $woocommerce->cart->empty_cart();
@@ -203,7 +230,7 @@ class Boleto extends WC_Payment_Gateway
             return;
         }
         
-        $payment_method_meta = $order->get_meta('pagbank_payment_method');
+        $payment_method_meta = OrderMeta::get($order, 'payment_method');
         if ($payment_method_meta !== 'boleto') {
             return; // Not a Boleto order, exit immediately
         }
@@ -221,10 +248,10 @@ class Boleto extends WC_Payment_Gateway
             return;
         }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
-        if ($order->get_meta('pagbank_payment_method') === 'boleto' && in_array($email->id, $emailIds)) {
-            $boletoBarcode = $order->get_meta('pagbank_boleto_barcode_formatted');
-            $boletoPdfLink = $order->get_meta('pagbank_boleto_pdf');
-            $boletoDueDate = $order->get_meta('pagbank_boleto_due_date');
+        if (OrderMeta::get($order, 'payment_method') === 'boleto' && in_array($email->id, $emailIds)) {
+            $boletoBarcode = OrderMeta::get($order, 'boleto_barcode_formatted');
+            $boletoPdfLink = OrderMeta::get($order, 'boleto_pdf');
+            $boletoDueDate = OrderMeta::get($order, 'boleto_due_date');
             $boletoDueDate = $boletoDueDate ? Functions::formatDate($boletoDueDate) : '';
 
             ob_start();
