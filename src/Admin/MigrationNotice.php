@@ -87,7 +87,7 @@ class MigrationNotice
                 )
             );
         }
-        echo ' <a class="button button-primary" style="margin-left:8px" href="' . $url . '" target="_blank" rel="noopener noreferrer">';
+        echo ' <a class="button button-primary" style="margin-left:8px" href="' . $url . '/?utm_source=woocommerce&utm_medium=notice&utm_campaign=migrate-now&utm_content=cutoff-notice" target="_blank" rel="noopener noreferrer">';
         echo esc_html__('Migrar agora', 'pagbank-connect');
         echo '</a></p></div>';
     }
