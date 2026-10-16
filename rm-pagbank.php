@@ -11,7 +11,7 @@
  * Plugin Name:       PB Integrações (antigo PagBank Connect)
  * Plugin URI:        https://pbintegracoes.com
  * Description:       Integra seu WooCommerce com Vindi, PagBank e os melhores provedores de pagamento (com descontos nas taxas oficiais), e com suporte a PIX transparente, Recorrência e muito mais.
- * Version:           5.0.0
+ * Version:           5.0.1
  * Requires at least: 5.2
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -34,7 +34,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '5.0.0' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '5.0.1' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
