@@ -405,6 +405,9 @@ jQuery(document).ready(function ($) {
                 if (Number.isFinite(reais) && reais > 0) {
                     window.pagseguro_connect_cart_total_cents = Math.round(reais * 100);
                     console.debug('PB Integrações: cart total cents updated', window.pagseguro_connect_cart_total_cents);
+                } else {
+                    // Cart emptied (e.g. Funnel Kit removes last item on checkout).
+                    window.pagseguro_connect_cart_total_cents = 0;
                 }
             }
         });
@@ -1389,16 +1392,23 @@ jQuery(document).ready(function ($) {
         let orderTotal = (typeof window.rmPagbankParseBrlToCents === 'function')
             ? window.rmPagbankParseBrlToCents(total)
             : 0;
+        // Never let a stale injected cart total (Vindi 3DS sync) override an empty cart.
+        // Funnel Kit (and similar) can remove the last item on checkout; DOM goes to R$0
+        // while pagseguro_connect_cart_total_cents may still hold the previous amount.
+        if (orderTotal < 100) {
+            if (typeof window.pagseguro_connect_cart_total_cents !== 'undefined') {
+                window.pagseguro_connect_cart_total_cents = 0;
+            }
+            let select = jQuery(selector_installments);
+            select.empty();
+            select.parent().hide();
+            return;
+        }
         if (typeof pagseguro_connect_cart_total_cents !== 'undefined') {
             const injected = Number(pagseguro_connect_cart_total_cents);
             if (Number.isFinite(injected) && injected >= 100) {
                 orderTotal = Math.round(injected);
             }
-        }
-        if (orderTotal < 100) {
-            let select = jQuery(selector_installments);
-            select.parent().hide();
-            return;
         }
         // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');
         let url = ajax_object.ajax_url;
@@ -1416,6 +1426,11 @@ jQuery(document).ready(function ($) {
             success: (response)=>{
                 let select = jQuery(selector_installments);
                 select.empty();
+                if (!Array.isArray(response) || response.length === 0) {
+                    select.parent().hide();
+                    return;
+                }
+                select.parent().show();
                 let found = false;
                 let previouslySelected = window.ps_cc_selected_installment || jQuery(selector_installments).val();
                 for (let i = 0; i < response.length; i++) {
@@ -1442,7 +1457,14 @@ jQuery(document).ready(function ($) {
                     select.val(response[response.length-1].installments);
                 }
             },
-            error: (response)=>{
+            error: (xhr)=>{
+                const payload = xhr && xhr.responseJSON;
+                const msg = (payload && (payload.error || (payload.data && payload.data.error))) || '';
+                // Empty cart / invalid total: hide quietly (no alert).
+                if (typeof msg === 'string' && /total do pedido inválido|pedido inválido/i.test(msg)) {
+                    jQuery(selector_installments).empty().parent().hide();
+                    return;
+                }
                 alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
                 console.info('Lojista: Verifique os logs em WooCommerce > Status > Logs ' +
                     'para ver os possíveis problemas na obtenção das parcelas. Note que cartões de teste falharão ' +

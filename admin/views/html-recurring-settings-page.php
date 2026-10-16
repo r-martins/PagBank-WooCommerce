@@ -31,7 +31,9 @@ if (!defined('ABSPATH')) {
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-cc' ) ?>#tab-credit-card" class="nav-tab"><?php esc_html_e('Cartão de Crédito', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-pix' ) ?>#tab-pix" class="nav-tab"><?php esc_html_e('PIX', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-boleto' ) ?>#tab-boleto" class="nav-tab"><?php esc_html_e('Boleto', 'pagbank-connect') ?></a>
+        <?php if ((new \RM_PagBank\Partner\Capabilities())->hasHostedCheckout()): ?>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-redirect' ) ?>#tab-redirect" class="nav-tab"><?php esc_html_e('Checkout PagBank', 'pagbank-connect') ?></a>
+        <?php endif; ?>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-recurring-settings' ) ?>#tab-recurring" class="nav-tab nav-tab-active"><?php esc_html_e('Recorrência', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-integrations' ) ?>#tab-integrations" class="nav-tab"><?php esc_html_e('Integrações', 'pagbank-connect') ?></a>
     </nav>
