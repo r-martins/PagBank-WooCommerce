@@ -45,13 +45,16 @@ use RM_PagBank\Connect\Gateway;
     <?php 
     $current_section = isset($_GET['section']) ? sanitize_text_field($_GET['section']) : 'rm-pagbank';
     $show_integrations = isset($_GET['show_integrations']) && $_GET['show_integrations'] === '1';
+    $show_hosted_checkout_tab = (new \RM_PagBank\Partner\Capabilities())->hasHostedCheckout();
     ?>
     <nav class="nav-tab-wrapper ">
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank' ) ?>#tab-general" class="nav-tab <?php echo ($current_section === 'rm-pagbank' && !$show_integrations) ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Geral', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-cc' ) ?>#tab-credit-card" class="nav-tab <?php echo $current_section === 'rm-pagbank-cc' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Cartão de Crédito', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-pix' ) ?>#tab-pix" class="nav-tab <?php echo $current_section === 'rm-pagbank-pix' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('PIX', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-boleto' ) ?>#tab-boleto" class="nav-tab <?php echo $current_section === 'rm-pagbank-boleto' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Boleto', 'pagbank-connect') ?></a>
+        <?php if ($show_hosted_checkout_tab): ?>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-redirect' ) ?>#tab-redirect" class="nav-tab <?php echo $current_section === 'rm-pagbank-redirect' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Checkout PagBank', 'pagbank-connect') ?></a>
+        <?php endif; ?>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-recurring-settings' ) ?>#tab-recurring" class="nav-tab <?php echo $current_section === 'rm-pagbank-recurring' ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Recorrência', 'pagbank-connect') ?></a>
         <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rm-pagbank-integrations' ) ?>#tab-integrations" class="nav-tab <?php echo $show_integrations ? 'nav-tab-active' : '' ?>"><?php esc_html_e('Integrações', 'pagbank-connect') ?></a>
     </nav>
