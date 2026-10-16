@@ -317,11 +317,10 @@ class CreditCard extends Common
             }
         }
         
+        // Empty cart (e.g. Funnel Kit removes last item on checkout): return empty
+        // plans with HTTP 200 so the storefront can hide the dropdown without an alert.
         if ($orderTotal <= 0) {
-            wp_send_json(
-                ['error' => __('Não foi possível obter as parcelas. Total do pedido inválido.', 'pagbank-connect')],
-                400
-            );
+            wp_send_json([]);
         }
 
         $installments = Params::getInstallments($orderTotal, $ccBin);
