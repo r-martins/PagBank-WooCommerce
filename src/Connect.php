@@ -374,29 +374,63 @@ class Connect
     public static function configInfo(): void
     {
         $api = new Api();
+        $detector = \RM_PagBank\Partner\PartnerDetector::fromSettings();
+        $caps = new \RM_PagBank\Partner\Capabilities($detector);
+        $key = (string) Params::getConfig('connect_key');
+        $isVindi = $detector->isVindi();
+
+        $connectKeyStatus = 'Missing';
+        if ($key !== '') {
+            if (stripos($key, 'CON') !== 0) {
+                $connectKeyStatus = 'Invalid prefix';
+            } else {
+                // PagBank CON… / Vindi CONVD… — new keys 40 chars; legacy shorter CONVD… OK.
+                $connectKeyStatus = strlen($key) >= 20 ? 'Good' : 'Wrong size';
+            }
+        }
+
+        $publicKeyStored = (string) Params::getConfig('public_key', '');
+        // Never expose key material — only presence (Vindi ignores stored PagBank RSA key).
+        $publicKeyStatus = $isVindi
+            ? ($publicKeyStored !== '' ? 'legacy_pagbank_key_present' : 'n/a (vindi uses tokenize/config)')
+            : ($publicKeyStored !== '' ? 'Present' : 'Missing');
+
+        $hostedCheckoutAvailable = $caps->hasHostedCheckout();
+        $redirectEnabled = Params::getRedirectConfig('enabled', 'yes');
+
+        // Public endpoint (?wc-api=wc_pagseguro_info): no fingerprints, keys, e-mails,
+        // account ids, webhook URLs, or other PII — only health/config flags.
         $settings = [
-            'platform' => 'Wordpress',
-            'module_version' =>[
+            'platform' => 'WordPress',
+            'module_version' => [
                 'Version' => WC_PAGSEGURO_CONNECT_VERSION,
+            ],
+            'partner' => $detector->getPartner(),
+            'partner_sandbox' => $detector->isSandbox(),
+            'connect_key' => $connectKeyStatus,
+            'capabilities' => [
+                'hosted_checkout' => $hostedCheckoutAvailable,
+                'split' => $caps->hasSplit(),
+                'uses_gateway_token' => $caps->usesGatewayToken(),
+                'uses_encrypted_card' => $caps->usesEncryptedCard(),
+                'has_3ds' => $caps->has3ds(),
             ],
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'block_checkout' => Functions::isBlockCheckoutInUse(),
-            'connect_key' => (static function () {
-                $key = (string) Params::getConfig('connect_key');
-                if ($key === '' || stripos($key, 'CON') !== 0) {
-                    return 'Missing';
-                }
-                // PagBank + Vindi (new) = 40 chars; legacy shorter CONVD… still OK
-                return strlen($key) >= 20 ? 'Good' : 'Wrong size';
-            })(),
-            'enable_proxy' => Params::getConfig('enable_proxy', "no"),
-            // Use same defaults as admin form_fields when option not saved yet
+            'enable_proxy' => Params::getConfig('enable_proxy', 'no'),
+            'runtime' => [
+                'ext_curl' => extension_loaded('curl') ? 'yes' : 'no',
+                'ext_json' => extension_loaded('json') ? 'yes' : 'no',
+                'ext_openssl' => extension_loaded('openssl') ? 'yes' : 'no',
+                'ext_mbstring' => extension_loaded('mbstring') ? 'yes' : 'no',
+                'allow_url_fopen' => ini_get('allow_url_fopen') ? 'yes' : 'no',
+            ],
             'settings' => [
                 'enabled' => Params::getConfig('enabled', ''),
                 'cc_enabled' => Params::getCcConfig('enabled', 'yes'),
                 'pix_enabled' => Params::getPixConfig('enabled', 'yes'),
                 'boleto_enabled' => Params::getBoletoConfig('enabled', 'no'),
-                'public_key' => substr(Params::getConfig('public_key', 'null'), 0, 50) . '...',
+                'public_key' => $publicKeyStatus,
                 'sandbox' => $api->getIsSandbox(),
                 'boleto' => [
                     'enabled' => Params::getBoletoConfig('enabled', 'no'),
@@ -414,27 +448,47 @@ class Connect
                     'installment_options' => Params::getCcConfig('cc_installment_options', ''),
                     'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed', '3'),
                     'installments_options_min_total' => Params::getCcConfig('cc_installments_options_min_total', '50'),
-                    'installments_options_limit_installments' => Params::getCcConfig('cc_installments_options_limit_installments', ''),
-                    'installments_options_max_installments' => Params::getCcConfig('cc_installments_options_max_installments', '18'),
+                    'installments_options_limit_installments' => Params::getCcConfig(
+                        'cc_installments_options_limit_installments',
+                        ''
+                    ),
+                    'installments_options_max_installments' => Params::getCcConfig(
+                        'cc_installments_options_max_installments',
+                        '18'
+                    ),
                     '3d_secure' => Params::getCcConfig('cc_3ds', 'yes'),
                     '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
                     '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry', 'yes'),
-                    '3d_retry_failed' => Params::getCcConfig('cc_3ds_retry', 'yes'),
+                    'cc_healthy' => (static function () use ($api) {
+                        try {
+                            return $api->isCcEnabledAndHealthy();
+                        } catch (Exception $e) {
+                            return false;
+                        }
+                    })(),
                 ],
                 'recurring' => [
                     'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
-                    'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency', 'hourly'),
+                    'recurring_process_frequency' => Params::getRecurringConfig(
+                        'recurring_process_frequency',
+                        'hourly'
+                    ),
                     'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
                     'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
                     'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
                     'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
                     'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
+                    'needs_retoken' => get_option('rm_pagbank_recurring_needs_retoken', 'no'),
                 ],
                 'redirect' => [
-                    'enabled' => Params::getRedirectConfig('enabled', 'yes'),
+                    'available' => $hostedCheckoutAvailable,
+                    'enabled' => $hostedCheckoutAvailable ? $redirectEnabled : 'no',
                     'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
                     'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
-                    'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
+                    'redirect_discount_excludes_shipping' => Params::getRedirectConfig(
+                        'redirect_discount_excludes_shipping',
+                        'no'
+                    ),
                     'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods', ''),
                 ],
             ],
@@ -442,22 +496,51 @@ class Connect
                 'hpos_enabled' => Functions::isHposEnabled() ? 'yes' : 'no',
                 'litespeed_cache' => is_plugin_active('litespeed-cache/litespeed-cache.php') ? 'yes' : 'no',
                 'wordfence_active' => is_plugin_active('wordfence/wordfence.php') ? 'yes' : 'no',
-                'cron_ok' => defined('DISABLE_WP_CRON') && DISABLE_WP_CRON ? 'yes' : 'no',
+                'disable_wp_cron' => defined('DISABLE_WP_CRON') && DISABLE_WP_CRON ? 'yes' : 'no',
             ],
         ];
 
-        try{
-            $api = new Api();
-            $resp = $api->get('ws/public-keys/card');
-            if (isset($resp['public_key'])){
-                $resp['public_key'] = substr($resp['public_key'], 0, 50) . '...';
-            }
-            $settings['live_auth'] = $resp;
-        }catch (Exception $e){
-            $settings['live_auth'] = $e->getMessage();
+        // Live probes: health flags only (never echo connectInfo/tokenize bodies).
+        try {
+            $connectInfo = $api->get('connectInfo', [], 0);
+            $settings['live_auth'] = [
+                'ok' => true,
+                'status' => $connectInfo['status'] ?? null,
+                'private_key_ok' => $connectInfo['private_key_ok'] ?? null,
+                'public_key_ok' => $connectInfo['public_key_ok'] ?? null,
+                'webhook_ok' => $connectInfo['webhook_ok'] ?? null,
+            ];
+        } catch (Exception $e) {
+            $settings['live_auth'] = ['ok' => false, 'error' => 'unreachable'];
         }
-        wp_send_json($settings);
 
+        if ($isVindi) {
+            try {
+                $tokenize = $api->get('tokenize/config', [], 0);
+                $hasPub = !empty($tokenize['public_api_key'])
+                    || !empty($tokenize['public_key'])
+                    || !empty($tokenize['publicKey']);
+                $settings['live_tokenize'] = [
+                    'ok' => true,
+                    'public_api_key' => $hasPub ? 'Present' : 'Missing',
+                ];
+            } catch (Exception $e) {
+                $settings['live_tokenize'] = ['ok' => false, 'error' => 'unreachable'];
+            }
+        } else {
+            try {
+                $resp = $api->get('ws/public-keys/card');
+                $hasPub = !empty($resp['public_key']) || !empty($resp['publicKey']);
+                $settings['live_public_key_card'] = [
+                    'ok' => true,
+                    'public_key' => $hasPub ? 'Present' : 'Missing',
+                ];
+            } catch (Exception $e) {
+                $settings['live_public_key_card'] = ['ok' => false, 'error' => 'unreachable'];
+            }
+        }
+
+        wp_send_json($settings);
     }
 
     /**
