@@ -13,7 +13,7 @@ class Capabilities
     /** @var bool|null */
     private $threeDsAvailable;
 
-    public function __construct(PartnerDetector $detector = null)
+    public function __construct(?PartnerDetector $detector = null)
     {
         $this->detector = $detector ?: PartnerDetector::fromSettings();
         $this->threeDsAvailable = null;
