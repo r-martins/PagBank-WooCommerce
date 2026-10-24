@@ -121,15 +121,15 @@ class CreditCardDisplayTitle
             wc_get_price_thousand_separator()
         );
 
-        $interestFreeMeta = OrderMeta::get($order, 'cc_interest_free');
-        if ($interestFreeMeta === 'yes') {
-            $yesNo = __('sem juros', 'pagbank-connect');
-        } elseif ($interestFreeMeta === 'no') {
+        // Prefer computed interest (meta, fees, or charged−order). Do not trust
+        // cc_interest_free=yes alone: Vindi inflates amount without fees, and older
+        // orders wrongly persisted interest_free while the buyer still paid more.
+        if ($buyerInterestFloat > 0) {
+            $yesNo = __('com juros', 'pagbank-connect');
+        } elseif (OrderMeta::get($order, 'cc_interest_free') === 'no') {
             $yesNo = __('com juros', 'pagbank-connect');
         } else {
-            $yesNo = $buyerInterestFloat > 0
-                ? __('com juros', 'pagbank-connect')
-                : __('sem juros', 'pagbank-connect');
+            $yesNo = __('sem juros', 'pagbank-connect');
         }
 
         return [
@@ -193,19 +193,26 @@ class CreditCardDisplayTitle
         }
 
         $charges = OrderMeta::get($order, 'order_charges');
-        if (!is_array($charges) || !isset($charges[0]) || !is_array($charges[0])) {
-            return 0.0;
+        if (is_array($charges) && isset($charges[0]) && is_array($charges[0])) {
+            $raw = $charges[0]['amount']['fees']['buyer']['interest']['total'] ?? null;
+            if ($raw !== null && $raw !== '' && is_numeric($raw)) {
+                $val = (float) $raw;
+                // v4 amounts are typically in cents
+                if ($val > 0) {
+                    return max(0, $val / 100);
+                }
+            }
         }
 
-        $raw = $charges[0]['amount']['fees']['buyer']['interest']['total'] ?? null;
-        if ($raw === null || $raw === '' || !is_numeric($raw)) {
-            return 0.0;
-        }
-
-        $val = (float) $raw;
-        // v4 amounts are typically in cents
-        if ($val > 0) {
-            return max(0, $val / 100);
+        // Vindi (and similar): interest = inflated charge − WC cart total (no fees object).
+        $chargedMeta = OrderMeta::get($order, 'cc_total_charged');
+        if ($chargedMeta !== '' && $chargedMeta !== null && is_numeric($chargedMeta)) {
+            $charged = (float) $chargedMeta;
+            $orderTotal = (float) $order->get_total('edit');
+            $diff = round($charged - $orderTotal, wc_get_price_decimals());
+            if ($diff > 0) {
+                return $diff;
+            }
         }
 
         return 0.0;

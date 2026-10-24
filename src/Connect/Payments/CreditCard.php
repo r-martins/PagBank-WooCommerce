@@ -245,6 +245,16 @@ class CreditCard extends Common
             ? max(0, (float) $interestRaw / 100)
             : 0.0;
 
+        // PagBank may return amount.fees.buyer.interest. Vindi does not charge buyer
+        // interest as fees — it only inflates the charge amount. Infer from charged vs cart.
+        if ($interestReais <= 0) {
+            $orderTotal = (float) $order->get_total('edit');
+            $diff = round($totalReais - $orderTotal, $decimals);
+            if ($diff > 0) {
+                $interestReais = $diff;
+            }
+        }
+
         if ($interestReais > 0) {
             OrderMeta::set($order, '_cc_buyer_interest_total', wc_format_decimal($interestReais, $decimals));
             OrderMeta::set($order, 'cc_interest_free', 'no');
