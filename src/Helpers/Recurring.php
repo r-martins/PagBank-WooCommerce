@@ -71,7 +71,7 @@ class Recurring
      *
      * @return bool
      */
-    public function isCartRecurring(WC_Cart $cart = null): bool
+    public function isCartRecurring(?WC_Cart $cart = null): bool
     {
         //checks if pagbank recurring is enabled
         $isRecurringEnabled = Params::getRecurringConfig('recurring_enabled', 'no') == 'yes';
@@ -107,7 +107,7 @@ class Recurring
      *
      * @return bool|int
      */
-    public function getCartRecurringTrial(WC_Cart $cart = null)
+    public function getCartRecurringTrial(?WC_Cart $cart = null)
     {
         //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
         if (!did_action('woocommerce_load_cart_from_session')) {
@@ -246,7 +246,7 @@ class Recurring
         }
     }
     
-    public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null): string
+    public function getRecurringTermsFromCart($paymentMethod, ?WC_Cart $cart = null): string
     {
         if (!$cart) $cart = WC()->cart;
         if (!$cart) return '';

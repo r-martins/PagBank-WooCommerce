@@ -16,14 +16,20 @@ use RM_PagBank\Connect\Gateway;
     // WC_Admin_Settings::show_messages() already printed errors (or success) above the form.
     // It uses if/elseif, so when there are errors the success message is skipped — print
     // success only in that case. Do not re-print errors (that duplicated notices on save).
-    $reflection = new ReflectionClass('WC_Admin_Settings');
-    $errors_property = $reflection->getProperty('errors');
-    $errors_property->setAccessible(true);
-    $errors = $errors_property->getValue();
-
-    $messages_property = $reflection->getProperty('messages');
-    $messages_property->setAccessible(true);
-    $messages = $messages_property->getValue();
+    // Closure::bind reads private statics without ReflectionProperty::setAccessible (deprecated in PHP 8.5).
+    $wcSettingsNotices = \Closure::bind(
+        static function (): array {
+            return [
+                'errors' => self::$errors,
+                'messages' => self::$messages,
+            ];
+        },
+        null,
+        \WC_Admin_Settings::class
+    );
+    $wcSettingsNotices = is_callable($wcSettingsNotices) ? $wcSettingsNotices() : ['errors' => [], 'messages' => []];
+    $errors = $wcSettingsNotices['errors'] ?? [];
+    $messages = $wcSettingsNotices['messages'] ?? [];
 
     if (!empty($errors) && !empty($messages)) {
         foreach ($messages as $message) {

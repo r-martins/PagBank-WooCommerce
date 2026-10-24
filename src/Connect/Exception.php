@@ -31,7 +31,7 @@ class Exception extends \Exception
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 * */
-	public function __construct(array $error_messages, $code = 0, Throwable $previous = null)
+	public function __construct(array $error_messages, $code = 0, ?Throwable $previous = null)
     {
         $message = [];
         $original_error_messages = [];

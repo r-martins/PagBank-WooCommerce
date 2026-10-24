@@ -13,7 +13,7 @@ class Branding
     /** @var PartnerDetector */
     private $detector;
 
-    public function __construct(PartnerDetector $detector = null)
+    public function __construct(?PartnerDetector $detector = null)
     {
         $this->detector = $detector ?: PartnerDetector::fromSettings();
     }
