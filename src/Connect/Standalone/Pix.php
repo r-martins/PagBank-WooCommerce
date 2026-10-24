@@ -84,15 +84,15 @@ class Pix extends WC_Payment_Gateway
             return;
         }
 
-        $yapayUrl = 'https://intermediador.yapay.com.br/settings/sales';
+        $vindiPortalUrl = 'https://portal.vindi.com.br/pt-br/settings/sales';
         $this->form_fields['pix_expiry_minutes']['description'] = sprintf(
-            /* translators: %s = URL to Vindi/Yapay PIX sales settings */
+            /* translators: %s = URL to Vindi Portal sales settings */
             __(
                 'minutos<br/><em>Obs.: o valor acima é apenas visual. A real validade do PIX é configurada '
-                . '<a href="%s" target="_blank" rel="noopener noreferrer">aqui</a>.</em>',
+                . '<a href="%s" target="_blank" rel="noopener noreferrer">aqui</a> (Portal Vindi).</em>',
                 'pagbank-connect'
             ),
-            esc_url($yapayUrl)
+            esc_url($vindiPortalUrl)
         );
     }
 
@@ -183,7 +183,9 @@ class Pix extends WC_Payment_Gateway
         $order->add_order_note(\RM_PagBank\Partner\Branding::notePrefix($order) . ': Pedido criado com sucesso!', $shouldNotify);
 
 
-        $woocommerce->cart->empty_cart();
+        if (isset($woocommerce->cart) && $woocommerce->cart) {
+            $woocommerce->cart->empty_cart();
+        }
         return array(
             'result' => 'success',
             'redirect' => $this->get_return_url($order),

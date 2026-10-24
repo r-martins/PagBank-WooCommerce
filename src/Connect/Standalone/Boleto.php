@@ -77,16 +77,16 @@ class Boleto extends WC_Payment_Gateway
             return;
         }
 
-        $yapayUrl = 'https://intermediador.yapay.com.br/settings/sales';
+        $vindiPortalUrl = 'https://portal.vindi.com.br/pt-br/settings/sales';
         $notice = sprintf(
-            /* translators: %s = URL to Vindi/Yapay sales settings */
+            /* translators: %s = URL to Vindi Portal sales settings */
             __(
                 'As linhas de instrução e logo podem ser configuradas '
                 . '<a href="%s" target="_blank" rel="noopener noreferrer">aqui</a> '
-                . '(Configurações &gt; Transação de Vendas).',
+                . '(Portal Vindi).',
                 'pagbank-connect'
             ),
-            esc_url($yapayUrl)
+            esc_url($vindiPortalUrl)
         );
 
         if (isset($this->form_fields['boleto_line_1'])) {
@@ -97,6 +97,18 @@ class Boleto extends WC_Payment_Gateway
             ];
         }
         unset($this->form_fields['boleto_line_2']);
+
+        if (isset($this->form_fields['boleto_expiry_days'])) {
+            $this->form_fields['boleto_expiry_days']['description'] = sprintf(
+                /* translators: %s = URL to Vindi Portal sales settings */
+                __(
+                    'dias<br/><em>Obs.: o valor acima é apenas visual. A real validade do boleto é configurada '
+                    . '<a href="%s" target="_blank" rel="noopener noreferrer">aqui</a> (Portal Vindi).</em>',
+                    'pagbank-connect'
+                ),
+                esc_url($vindiPortalUrl)
+            );
+        }
     }
 
     public function admin_options() {
@@ -159,7 +171,9 @@ class Boleto extends WC_Payment_Gateway
         $order->add_order_note(\RM_PagBank\Partner\Branding::notePrefix($order) . ': Pedido criado com sucesso!', $shouldNotify);
 
 
-        $woocommerce->cart->empty_cart();
+        if (isset($woocommerce->cart) && $woocommerce->cart) {
+            $woocommerce->cart->empty_cart();
+        }
         return array(
             'result' => 'success',
             'redirect' => $this->get_return_url($order),
