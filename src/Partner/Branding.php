@@ -13,7 +13,7 @@ class Branding
     /** @var PartnerDetector */
     private $detector;
 
-    public function __construct(PartnerDetector $detector = null)
+    public function __construct(?PartnerDetector $detector = null)
     {
         $this->detector = $detector ?: PartnerDetector::fromSettings();
     }
@@ -182,6 +182,20 @@ class Branding
     }
 
     /**
+     * Vindi admin bill URL (fatura). Prefer this over charges for unpaid PIX/boleto.
+     */
+    public function adminBillUrl(string $billId, bool $isSandbox): ?string
+    {
+        $billId = trim($billId);
+        if ($billId === '' || !$this->detector->isVindi()) {
+            return null;
+        }
+
+        $host = $isSandbox ? 'sandbox-app.vindi.com.br' : 'app.vindi.com.br';
+        return 'https://' . $host . '/admin/bills/' . rawurlencode($billId);
+    }
+
+    /**
      * Admin portal URL for a charge, or null when not linkable (PagBank sandbox).
      */
     public function adminChargeUrl(string $chargeId, bool $isSandbox): ?string
@@ -202,6 +216,19 @@ class Branding
 
         $transaction = str_replace('CHAR_', '', $chargeId);
         return 'https://minhaconta.pagseguro.uol.com.br/transacao/detalhes/' . rawurlencode($transaction);
+    }
+
+    /**
+     * Prefer Vindi bill URL (works for unpaid PIX/boleto); charge as fallback / PagBank.
+     */
+    public function adminPortalUrl(?string $billId, ?string $chargeId, bool $isSandbox): ?string
+    {
+        $billUrl = $this->adminBillUrl((string) $billId, $isSandbox);
+        if ($billUrl) {
+            return $billUrl;
+        }
+
+        return $this->adminChargeUrl((string) $chargeId, $isSandbox);
     }
 
     /**

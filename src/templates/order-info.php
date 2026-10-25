@@ -164,8 +164,12 @@ $logoRel = $branding->orderAdminLogo();
 		</span>
 	<?php endif;?>
 
-	<?php if($charge_id):
-		$portalUrl = $branding->adminChargeUrl((string) $charge_id, $isSandbox);
+	<?php if($charge_id || $bill_id):
+		$portalUrl = $branding->adminPortalUrl(
+			$bill_id ? (string) $bill_id : null,
+			$charge_id ? (string) $charge_id : null,
+			$isSandbox
+		);
 		$viewLabel = sprintf(
 			/* translators: %s = PagBank or Vindi */
 			__('Ver na %s', 'pagbank-connect'),
@@ -192,28 +196,20 @@ $logoRel = $branding->orderAdminLogo();
             <?php echo $linkTagHtml;?>
 			<br/>
 			<?php
-			echo esc_html(sprintf(
-				/* translators: %s = charge id */
-				__('Charge ID: %s', 'pagbank-connect'),
-				(string) $charge_id
-			));
+			if ($charge_id) {
+				echo esc_html(sprintf(
+					/* translators: %s = charge id */
+					__('Charge ID: %s', 'pagbank-connect'),
+					(string) $charge_id
+				));
+			}
 			if ($bill_id) {
-				echo '<br/>' . esc_html(sprintf(
+				echo ($charge_id ? '<br/>' : '') . esc_html(sprintf(
 					/* translators: %s = bill id */
 					__('Bill ID: %s', 'pagbank-connect'),
 					(string) $bill_id
 				));
 			}
-			?>
-		</span>
-	<?php elseif ($bill_id): ?>
-		<span class="form-field form-field-wide ps-pagbank-info">
-			<?php
-			echo esc_html(sprintf(
-				/* translators: %s = bill id */
-				__('Bill ID: %s', 'pagbank-connect'),
-				(string) $bill_id
-			));
 			?>
 		</span>
 	<?php endif;?>

@@ -82,6 +82,7 @@ class Connect
         add_filter('woocommerce_rest_prepare_shop_order_object', [CreditCardDisplayTitle::class, 'filterRestPrepareShopOrderObject'], 20, 3);
         add_filter('woocommerce_order_get_payment_method_title', [CreditCardDisplayTitle::class, 'filterPaymentMethodTitle'], 10, 2);
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
+        Connect\AdminOrderPayment::init();
         add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
