@@ -46,26 +46,27 @@ class GeneralSplitManager
             }
         }
 
-        // Check if primary account ID is configured (should be set when split is enabled)
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
         $primary_account_id = $gateway->get_option('split_payments_primary_account_id', '');
-        
+
         \RM_PagBank\Helpers\Functions::log(
             sprintf(
-                'GeneralSplitManager::shouldApplySplit - Account ID principal: %s (vazio: %s)',
+                'GeneralSplitManager::shouldApplySplit - Account ID principal: %s (vazio: %s, vindi: %s)',
                 $primary_account_id ?: '(vazio)',
-                empty($primary_account_id) ? 'sim' : 'não'
+                empty($primary_account_id) ? 'sim' : 'não',
+                $isVindi ? 'sim' : 'não'
             ),
             'info'
         );
-        
-        if (empty($primary_account_id)) {
+
+        // PagBank requires PRIMARY account id; Vindi merchant is implicit (bill owner).
+        if (!$isVindi && empty($primary_account_id)) {
             \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::shouldApplySplit - Account ID principal não configurado', 'info');
             return false;
         }
-        
-        // Check if we have receivers configured
+
         $receivers = $gateway->get_option('split_payments_receivers', []);
-        
+
         if (empty($receivers) || !is_array($receivers)) {
             \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::shouldApplySplit - Nenhum recebedor secundário configurado', 'info');
             return false;
@@ -108,60 +109,50 @@ class GeneralSplitManager
         // Primary receiver gets the remaining percentage (100% - total_percentage)
         $primary_percentage = 100 - $total_percentage;
         
-        // Get primary account ID from settings (should be set when split is enabled)
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
         $primary_account_id = $gateway->get_option('split_payments_primary_account_id', '');
-        
-        if (empty($primary_account_id)) {
-            \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::buildSplitData - Account ID principal não configurado', 'error');
-            throw new \Exception('Account ID principal não configurado. Configure o Account ID Principal nas configurações de Divisão de Pagamentos.');
+
+        if (!$isVindi) {
+            if (empty($primary_account_id)) {
+                \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::buildSplitData - Account ID principal não configurado', 'error');
+                throw new \Exception('Account ID principal não configurado. Configure o Account ID Principal nas configurações de Divisão de Pagamentos.');
+            }
+            $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
+            if (!preg_match($pattern, $primary_account_id)) {
+                \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::buildSplitData - Account ID principal com formato inválido: ' . $primary_account_id, 'error');
+                throw new \Exception('Account ID principal com formato inválido.');
+            }
+
+            $primaryReceiver = new Receiver();
+            $primaryReceiver->setAccount(['id' => $primary_account_id]);
+            $primaryReceiver->setAmount(['value' => (float) $primary_percentage]);
+            $primaryReceiver->setReason('Pagamento principal');
+            $primaryReceiver->setType(Receiver::TYPE_PRIMARY);
+            $primaryReceiver->setCustody(false);
+            $primaryReceiver->setChargeback(0);
+            $split->addReceiver($primaryReceiver);
         }
-        
-        // Validate Account ID format
-        $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
-        if (!preg_match($pattern, $primary_account_id)) {
-            \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::buildSplitData - Account ID principal com formato inválido: ' . $primary_account_id, 'error');
-            throw new \Exception('Account ID principal com formato inválido.');
-        }
-        
-        // Primary receiver (account from settings)
-        $primaryReceiver = new Receiver();
-        
-        $primaryReceiver->setAccount(['id' => $primary_account_id]);
-        // For PERCENTAGE method, amount.value is the percentage as float
-        $primaryReceiver->setAmount(['value' => (float) $primary_percentage]);
-        $primaryReceiver->setReason('Pagamento principal');
-        $primaryReceiver->setType(Receiver::TYPE_PRIMARY);
-        $primaryReceiver->setCustody(false);
-        $primaryReceiver->setChargeback(0);
-        
-        // Set liable only for credit card (primary is always liable for general split)
-        if ($isCreditCard) {
-            // $primaryReceiver->setLiable(true);
-        }
-        
-        $split->addReceiver($primaryReceiver);
-        
-        // Secondary receivers (from configuration)
+
         foreach ($receivers_config as $receiver_config) {
-            $account_id = $receiver_config['account_id'] ?? '';
+            $account_id = (string) ($receiver_config['account_id'] ?? '');
             $percentage = floatval($receiver_config['percentage'] ?? 0);
-            
-            if (empty($account_id) || $percentage <= 0) {
+
+            if ($account_id === '' || $percentage <= 0) {
                 continue;
             }
-            
+            if ($isVindi && !preg_match('/^\d{1,12}$/', $account_id)) {
+                \RM_PagBank\Helpers\Functions::log('GeneralSplitManager::buildSplitData - Affiliate ID inválido: ' . $account_id, 'error');
+                continue;
+            }
+
             $receiver = new Receiver();
             $receiver->setAccount(['id' => $account_id]);
-            // For PERCENTAGE method, amount.value is the percentage as float
             $receiver->setAmount(['value' => $percentage]);
             $receiver->setReason('Divisão de pagamento');
             $receiver->setType(Receiver::TYPE_SECONDARY);
-            $receiver->setCustody(false); // No custody for general split
-            $receiver->setChargeback(0); // No chargeback transfer
-            
-            // Secondary receivers are never liable
-            // $receiver->setLiable(false);
-            
+            $receiver->setCustody(false);
+            $receiver->setChargeback(0);
+
             $split->addReceiver($receiver);
         }
         

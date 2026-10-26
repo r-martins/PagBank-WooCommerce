@@ -104,9 +104,11 @@ class CreditCard extends Common
             }
         }
 
-        // Check if split with liable will be applied
+        // PagBank Dokan split uses liable — incompatible with PagBank 3DS. Vindi has no liable on bill_affiliates.
         $hasSplitWithLiable = false;
-        if (\RM_PagBank\Integrations\Dokan\DokanSplitManager::shouldApplySplit($this->order)) {
+        if (\RM_PagBank\Integrations\Dokan\DokanSplitManager::shouldApplySplit($this->order)
+            && !(new \RM_PagBank\Helpers\Api())->partner()->isVindi()
+        ) {
             $hasSplitWithLiable = true;
         }
 

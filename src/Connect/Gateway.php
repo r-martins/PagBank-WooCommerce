@@ -128,7 +128,8 @@ class Gateway extends WC_Payment_Gateway_CC
         
         // Fetch Account ID from API when split is being enabled
         $primary_account_id_to_save = null;
-        if ($split_enabled === 'yes') {
+        // PagBank: auto-fetch ACCO_… primary. Vindi: merchant is the Connect Key owner (no PRIMARY id).
+        if ($split_enabled === 'yes' && $caps->detector()->isPagBank()) {
             $primary_account_id_key = $this->get_field_key('split_payments_primary_account_id');
             $primary_account_id = isset($_POST[$primary_account_id_key]) ? sanitize_text_field($_POST[$primary_account_id_key]) : '';
             $current_split_enabled = $this->get_option('split_payments_enabled', 'no');
@@ -304,7 +305,7 @@ class Gateway extends WC_Payment_Gateway_CC
     }
 
     /**
-     * Split is PagBank-only — hide admin fields when Connect Key is Vindi.
+     * Hide split when partner has no split; adapt Vindi labels (no PagBank PRIMARY account id).
      */
     private function maybeHideSplitFields(): void
     {
@@ -314,20 +315,34 @@ class Gateway extends WC_Payment_Gateway_CC
             $key = sanitize_text_field(wp_unslash($_POST[$this->get_field_key('connect_key')]));
         }
 
-        $caps = new \RM_PagBank\Partner\Capabilities(
-            \RM_PagBank\Partner\PartnerDetector::fromKey($key)
-        );
-        if ($caps->hasSplit()) {
+        $detector = \RM_PagBank\Partner\PartnerDetector::fromKey($key);
+        $caps = new \RM_PagBank\Partner\Capabilities($detector);
+        if (!$caps->hasSplit()) {
+            foreach ([
+                'split_payments_section',
+                'split_payments_enabled',
+                'split_payments_primary_account_id',
+                'split_payments_receivers',
+            ] as $field) {
+                unset($this->form_fields[$field]);
+            }
             return;
         }
 
-        foreach ([
-            'split_payments_section',
-            'split_payments_enabled',
-            'split_payments_primary_account_id',
-            'split_payments_receivers',
-        ] as $field) {
-            unset($this->form_fields[$field]);
+        if ($detector->isVindi()) {
+            unset($this->form_fields['split_payments_primary_account_id']);
+            if (isset($this->form_fields['split_payments_section'])) {
+                $this->form_fields['split_payments_section']['desc'] = esc_html__(
+                    'Configure a divisão automática entre afiliados Vindi (Affiliate ID). O restante fica com a conta da Connect Key. Cadastro self-service no pbintegracoes.',
+                    'pagbank-connect'
+                );
+            }
+            if (isset($this->form_fields['split_payments_receivers'])) {
+                $this->form_fields['split_payments_receivers']['description'] = esc_html__(
+                    'Adicione Affiliate IDs Vindi (números) e o percentual de cada um. A soma deve ser menor que 100%.',
+                    'pagbank-connect'
+                );
+            }
         }
     }
 
@@ -374,6 +389,20 @@ class Gateway extends WC_Payment_Gateway_CC
         if (!is_array($value)) {
             $value = [];
         }
+
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+        $idLabel = $isVindi
+            ? __('Affiliate ID Vindi', 'pagbank-connect')
+            : __('Account ID PagBank', 'pagbank-connect');
+        $idPlaceholder = $isVindi ? '123456' : 'ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+        $idPattern = $isVindi ? '\\d{1,12}' : 'ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}';
+        $idMax = $isVindi ? 12 : 41;
+        $idHelpUrl = $isVindi
+            ? \RM_PagBank\Helpers\SplitIdentity::selfServiceLookupUrl()
+            : \RM_PagBank\Helpers\SplitIdentity::selfServiceRegisterUrl();
+        $idHelpText = $isVindi
+            ? __('Buscar Affiliate ID (e-mail/CPF/CNPJ)', 'pagbank-connect')
+            : __('Qual é meu Account Id?', 'pagbank-connect');
 
         ob_start();
         ?>
@@ -424,11 +453,17 @@ class Gateway extends WC_Payment_Gateway_CC
                     }
                 </style>
                 
-                <div class="pagbank-split-payments-repeater" id="<?php echo esc_attr($field_key); ?>_container">
+                <div class="pagbank-split-payments-repeater" id="<?php echo esc_attr($field_key); ?>_container"
+                     data-partner="<?php echo $isVindi ? 'vindi' : 'pagbank'; ?>"
+                     data-id-placeholder="<?php echo esc_attr($idPlaceholder); ?>"
+                     data-id-pattern="<?php echo esc_attr($idPattern); ?>"
+                     data-id-maxlength="<?php echo (int) $idMax; ?>"
+                     data-id-help-url="<?php echo esc_url($idHelpUrl); ?>"
+                     data-id-help-text="<?php echo esc_attr($idHelpText); ?>">
                     <table class="widefat pagbank-split-payments-table" cellspacing="0">
                         <thead>
                             <tr>
-                                <th class="account-id-column"><?php esc_html_e('Account ID PagBank', 'pagbank-connect'); ?></th>
+                                <th class="account-id-column"><?php echo esc_html($idLabel); ?></th>
                                 <th class="percentage-column"><?php esc_html_e('Percentual (%)', 'pagbank-connect'); ?></th>
                                 <th class="actions-column"><?php esc_html_e('Ações', 'pagbank-connect'); ?></th>
                             </tr>
@@ -442,15 +477,15 @@ class Gateway extends WC_Payment_Gateway_CC
                                                 type="text" 
                                                 name="<?php echo esc_attr($field_key); ?>[<?php echo esc_attr($index); ?>][account_id]" 
                                                 value="<?php echo esc_attr($receiver['account_id'] ?? ''); ?>" 
-                                                placeholder="ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                                                pattern="ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"
+                                                placeholder="<?php echo esc_attr($idPlaceholder); ?>"
+                                                pattern="<?php echo esc_attr($idPattern); ?>"
                                                 class="regular-text pagbank-account-id"
-                                                maxlength="41"
+                                                maxlength="<?php echo (int) $idMax; ?>"
                                             />
                                             <br>
                                             <small>
-                                                <a href="https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-                                                    <?php esc_html_e('Qual é meu Account Id?', 'pagbank-connect'); ?>
+                                                <a href="<?php echo esc_url($idHelpUrl); ?>" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                                                    <?php echo esc_html($idHelpText); ?>
                                                 </a>
                                             </small>
                                         </td>
@@ -576,6 +611,7 @@ class Gateway extends WC_Payment_Gateway_CC
             return '';
         }
 
+        $previousKey = (string) $this->get_option('connect_key', '');
         $api = new Api();
         $api->setConnectKey($connect_key);
         $detector = $api->partner();
@@ -608,6 +644,9 @@ class Gateway extends WC_Payment_Gateway_CC
                 if ($prev === 'pagbank') {
                     update_option('rm_pagbank_recurring_needs_retoken', 'yes');
                 }
+                if ($previousKey !== '' && !hash_equals($previousKey, $connect_key)) {
+                    \RM_PagBank\Helpers\SplitIdentity::clearInviteCache();
+                }
                 return $connect_key;
             }
 
@@ -618,6 +657,9 @@ class Gateway extends WC_Payment_Gateway_CC
 				$isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
 				$this->update_option('is_sandbox', $isSandbox);
                 $this->update_option('pagbank_partner', 'pagbank');
+                if ($previousKey !== '' && !hash_equals($previousKey, $connect_key)) {
+                    \RM_PagBank\Helpers\SplitIdentity::clearInviteCache();
+                }
             }
 
             if (isset($ret['error_messages'])){
@@ -697,13 +739,18 @@ class Gateway extends WC_Payment_Gateway_CC
                 continue;
             }
 
-            // Validate Account ID format if provided
+            // Validate receiver id format (PagBank ACCO_… or Vindi numeric affiliate_id)
             if (!empty($account_id)) {
-                $pattern = '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
+                $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+                $pattern = $isVindi
+                    ? '/^\d{1,12}$/'
+                    : '/^ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/';
                 if (!preg_match($pattern, $account_id)) {
                     WC_Admin_Settings::add_error(
                         sprintf(
-                            __('Account ID inválido na linha %d: %s', 'pagbank-connect'),
+                            $isVindi
+                                ? __('Affiliate ID inválido na linha %d: %s', 'pagbank-connect')
+                                : __('Account ID inválido na linha %d: %s', 'pagbank-connect'),
                             $index + 1,
                             esc_html($account_id)
                         )

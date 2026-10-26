@@ -24,14 +24,21 @@ Nunca chame a API Vindi com a Connect Key. Tokenização de cartão no browser u
 | Cartão salvo | tokens PagBank | `payment_profile_id` | tokens PagBank | `payment_profile_id` |
 | Soft descriptor | ✓ | omitido (config na Vindi) | ✓ | omitido |
 | Checkout redirect PagBank | ✓ | oculto | ✓ (`is_active`) | oculto (`hasHostedCheckout` = false) |
-| Split / Dokan | ✓ | bloqueado | ✓ | bloqueado |
+| Split / Dokan | ✓ (`ACCO_…`) | ✓ (`affiliate_id` + invite self-service) | ✓ | ✓ |
 | Health CC (`isCcEnabledAndHealthy`) | sessão 3DS PagBank | `true` se CC enabled | — | — |
 | Sandbox debug upstream | — | `POST orders?debug=1` automático (prod e sandbox) | — | idem |
+
+## Split Vindi (Dokan / geral)
+
+- Meta do vendedor: `vindi_affiliate_id` (numérico). PagBank continua em `pagbank_account_id`.
+- Cadastro self-service: link gerado via `POST /v1/affiliates/invites` (Connect Key só no servidor) → página `/connect/vindi-afiliado?token=…`.
+- Validar status (`ready_for_split`) ao salvar o ID; `pending_approval` / blocked → portal.vindi.com.br.
+- Sem custódia / liable PagBank; marketplace PRIMARY implícito (conta da Connect Key).
+- Pedido: `splits` no contrato PB → API mapeia SECONDARY → `bill_affiliates`.
 
 ## Recursos bloqueados na Vindi
 
 - Checkout PagBank (`rm-pagbank-redirect`)
-- Split / Dokan receivers PagBank
 
 ## Meta de pedidos
 

@@ -1,14 +1,23 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-return array(
+$isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+$inviteUrl = $isVindi ? \RM_PagBank\Helpers\SplitIdentity::selfServiceRegisterUrl() : '';
+$lookupUrl = $isVindi ? \RM_PagBank\Helpers\SplitIdentity::selfServiceLookupUrl() : '';
+
+$fields = [
     'dokan_split_section' => [
         'title' => esc_html( __( 'Integração Dokan - Split de Pagamentos', 'pagbank-connect' ) ),
         'type'  => 'title',
-        'desc'  => esc_html( __(
-            'Configure a integração com o Dokan para permitir split de pagamentos direto para vendedores. Esta funcionalidade permite que vendedores recebam pagamentos diretamente em suas contas PagBank, com proteção via custódia e controle de responsabilidade por chargebacks.',
-            'pagbank-connect'
-        )),
+        'desc'  => $isVindi
+            ? esc_html( __(
+                'Split Dokan na Vindi: vendedores informam o Affiliate ID (self-service no pbintegracoes). A loja (Connect Key) fica com o restante automaticamente — sem custódia PagBank.',
+                'pagbank-connect'
+            ))
+            : esc_html( __(
+                'Configure a integração com o Dokan para permitir split de pagamentos direto para vendedores. Esta funcionalidade permite que vendedores recebam pagamentos diretamente em suas contas PagBank, com proteção via custódia e controle de responsabilidade por chargebacks.',
+                'pagbank-connect'
+            )),
         'id'    => 'wc_pagseguro_connect_dokan_split_options',
     ],
     'dokan_split_enabled' => [
@@ -16,14 +25,47 @@ return array(
         'label' => esc_html( __( 'Ativar split de pagamentos para vendedores Dokan', 'pagbank-connect' ) ),
         'type'  => 'checkbox',
         'desc_tip' => true,
-        'description' => esc_html( __(
-            'Quando ativado, vendedores com Account ID PagBank configurado receberão pagamentos diretos via split.',
-            'pagbank-connect'
-        )),
+        'description' => $isVindi
+            ? esc_html( __(
+                'Quando ativado, vendedores com Affiliate ID Vindi ativo receberão a comissão via bill_affiliates.',
+                'pagbank-connect'
+            ))
+            : esc_html( __(
+                'Quando ativado, vendedores com Account ID PagBank configurado receberão pagamentos diretos via split.',
+                'pagbank-connect'
+            )),
         'default' => 'no',
         'id'    => 'woocommerce_rm-pagbank-integrations_dokan_split_enabled',
     ],
-    'marketplace_account_id' => [
+];
+
+if ($isVindi) {
+    $fields['vindi_affiliate_invite_link'] = [
+        'title'       => esc_html( __( 'Link self-service de afiliados', 'pagbank-connect' ) ),
+        'type'        => 'text',
+        'description' => sprintf(
+            '%s<br><strong>%s</strong> <a href="%s" target="_blank" rel="noopener noreferrer">%s</a><br><strong>%s</strong> <a href="%s" target="_blank" rel="noopener noreferrer">%s</a><br>%s',
+            esc_html__(
+                'Compartilhe com os vendedores. A Connect Key nunca é exposta — o token identifica a loja no servidor.',
+                'pagbank-connect'
+            ),
+            esc_html__('Buscar ID (e-mail/CPF/CNPJ):', 'pagbank-connect'),
+            esc_url($lookupUrl),
+            esc_html($lookupUrl !== '' ? $lookupUrl : __('Gerar link (salve as configurações / recarregue)', 'pagbank-connect')),
+            esc_html__('Cadastrar novo afiliado:', 'pagbank-connect'),
+            esc_url($inviteUrl),
+            esc_html($inviteUrl !== '' ? $inviteUrl : __('Gerar link (salve as configurações / recarregue)', 'pagbank-connect')),
+            esc_html__('Após o cadastro, o afiliado deve validar a conta em portal.vindi.com.br antes de colar o Affiliate ID no Dokan.', 'pagbank-connect')
+        ),
+        'default'     => $lookupUrl !== '' ? $lookupUrl : $inviteUrl,
+        'custom_attributes' => [
+            'readonly' => 'readonly',
+        ],
+        'desc_tip'    => false,
+        'id'          => 'woocommerce_rm-pagbank-integrations_vindi_affiliate_invite_link',
+    ];
+} else {
+    $fields['marketplace_account_id'] = [
         'title'       => esc_html( __( 'Account ID do Marketplace', 'pagbank-connect' ) ),
         'type'        => 'text',
         'description' => sprintf(
@@ -45,24 +87,8 @@ return array(
             'title' => 'Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         ],
         'validate' => 'validate_pagbank_account_id'
-    ],
-    'split_marketplace_reason' => [
-        'title'       => esc_html( __( 'Descrição do Marketplace', 'pagbank-connect' ) ),
-        'type'        => 'text',
-        'description' => esc_html( __(
-            'Descrição que aparecerá na fatura do marketplace para transações com split.',
-            'pagbank-connect'
-        )),
-        'default'     => 'Comissão do Marketplace',
-        'placeholder' => 'Comissão do Marketplace',
-        'desc_tip'    => true,
-        'required'    => false,
-        'id'          => 'woocommerce_rm-pagbank-integrations_split_marketplace_reason',
-        'custom_attributes' => [
-            'maxlength' => 64
-        ]
-    ],
-    'split_custody_days' => [
+    ];
+    $fields['split_custody_days'] = [
         'title'       => esc_html( __( 'Prazo de Custódia (dias)', 'pagbank-connect' ) ),
         'type'        => 'number',
         'description' => esc_html( __(
@@ -78,8 +104,8 @@ return array(
             'min' => 1,
             'max' => 30
         ]
-    ],
-    'split_chargeback_liability' => [
+    ];
+    $fields['split_chargeback_liability'] = [
         'title' => esc_html( __( 'Responsabilidade por Chargebacks (Liable)', 'pagbank-connect' ) ),
         'type'  => 'select',
         'description' => esc_html( __(
@@ -93,17 +119,39 @@ return array(
         ],
         'desc_tip'    => true,
         'id'          => 'woocommerce_rm-pagbank-integrations_split_chargeback_liability',
-    ],
-    'split_notifications' => [
-        'title' => esc_html( __( 'Notificações', 'pagbank-connect' ) ),
-        'type'  => 'checkbox',
-        'label' => esc_html( __( 'Notificar vendedores sobre configuração de Account ID', 'pagbank-connect' ) ),
-        'description' => esc_html( __(
-            'Enviar e-mail para vendedores quando Account ID for configurado ou alterado.',
-            'pagbank-connect'
-        )),
-        'default' => 'yes',
-        'desc_tip'    => true,
-        'id'          => 'woocommerce_rm-pagbank-integrations_split_notifications',
-    ],
-);
+    ];
+}
+
+$fields['split_marketplace_reason'] = [
+    'title'       => esc_html( __( 'Descrição do Marketplace', 'pagbank-connect' ) ),
+    'type'        => 'text',
+    'description' => esc_html( __(
+        'Descrição que aparecerá na fatura do marketplace para transações com split.',
+        'pagbank-connect'
+    )),
+    'default'     => 'Comissão do Marketplace',
+    'placeholder' => 'Comissão do Marketplace',
+    'desc_tip'    => true,
+    'required'    => false,
+    'id'          => 'woocommerce_rm-pagbank-integrations_split_marketplace_reason',
+    'custom_attributes' => [
+        'maxlength' => 64
+    ]
+];
+
+$fields['split_notifications'] = [
+    'title' => esc_html( __( 'Notificações', 'pagbank-connect' ) ),
+    'type'  => 'checkbox',
+    'label' => $isVindi
+        ? esc_html( __( 'Notificar admin quando Affiliate ID for configurado', 'pagbank-connect' ) )
+        : esc_html( __( 'Notificar vendedores sobre configuração de Account ID', 'pagbank-connect' ) ),
+    'description' => esc_html( __(
+        'Enviar e-mail quando o ID de split do vendedor for configurado ou alterado.',
+        'pagbank-connect'
+    )),
+    'default' => 'yes',
+    'desc_tip'    => true,
+    'id'          => 'woocommerce_rm-pagbank-integrations_split_notifications',
+];
+
+return $fields;

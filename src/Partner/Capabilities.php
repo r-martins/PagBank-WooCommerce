@@ -31,7 +31,8 @@ class Capabilities
 
     public function hasSplit(): bool
     {
-        return $this->detector->isPagBank();
+        // PagBank: ACCO_… receivers. Vindi: affiliate_id → bill_affiliates via API v1.
+        return $this->detector->isPagBank() || $this->detector->isVindi();
     }
 
     public function forceNotificationProxy(): bool
