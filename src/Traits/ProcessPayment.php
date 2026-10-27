@@ -83,6 +83,10 @@ trait ProcessPayment
         }
         OrderMeta::set($order, 'payment_response', $payment_response, true);
         OrderMeta::set($order, 'order_id', $order_data['id'] ?? null, true);
+        // Vindi webhooks/poll may include bill_affiliates without PagBank SPLIT links.
+        if (!OrderMeta::get($order, '_split_applied')) {
+            \RM_PagBank\Connect\Payments\Common::persistSplitMetaFromResponse($order, $order_data);
+        }
         $chargePaymentType = (string) ($charge['payment_method']['type'] ?? '');
         if (in_array($chargePaymentType, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true)) {
             CreditCard::applyChargeInstallmentMeta($order, $charge);

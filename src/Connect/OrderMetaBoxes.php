@@ -158,9 +158,14 @@ class OrderMetaBoxes
         
         $order = wc_get_order($order_id);
         if ($order && OrderMeta::get($order, '_split_applied')) {
+            $brand = \RM_PagBank\Partner\Branding::notePrefix($order);
             add_meta_box(
                 'pagbank_split_details',
-                __('PagBank - Detalhes do Split', 'pagbank-connect'),
+                sprintf(
+                    /* translators: %s: partner name (PagBank|Vindi) */
+                    __('%s - Detalhes do Split', 'pagbank-connect'),
+                    $brand
+                ),
                 [__CLASS__, 'displaySplitMetaBox'],
                 ['shop_order', 'woocommerce_page_wc-orders'],
                 'side',
@@ -249,9 +254,12 @@ class OrderMetaBoxes
                 echo '<strong style="color: ' . $border_color . '; font-size: 13px;">' . esc_html($type) . '</strong>';
                 echo '</div>';
                 
-                // Account ID
+                // Account / Affiliate ID
+                $idLabel = (($split_data['partner'] ?? '') === 'vindi' || ctype_digit((string) $account_id))
+                    ? __('Affiliate ID:', 'pagbank-connect')
+                    : __('Account ID:', 'pagbank-connect');
                 echo '<div style="margin-bottom: 5px; font-size: 12px;">';
-                echo '<strong>' . __('Account ID:', 'pagbank-connect') . '</strong> ';
+                echo '<strong>' . $idLabel . '</strong> ';
                 echo '<code style="background: #fff; padding: 2px 6px; border-radius: 3px;">' . esc_html($account_id) . '</code>';
                 echo '</div>';
                 
