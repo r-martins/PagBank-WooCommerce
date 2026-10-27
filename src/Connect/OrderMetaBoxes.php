@@ -3,6 +3,8 @@
 namespace RM_PagBank\Connect;
 
 use RM_PagBank\Helpers\OrderMeta;
+use RM_PagBank\Helpers\ReceitaWs;
+use RM_PagBank\Helpers\TaxId;
 
 /**
  * Class OrderMetaBoxes
@@ -18,11 +20,25 @@ class OrderMetaBoxes
     {
         add_action('add_meta_boxes', [__CLASS__, 'addSplitMetaBox']);
         add_action('wp_ajax_pagbank_get_split_details', [__CLASS__, 'ajaxGetSplitDetails']);
+        add_action('wp_ajax_pagbank_get_cnpj_details', [__CLASS__, 'ajaxGetCnpjDetails']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueueScripts']);
+    }
+
+    /**
+     * Customer document stored by blocks/classic checkout (legacy key + OrderMeta fallback).
+     */
+    public static function getCustomerDocument(\WC_Order $order): string
+    {
+        $doc = (string) $order->get_meta('_rm_pagbank_customer_document');
+        if ($doc === '') {
+            $doc = (string) OrderMeta::get($order, 'customer_document');
+        }
+
+        return TaxId::sanitizeForApi($doc);
     }
     
     /**
-     * Enqueue scripts and styles for split details modal
+     * Enqueue scripts and styles for split / CNPJ details modals
      */
     public static function enqueueScripts($hook): void
     {
@@ -50,35 +66,67 @@ class OrderMetaBoxes
         }
         
         $order = wc_get_order($order_id);
-        if (!$order || !OrderMeta::get($order, '_split_applied')) {
+        if (!$order) {
             return;
         }
-        
+
+        if ((string) OrderMeta::get($order, 'payment_method') === '') {
+            return;
+        }
+
+        wp_enqueue_style(
+            'pagbank-order-info',
+            plugins_url('public/css/admin/order-info.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            [],
+            WC_PAGSEGURO_CONNECT_VERSION
+        );
+
+        $hasSplit = (bool) OrderMeta::get($order, '_split_applied');
+        $hasCnpj = TaxId::isCnpj(self::getCustomerDocument($order));
+        if (!$hasSplit && !$hasCnpj) {
+            return;
+        }
+
         // Enqueue Thickbox (WordPress built-in)
         wp_enqueue_script('thickbox');
         wp_enqueue_style('thickbox');
-        
-        // Enqueue our custom script
-        wp_enqueue_script(
-            'pagbank-split-details-modal',
-            plugins_url('public/js/admin/split-details-modal.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            ['jquery', 'thickbox'],
-            WC_PAGSEGURO_CONNECT_VERSION,
-            true
-        );
-        
-        // Localize script with AJAX data
-        wp_localize_script(
-            'pagbank-split-details-modal',
-            'pagbankSplitDetails',
-            [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('pagbank_get_split_details')
-            ]
-        );
-        
-        // Enqueue custom CSS
         wp_add_inline_style('thickbox', self::getModalStyles());
+
+        if ($hasSplit) {
+            wp_enqueue_script(
+                'pagbank-split-details-modal',
+                plugins_url('public/js/admin/split-details-modal.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery', 'thickbox'],
+                WC_PAGSEGURO_CONNECT_VERSION,
+                true
+            );
+            wp_localize_script(
+                'pagbank-split-details-modal',
+                'pagbankSplitDetails',
+                [
+                    'ajaxurl' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('pagbank_get_split_details'),
+                ]
+            );
+        }
+
+        if ($hasCnpj) {
+            wp_enqueue_script(
+                'pagbank-cnpj-details-modal',
+                plugins_url('public/js/admin/cnpj-details-modal.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery', 'thickbox'],
+                WC_PAGSEGURO_CONNECT_VERSION,
+                true
+            );
+            wp_localize_script(
+                'pagbank-cnpj-details-modal',
+                'pagbankCnpjDetails',
+                [
+                    'ajaxurl' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('pagbank_get_cnpj_details'),
+                ]
+            );
+        }
     }
     
     /**
@@ -413,6 +461,50 @@ class OrderMetaBoxes
             ]);
             
         } catch (\Exception $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * AJAX: lookup CNPJ via ReceitaWS for the document stored on the order.
+     */
+    public static function ajaxGetCnpjDetails(): void
+    {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'pagbank_get_cnpj_details')) {
+            wp_send_json_error(['message' => __('Verificação de segurança falhou.', 'pagbank-connect')]);
+            return;
+        }
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => __('Você não tem permissão para realizar esta ação.', 'pagbank-connect')]);
+            return;
+        }
+
+        $orderId = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+        $cnpjPosted = isset($_POST['cnpj'])
+            ? TaxId::sanitizeForApi(wp_unslash((string) $_POST['cnpj']))
+            : '';
+
+        if (!$orderId || $cnpjPosted === '') {
+            wp_send_json_error(['message' => __('Parâmetros inválidos.', 'pagbank-connect')]);
+            return;
+        }
+
+        $order = wc_get_order($orderId);
+        if (!$order) {
+            wp_send_json_error(['message' => __('Pedido não encontrado.', 'pagbank-connect')]);
+            return;
+        }
+
+        $orderDoc = self::getCustomerDocument($order);
+        if ($orderDoc === '' || $orderDoc !== $cnpjPosted || !TaxId::isCnpj($orderDoc)) {
+            wp_send_json_error(['message' => __('CNPJ do pedido não confere.', 'pagbank-connect')]);
+            return;
+        }
+
+        try {
+            wp_send_json_success(ReceitaWs::lookupCnpj($orderDoc));
+        } catch (\Throwable $e) {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }

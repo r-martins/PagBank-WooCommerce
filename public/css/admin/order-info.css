@@ -1,0 +1,227 @@
+/**
+ * Admin order payment info card (PagBank / Vindi).
+ */
+
+.pagbank-order-info {
+	clear: both;
+	margin: 12px 0 4px;
+	padding: 12px 14px;
+	background: #f8f9fa;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	box-sizing: border-box;
+}
+
+.pagbank-order-info__header {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px 10px;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.pagbank-order-info__logo {
+	display: block;
+	width: 88px;
+	height: auto;
+	margin: 0;
+	float: none;
+}
+
+.pagbank-order-info__badges {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.pagbank-order-info .sandbox-label,
+.pagbank-order-info .split-label,
+.pagbank-order-info .recurring-label {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.pagbank-order-info__body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pagbank-order-info__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.pagbank-order-info__action {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	background: #fff;
+	color: #2271b1;
+	text-decoration: none;
+	font-size: 12px;
+	line-height: 1.4;
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+	transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.pagbank-order-info__action:hover,
+.pagbank-order-info__action:focus {
+	border-color: #2271b1;
+	background: #f0f6fc;
+	color: #135e96;
+	text-decoration: none;
+}
+
+.pagbank-order-info__action .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 1;
+	color: inherit;
+}
+
+.pagbank-order-info__action.is-disabled,
+.pagbank-order-info__action.is-disabled:hover {
+	color: #a7aaad;
+	border-color: #dcdcde;
+	background: #f6f7f7;
+	cursor: default;
+}
+
+.pagbank-order-info__meta {
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.pagbank-order-info__row {
+	display: grid;
+	grid-template-columns: minmax(88px, 28%) 1fr;
+	gap: 8px;
+	align-items: start;
+	margin: 0;
+	padding: 7px 10px;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+.pagbank-order-info__row:last-child {
+	border-bottom: 0;
+}
+
+.pagbank-order-info__row dt {
+	margin: 0;
+	color: #646970;
+	font-weight: 600;
+}
+
+.pagbank-order-info__row dd {
+	margin: 0;
+	color: #1d2327;
+	word-break: break-word;
+}
+
+.pagbank-order-info__doc-value {
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.pagbank-order-info__cnpj-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 3px;
+	background: transparent;
+	color: #2271b1;
+	text-decoration: none;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+.pagbank-order-info__cnpj-btn:hover,
+.pagbank-order-info__cnpj-btn:focus {
+	background: #f0f6fc;
+	color: #135e96;
+}
+
+.pagbank-order-info__cnpj-btn .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.pagbank-order-info__cnpj-btn.is-busy {
+	opacity: 0.55;
+	pointer-events: none;
+}
+
+.pagbank-order-info__card-brand {
+	display: inline-block;
+	width: 28px;
+	height: auto;
+	margin: 0 6px 0 0;
+	vertical-align: middle;
+	float: none;
+}
+
+.pagbank-order-info__3ds {
+	color: #646970;
+	font-size: 12px;
+}
+
+.pagbank-order-info__footer {
+	margin-top: 2px;
+	padding-top: 8px;
+	border-top: 1px dashed #dcdcde;
+}
+
+.pagbank-order-info__force {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: #646970;
+	font-size: 12px;
+	text-decoration: none;
+}
+
+.pagbank-order-info__force:hover,
+.pagbank-order-info__force:focus {
+	color: #2271b1;
+}
+
+.pagbank-order-info__force .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 1;
+}
+
+@media screen and (max-width: 782px) {
+	.pagbank-order-info__row {
+		grid-template-columns: 1fr;
+		gap: 2px;
+	}
+}
