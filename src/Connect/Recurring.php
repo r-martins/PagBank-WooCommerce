@@ -204,7 +204,7 @@ class Recurring
     public function addProductRecurringTab($productTabs)
     {
         $productTabs['recurring_pagbank'] = [
-            'label' => __('Assinatura PagBank', 'pagbank-connect'),
+            'label' => __('Assinatura PB', 'pagbank-connect'),
             'target' => 'recurring_pagbank',
             'class' => ['show_if_simple', 'show_if_variable'],
             'priority' => 90,
@@ -746,7 +746,11 @@ class Recurring
         $isVindi = $api->partner()->isVindi()
             || ((string) OrderMeta::get($order, 'partner') === 'vindi');
 
-        if ($paymentMethod == 'credit_card') {
+        // Checkout PB remaps to credit_card after charge; accept both for Assinaturas payment_info.
+        if (in_array($paymentMethod, ['credit_card', 'checkout_pb'], true)) {
+            if ($paymentMethod === 'checkout_pb') {
+                $paymentInfo['method'] = 'credit_card';
+            }
             $initialChargeInfo = OrderMeta::get($order, 'order_charges');
             $chargeCard = is_array($initialChargeInfo[0]['payment_method']['card'] ?? null)
                 ? $initialChargeInfo[0]['payment_method']['card']

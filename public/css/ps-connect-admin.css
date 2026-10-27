@@ -133,3 +133,89 @@ a.rm-sandbox-clear-btn span {
 a.rm-sandbox-clear-btn:hover, a.rm-sandbox-clear-btn span:hover{
     color: #FFF;
 }
+
+/* Checkout PB settings mini-hero */
+.rm-checkout-pb-hero {
+    --rm-cpb-ink: #171717;
+    --rm-cpb-muted: #57534e;
+    --rm-cpb-surface: #fafaf9;
+    --rm-cpb-accent: #0f766e;
+    --rm-cpb-accent-soft: rgba(15, 118, 110, 0.12);
+    margin: 12px 0 20px;
+    padding: 18px 20px;
+    border-radius: 10px;
+    border: 1px solid #e7e5e4;
+    background:
+        linear-gradient(135deg, var(--rm-cpb-accent-soft) 0%, transparent 42%),
+        linear-gradient(180deg, #ffffff 0%, var(--rm-cpb-surface) 100%);
+    box-shadow: 0 1px 2px rgba(23, 23, 23, 0.04);
+}
+
+.rm-checkout-pb-hero__eyebrow {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rm-cpb-accent);
+}
+
+.rm-checkout-pb-hero__title {
+    margin: 0 0 8px;
+    font-size: 18px;
+    line-height: 1.3;
+    color: var(--rm-cpb-ink);
+}
+
+.rm-checkout-pb-hero__lead {
+    margin: 0 0 12px;
+    max-width: 52rem;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--rm-cpb-muted);
+}
+
+.rm-checkout-pb-hero__benefits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 6px 16px;
+    margin: 0 0 14px;
+    padding: 0;
+    list-style: none;
+}
+
+.rm-checkout-pb-hero__benefits li {
+    position: relative;
+    padding-left: 1.15em;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--rm-cpb-ink);
+}
+
+.rm-checkout-pb-hero__benefits li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.45em;
+    width: 0.45em;
+    height: 0.45em;
+    border-radius: 50%;
+    background: var(--rm-cpb-accent);
+}
+
+.rm-checkout-pb-hero__actions {
+    margin: 0;
+}
+
+.rm-checkout-pb-hero__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rm-checkout-pb-hero__cta .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+}

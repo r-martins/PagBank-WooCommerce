@@ -24,13 +24,21 @@ Nunca chame a API Vindi com a Connect Key. Tokenização de cartão no browser u
 | Cartão salvo | tokens PagBank | `payment_profile_id` | tokens PagBank | `payment_profile_id` |
 | Soft descriptor | ✓ | omitido (config na Vindi) | ✓ | omitido |
 | Checkout redirect PagBank | ✓ | oculto | ✓ (`is_active`) | oculto (`hasHostedCheckout` = false) |
+| Checkout PB (`rm-pagbank-checkout-pb`) | oculto | ✓ (`hasCheckoutPb`) | oculto | ✓ (`is_active`) |
 | Split / Dokan | ✓ | bloqueado | ✓ | bloqueado |
 | Health CC (`isCcEnabledAndHealthy`) | sessão 3DS PagBank | `true` se CC enabled | — | — |
 | Sandbox debug upstream | — | `POST orders?debug=1` automático (prod e sandbox) | — | idem |
 
 ## Recursos bloqueados na Vindi
 
-- Checkout PagBank (`rm-pagbank-redirect`)
+- Checkout PagBank (`rm-pagbank-redirect`) — use **Checkout PB** (`rm-pagbank-checkout-pb`) → `POST /v1/checkouts`
+
+## Checkout PB (Vindi)
+
+- Settings: Woo → Pagamentos → Checkout PB (só com key `CONVD…`)
+- Carrinho Woo: frete `FIXED`/`FREE` + `address_modifiable: false` (já calculado na loja)
+- Compra com um clique (opt-in, default off): `CALCULATE` com CEP origem + caixas Envio Fácil + dims do produto
+- Webhook: sync de `shipping.address`, método/valor de frete e customer no `WC_Order`
 - Split / Dokan receivers PagBank
 
 ## Meta de pedidos

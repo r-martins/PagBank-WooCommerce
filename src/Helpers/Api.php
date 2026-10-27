@@ -867,28 +867,42 @@ class Api
     }
 
     /**
-     * @param $pagBankOrderId
+     * Resolve order payload for force-update / cron.
+     * Accepts PB order id (pb_ord_… / ORDEM_…), PagBank checkout (CHEC_…) or Checkout PB (chk_…).
      *
+     * @param string $pagBankOrderId
      * @return array
      * @throws Exception
      */
-    public static function getOrderData($pagBankOrderId){
+    public static function getOrderData($pagBankOrderId)
+    {
         $api = new Api();
-        $isCheckoutPagBank = substr($pagBankOrderId, 0, 4) === 'CHEC';
-        if ($isCheckoutPagBank) {
-            $pagBankOrderId = self::getFirstOrderFromCheckout($pagBankOrderId);
-            if (is_array($pagBankOrderId)) {
+        $id = (string) $pagBankOrderId;
+        if (self::isCheckoutSessionId($id)) {
+            $resolved = self::getFirstOrderFromCheckout($id);
+            if (!is_string($resolved) || $resolved === '') {
                 return [];
             }
+            $id = $resolved;
         }
-        
-        return $api->get('ws/orders/' . $pagBankOrderId, [], 5);
+
+        return $api->get('ws/orders/' . $id, [], 5);
     }
 
     /**
-     * @param $checkoutId
+     * PagBank hosted checkout (CHEC_…) or Checkout PB (chk_…).
+     */
+    public static function isCheckoutSessionId(string $id): bool
+    {
+        return strpos($id, 'CHEC') === 0 || strpos($id, 'chk_') === 0;
+    }
+
+    /**
+     * First paid/created order id linked to a checkout session.
+     * PagBank: orders[].id — Checkout PB / API v1: order_ids[].
      *
-     * @return array|mixed
+     * @param string $checkoutId
+     * @return string|array Empty array when no order yet or error.
      * @throws Exception
      */
     public static function getFirstOrderFromCheckout($checkoutId)
@@ -896,10 +910,29 @@ class Api
         $api = new Api();
         $data = $api->get('ws/checkouts/' . $checkoutId, [], 5);
 
-        if (empty($data['orders']) || isset($data['error_messages'])) {
+        if (!is_array($data) || isset($data['error_messages']) || isset($data['error'])) {
             return [];
         }
-        
-        return $data['orders'][0]['id'] ?? [];
+
+        // PagBank hosted checkout shape
+        if (!empty($data['orders'][0]['id'])) {
+            return (string) $data['orders'][0]['id'];
+        }
+
+        // Checkout PB / API v1
+        if (!empty($data['order_ids']) && is_array($data['order_ids'])) {
+            foreach ($data['order_ids'] as $oid) {
+                if (is_string($oid) && $oid !== '') {
+                    return $oid;
+                }
+            }
+        }
+
+        // complete() last_result may be exposed on some builds
+        if (!empty($data['last_result']['order']['id'])) {
+            return (string) $data['last_result']['order']['id'];
+        }
+
+        return [];
     }
 }

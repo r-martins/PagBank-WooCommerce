@@ -42,7 +42,12 @@ class CreditCardDisplayTitle
 
         $pm = $order->get_payment_method();
 
-        return $pm === 'rm-pagbank-cc' || $pm === Connect::DOMAIN;
+        return in_array($pm, [
+            'rm-pagbank-cc',
+            Connect::DOMAIN,
+            'rm-pagbank-checkout-pb',
+            'rm-pagbank-redirect',
+        ], true);
     }
 
     public static function isApiContext(): bool

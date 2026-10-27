@@ -29,7 +29,8 @@ class ForceOrderUpdate
         $orders = Functions::getPagBankPendingOrders();
 
         foreach ($orders as $order) {
-            $pagbankOrderId = OrderMeta::get($order, 'order_id');
+            $pagbankOrderId = OrderMeta::get($order, 'order_id')
+                ?: OrderMeta::get($order, 'checkout_id');
             if (!$pagbankOrderId) {
                 continue;
             }
@@ -91,6 +92,17 @@ class ForceOrderUpdate
             case 'credit_card':
                 // Every 6 hours for 3 days
                 if ($hoursFromCreation <= 72) { // 3 days in hours
+                    return ($now - $lastCheck) >= 6 * 3600;
+                }
+                return false;
+
+            case 'checkout_pb':
+            case 'redirect':
+                // Poll checkout/session until paid — hourly for 24h, then every 6h for 7 days
+                if ($hoursFromCreation <= 24) {
+                    return ($now - $lastCheck) >= 3600;
+                }
+                if ($hoursFromCreation <= 168) {
                     return ($now - $lastCheck) >= 6 * 3600;
                 }
                 return false;

@@ -219,6 +219,42 @@ class Params
     }
 
     /**
+     * Checkout PB gateway settings (Vindi hosted checkout).
+     *
+     * @param string $key
+     * @param mixed  $default
+     * @return mixed
+     */
+    public static function getCheckoutPbConfig($key, $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-checkout-pb_settings');
+        if (is_array($settings) && array_key_exists($key, $settings)) {
+            return $settings[$key];
+        }
+        return $default;
+    }
+
+    /**
+     * https image URL allowed by Checkout PB (png/jpg/jpeg/gif/webp, no SVG).
+     */
+    public static function isAllowedCheckoutImageUrl(string $value): bool
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '' || !preg_match('#^https://#i', $trimmed)) {
+            return false;
+        }
+        try {
+            $path = (string) (parse_url($trimmed, PHP_URL_PATH) ?? '');
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (preg_match('#\.svg$#i', $path)) {
+            return false;
+        }
+        return (bool) preg_match('#\.(png|jpe?g|gif|webp)$#i', $path);
+    }
+
+    /**
      * Gets the max allowed installments or false if no limit
 	 *
      * @return false|int
@@ -472,6 +508,9 @@ class Params
                 break;
             case 'redirect':
                 $discountConfig = self::getRedirectConfig('redirect_discount', 0);
+                break;
+            case 'checkout_pb':
+                $discountConfig = self::getCheckoutPbConfig('checkout_pb_discount', 0);
                 break;
         }
         $discountType = self::getDiscountType($discountConfig);

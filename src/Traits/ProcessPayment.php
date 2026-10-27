@@ -31,11 +31,19 @@ trait ProcessPayment
         $cronMsg = wp_doing_cron() ? __(' (Atualizado via Cron)', 'pagbank-connect') : '';
         $notePrefix = Branding::notePrefix($order);
         $md5 = md5(serialize($order_data));
-        if (OrderMeta::get($order, '_last_update_md5') == $md5) {
+        $currentPm = (string) OrderMeta::get($order, 'payment_method');
+        $chargeTypePreview = (string) ($order_data['charges'][0]['payment_method']['type'] ?? '');
+        // Same payload: still refresh method meta when hosted checkout never remapped to PIX/CC/boleto.
+        $needsHostedMethodRefresh = $chargeTypePreview !== ''
+            && in_array($currentPm, ['checkout_pb', 'redirect'], true);
+        if (OrderMeta::get($order, '_last_update_md5') == $md5 && !$needsHostedMethodRefresh) {
             Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect'), $order->get_id()), 'debug');
             return; // Do not update if the data is the same
         }
         OrderMeta::set($order, '_last_update_md5', $md5);
+
+        // Checkout PB: sync canonical shipping/customer from notification/order payload.
+        self::syncCheckoutPbOrderFromPayload($order, $order_data);
         
         $charge = $order_data['charges'][0] ?? [];
         $status = $charge['status'] ?? '';
@@ -86,10 +94,26 @@ trait ProcessPayment
         $chargePaymentType = (string) ($charge['payment_method']['type'] ?? '');
         if (in_array($chargePaymentType, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true)) {
             CreditCard::applyChargeInstallmentMeta($order, $charge);
+            $installments = max(1, (int) ($charge['payment_method']['installments'] ?? 1));
+            OrderMeta::set($order, 'card_installments', $installments, true);
+            OrderMeta::set($order, '_card_installments', $installments, true);
             OrderMeta::set($order, 'tid', $charge['payment_response']['tid'] ?? null);
-            OrderMeta::set($order, '_card_brand', $charge['payment_method']['card']['brand'] ?? null);
+            $cardBrand = $charge['payment_method']['card']['brand']
+                ?? ($charge['payment_method']['card']['payment_company']['code'] ?? null);
+            OrderMeta::set($order, '_card_brand', $cardBrand);
+            if ($cardBrand) {
+                OrderMeta::set($order, '_payment_company_code', (string) $cardBrand, false);
+            }
             OrderMeta::set($order, '_card_first_digits', $charge['payment_method']['card']['first_digits'] ?? null);
             OrderMeta::set($order, '_card_last_digits', $charge['payment_method']['card']['last_digits'] ?? null);
+            if (!empty($charge['payment_method']['card']['last_digits'])) {
+                OrderMeta::set(
+                    $order,
+                    'card_last4',
+                    substr((string) $charge['payment_method']['card']['last_digits'], -4),
+                    true
+                );
+            }
             OrderMeta::set($order, '_card_holder', $charge['payment_method']['card']['holder']['name'] ?? null);
             OrderMeta::set($order, '_card_exp_month', $charge['payment_method']['card']['exp_month'] ?? null);
             OrderMeta::set($order, '_card_exp_year', $charge['payment_method']['card']['exp_year'] ?? null);
@@ -131,9 +155,38 @@ trait ProcessPayment
             }
         }
 
-        //redirect payments will change payment from 'redirect' to the payment actually used
-        if (isset($charge[0]['payment_method']['type'])) {
-            OrderMeta::set($order, 'payment_method', $charge[0]['payment_method']['type']);
+        // Persist charges so admin order-info / titles can read brand, installments, etc.
+        if (!empty($order_data['charges']) && is_array($order_data['charges'])) {
+            OrderMeta::set($order, 'order_charges', $order_data['charges'], true);
+        }
+
+        // Hosted checkout (PagBank redirect / Checkout PB): record the method actually used.
+        $previousMethod = (string) OrderMeta::get($order, 'payment_method');
+        $hostedOrigin = (string) OrderMeta::get($order, '_hosted_checkout_origin');
+        $isHostedPending = in_array($previousMethod, ['redirect', 'checkout_pb'], true)
+            || in_array($hostedOrigin, ['redirect', 'checkout_pb'], true);
+        if ($chargePaymentType !== '' && ($isHostedPending || $previousMethod === '')) {
+            $mapped = self::mapChargeTypeToPaymentMethodMeta($chargePaymentType);
+            if ($mapped !== '') {
+                $originForTitle = in_array($previousMethod, ['redirect', 'checkout_pb'], true)
+                    ? $previousMethod
+                    : ($hostedOrigin !== '' ? $hostedOrigin : $previousMethod);
+                if (in_array($previousMethod, ['redirect', 'checkout_pb'], true)) {
+                    OrderMeta::set($order, '_hosted_checkout_origin', $previousMethod, true);
+                    $originForTitle = $previousMethod;
+                }
+                OrderMeta::set($order, 'payment_method', $mapped, true);
+                if (in_array($originForTitle, ['redirect', 'checkout_pb'], true)) {
+                    self::maybeUpdateHostedCheckoutPaymentTitle($order, $charge, $originForTitle, $mapped);
+                }
+                self::persistHostedCheckoutMethodExtras($order, $order_data, $charge, $mapped);
+            }
+        } elseif ($chargePaymentType !== '' && isset($charge['payment_method']['type'])) {
+            // Legacy buggy path used $charge[0]; keep non-hosted updates when type present.
+            $mapped = self::mapChargeTypeToPaymentMethodMeta($chargePaymentType);
+            if ($mapped !== '' && $previousMethod === '') {
+                OrderMeta::set($order, 'payment_method', $mapped, true);
+            }
         }
 
         if (isset($charge['payment_response']['reference'])) {
@@ -317,12 +370,26 @@ trait ProcessPayment
 
         $order_pagbank_id = OrderMeta::get($order, 'order_id');
         if ($order_pagbank_id != $id) {
-            if ($order->get_payment_method() == 'rm-pagbank-redirect') {
-                // get x-product-id header
-                $checkoutId = $_SERVER['HTTP_X_PRODUCT_ID'] ?? null;
-                if ($order_pagbank_id != $checkoutId)
-                    wp_die('ID do pedido não corresponde ao código de checkout. Verifique header x-product-id.', 400);
-            }else{
+            $pm = (string) $order->get_payment_method();
+            $hostedOrigin = (string) OrderMeta::get($order, '_hosted_checkout_origin');
+            $paymentMethodMeta = (string) OrderMeta::get($order, 'payment_method');
+            $isHostedCheckout = in_array($pm, ['rm-pagbank-redirect', 'rm-pagbank-checkout-pb'], true)
+                || in_array($hostedOrigin, ['redirect', 'checkout_pb'], true)
+                || in_array($paymentMethodMeta, ['redirect', 'checkout_pb'], true);
+            if ($isHostedCheckout) {
+                // Before first paid order is linked, order_id is empty or still the checkout session (chk_/CHEC_).
+                $checkoutId = (string) (
+                    OrderMeta::get($order, 'checkout_id')
+                    ?: ($_SERVER['HTTP_X_PRODUCT_ID'] ?? '')
+                );
+                $awaitingOrderLink = $order_pagbank_id === null
+                    || $order_pagbank_id === ''
+                    || Api::isCheckoutSessionId((string) $order_pagbank_id)
+                    || ($checkoutId !== '' && (string) $order_pagbank_id === $checkoutId);
+                if (!$awaitingOrderLink) {
+                    wp_die('ID do pedido não corresponde ao código de checkout.', 400);
+                }
+            } else {
                 wp_die('ID do pedido não corresponde', 400);
             }
         }
@@ -359,6 +426,7 @@ trait ProcessPayment
                 $endpoint = 'ws/tokens/cards';
                 break;
             case 'redirect':
+            case 'checkout_pb':
                 $endpoint = 'ws/checkouts';
                 break;
             default:
@@ -385,6 +453,308 @@ trait ProcessPayment
         }
 
         return $resp;
+    }
+
+    /**
+     * Map API charge type to OrderMeta payment_method (plugin convention).
+     */
+    public static function mapChargeTypeToPaymentMethodMeta(string $chargeType): string
+    {
+        $type = strtoupper($chargeType);
+        if ($type === 'CREDIT_CARD' || $type === 'CREDIT_CARD_3DS') {
+            return 'credit_card';
+        }
+        if ($type === 'PIX' || $type === 'BOLEPIX') {
+            return 'pix';
+        }
+        if ($type === 'BOLETO') {
+            return 'boleto';
+        }
+        return '';
+    }
+
+    /**
+     * Human-readable payment method title for hosted checkout orders in admin/emails.
+     *
+     * @param array<string, mixed> $charge
+     */
+    public static function maybeUpdateHostedCheckoutPaymentTitle(
+        WC_Order $order,
+        array $charge,
+        string $origin,
+        string $mappedMethod
+    ): void {
+        $prefix = $origin === 'checkout_pb'
+            ? __('Checkout PB', 'pagbank-connect')
+            : __('Checkout PagBank', 'pagbank-connect');
+
+        if ($mappedMethod === 'pix') {
+            $order->set_payment_method_title($prefix . ' — PIX');
+            return;
+        }
+        if ($mappedMethod === 'boleto') {
+            $order->set_payment_method_title($prefix . ' — ' . __('Boleto', 'pagbank-connect'));
+            return;
+        }
+        if ($mappedMethod === 'credit_card') {
+            $brand = (string) (
+                $charge['payment_method']['card']['brand']
+                ?? ($charge['payment_method']['card']['payment_company']['code'] ?? null)
+                ?? OrderMeta::get($order, '_card_brand')
+                ?? ''
+            );
+            $brand = $brand !== '' ? wc_strtoupper(str_replace('_', ' ', $brand)) : '';
+            $inst = max(1, (int) (
+                $charge['payment_method']['installments']
+                ?? OrderMeta::get($order, 'card_installments')
+                ?? 1
+            ));
+            $parts = array_filter([
+                $prefix,
+                __('Cartão', 'pagbank-connect') . ($brand !== '' ? ' ' . $brand : ''),
+                $inst > 1 ? ($inst . 'x') : null,
+            ]);
+            $order->set_payment_method_title(implode(' — ', $parts));
+        }
+    }
+
+    /**
+     * PIX / boleto links from hosted-checkout charge payloads (not set at session create).
+     *
+     * @param array<string, mixed> $order_data
+     * @param array<string, mixed> $charge
+     */
+    public static function persistHostedCheckoutMethodExtras(
+        WC_Order $order,
+        array $order_data,
+        array $charge,
+        string $mappedMethod
+    ): void {
+        if ($mappedMethod === 'pix') {
+            $qr = $order_data['qr_codes'][0] ?? null;
+            if (is_array($qr)) {
+                if (!empty($qr['links'][0]['href'])) {
+                    OrderMeta::set($order, 'pix_qrcode', $qr['links'][0]['href'], true);
+                }
+                if (!empty($qr['text'])) {
+                    OrderMeta::set($order, 'pix_qrcode_text', $qr['text'], true);
+                }
+                if (!empty($qr['expiration_date'])) {
+                    OrderMeta::set($order, 'pix_qrcode_expiration', $qr['expiration_date'], true);
+                }
+            }
+            return;
+        }
+
+        if ($mappedMethod !== 'boleto') {
+            return;
+        }
+
+        $boletoPdf = $charge['links'][0]['href']
+            ?? ($order_data['links'][0]['href'] ?? null)
+            ?? ($charge['payment_method']['boleto']['print_url'] ?? null);
+        $boletoPng = $charge['links'][1]['href'] ?? null;
+        $partner = (string) OrderMeta::get($order, 'partner');
+        if ($partner === 'vindi') {
+            $boletoPng = null;
+        }
+        if ($boletoPdf) {
+            OrderMeta::set($order, 'boleto_pdf', $boletoPdf, true);
+        }
+        if ($boletoPng) {
+            OrderMeta::set($order, 'boleto_png', $boletoPng, true);
+        }
+        $boleto = is_array($charge['payment_method']['boleto'] ?? null)
+            ? $charge['payment_method']['boleto']
+            : [];
+        if (!empty($boleto['due_date'])) {
+            OrderMeta::set($order, 'boleto_due_date', $boleto['due_date'], true);
+        }
+        if (!empty($boleto['formatted_barcode']) || !empty($order_data['boleto']['formatted_barcode'])) {
+            OrderMeta::set(
+                $order,
+                'boleto_barcode_formatted',
+                $boleto['formatted_barcode'] ?? $order_data['boleto']['formatted_barcode'],
+                true
+            );
+        }
+        if (!empty($boleto['barcode']) || !empty($order_data['boleto']['barcode'])) {
+            OrderMeta::set(
+                $order,
+                'boleto_barcode',
+                $boleto['barcode'] ?? $order_data['boleto']['barcode'],
+                true
+            );
+        }
+    }
+
+    /**
+     * Apply Checkout PB canonical shipping/customer onto the Woo order.
+     *
+     * @param WC_Order $order
+     * @param array    $order_data Canonical PB order (or nested under 'order')
+     */
+    public static function syncCheckoutPbOrderFromPayload(WC_Order $order, array $order_data): void
+    {
+        $pm = (string) OrderMeta::get($order, 'payment_method');
+        $checkoutId = (string) OrderMeta::get($order, 'checkout_id');
+        $isCheckoutPb = $pm === 'checkout_pb'
+            || $order->get_payment_method() === 'rm-pagbank-checkout-pb'
+            || strpos($checkoutId, 'chk_') === 0;
+        if (!$isCheckoutPb) {
+            return;
+        }
+
+        // Nested complete result: { order: {...} }
+        if (isset($order_data['order']) && is_array($order_data['order']) && empty($order_data['id'])) {
+            $order_data = $order_data['order'];
+        }
+
+        $notePrefix = Branding::notePrefix($order);
+        $changed = false;
+
+        if (!empty($order_data['customer']) && is_array($order_data['customer'])) {
+            $c = $order_data['customer'];
+            if (!empty($c['name'])) {
+                $parts = preg_split('/\s+/', trim((string) $c['name']), 2);
+                $order->set_billing_first_name($parts[0] ?? '');
+                $order->set_billing_last_name($parts[1] ?? '');
+                $changed = true;
+            }
+            if (!empty($c['email'])) {
+                $order->set_billing_email((string) $c['email']);
+                $changed = true;
+            }
+            if (!empty($c['tax_id'])) {
+                OrderMeta::set($order, '_rm_pagbank_customer_document', preg_replace('/\D+/', '', (string) $c['tax_id']), true);
+            }
+            if (!empty($c['address']) && is_array($c['address'])) {
+                self::applyPbAddressToOrder($order, $c['address'], 'billing');
+                $changed = true;
+            }
+            if (!empty($c['phone'])) {
+                $phone = $c['phone'];
+                if (is_array($phone)) {
+                    $first = $phone[0] ?? $phone;
+                    if (is_array($first)) {
+                        $digits = ($first['area'] ?? '') . ($first['number'] ?? '');
+                        if ($digits !== '') {
+                            $order->set_billing_phone((string) $digits);
+                            $changed = true;
+                        }
+                    }
+                } elseif (is_string($phone) && $phone !== '') {
+                    $order->set_billing_phone($phone);
+                    $changed = true;
+                }
+            }
+        }
+
+        $shipping = is_array($order_data['shipping'] ?? null) ? $order_data['shipping'] : null;
+        if ($shipping) {
+            if (!empty($shipping['address']) && is_array($shipping['address'])) {
+                self::applyPbAddressToOrder($order, $shipping['address'], 'shipping');
+                $changed = true;
+            }
+
+            $amountCents = null;
+            if (isset($shipping['amount'])) {
+                $amountCents = (int) $shipping['amount'];
+            } elseif (isset($order_data['amounts']['shipping'])) {
+                $amountCents = (int) $order_data['amounts']['shipping'];
+            } elseif (is_array($shipping['selected'] ?? null) && isset($shipping['selected']['amount'])) {
+                $amountCents = (int) $shipping['selected']['amount'];
+            }
+
+            if ($amountCents !== null) {
+                $amount = $amountCents / 100;
+                $label = (string) (
+                    $shipping['service_type']
+                    ?? ($shipping['selected']['method'] ?? null)
+                    ?? ($shipping['method'] ?? null)
+                    ?? __('Frete', 'pagbank-connect')
+                );
+                if (is_array($shipping['selected'] ?? null)) {
+                    $sel = $shipping['selected'];
+                    $parts = array_filter([
+                        $sel['provider'] ?? null,
+                        $sel['method'] ?? null,
+                        $shipping['service_type'] ?? null,
+                    ]);
+                    if ($parts) {
+                        $label = implode(' / ', $parts);
+                    }
+                }
+
+                // Replace existing shipping lines
+                foreach ($order->get_items('shipping') as $item_id => $item) {
+                    $order->remove_item($item_id);
+                }
+                if ($amount > 0 || strtoupper((string) ($shipping['type'] ?? '')) === 'FREE') {
+                    $rate = new \WC_Order_Item_Shipping();
+                    $rate->set_method_title($label);
+                    $rate->set_method_id('rm_pagbank_checkout_pb');
+                    $rate->set_total(max(0, $amount));
+                    $order->add_item($rate);
+                }
+                $order->set_shipping_total(max(0, $amount));
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $order->calculate_totals(false);
+            $order->add_order_note(
+                $notePrefix . ': Endereço/frete sincronizados a partir do Checkout PB.'
+            );
+            $order->save();
+        }
+    }
+
+    /**
+     * @param WC_Order             $order
+     * @param array<string, mixed> $addr
+     * @param string               $type billing|shipping
+     */
+    protected static function applyPbAddressToOrder(WC_Order $order, array $addr, string $type): void
+    {
+        $street = (string) ($addr['street'] ?? '');
+        $number = (string) ($addr['number'] ?? '');
+        $complement = (string) ($addr['complement'] ?? '');
+        $locality = (string) ($addr['locality'] ?? '');
+        $city = (string) ($addr['city'] ?? '');
+        $region = (string) ($addr['region_code'] ?? ($addr['region'] ?? ''));
+        $postal = preg_replace('/\D+/', '', (string) ($addr['postal_code'] ?? '')) ?? '';
+        $country = (string) ($addr['country'] ?? 'BR');
+        if (strtoupper($country) === 'BRA') {
+            $country = 'BR';
+        }
+
+        if ($type === 'shipping') {
+            $order->set_shipping_address_1($street);
+            $order->set_shipping_address_2($complement);
+            $order->set_shipping_city($city);
+            $order->set_shipping_state($region);
+            $order->set_shipping_postcode($postal);
+            $order->set_shipping_country($country);
+            $order->update_meta_data('_shipping_number', $number);
+            $order->update_meta_data('_shipping_neighborhood', $locality);
+            if ($complement !== '') {
+                $order->update_meta_data('_shipping_complement', $complement);
+            }
+        } else {
+            $order->set_billing_address_1($street);
+            $order->set_billing_address_2($complement);
+            $order->set_billing_city($city);
+            $order->set_billing_state($region);
+            $order->set_billing_postcode($postal);
+            $order->set_billing_country($country);
+            $order->update_meta_data('_billing_number', $number);
+            $order->update_meta_data('_billing_neighborhood', $locality);
+            if ($complement !== '') {
+                $order->update_meta_data('_billing_complement', $complement);
+            }
+        }
     }
 
     /**

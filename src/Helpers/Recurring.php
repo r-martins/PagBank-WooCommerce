@@ -457,8 +457,149 @@ class Recurring
         return (float) $this->getRecurringMeta($product, '_recurring_discount_amount') > 0
             && (int) $this->getRecurringMeta($product, '_recurring_discount_cycles') > 0;
     }
-    
 
+    /**
+     * API Checkout PB recurrence units: MONTH|YEAR with length 1 only.
+     */
+    public function checkoutPbRecurrenceUnit(?string $frequency, int $cycle): ?string
+    {
+        if ($cycle < 1) {
+            $cycle = 1;
+        }
+        if ($frequency === 'monthly' && $cycle === 1) {
+            return 'MONTH';
+        }
+        if ($frequency === 'yearly' && $cycle === 1) {
+            return 'YEAR';
+        }
+        return null;
+    }
+
+    /**
+     * Non-recurring products are fine. Recurring must map to MONTH|YEAR length 1.
+     *
+     * @param \WC_Product|null|false $product
+     */
+    public function productSupportsCheckoutPbRecurrence($product): bool
+    {
+        if (!$this->isProductRecurring($product)) {
+            return true;
+        }
+        $frequency = (string) $this->getRecurringMeta($product, '_frequency');
+        $cycle = (int) $this->getRecurringMeta($product, '_frequency_cycle');
+
+        return $this->checkoutPbRecurrenceUnit($frequency, $cycle) !== null;
+    }
+
+    /**
+     * True when the cart has at least one PagBank recurring product that Checkout PB cannot bill.
+     */
+    public function cartHasUnsupportedCheckoutPbRecurrence(?WC_Cart $cart = null): bool
+    {
+        if (Params::getRecurringConfig('recurring_enabled', 'no') !== 'yes') {
+            return false;
+        }
+        if (!did_action('woocommerce_load_cart_from_session')) {
+            return false;
+        }
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+        if (!$cart) {
+            return false;
+        }
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem['data'] ?? null;
+            if ($this->isProductRecurring($product) && !$this->productSupportsCheckoutPbRecurrence($product)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True when the order has at least one PagBank recurring product that Checkout PB cannot bill.
+     */
+    public function orderHasUnsupportedCheckoutPbRecurrence(WC_Order $order): bool
+    {
+        if (Params::getRecurringConfig('recurring_enabled', 'no') !== 'yes') {
+            return false;
+        }
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+            if ($this->isProductRecurring($product) && !$this->productSupportsCheckoutPbRecurrence($product)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function unsupportedCheckoutPbRecurrenceMessage(): string
+    {
+        return __(
+            'Checkout PB não está disponível para esta assinatura: a recorrência deve ser mensal ou anual (ciclo 1). Use Cartão de Crédito PagBank ou ajuste a frequência do produto.',
+            'pagbank-connect'
+        );
+    }
+
+    /**
+     * Checkout PB /v1/checkouts `recurrence` from order line items.
+     * API accepts only MONTH|YEAR with length 1 (card-only on the session).
+     *
+     * @return array{name:string,interval:array{unit:string,length:int},billing_cycles?:int}|null
+     */
+    public function buildCheckoutPbRecurrenceFromOrder(WC_Order $order): ?array
+    {
+        if (Params::getRecurringConfig('recurring_enabled', 'no') !== 'yes') {
+            return null;
+        }
+
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+            if (!$this->isProductRecurring($product)) {
+                continue;
+            }
+
+            $frequency = (string) $this->getRecurringMeta($product, '_frequency');
+            $cycle = (int) $this->getRecurringMeta($product, '_frequency_cycle');
+            $unit = $this->checkoutPbRecurrenceUnit($frequency, $cycle);
+
+            if ($unit === null) {
+                Functions::log(
+                    sprintf(
+                        'Checkout PB: produto recorrente #%d com frequência %s/%d não mapeia para recurrence (só MONTH|YEAR length 1).',
+                        $product->get_id(),
+                        $frequency,
+                        $cycle
+                    ),
+                    'warning'
+                );
+                // Unsupported recurring must not fall through as a one-shot checkout.
+                return null;
+            }
+
+            $recurringProduct = $this->getRecurringProduct($product);
+            $name = $recurringProduct ? (string) $recurringProduct->get_name() : (string) $product->get_name();
+            $name = trim($name) !== '' ? $name : __('Assinatura', 'pagbank-connect');
+
+            $recurrence = [
+                'name' => function_exists('mb_substr') ? mb_substr($name, 0, 80) : substr($name, 0, 80),
+                'interval' => [
+                    'unit' => $unit,
+                    'length' => 1,
+                ],
+            ];
+
+            $maxCycles = (int) $this->getRecurringMeta($product, '_recurring_max_cycles');
+            if ($maxCycles > 0) {
+                $recurrence['billing_cycles'] = $maxCycles;
+            }
+
+            return $recurrence;
+        }
+
+        return null;
+    }
 
     /**
      * Checks if the user has access to restricted content

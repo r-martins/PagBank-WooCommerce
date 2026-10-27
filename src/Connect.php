@@ -17,8 +17,10 @@ use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
 use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
 use RM_PagBank\Connect\Standalone\Redirect;
 use RM_PagBank\Connect\Standalone\Redirect as StandaloneRedirect;
+use RM_PagBank\Connect\Standalone\CheckoutPb as StandaloneCheckoutPb;
 use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
 use RM_PagBank\Connect\Blocks\Redirect as RedirectBlock;
+use RM_PagBank\Connect\Blocks\CheckoutPb as CheckoutPbBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
 use RM_PagBank\Cron\CancelExpiredPix;
@@ -87,6 +89,9 @@ class Connect
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
         add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
+        add_filter('woocommerce_get_checkout_order_received_url', [StandaloneCheckoutPb::class, 'getOrderReceivedURL'], 101, 2);
+        add_filter('woocommerce_get_checkout_payment_url', [StandaloneCheckoutPb::class, 'changePaymentLink'], 11, 2);
+        \RM_PagBank\Connect\CheckoutPbOneClick::init();
         add_action('rest_api_init', [CreditCard::class,'restApiInstallments']);
 
         // Load plugin files
@@ -159,6 +164,7 @@ class Connect
                 $payment_method_registry->register( new PixBlock() );
                 $payment_method_registry->register( new CreditCardBlock() );
                 $payment_method_registry->register( new RedirectBlock() );
+                $payment_method_registry->register( new CheckoutPbBlock() );
             }
         );
     }
@@ -206,6 +212,10 @@ class Connect
                 $gateways[] = $redirect;
             }
 
+            if ($caps->hasCheckoutPb()) {
+                $gateways[] = new StandaloneCheckoutPb();
+            }
+
             return $gateways;
         }
 
@@ -228,6 +238,9 @@ class Connect
         $caps = new \RM_PagBank\Partner\Capabilities();
         if (!$caps->hasHostedCheckout() && isset($gateways['rm-pagbank-redirect'])) {
             unset($gateways['rm-pagbank-redirect']);
+        }
+        if (!$caps->hasCheckoutPb() && isset($gateways['rm-pagbank-checkout-pb'])) {
+            unset($gateways['rm-pagbank-checkout-pb']);
         }
         return $gateways;
     }
@@ -285,6 +298,7 @@ class Connect
             self::DOMAIN . '-cc',
             self::DOMAIN . '-boleto',
             self::DOMAIN . '-redirect',
+            self::DOMAIN . '-checkout-pb',
         ];
 
         foreach (array_keys($gateways) as $id) {
@@ -411,6 +425,7 @@ class Connect
             'connect_key' => $connectKeyStatus,
             'capabilities' => [
                 'hosted_checkout' => $hostedCheckoutAvailable,
+                'checkout_pb' => $caps->hasCheckoutPb(),
                 'split' => $caps->hasSplit(),
                 'uses_gateway_token' => $caps->usesGatewayToken(),
                 'uses_encrypted_card' => $caps->usesEncryptedCard(),
@@ -491,6 +506,14 @@ class Connect
                         'no'
                     ),
                     'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods', ''),
+                ],
+                'checkout_pb' => [
+                    'available' => $caps->hasCheckoutPb(),
+                    'enabled' => $caps->hasCheckoutPb()
+                        ? Params::getCheckoutPbConfig('enabled', 'no')
+                        : 'no',
+                    'one_click_enabled' => Params::getCheckoutPbConfig('checkout_pb_one_click_enabled', 'no'),
+                    'expiry_minutes' => Params::getCheckoutPbConfig('checkout_pb_expiry_minutes', '120'),
                 ],
             ],
             'extra' => [
@@ -902,16 +925,8 @@ class Connect
             return;
         }
 
-        // if cart is recurring only show PagBank as payment method
-        $recHelper = new Recurring();
-        $isCartRecurring = $recHelper->isCartRecurring();
-        if ($isCartRecurring) {
-            add_filter('woocommerce_available_payment_gateways', function ($gateways) {
-                    $cc = new StandaloneCc();
-                    $cc->id = Connect::DOMAIN . '-cc';
-                    return [$cc->id => $cc];
-            });
-        }
+        // Restriction is applied by recurringRestrictPaymentMethod (always hooked).
+        // Historically this also added a second filter; keep the hook for BC.
     }
 
     public static function recurringRestrictPaymentMethod($gateways)
@@ -919,9 +934,32 @@ class Connect
         $recHelper = new Recurring();
         $isCartRecurring = $recHelper->isCartRecurring();
         if ($isCartRecurring) {
-            $cc = new StandaloneCc();
-            $cc->id = Connect::DOMAIN . '-cc';
-            return [$cc->id => $cc];
+            $out = [];
+            $ccId = Connect::DOMAIN . '-cc';
+            $checkoutPbId = Connect::DOMAIN . '-checkout-pb';
+            if (isset($gateways[$ccId])) {
+                $out[$ccId] = $gateways[$ccId];
+            } else {
+                $cc = new StandaloneCc();
+                $cc->id = $ccId;
+                $out[$ccId] = $cc;
+            }
+            // Checkout PB only when recurrence maps to API MONTH|YEAR length 1.
+            if (
+                isset($gateways[$checkoutPbId])
+                && !$recHelper->cartHasUnsupportedCheckoutPbRecurrence()
+            ) {
+                $out[$checkoutPbId] = $gateways[$checkoutPbId];
+            }
+            return $out;
+        }
+        // Non-recurring cart: still hide Checkout PB if a recurring line somehow does not map.
+        $checkoutPbId = Connect::DOMAIN . '-checkout-pb';
+        if (
+            isset($gateways[$checkoutPbId])
+            && $recHelper->cartHasUnsupportedCheckoutPbRecurrence()
+        ) {
+            unset($gateways[$checkoutPbId]);
         }
         return $gateways;
     }
@@ -1228,17 +1266,53 @@ class Connect
             wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
         }
 
-        // Obter o pedido com base no pagbank_order_id e id
         $order = wc_get_order($order_id);
+        $metaOrderId = (string) OrderMeta::get($order, 'order_id');
+        $metaCheckoutId = (string) OrderMeta::get($order, 'checkout_id');
+        $idMatches = $order
+            && (
+                $metaOrderId === $pagbank_order_id
+                || $metaCheckoutId === $pagbank_order_id
+            );
 
-        if (!$order || OrderMeta::get($order, 'order_id') !== $pagbank_order_id) {
+        if (!$idMatches) {
             wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
         }
 
-
         $edit_order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
+        if (function_exists('wc_get_order') && class_exists('\Automattic\WooCommerce\Utilities\OrderUtil')
+            && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()) {
+            $edit_order_url = admin_url('admin.php?page=wc-orders&action=edit&id=' . $order_id);
+        }
 
-        $orderData = Api::getOrderData($pagbank_order_id);
+        try {
+            $orderData = Api::getOrderData($pagbank_order_id);
+        } catch (\Exception $e) {
+            $order->add_order_note(
+                __('Erro ao consultar pedido/checkout: ', 'pagbank-connect') . $e->getMessage(),
+                false,
+                true
+            );
+            return wp_redirect($edit_order_url);
+        }
+
+        if (empty($orderData) || empty($orderData['id'])) {
+            $hint = Api::isCheckoutSessionId($pagbank_order_id)
+                ? __('Checkout consultado, mas ainda sem pedido pago vinculado (order_ids vazio).', 'pagbank-connect')
+                : __('Nenhum dado retornado pela API.', 'pagbank-connect');
+            $order->add_order_note(
+                __('Pedido atualizado manualmente: ', 'pagbank-connect') . $hint,
+                false,
+                true
+            );
+            return wp_redirect($edit_order_url);
+        }
+
+        // Persist resolved order id when we started from a checkout session id.
+        if (Api::isCheckoutSessionId($pagbank_order_id) && !empty($orderData['id'])) {
+            OrderMeta::set($order, 'order_id', (string) $orderData['id'], true);
+        }
+
         $md5 = md5(serialize($orderData));
         if (OrderMeta::get($order, '_last_update_md5') == $md5) {
             $order->add_order_note(

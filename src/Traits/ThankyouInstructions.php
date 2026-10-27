@@ -4,6 +4,8 @@ namespace RM_PagBank\Traits;
 
 use RM_PagBank\Connect\Payments\Boleto;
 use RM_PagBank\Connect\Payments\Pix;
+use RM_PagBank\Connect\Payments\Redirect;
+use RM_PagBank\Connect\Payments\CheckoutPb;
 use RM_PagBank\Connect\Recurring;
 use RM_PagBank\Connect\Payments\CreditCard;
 use RM_PagBank\Helpers\OrderMeta;
@@ -28,6 +30,12 @@ trait ThankyouInstructions
                 break;
             case 'credit_card':
                 $method = new CreditCard($order);
+                break;
+            case 'redirect':
+                $method = new Redirect($order);
+                break;
+            case 'checkout_pb':
+                $method = new CheckoutPb($order);
                 break;
         }
         if (!empty($method)) {

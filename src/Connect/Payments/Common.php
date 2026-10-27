@@ -434,6 +434,37 @@ class Common
 
 
     /**
+     * Pay URL from checkout create response (PagBank or Checkout PB).
+     *
+     * @param array $response
+     * @return string|null
+     */
+    public static function extractCheckoutPayUrl(array $response): ?string
+    {
+        foreach (['url', 'payment_url', 'checkout_url'] as $key) {
+            if (!empty($response[$key]) && is_string($response[$key])) {
+                return $response[$key];
+            }
+        }
+        if (!empty($response['links']) && is_array($response['links'])) {
+            foreach ($response['links'] as $link) {
+                if (!is_array($link)) {
+                    continue;
+                }
+                $rel = strtoupper((string) ($link['rel'] ?? ''));
+                if (($rel === 'PAY' || $rel === 'CHECKOUT') && !empty($link['href']) && is_string($link['href'])) {
+                    return $link['href'];
+                }
+            }
+            // PagBank legacy: PAY often at index 1
+            if (!empty($response['links'][1]['href']) && is_string($response['links'][1]['href'])) {
+                return $response['links'][1]['href'];
+            }
+        }
+        return null;
+    }
+
+    /**
 	 * Process response from the API and add the metadata to the order
      * @param WC_Order $order
      * @param array    $response
@@ -498,14 +529,22 @@ class Common
                 $order->set_props(['payment_method' => 'rm-pagbank-cc']);
 				break;
             case 'redirect':
-                OrderMeta::set($order, 'redirect_url', $response['links'][1]['href'] ?? null, true);
-                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? null, false);
+                OrderMeta::set($order, 'redirect_url', self::extractCheckoutPayUrl($response), true);
+                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? ($response['expires_at'] ?? null), false);
                 OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
                 $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
                 break;
+            case 'checkout_pb':
+                OrderMeta::set($order, 'redirect_url', self::extractCheckoutPayUrl($response), true);
+                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? ($response['expires_at'] ?? null), false);
+                OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
+                $order->set_props(['payment_method' => 'rm-pagbank-checkout-pb']);
+                break;
                 
         }
-        if (isset($response['id']) && substr($response['id'], 0, 4) != 'CHEC'){ //if not a pagbank checkout code
+        $respId = (string) ($response['id'] ?? '');
+        // Checkout sessions (PagBank CHEC_* or PB chk_*) are not order ids.
+        if ($respId !== '' && strpos($respId, 'CHEC') !== 0 && strpos($respId, 'chk_') !== 0) {
             OrderMeta::set($order, 'order_id', $response['id'], true);
         }
         $chargeId = $response['charges'][0]['id']

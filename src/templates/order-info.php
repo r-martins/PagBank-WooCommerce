@@ -17,6 +17,10 @@ $charge_id = OrderMeta::get($order, 'charge_id');
 $bill_id = OrderMeta::get($order, 'partner_bill_id');
 $isRecurringOrder = OrderMeta::get($order, '_is_recurring') > 0 || $order->get_meta('_recurring_cycle') > 0;
 $pbOrderId = OrderMeta::get($order, 'order_id');
+// Checkout PB / redirect pending: only checkout session id until payment creates an order.
+if (!$pbOrderId) {
+	$pbOrderId = OrderMeta::get($order, 'checkout_id');
+}
 $isSandbox = (string) OrderMeta::get($order, 'is_sandbox') === '1';
 $partner = (string) OrderMeta::get($order, 'partner');
 if ($partner === '') {
@@ -64,15 +68,57 @@ $logoRel = $branding->orderAdminLogo();
         </span>
     <?php endif;?>
 
-    <?php if(OrderMeta::get($order, 'payment_method') === 'pix'):?>
+    <?php
+	$paymentMethodMeta = (string) OrderMeta::get($order, 'payment_method');
+	$hostedOrigin = (string) OrderMeta::get($order, '_hosted_checkout_origin');
+	$checkoutSessionId = (string) OrderMeta::get($order, 'checkout_id');
+	$isHostedCheckout = in_array($paymentMethodMeta, ['checkout_pb', 'redirect'], true)
+		|| in_array($hostedOrigin, ['checkout_pb', 'redirect'], true)
+		|| (strpos($checkoutSessionId, 'chk_') === 0)
+		|| (strpos($checkoutSessionId, 'CHEC') === 0);
+	if ($isHostedCheckout):
+		$hostedLabel = ($hostedOrigin === 'redirect' || $paymentMethodMeta === 'redirect' || strpos($checkoutSessionId, 'CHEC') === 0)
+			? __('Checkout PagBank', 'pagbank-connect')
+			: __('Checkout PB', 'pagbank-connect');
+		?>
+		<span class="form-field form-field-wide ps-pagbank-info">
+			<?php echo esc_html($hostedLabel); ?>
+			<?php if ($checkoutSessionId !== ''): ?>
+				<br/><small><?php echo esc_html(sprintf(
+					/* translators: %s = checkout session id */
+					__('Sessão: %s', 'pagbank-connect'),
+					$checkoutSessionId
+				)); ?></small>
+			<?php endif; ?>
+			<?php
+			$payUrl = OrderMeta::get($order, 'redirect_url');
+			if ($payUrl && !$order->is_paid() && in_array($order->get_status(), ['pending', 'on-hold'], true)):
+				?>
+				<br/><a href="<?php echo esc_url($payUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Link de pagamento', 'pagbank-connect'); ?></a><span class="dashicons dashicons-external"></span>
+			<?php endif; ?>
+		</span>
+	<?php endif; ?>
+
+    <?php if($paymentMethodMeta === 'pix'):?>
         <span class="form-field form-field-wide ps-pagbank-info">
-            <a href="<?php echo esc_url(\RM_PagBank\Helpers\PixQr::getDisplayUrl($order))?>" target="_blank" rel="noopener noreferrer" title="<?php echo esc_attr__('Abrir QrCode Pix em nova aba.', 'pagbank-connect'); ?>">Ver QrCode Pix</a><span class="dashicons dashicons-external"></span>
+			<?php esc_html_e('PIX', 'pagbank-connect'); ?>
+			<?php if (OrderMeta::get($order, 'pix_qrcode') || OrderMeta::get($order, 'pix_qrcode_text')): ?>
+            — <a href="<?php echo esc_url(\RM_PagBank\Helpers\PixQr::getDisplayUrl($order))?>" target="_blank" rel="noopener noreferrer" title="<?php echo esc_attr__('Abrir QrCode Pix em nova aba.', 'pagbank-connect'); ?>">Ver QrCode Pix</a><span class="dashicons dashicons-external"></span>
+			<?php endif; ?>
         </span>
     <?php endif;?>
 
 	<?php
-	$paymentMethodMeta = (string) OrderMeta::get($order, 'payment_method');
+	$chargesMeta = OrderMeta::get($order, 'order_charges');
+	$chargePm = is_array($chargesMeta) && isset($chargesMeta[0]['payment_method']) && is_array($chargesMeta[0]['payment_method'])
+		? $chargesMeta[0]['payment_method']
+		: [];
+	$chargeType = (string) ($chargePm['type'] ?? '');
 	$isCreditCardMethod = in_array($paymentMethodMeta, ['credit_card', 'credit_card_token', 'cc'], true);
+	// Fallback: charge payload already has card data but meta not remapped yet.
+	if (!$isCreditCardMethod && $isHostedCheckout) {
+		$isCreditCardMethod = in_array($chargeType, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true);
+	}
 	if ($isCreditCardMethod):
 		$cardBrand = (string) (
 			OrderMeta::get($order, '_card_brand')
@@ -93,6 +139,30 @@ $logoRel = $branding->orderAdminLogo();
 			?: OrderMeta::get($order, '_card_holder_name')
 			?: ''
 		);
+		$cardInstallments = (int) (
+			OrderMeta::get($order, 'card_installments')
+			?: OrderMeta::get($order, '_card_installments')
+			?: 0
+		);
+		// Fallback from persisted charge (webhook / force update).
+		if (is_array($chargePm['card'] ?? null)) {
+			$c = $chargePm['card'];
+			if ($cardBrand === '') {
+				$cardBrand = (string) ($c['brand'] ?? ($c['payment_company']['code'] ?? ''));
+			}
+			if ($cardFirst === '' && !empty($c['first_digits'])) {
+				$cardFirst = (string) $c['first_digits'];
+			}
+			if ($cardLast === '' && !empty($c['last_digits'])) {
+				$cardLast = (string) $c['last_digits'];
+			}
+			if ($cardHolder === '' && !empty($c['holder']['name'])) {
+				$cardHolder = (string) $c['holder']['name'];
+			}
+		}
+		if ($cardInstallments < 1 && !empty($chargePm['installments'])) {
+			$cardInstallments = max(1, (int) $chargePm['installments']);
+		}
 		// Trial token response stored on the order
 		$recurringCard = OrderMeta::get($order, 'order_recurring_card');
 		if (is_array($recurringCard)) {
@@ -111,8 +181,8 @@ $logoRel = $branding->orderAdminLogo();
 		}
 		?>
 		<span class="form-field form-field-wide ps-pagbank-info">
-			<?php if(OrderMeta::get($order, 'card_installments')):?>
-				<?php _e('Cartão de Crédito em', 'pagbank-connect');?> <?php esc_html_e(OrderMeta::get($order, 'card_installments'), 'pagbank-connect');?>x
+			<?php if($cardInstallments > 1):?>
+				<?php _e('Cartão de Crédito em', 'pagbank-connect');?> <?php echo esc_html((string) $cardInstallments);?>x
 			<?php else: ?>
 				<?php _e('Cartão de Crédito', 'pagbank-connect');?>
 			<?php endif;?>
