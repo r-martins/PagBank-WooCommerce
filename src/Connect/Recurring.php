@@ -592,7 +592,7 @@ class Recurring
      *
      * @return void
      */
-    public function processRecurringPayments(\stdClass $subscription = null)
+    public function processRecurringPayments(?\stdClass $subscription = null)
     {
         global $wpdb;
         $recHelper = new \RM_PagBank\Helpers\Recurring();
@@ -2026,7 +2026,7 @@ class Recurring
      *
      * @return stdClass|WC_Order[]
      */
-    protected function getUserRecurringOrders(int $userId = null)
+    protected function getUserRecurringOrders(?int $userId = null)
     {
         $userId = $userId ?? get_current_user_id();
         // Check if HPOS is enabled
