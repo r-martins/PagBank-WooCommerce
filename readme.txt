@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.0.3
+Stable tag: 5.0.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -253,6 +253,9 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.0.4 =
+* Correção: avisos de depreciação no PHP 8.5 na recorrência (parâmetros nullable implícitos em processRecurringPayments e getUserRecurringOrders).
 
 = 5.0.3 =
 * Correção: pedidos parcelados com juros (Vindi) podiam aparecer como "sem juros" no título/admin, pois o juros é aplicado inflando o valor cobrado e não via fees.
