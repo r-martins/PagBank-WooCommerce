@@ -8,7 +8,7 @@ import PaymentInstructions from './components/PaymentInstructions';
 import PaymentUnavailable from './components/PaymentUnavailable';
 
 const settings = getSetting('rm-pagbank-checkout-pb_data', {});
-const label = decodeEntities(settings.title) || window.wp.i18n.__('Checkout PB', 'pagbank-connect');
+const label = decodeEntities(settings.title) || window.wp.i18n.__('Checkout externo', 'pagbank-connect');
 
 const Label = (props) => {
     const { PaymentMethodLabel } = props.components;

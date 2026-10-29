@@ -44,7 +44,7 @@ class CheckoutPb extends WC_Payment_Gateway
         $this->icon = '';
         $this->method_title = $this->get_option(
             'title',
-            __('Checkout PB', 'pagbank-connect')
+            __('Checkout externo', 'pagbank-connect')
         );
         $this->method_description = __(
             'Checkout hospedado da PB Integrações. O comprador conclui o pagamento em checkout.pbintegracoes.com.',
@@ -54,8 +54,9 @@ class CheckoutPb extends WC_Payment_Gateway
         $this->init_form_fields();
         $this->init_settings();
 
-        $this->title = $this->get_option('title', __('Checkout PB', 'pagbank-connect'));
+        $this->title = $this->get_option('title', __('Checkout externo', 'pagbank-connect'));
         $this->description = $this->get_option('description');
+        $this->syncEnabledFromMode();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
@@ -68,6 +69,41 @@ class CheckoutPb extends WC_Payment_Gateway
         add_action('wp_enqueue_scripts', [$this, 'addScripts']);
         add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
         add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
+    }
+
+    /**
+     * Keep Woo `enabled` in sync with checkout_pb_mode (yes/no only).
+     */
+    public function syncEnabledFromMode(): void
+    {
+        $mode = Params::getCheckoutPbMode();
+        $this->enabled = $mode === 'disabled' ? 'no' : 'yes';
+    }
+
+    public function process_admin_options()
+    {
+        $result = parent::process_admin_options();
+        $mode = $this->get_option('checkout_pb_mode', 'disabled');
+        if (!in_array($mode, ['disabled', 'default', 'payment_method'], true)) {
+            $mode = 'disabled';
+            $this->update_option('checkout_pb_mode', $mode);
+        }
+        $this->update_option('enabled', $mode === 'disabled' ? 'no' : 'yes');
+        $this->enabled = $mode === 'disabled' ? 'no' : 'yes';
+
+        return $result;
+    }
+
+    /**
+     * Only offer as a Woo payment method when mode is payment_method.
+     */
+    public function is_available()
+    {
+        if (Params::getCheckoutPbMode() !== 'payment_method') {
+            return false;
+        }
+
+        return parent::is_available();
     }
 
     /**
@@ -123,6 +159,8 @@ class CheckoutPb extends WC_Payment_Gateway
 
         $caps = new \RM_PagBank\Partner\Capabilities();
         if ($caps->hasCheckoutPb()) {
+            // Prefer migrated mode (legacy enabled=yes → payment_method) as select default.
+            $this->form_fields['checkout_pb_mode']['default'] = Params::getCheckoutPbMode();
             return;
         }
 
@@ -136,8 +174,10 @@ class CheckoutPb extends WC_Payment_Gateway
                 ),
             ],
         ];
-        if ($this->get_option('enabled') === 'yes') {
+        if (Params::isCheckoutPbEnabled()) {
+            $this->update_option('checkout_pb_mode', 'disabled');
             $this->update_option('enabled', 'no');
+            $this->enabled = 'no';
         }
     }
 

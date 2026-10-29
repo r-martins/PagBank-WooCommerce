@@ -61,7 +61,7 @@ final class CheckoutPb extends AbstractPaymentMethodType
         $branding = new Branding();
 
         return [
-            'title' => isset($this->settings['title']) ? $this->settings['title'] : 'Checkout PB',
+            'title' => isset($this->settings['title']) ? $this->settings['title'] : 'Checkout externo',
             'description' => $this->get_setting('description'),
             'icon' => '',
             'supports' => array_filter($this->gateway->supports, [$this->gateway, 'supports']),

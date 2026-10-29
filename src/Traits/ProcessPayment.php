@@ -485,7 +485,7 @@ trait ProcessPayment
         string $mappedMethod
     ): void {
         $prefix = $origin === 'checkout_pb'
-            ? __('Checkout PB', 'pagbank-connect')
+            ? (string) Params::getCheckoutPbConfig('title', __('Checkout externo', 'pagbank-connect'))
             : __('Checkout PagBank', 'pagbank-connect');
 
         if ($mappedMethod === 'pix') {

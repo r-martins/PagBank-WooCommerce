@@ -92,6 +92,8 @@ class Connect
         add_filter('woocommerce_get_checkout_order_received_url', [StandaloneCheckoutPb::class, 'getOrderReceivedURL'], 101, 2);
         add_filter('woocommerce_get_checkout_payment_url', [StandaloneCheckoutPb::class, 'changePaymentLink'], 11, 2);
         \RM_PagBank\Connect\CheckoutPbOneClick::init();
+        \RM_PagBank\Connect\CheckoutPbDefaultCheckout::init();
+        \RM_PagBank\Connect\CheckoutPbPreview::init();
         add_action('rest_api_init', [CreditCard::class,'restApiInstallments']);
 
         // Load plugin files
@@ -509,9 +511,9 @@ class Connect
                 ],
                 'checkout_pb' => [
                     'available' => $caps->hasCheckoutPb(),
-                    'enabled' => $caps->hasCheckoutPb()
-                        ? Params::getCheckoutPbConfig('enabled', 'no')
-                        : 'no',
+                    'enabled' => $caps->hasCheckoutPb() && Params::isCheckoutPbEnabled() ? 'yes' : 'no',
+                    'mode' => $caps->hasCheckoutPb() ? Params::getCheckoutPbMode() : 'disabled',
+                    'shipping_mode' => Params::getCheckoutPbConfig('checkout_pb_shipping_mode', 'free'),
                     'one_click_enabled' => Params::getCheckoutPbConfig('checkout_pb_one_click_enabled', 'no'),
                     'expiry_minutes' => Params::getCheckoutPbConfig('checkout_pb_expiry_minutes', '120'),
                 ],

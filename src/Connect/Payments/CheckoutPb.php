@@ -50,7 +50,11 @@ class CheckoutPb extends Common
 
         if ($this->oneClick) {
             $return['shipping'] = $this->buildCalculateShipping();
+        } elseif (Params::getCheckoutPbMode() === 'default') {
+            // Checkout padrão: Woo redireciona sem frete; usa config do gateway (free/fixed/calculate).
+            $return['shipping'] = $this->buildShippingFromGatewaySettings();
         } else {
+            // Meio de pagamento: frete já calculado no checkout Woo.
             $fixedShipping = $this->buildFixedShippingFromOrder();
             if ($fixedShipping !== null) {
                 $return['shipping'] = $fixedShipping;
@@ -114,8 +118,8 @@ class CheckoutPb extends Common
         if (in_array('CREDIT_CARD', $paymentMethodCfg, true)) {
             $pmCfg = new PaymentMethodsConfigs();
             $pmCfg->setType('CREDIT_CARD');
-            $installmentsLimit = Params::getMaxInstallments();
-            $interestFreeInstallments = Params::getMaxInstallmentsNoInterest($orderTotal);
+            $installmentsLimit = Params::getCheckoutPbMaxInstallments();
+            $interestFreeInstallments = Params::getCheckoutPbMaxInstallmentsNoInterest($orderTotal);
             $configOptions = [];
             if ($installmentsLimit) {
                 $configOption = new PaymentMethodConfigOptions();
@@ -205,6 +209,39 @@ class CheckoutPb extends Common
             $this->order->save();
             break;
         }
+    }
+
+    /**
+     * Shipping from Checkout PB gateway settings (default-checkout mode).
+     *
+     * @return Shipping|array<string, mixed>
+     * @throws \Exception
+     */
+    protected function buildShippingFromGatewaySettings()
+    {
+        $mode = (string) Params::getCheckoutPbConfig('checkout_pb_shipping_mode', 'free');
+        if ($mode === 'calculate') {
+            return $this->buildCalculateShipping();
+        }
+
+        $shipping = new Shipping();
+        $shipping->setAddressModifiable(true);
+
+        if ($mode === 'fixed') {
+            $raw = (string) Params::getCheckoutPbConfig('checkout_pb_shipping_fixed_amount', '0');
+            $raw = str_replace(',', '.', trim($raw));
+            $reais = is_numeric($raw) ? (float) $raw : 0.0;
+            if ($reais > 0) {
+                $shipping->setType(Shipping::TYPE_FIXED);
+                $shipping->setAmount((int) round($reais * 100));
+                return $shipping;
+            }
+        }
+
+        $shipping->setType(Shipping::TYPE_FREE);
+        $shipping->setAmount(0);
+
+        return $shipping;
     }
 
     /**

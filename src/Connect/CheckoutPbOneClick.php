@@ -29,7 +29,7 @@ class CheckoutPbOneClick
         if (!$caps->hasCheckoutPb()) {
             return false;
         }
-        if (Params::getCheckoutPbConfig('enabled', 'no') !== 'yes') {
+        if (!Params::isCheckoutPbEnabled()) {
             return false;
         }
         return Params::getCheckoutPbConfig('checkout_pb_one_click_enabled', 'no') === 'yes';
@@ -141,7 +141,7 @@ class CheckoutPbOneClick
 
             $order->set_payment_method('rm-pagbank-checkout-pb');
             $order->set_payment_method_title(
-                Params::getCheckoutPbConfig('title', __('Checkout PB', 'pagbank-connect'))
+                Params::getCheckoutPbConfig('title', __('Checkout externo', 'pagbank-connect'))
             );
             OrderMeta::set($order, '_checkout_pb_one_click', 'yes', true);
             $order->calculate_totals();
