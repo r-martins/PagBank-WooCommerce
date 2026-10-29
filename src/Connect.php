@@ -77,8 +77,8 @@ class Connect
         add_action('admin_notices', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens'], 1);
         add_action('admin_enqueue_scripts', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens'], 1);
         // Gateways may instantiate after admin_enqueue_scripts on a single section page —
-        // enqueue admin CSS from bootstrap so Checkout PB hero/styles always load.
-        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueueAdminSettingsStyles'], 5);
+        // enqueue admin CSS/JS from bootstrap so Checkout PB hero/preview always load.
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueueAdminSettingsAssets'], 5);
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'filterGatewaysByPartner'], 20);
         // Order-pay: keep only PIX/boleto when that method's discount fee is already on the order.
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'restrictGatewaysOnOrderPayWithMethodDiscount'], 25);
@@ -191,27 +191,55 @@ class Connect
     }
 
     /**
-     * Admin CSS for gateway settings (Checkout PB hero, sandbox notices, etc.).
+     * Admin CSS/JS for gateway settings (Checkout PB hero, preview button, etc.).
+     *
+     * Standalone gateways register these hooks in their constructor, which can run
+     * after admin_enqueue_scripts on a single-section settings page.
      *
      * @param string $hook
      */
-    public static function enqueueAdminSettingsStyles($hook): void
+    public static function enqueueAdminSettingsAssets($hook): void
     {
         if ($hook !== 'woocommerce_page_wc-settings') {
             return;
         }
-        if (wp_style_is('pagseguro-connect-admin-css', 'enqueued')
-            || wp_style_is('pagseguro-connect-admin-css', 'registered')) {
-            // Still ensure it is enqueued if only registered.
-            wp_enqueue_style('pagseguro-connect-admin-css');
+
+        if (!wp_style_is('pagseguro-connect-admin-css', 'enqueued')) {
+            wp_enqueue_style(
+                'pagseguro-connect-admin-css',
+                plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
+            );
+        }
+
+        $section = sanitize_text_field(wp_unslash($_GET['section'] ?? ''));
+        if ($section === '' || strpos($section, self::DOMAIN) === false) {
             return;
         }
-        wp_enqueue_style(
-            'pagseguro-connect-admin-css',
-            plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-            [],
-            WC_PAGSEGURO_CONNECT_VERSION
-        );
+
+        if (!wp_script_is('pagseguro-connect-admin', 'enqueued')) {
+            wp_enqueue_script(
+                'pagseguro-connect-admin',
+                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery'],
+                WC_PAGSEGURO_CONNECT_VERSION
+            );
+        }
+
+        if ($section === 'rm-pagbank-checkout-pb') {
+            wp_localize_script(
+                'pagseguro-connect-admin',
+                'rmPagBankCheckoutPbPreview',
+                [
+                    'ajaxUrl' => admin_url('admin-ajax.php'),
+                    'action' => Connect\CheckoutPbPreview::AJAX_ACTION,
+                    'nonce' => wp_create_nonce(Connect\CheckoutPbPreview::AJAX_ACTION),
+                    'label' => __('Pré-visualizar', 'pagbank-connect'),
+                    'error' => __('Não foi possível gerar a pré-visualização.', 'pagbank-connect'),
+                ]
+            );
+        }
     }
 
     /**
