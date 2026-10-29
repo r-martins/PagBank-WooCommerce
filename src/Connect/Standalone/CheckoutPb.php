@@ -201,9 +201,8 @@ class CheckoutPb extends WC_Payment_Gateway
 
         ob_start();
         ?>
-        <tr valign="top">
-            <th scope="row" class="titledesc"></th>
-            <td class="forminp">
+        <tr valign="top" class="rm-pagbank-checkout-pb-preview-row">
+            <td colspan="2" class="forminp rm-pagbank-checkout-pb-preview-wrap">
                 <button
                     type="button"
                     class="button button-secondary rm-pagbank-checkout-pb-preview"
@@ -214,8 +213,8 @@ class CheckoutPb extends WC_Payment_Gateway
                     data-label="<?php echo esc_attr($label); ?>"
                     data-error="<?php echo esc_attr($error); ?>"
                 >
-                    <span class="dashicons dashicons-visibility" style="vertical-align:middle;margin-top:3px;" aria-hidden="true"></span>
-                    <?php echo esc_html($label); ?>
+                    <span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+                    <span class="rm-pagbank-checkout-pb-preview__label"><?php echo esc_html($label); ?></span>
                 </button>
                 <input type="hidden" id="<?php echo esc_attr($fieldKey); ?>" value="" />
             </td>

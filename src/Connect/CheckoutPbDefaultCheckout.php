@@ -17,12 +17,20 @@ use WC_Order;
 class CheckoutPbDefaultCheckout
 {
     public const API_ACTION = 'rm_pagbank_checkout_pb_default';
+    public const SESSION_FALLBACK = 'rm_pagbank_checkout_pb_fallback';
+    public const SESSION_FALLBACK_MSG = 'rm_pagbank_checkout_pb_fallback_msg';
 
     public static function init(): void
     {
         add_filter('woocommerce_get_checkout_url', [__CLASS__, 'filterCheckoutUrl'], 20);
         add_action('woocommerce_api_' . self::API_ACTION, [__CLASS__, 'handleApi']);
         add_action('template_redirect', [__CLASS__, 'maybeInterceptCheckoutPage'], 5);
+        add_action('woocommerce_thankyou', [__CLASS__, 'clearWooCheckoutFallback'], 1);
+        add_action('woocommerce_cart_emptied', [__CLASS__, 'clearWooCheckoutFallback']);
+        // Classic checkout / shortcode.
+        add_action('woocommerce_before_checkout_form', [__CLASS__, 'printFallbackNotice'], 5);
+        // Blocks checkout does not reliably surface wc_add_notice — inject into the block markup.
+        add_filter('render_block_woocommerce/checkout', [__CLASS__, 'prependFallbackNoticeToCheckoutBlock'], 10, 2);
     }
 
     public static function isDefaultMode(): bool
@@ -33,6 +41,123 @@ class CheckoutPbDefaultCheckout
         }
 
         return Params::getCheckoutPbMode() === 'default';
+    }
+
+    /**
+     * When hosted checkout cannot proceed, allow the real Woo /checkout/ once.
+     */
+    public static function hasWooCheckoutFallback(): bool
+    {
+        return function_exists('WC')
+            && WC()->session
+            && WC()->session->get(self::SESSION_FALLBACK) === 'yes';
+    }
+
+    public static function clearWooCheckoutFallback(): void
+    {
+        if (function_exists('WC') && WC()->session) {
+            WC()->session->set(self::SESSION_FALLBACK, null);
+            WC()->session->set(self::SESSION_FALLBACK_MSG, null);
+        }
+    }
+
+    private static function enableWooCheckoutFallback(string $message): void
+    {
+        if (!function_exists('WC') || !WC()->session) {
+            return;
+        }
+        WC()->session->set(self::SESSION_FALLBACK, 'yes');
+        WC()->session->set(self::SESSION_FALLBACK_MSG, $message);
+        // Persist before exit/redirect — otherwise Blocks checkout can load with an empty session.
+        if (method_exists(WC()->session, 'save_data')) {
+            WC()->session->save_data();
+        }
+    }
+
+    private static function getFallbackMessage(): string
+    {
+        if (!function_exists('WC') || !WC()->session) {
+            return '';
+        }
+        $message = WC()->session->get(self::SESSION_FALLBACK_MSG);
+        return is_string($message) ? trim($message) : '';
+    }
+
+    /**
+     * Classic checkout (shortcode / hook).
+     */
+    public static function printFallbackNotice(): void
+    {
+        $message = self::getFallbackMessage();
+        if ($message === '') {
+            return;
+        }
+        echo '<div class="woocommerce-info rm-pagbank-checkout-pb-fallback-notice" role="status">'
+            . esc_html($message)
+            . '</div>';
+    }
+
+    /**
+     * Blocks checkout: prepend a visible info banner (wc_add_notice is often invisible here).
+     *
+     * @param string $content
+     * @param array  $block
+     */
+    public static function prependFallbackNoticeToCheckoutBlock($content, $block): string
+    {
+        $message = self::getFallbackMessage();
+        if ($message === '') {
+            return (string) $content;
+        }
+
+        $banner = sprintf(
+            '<div class="woocommerce-info wc-block-components-notice-banner is-info rm-pagbank-checkout-pb-fallback-notice" role="status" style="margin:0 0 1rem;">'
+            . '<div class="wc-block-components-notice-banner__content">%s</div>'
+            . '</div>',
+            esc_html($message)
+        );
+
+        return $banner . (string) $content;
+    }
+
+    private static function checkoutPbTitle(): string
+    {
+        $title = (string) Params::getCheckoutPbConfig(
+            'title',
+            __('Checkout externo', 'pagbank-connect')
+        );
+
+        return $title !== '' ? $title : __('Checkout externo', 'pagbank-connect');
+    }
+
+    /**
+     * Soft-fail: keep the cart and send the buyer to the store checkout with a warning.
+     */
+    private static function redirectToWooCheckoutWithWarning(string $message, ?WC_Order $orphanOrder = null): void
+    {
+        if ($orphanOrder instanceof WC_Order) {
+            $orphanOrder->update_status(
+                'cancelled',
+                sprintf(
+                    /* translators: %s = Checkout PB payment method title */
+                    __('Pedido cancelado: falha ao iniciar %s (fallback para checkout da loja).', 'pagbank-connect'),
+                    self::checkoutPbTitle()
+                )
+            );
+        }
+
+        self::enableWooCheckoutFallback($message);
+        // Keep classic notices for themes that still render them.
+        if (function_exists('wc_add_notice')) {
+            wc_add_notice($message, 'notice');
+        }
+
+        $checkoutUrl = wc_get_page_permalink('checkout');
+        if (!$checkoutUrl) {
+            $checkoutUrl = wc_get_cart_url();
+        }
+        wp_safe_redirect($checkoutUrl);
+        exit;
     }
 
     /**
@@ -62,6 +187,10 @@ class CheckoutPbDefaultCheckout
     public static function maybeInterceptCheckoutPage(): void
     {
         if (!self::isDefaultMode()) {
+            return;
+        }
+        // After a soft-fail, let the buyer use the real Woo checkout.
+        if (self::hasWooCheckoutFallback()) {
             return;
         }
         if (!function_exists('is_checkout') || !is_checkout()) {
@@ -113,11 +242,10 @@ class CheckoutPbDefaultCheckout
 
         $recHelper = new RecurringHelper();
         if ($recHelper->cartHasUnsupportedCheckoutPbRecurrence()) {
-            wc_add_notice($recHelper->unsupportedCheckoutPbRecurrenceMessage(), 'error');
-            wp_safe_redirect(wc_get_cart_url());
-            exit;
+            self::redirectToWooCheckoutWithWarning($recHelper->unsupportedCheckoutPbRecurrenceMessage());
         }
 
+        $order = null;
         try {
             $order = self::createOrderFromCart();
             $orderId = $order->get_id();
@@ -126,7 +254,13 @@ class CheckoutPbDefaultCheckout
             $result = $gateway->process_payment($orderId);
 
             if (($result['result'] ?? '') !== 'success') {
-                throw new Exception(__('Falha ao criar sessão do Checkout PB.', 'pagbank-connect'));
+                throw new Exception(
+                    sprintf(
+                        /* translators: %s = Checkout PB payment method title */
+                        __('Falha ao criar sessão do %s.', 'pagbank-connect'),
+                        self::checkoutPbTitle()
+                    )
+                );
             }
 
             $order = wc_get_order($orderId);
@@ -138,8 +272,16 @@ class CheckoutPbDefaultCheckout
                 }
             }
             if ($payUrl === '' || !self::isAllowedHostedCheckoutUrl($payUrl)) {
-                throw new Exception(__('Checkout PB não retornou URL de pagamento.', 'pagbank-connect'));
+                throw new Exception(
+                    sprintf(
+                        /* translators: %s = Checkout PB payment method title */
+                        __('%s não retornou URL de pagamento.', 'pagbank-connect'),
+                        self::checkoutPbTitle()
+                    )
+                );
             }
+
+            self::clearWooCheckoutFallback();
 
             // process_payment already empties the cart on success.
             // wp_safe_redirect() blocks external hosts (checkout.pbintegracoes.com) and
@@ -150,9 +292,16 @@ class CheckoutPbDefaultCheckout
             Functions::log('Checkout PB default checkout: ' . $e->getMessage(), 'error', [
                 'from_api' => $fromApi,
             ]);
-            wc_add_notice($e->getMessage(), 'error');
-            wp_safe_redirect(wc_get_cart_url());
-            exit;
+            $warning = sprintf(
+                /* translators: 1: Checkout PB title, 2: error detail */
+                __('Não foi possível abrir o %1$s (%2$s). Continue o pedido no checkout da loja.', 'pagbank-connect'),
+                self::checkoutPbTitle(),
+                $e->getMessage()
+            );
+            self::redirectToWooCheckoutWithWarning(
+                $warning,
+                $order instanceof WC_Order ? $order : null
+            );
         }
     }
 

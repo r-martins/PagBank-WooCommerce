@@ -204,12 +204,17 @@ class Connect
             return;
         }
 
+        $adminCss = WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/css/ps-connect-admin.css';
+        $adminCssVer = file_exists($adminCss)
+            ? (string) filemtime($adminCss)
+            : WC_PAGSEGURO_CONNECT_VERSION;
+
         if (!wp_style_is('pagseguro-connect-admin-css', 'enqueued')) {
             wp_enqueue_style(
                 'pagseguro-connect-admin-css',
                 plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 [],
-                WC_PAGSEGURO_CONNECT_VERSION
+                $adminCssVer
             );
         }
 

@@ -3,6 +3,7 @@
 namespace RM_PagBank\Connect;
 
 use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring as RecurringHelper;
 use RM_PagBank\Partner\Capabilities;
 
 /**
@@ -58,7 +59,9 @@ class CheckoutPbPreview
         );
         $base = rtrim((string) $base, '/');
 
-        $item = self::resolvePreviewItem();
+        $resolved = self::resolvePreviewItem();
+        $item = $resolved['item'];
+        $recurrence = $resolved['recurrence'];
         $itemCents = (int) $item['unit_amount'];
 
         $theme = (string) self::cfg($snapshot, 'checkout_pb_theme', 'painel');
@@ -89,6 +92,10 @@ class CheckoutPbPreview
         if ($methods === []) {
             $methods = ['CREDIT_CARD', 'PIX'];
         }
+        // Hosted recurrence is card-only (same as API / studio).
+        if ($recurrence !== null) {
+            $methods = ['CREDIT_CARD'];
+        }
 
         $q = [
             'theme' => $theme,
@@ -98,6 +105,13 @@ class CheckoutPbPreview
             'cm' => '1',
             'ship_addr' => '1',
         ];
+        if ($recurrence !== null) {
+            $q['recur'] = '1';
+            $q['recur_unit'] = $recurrence['unit'];
+            if (!empty($recurrence['billing_cycles'])) {
+                $q['cycles'] = (string) (int) $recurrence['billing_cycles'];
+            }
+        }
 
         if ($colors !== []) {
             $q['colors'] = implode(',', array_map(static function ($c) {
@@ -137,12 +151,17 @@ class CheckoutPbPreview
     }
 
     /**
-     * @return array{name: string, quantity: int, unit_amount: int, image_url?: string}
+     * Latest published product (or fake item) plus Checkout PB recurrence when supported.
+     *
+     * @return array{
+     *   item: array{name: string, quantity: int, unit_amount: int, image_url?: string},
+     *   recurrence: array{unit: string, billing_cycles?: int}|null
+     * }
      */
     private static function resolvePreviewItem(): array
     {
         if (!function_exists('wc_get_products')) {
-            return self::fakeItem();
+            return ['item' => self::fakeItem(), 'recurrence' => null];
         }
 
         $products = wc_get_products([
@@ -153,7 +172,7 @@ class CheckoutPbPreview
             'return' => 'objects',
         ]);
         if (!is_array($products) || $products === []) {
-            return self::fakeItem();
+            return ['item' => self::fakeItem(), 'recurrence' => null];
         }
 
         $product = $products[0];
@@ -175,7 +194,41 @@ class CheckoutPbPreview
             }
         }
 
-        return $row;
+        return [
+            'item' => $row,
+            'recurrence' => self::recurrenceFromProduct($product),
+        ];
+    }
+
+    /**
+     * @param \WC_Product $product
+     * @return array{unit: string, billing_cycles?: int}|null
+     */
+    private static function recurrenceFromProduct($product): ?array
+    {
+        if (Params::getRecurringConfig('recurring_enabled', 'no') !== 'yes') {
+            return null;
+        }
+
+        $recHelper = new RecurringHelper();
+        if (!$recHelper->isProductRecurring($product)) {
+            return null;
+        }
+
+        $frequency = (string) $recHelper->getRecurringMeta($product, '_frequency');
+        $cycle = (int) $recHelper->getRecurringMeta($product, '_frequency_cycle');
+        $unit = $recHelper->checkoutPbRecurrenceUnit($frequency, $cycle);
+        if ($unit === null) {
+            return null;
+        }
+
+        $recurrence = ['unit' => $unit];
+        $maxCycles = (int) $recHelper->getRecurringMeta($product, '_recurring_max_cycles');
+        if ($maxCycles > 0) {
+            $recurrence['billing_cycles'] = $maxCycles;
+        }
+
+        return $recurrence;
     }
 
     /**

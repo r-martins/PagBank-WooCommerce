@@ -536,9 +536,21 @@ class Recurring
 
     public function unsupportedCheckoutPbRecurrenceMessage(): string
     {
-        return __(
-            'Checkout PB não está disponível para esta assinatura: a recorrência deve ser mensal ou anual (ciclo 1). Use Cartão de Crédito PagBank ou ajuste a frequência do produto.',
-            'pagbank-connect'
+        $title = (string) Params::getCheckoutPbConfig(
+            'title',
+            __('Checkout externo', 'pagbank-connect')
+        );
+        if ($title === '') {
+            $title = __('Checkout externo', 'pagbank-connect');
+        }
+
+        return sprintf(
+            /* translators: %s = Checkout PB payment method title from settings */
+            __(
+                '%s não está disponível para esta assinatura: a recorrência deve ser mensal ou anual. Você pode finalizar no nosso checkout.',
+                'pagbank-connect'
+            ),
+            $title
         );
     }
 
