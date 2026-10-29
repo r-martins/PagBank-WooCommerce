@@ -181,6 +181,8 @@ trait ProcessPayment
                     self::maybeUpdateHostedCheckoutPaymentTitle($order, $charge, $originForTitle, $mapped);
                 }
                 self::persistHostedCheckoutMethodExtras($order, $order_data, $charge, $mapped);
+                // Title/meta must persist even when the order is already paid (payment_complete no-ops).
+                $order->save();
             }
         } elseif ($chargePaymentType !== '' && isset($charge['payment_method']['type'])) {
             // Legacy buggy path used $charge[0]; keep non-hosted updates when type present.
