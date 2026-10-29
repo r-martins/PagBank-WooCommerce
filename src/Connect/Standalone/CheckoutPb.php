@@ -187,6 +187,44 @@ class CheckoutPb extends WC_Payment_Gateway
     }
 
     /**
+     * Server-rendered preview button (does not depend on JS injecting into the save bar).
+     *
+     * @param string $key
+     * @param array  $data
+     */
+    public function generate_checkout_pb_preview_html($key, $data): string
+    {
+        $fieldKey = $this->get_field_key($key);
+        $ajaxAction = \RM_PagBank\Connect\CheckoutPbPreview::AJAX_ACTION;
+        $label = __('Pré-visualizar', 'pagbank-connect');
+        $error = __('Não foi possível gerar a pré-visualização.', 'pagbank-connect');
+
+        ob_start();
+        ?>
+        <tr valign="top">
+            <th scope="row" class="titledesc"></th>
+            <td class="forminp">
+                <button
+                    type="button"
+                    class="button button-secondary rm-pagbank-checkout-pb-preview"
+                    id="rm-pagbank-checkout-pb-preview-section"
+                    data-ajax-url="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
+                    data-action="<?php echo esc_attr($ajaxAction); ?>"
+                    data-nonce="<?php echo esc_attr(wp_create_nonce($ajaxAction)); ?>"
+                    data-label="<?php echo esc_attr($label); ?>"
+                    data-error="<?php echo esc_attr($error); ?>"
+                >
+                    <span class="dashicons dashicons-visibility" style="vertical-align:middle;margin-top:3px;" aria-hidden="true"></span>
+                    <?php echo esc_html($label); ?>
+                </button>
+                <input type="hidden" id="<?php echo esc_attr($fieldKey); ?>" value="" />
+            </td>
+        </tr>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
      * @param int $order_id
      * @return array
      * @throws WC_Data_Exception|\RM_PagBank\Connect\Exception|\Exception

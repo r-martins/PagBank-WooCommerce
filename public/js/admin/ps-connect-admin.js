@@ -333,26 +333,24 @@ jQuery(document).ready(function($) {
 
     //region Checkout PB preview
     (function initCheckoutPbPreview() {
-        if (typeof rmPagBankCheckoutPbPreview === 'undefined') {
+        // Button is rendered in PHP under Pré-visualização; JS only handles the click.
+        if (!jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_mode').length
+            && !jQuery('.rm-pagbank-checkout-pb-preview').length) {
             return;
         }
-        var cfg = rmPagBankCheckoutPbPreview;
         var prefix = 'woocommerce_rm-pagbank-checkout-pb_';
 
-        function buildPreviewButton(id) {
-            return jQuery(
-                '<button type="button" class="button rm-pagbank-checkout-pb-preview" id="' + id + '">' +
-                '<span class="dashicons dashicons-visibility" style="vertical-align:middle;margin-top:3px;" aria-hidden="true"></span> ' +
-                jQuery('<span/>').text(cfg.label || 'Pré-visualizar').html() +
-                '</button>'
-            );
-        }
-
-        // Só ao lado de Salvar: a section Pré-visualização fica no rodapé e
-        // um segundo botão ali parece duplicata.
-        var $save = jQuery('.woocommerce-save-button');
-        if ($save.length && !jQuery('#rm-pagbank-checkout-pb-preview-save').length) {
-            $save.before(buildPreviewButton('rm-pagbank-checkout-pb-preview-save').css('margin-right', '8px'));
+        function resolveCfg($btn) {
+            if (typeof rmPagBankCheckoutPbPreview !== 'undefined') {
+                return rmPagBankCheckoutPbPreview;
+            }
+            return {
+                ajaxUrl: $btn.data('ajaxUrl') || $btn.attr('data-ajax-url') || '',
+                action: $btn.data('action') || $btn.attr('data-action') || '',
+                nonce: $btn.data('nonce') || $btn.attr('data-nonce') || '',
+                label: $btn.data('label') || $btn.attr('data-label') || 'Pré-visualizar',
+                error: $btn.data('error') || $btn.attr('data-error') || 'Não foi possível gerar a pré-visualização.'
+            };
         }
 
         function collectSettings() {
@@ -392,6 +390,11 @@ jQuery(document).ready(function($) {
         jQuery(document).on('click', '.rm-pagbank-checkout-pb-preview', function (e) {
             e.preventDefault();
             var $btn = jQuery(this);
+            var cfg = resolveCfg($btn);
+            if (!cfg.ajaxUrl || !cfg.action || !cfg.nonce) {
+                window.alert(cfg.error || 'Não foi possível gerar a pré-visualização.');
+                return;
+            }
             if ($btn.prop('disabled') || $btn.attr('aria-busy') === 'true') {
                 return;
             }

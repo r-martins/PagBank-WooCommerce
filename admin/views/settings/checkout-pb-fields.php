@@ -277,4 +277,8 @@ return [
 			'pagbank-connect'
 		),
 	],
+	'checkout_pb_preview_button' => [
+		'title' => '',
+		'type'  => 'checkout_pb_preview',
+	],
 ];

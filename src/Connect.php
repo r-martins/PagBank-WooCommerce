@@ -218,12 +218,18 @@ class Connect
             return;
         }
 
+        $adminJs = WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/js/admin/ps-connect-admin.js';
+        $adminJsVer = file_exists($adminJs)
+            ? (string) filemtime($adminJs)
+            : WC_PAGSEGURO_CONNECT_VERSION;
+
         if (!wp_script_is('pagseguro-connect-admin', 'enqueued')) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 ['jquery'],
-                WC_PAGSEGURO_CONNECT_VERSION
+                $adminJsVer,
+                true
             );
         }
 
