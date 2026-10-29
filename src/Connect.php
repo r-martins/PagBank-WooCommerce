@@ -76,6 +76,9 @@ class Connect
         // Fallback: remove immediately before the notice would print (priority 10).
         add_action('admin_notices', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens'], 1);
         add_action('admin_enqueue_scripts', [\RM_PagBank\Admin\MigrationNotice::class, 'suppressWooConnectNoticeOnOurScreens'], 1);
+        // Gateways may instantiate after admin_enqueue_scripts on a single section page —
+        // enqueue admin CSS from bootstrap so Checkout PB hero/styles always load.
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueueAdminSettingsStyles'], 5);
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'filterGatewaysByPartner'], 20);
         // Order-pay: keep only PIX/boleto when that method's discount fee is already on the order.
         add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'restrictGatewaysOnOrderPayWithMethodDiscount'], 25);
@@ -185,6 +188,30 @@ class Connect
      */
     public static function includes()
     {
+    }
+
+    /**
+     * Admin CSS for gateway settings (Checkout PB hero, sandbox notices, etc.).
+     *
+     * @param string $hook
+     */
+    public static function enqueueAdminSettingsStyles($hook): void
+    {
+        if ($hook !== 'woocommerce_page_wc-settings') {
+            return;
+        }
+        if (wp_style_is('pagseguro-connect-admin-css', 'enqueued')
+            || wp_style_is('pagseguro-connect-admin-css', 'registered')) {
+            // Still ensure it is enqueued if only registered.
+            wp_enqueue_style('pagseguro-connect-admin-css');
+            return;
+        }
+        wp_enqueue_style(
+            'pagseguro-connect-admin-css',
+            plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            [],
+            WC_PAGSEGURO_CONNECT_VERSION
+        );
     }
 
     /**

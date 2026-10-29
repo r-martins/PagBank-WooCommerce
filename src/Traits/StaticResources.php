@@ -78,11 +78,13 @@ trait StaticResources
             return;
         }
 
-        $alreadyEnqueued = wp_style_is('pagseguro-connect-admin-css');
+        $alreadyEnqueued = wp_style_is('pagseguro-connect-admin-css', 'enqueued');
         if (!$alreadyEnqueued) {
             wp_enqueue_style(
                 'pagseguro-connect-admin-css',
-                plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                WC_PAGSEGURO_CONNECT_VERSION
             );
         }
 
