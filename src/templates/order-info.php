@@ -59,15 +59,6 @@ $logoRel = $branding->orderAdminLogo();
     </a>
 	<?php endif;?>
 
-    <?php if(OrderMeta::get($order, 'payment_method') === 'boleto'):?>
-        <span class="form-field form-field-wide ps-pagbank-info">
-                <span class="dashicons dashicons-download small-text"></span><a href="<?php echo esc_url(OrderMeta::get($order, 'boleto_pdf'))?>" title="Baixar Boleto em PDF">Baixar Boleto</a>
-                <?php if (OrderMeta::get($order, 'partner') !== 'vindi' && OrderMeta::get($order, 'boleto_png')): ?>
-                <span class="dashicons dashicons-format-image small-text"></span><a href="<?php echo esc_url(OrderMeta::get($order, 'boleto_png'))?>" title="Ver imagem do boleto">Ver Boleto</a>
-                <?php endif; ?>
-        </span>
-    <?php endif;?>
-
     <?php
 	$paymentMethodMeta = (string) OrderMeta::get($order, 'payment_method');
 	$hostedOrigin = (string) OrderMeta::get($order, '_hosted_checkout_origin');
@@ -76,13 +67,69 @@ $logoRel = $branding->orderAdminLogo();
 		|| in_array($hostedOrigin, ['checkout_pb', 'redirect'], true)
 		|| (strpos($checkoutSessionId, 'chk_') === 0)
 		|| (strpos($checkoutSessionId, 'CHEC') === 0);
+	$chargesMeta = OrderMeta::get($order, 'order_charges');
+	$chargePm = is_array($chargesMeta) && isset($chargesMeta[0]['payment_method']) && is_array($chargesMeta[0]['payment_method'])
+		? $chargesMeta[0]['payment_method']
+		: [];
+	$chargeType = (string) ($chargePm['type'] ?? '');
+
+	$isBoletoMethod = $paymentMethodMeta === 'boleto'
+		|| ($isHostedCheckout && ($chargeType === 'BOLETO' || OrderMeta::get($order, 'boleto_pdf')));
+	if ($isBoletoMethod):?>
+        <span class="form-field form-field-wide ps-pagbank-info">
+			<?php if (OrderMeta::get($order, 'boleto_pdf')): ?>
+                <span class="dashicons dashicons-download small-text"></span><a href="<?php echo esc_url(OrderMeta::get($order, 'boleto_pdf'))?>" title="Baixar Boleto em PDF">Baixar Boleto</a>
+			<?php else: ?>
+				<?php esc_html_e('Boleto', 'pagbank-connect'); ?>
+			<?php endif; ?>
+                <?php if (OrderMeta::get($order, 'partner') !== 'vindi' && OrderMeta::get($order, 'boleto_png')): ?>
+                <span class="dashicons dashicons-format-image small-text"></span><a href="<?php echo esc_url(OrderMeta::get($order, 'boleto_png'))?>" title="Ver imagem do boleto">Ver Boleto</a>
+                <?php endif; ?>
+			<?php
+			$boletoBarcode = (string) (
+				OrderMeta::get($order, 'boleto_barcode_formatted')
+				?: OrderMeta::get($order, 'boleto_barcode')
+				?: ''
+			);
+			if ($boletoBarcode !== ''):
+				?>
+				<br/><small style="word-break:break-all;"><?php echo esc_html($boletoBarcode); ?></small>
+			<?php endif; ?>
+        </span>
+    <?php endif;?>
+
+    <?php
 	if ($isHostedCheckout):
 		$hostedLabel = ($hostedOrigin === 'redirect' || $paymentMethodMeta === 'redirect' || strpos($checkoutSessionId, 'CHEC') === 0)
 			? __('Checkout PagBank', 'pagbank-connect')
 			: __('Checkout PB', 'pagbank-connect');
+		$hostedMethodHint = '';
+		if (in_array($paymentMethodMeta, ['pix', 'boleto', 'credit_card', 'credit_card_token', 'cc'], true)) {
+			$hostedMethodHint = [
+				'pix' => __('PIX', 'pagbank-connect'),
+				'boleto' => __('Boleto', 'pagbank-connect'),
+				'credit_card' => __('Cartão de Crédito', 'pagbank-connect'),
+				'credit_card_token' => __('Cartão de Crédito', 'pagbank-connect'),
+				'cc' => __('Cartão de Crédito', 'pagbank-connect'),
+			][ $paymentMethodMeta ] ?? '';
+		} elseif (in_array($chargeType, ['PIX', 'BOLEPIX', 'BOLETO', 'CREDIT_CARD', 'CREDIT_CARD_3DS'], true)) {
+			$hostedMethodHint = [
+				'PIX' => __('PIX', 'pagbank-connect'),
+				'BOLEPIX' => __('PIX', 'pagbank-connect'),
+				'BOLETO' => __('Boleto', 'pagbank-connect'),
+				'CREDIT_CARD' => __('Cartão de Crédito', 'pagbank-connect'),
+				'CREDIT_CARD_3DS' => __('Cartão de Crédito', 'pagbank-connect'),
+			][ $chargeType ] ?? '';
+		}
 		?>
 		<span class="form-field form-field-wide ps-pagbank-info">
-			<?php echo esc_html($hostedLabel); ?>
+			<?php
+			echo esc_html(
+				$hostedMethodHint !== ''
+					? sprintf('%s — %s', $hostedLabel, $hostedMethodHint)
+					: $hostedLabel
+			);
+			?>
 			<?php if ($checkoutSessionId !== ''): ?>
 				<br/><small><?php echo esc_html(sprintf(
 					/* translators: %s = checkout session id */
@@ -99,21 +146,29 @@ $logoRel = $branding->orderAdminLogo();
 		</span>
 	<?php endif; ?>
 
-    <?php if($paymentMethodMeta === 'pix'):?>
+    <?php
+	$isPixMethod = $paymentMethodMeta === 'pix'
+		|| ($isHostedCheckout && (
+			in_array($chargeType, ['PIX', 'BOLEPIX'], true)
+			|| OrderMeta::get($order, 'pix_qrcode')
+			|| OrderMeta::get($order, 'pix_qrcode_text')
+		));
+	if ($isPixMethod):?>
         <span class="form-field form-field-wide ps-pagbank-info">
 			<?php esc_html_e('PIX', 'pagbank-connect'); ?>
 			<?php if (OrderMeta::get($order, 'pix_qrcode') || OrderMeta::get($order, 'pix_qrcode_text')): ?>
             — <a href="<?php echo esc_url(\RM_PagBank\Helpers\PixQr::getDisplayUrl($order))?>" target="_blank" rel="noopener noreferrer" title="<?php echo esc_attr__('Abrir QrCode Pix em nova aba.', 'pagbank-connect'); ?>">Ver QrCode Pix</a><span class="dashicons dashicons-external"></span>
 			<?php endif; ?>
+			<?php
+			$pixText = (string) OrderMeta::get($order, 'pix_qrcode_text');
+			if ($pixText !== ''):
+				?>
+				<br/><small style="word-break:break-all;"><?php echo esc_html($pixText); ?></small>
+			<?php endif; ?>
         </span>
     <?php endif;?>
 
 	<?php
-	$chargesMeta = OrderMeta::get($order, 'order_charges');
-	$chargePm = is_array($chargesMeta) && isset($chargesMeta[0]['payment_method']) && is_array($chargesMeta[0]['payment_method'])
-		? $chargesMeta[0]['payment_method']
-		: [];
-	$chargeType = (string) ($chargePm['type'] ?? '');
 	$isCreditCardMethod = in_array($paymentMethodMeta, ['credit_card', 'credit_card_token', 'cc'], true);
 	// Fallback: charge payload already has card data but meta not remapped yet.
 	if (!$isCreditCardMethod && $isHostedCheckout) {

@@ -203,6 +203,7 @@ class CheckoutPbDefaultCheckout
             (string) Params::getCheckoutPbConfig('title', __('Checkout externo', 'pagbank-connect'))
         );
         OrderMeta::set($order, 'payment_method', 'checkout_pb', true);
+        OrderMeta::set($order, '_hosted_checkout_origin', 'checkout_pb', true);
         $order->calculate_totals();
         $order->save();
 

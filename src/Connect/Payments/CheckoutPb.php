@@ -549,8 +549,29 @@ class CheckoutPb extends Common
 
     public function getThankyouInstructions($order_id)
     {
-        $order = new WC_Order($order_id);
+        $order = wc_get_order($order_id);
+        if (!$order instanceof WC_Order) {
+            return;
+        }
+
+        // Paid / completed: do not show the hosted-checkout pay CTA.
+        if ($order->is_paid() || !in_array($order->get_status(), ['pending', 'on-hold'], true)) {
+            return;
+        }
+
         $redirect_link = OrderMeta::get($order, 'redirect_url');
+        if (empty($redirect_link)) {
+            return;
+        }
+
+        $checkout_title = (string) Params::getCheckoutPbConfig(
+            'title',
+            __('Checkout externo', 'pagbank-connect')
+        );
+        if ($checkout_title === '') {
+            $checkout_title = __('Checkout externo', 'pagbank-connect');
+        }
+
         require_once dirname(__FILE__) . '/../../templates/checkout-pb-instructions.php';
     }
 }

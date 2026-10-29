@@ -271,10 +271,22 @@ class CheckoutPb extends WC_Payment_Gateway
             return;
         }
         $emailIds = ['customer_invoice', 'new_order', 'customer_processing_order'];
-        if (OrderMeta::get($order, 'payment_method') === 'checkout_pb' && in_array($email->id, $emailIds, true)) {
+        $isCheckoutPbPending = OrderMeta::get($order, 'payment_method') === 'checkout_pb'
+            || (string) OrderMeta::get($order, '_hosted_checkout_origin') === 'checkout_pb';
+        if ($isCheckoutPbPending && in_array($email->id, $emailIds, true)) {
             $redirectLink = OrderMeta::get($order, 'redirect_url');
+            if (empty($redirectLink)) {
+                return;
+            }
             $checkoutExpires = OrderMeta::get($order, 'redirect_expiration');
             $checkoutExpires = $checkoutExpires ? Functions::formatDate($checkoutExpires) : '';
+            $checkoutTitle = (string) Params::getCheckoutPbConfig(
+                'title',
+                __('Checkout externo', 'pagbank-connect')
+            );
+            if ($checkoutTitle === '') {
+                $checkoutTitle = __('Checkout externo', 'pagbank-connect');
+            }
             ob_start();
             include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/emails/checkout-pb-payment-details.php';
             echo ob_get_clean();

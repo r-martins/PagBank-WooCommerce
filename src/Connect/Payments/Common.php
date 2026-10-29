@@ -532,12 +532,14 @@ class Common
                 OrderMeta::set($order, 'redirect_url', self::extractCheckoutPayUrl($response), true);
                 OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? ($response['expires_at'] ?? null), false);
                 OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
+                OrderMeta::set($order, '_hosted_checkout_origin', 'redirect', true);
                 $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
                 break;
             case 'checkout_pb':
                 OrderMeta::set($order, 'redirect_url', self::extractCheckoutPayUrl($response), true);
                 OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? ($response['expires_at'] ?? null), false);
                 OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
+                OrderMeta::set($order, '_hosted_checkout_origin', 'checkout_pb', true);
                 $order->set_props(['payment_method' => 'rm-pagbank-checkout-pb']);
                 break;
                 

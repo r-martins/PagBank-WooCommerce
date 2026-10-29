@@ -32,15 +32,16 @@ trait ProcessPayment
         $notePrefix = Branding::notePrefix($order);
         $md5 = md5(serialize($order_data));
         $currentPm = (string) OrderMeta::get($order, 'payment_method');
-        $chargeTypePreview = (string) ($order_data['charges'][0]['payment_method']['type'] ?? '');
-        // Same payload: still refresh method meta when hosted checkout never remapped to PIX/CC/boleto.
-        $needsHostedMethodRefresh = $chargeTypePreview !== ''
-            && in_array($currentPm, ['checkout_pb', 'redirect'], true);
+        // Hosted checkout webhooks often omit charge.payment_method — keep reprocessing until remapped.
+        $needsHostedMethodRefresh = in_array($currentPm, ['checkout_pb', 'redirect'], true);
         if (OrderMeta::get($order, '_last_update_md5') == $md5 && !$needsHostedMethodRefresh) {
             Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect'), $order->get_id()), 'debug');
             return; // Do not update if the data is the same
         }
         OrderMeta::set($order, '_last_update_md5', $md5);
+
+        // Sparse PAID notifications (Vindi/Checkout PB) lack payment_method — enrich from GET order.
+        $order_data = self::enrichHostedCheckoutOrderData($order, $order_data);
 
         // Checkout PB: sync canonical shipping/customer from notification/order payload.
         self::syncCheckoutPbOrderFromPayload($order, $order_data);
@@ -453,6 +454,95 @@ trait ProcessPayment
         }
 
         return $resp;
+    }
+
+    /**
+     * When hosted-checkout notifications omit charge.payment_method, fetch the full order.
+     *
+     * @param array<string, mixed> $order_data
+     * @return array<string, mixed>
+     */
+    public static function enrichHostedCheckoutOrderData(WC_Order $order, array $order_data): array
+    {
+        $charge = is_array($order_data['charges'][0] ?? null) ? $order_data['charges'][0] : [];
+        if (!empty($charge['payment_method']['type'])) {
+            return $order_data;
+        }
+
+        $pm = (string) OrderMeta::get($order, 'payment_method');
+        $origin = (string) OrderMeta::get($order, '_hosted_checkout_origin');
+        $checkoutId = (string) OrderMeta::get($order, 'checkout_id');
+        $wooPm = (string) $order->get_payment_method();
+        $isHosted = in_array($pm, ['checkout_pb', 'redirect'], true)
+            || in_array($origin, ['checkout_pb', 'redirect'], true)
+            || in_array($wooPm, ['rm-pagbank-checkout-pb', 'rm-pagbank-redirect'], true)
+            || ($checkoutId !== '' && Api::isCheckoutSessionId($checkoutId));
+        if (!$isHosted) {
+            return $order_data;
+        }
+
+        $lookupId = (string) (
+            ($order_data['id'] ?? null)
+            ?: OrderMeta::get($order, 'order_id')
+            ?: $checkoutId
+        );
+        if ($lookupId === '') {
+            return $order_data;
+        }
+
+        try {
+            $full = Api::getOrderData($lookupId);
+        } catch (\Throwable $e) {
+            Functions::log(
+                sprintf(
+                    'Checkout hosted: falha ao enriquecer pedido Woo #%s (%s): %s',
+                    $order->get_id(),
+                    $lookupId,
+                    $e->getMessage()
+                ),
+                'warning'
+            );
+            return $order_data;
+        }
+
+        if (!is_array($full) || empty($full)) {
+            return $order_data;
+        }
+
+        $fullCharge = is_array($full['charges'][0] ?? null) ? $full['charges'][0] : [];
+        if (empty($fullCharge['payment_method']['type'])) {
+            return $order_data;
+        }
+
+        // Prefer full order payload; keep notification status/ids when present.
+        $merged = $full;
+        if (!empty($charge['status'])) {
+            $merged['charges'][0]['status'] = $charge['status'];
+        }
+        if (!empty($charge['id'])) {
+            $merged['charges'][0]['id'] = $charge['id'];
+        }
+        if (!empty($order_data['partner_bill_id'])) {
+            $merged['partner_bill_id'] = $order_data['partner_bill_id'];
+        }
+        if (!empty($order_data['partner_charge_id'])) {
+            $merged['partner_charge_id'] = $order_data['partner_charge_id'];
+        }
+        if (!empty($order_data['reference_id'])) {
+            $merged['reference_id'] = $order_data['reference_id'];
+        }
+
+        Functions::log(
+            sprintf(
+                'Checkout hosted: pedido Woo #%s enriquecido via API (%s → %s).',
+                $order->get_id(),
+                $lookupId,
+                (string) $fullCharge['payment_method']['type']
+            ),
+            'debug'
+        );
+
+        return $merged;
     }
 
     /**
