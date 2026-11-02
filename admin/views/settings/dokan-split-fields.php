@@ -2,8 +2,6 @@
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
-$inviteUrl = $isVindi ? \RM_PagBank\Helpers\SplitIdentity::selfServiceRegisterUrl() : '';
-$lookupUrl = $isVindi ? \RM_PagBank\Helpers\SplitIdentity::selfServiceLookupUrl() : '';
 
 $fields = [
     'dokan_split_section' => [
@@ -11,7 +9,7 @@ $fields = [
         'type'  => 'title',
         'desc'  => $isVindi
             ? esc_html( __(
-                'Split Dokan na Vindi: vendedores informam o Affiliate ID (self-service no pbintegracoes). A loja (Connect Key) fica com o restante automaticamente — sem custódia PagBank.',
+                'Split Dokan via Vindi Pagamentos: Seu vendedor informa o código de afiliado nas configurações da conta dele, e o repasse é feito automaticamente de acordo com sua configuração.',
                 'pagbank-connect'
             ))
             : esc_html( __(
@@ -27,7 +25,7 @@ $fields = [
         'desc_tip' => true,
         'description' => $isVindi
             ? esc_html( __(
-                'Quando ativado, vendedores com Affiliate ID Vindi ativo receberão a comissão via bill_affiliates.',
+                'Quando ativado, vendedores com Affiliate ID Vindi ativo receberão a comissão via afiliados automaticamente.',
                 'pagbank-connect'
             ))
             : esc_html( __(
@@ -39,32 +37,7 @@ $fields = [
     ],
 ];
 
-if ($isVindi) {
-    $fields['vindi_affiliate_invite_link'] = [
-        'title'       => esc_html( __( 'Link self-service de afiliados', 'pagbank-connect' ) ),
-        'type'        => 'text',
-        'description' => sprintf(
-            '%s<br><strong>%s</strong> <a href="%s" target="_blank" rel="noopener noreferrer">%s</a><br><strong>%s</strong> <a href="%s" target="_blank" rel="noopener noreferrer">%s</a><br>%s',
-            esc_html__(
-                'Compartilhe com os vendedores. A Connect Key nunca é exposta — o token identifica a loja no servidor.',
-                'pagbank-connect'
-            ),
-            esc_html__('Buscar ID (e-mail/CPF/CNPJ):', 'pagbank-connect'),
-            esc_url($lookupUrl),
-            esc_html($lookupUrl !== '' ? $lookupUrl : __('Gerar link (salve as configurações / recarregue)', 'pagbank-connect')),
-            esc_html__('Cadastrar novo afiliado:', 'pagbank-connect'),
-            esc_url($inviteUrl),
-            esc_html($inviteUrl !== '' ? $inviteUrl : __('Gerar link (salve as configurações / recarregue)', 'pagbank-connect')),
-            esc_html__('Após o cadastro, o afiliado deve validar a conta em portal.vindi.com.br antes de colar o Affiliate ID no Dokan.', 'pagbank-connect')
-        ),
-        'default'     => $lookupUrl !== '' ? $lookupUrl : $inviteUrl,
-        'custom_attributes' => [
-            'readonly' => 'readonly',
-        ],
-        'desc_tip'    => false,
-        'id'          => 'woocommerce_rm-pagbank-integrations_vindi_affiliate_invite_link',
-    ];
-} else {
+if (!$isVindi) {
     $fields['marketplace_account_id'] = [
         'title'       => esc_html( __( 'Account ID do Marketplace', 'pagbank-connect' ) ),
         'type'        => 'text',

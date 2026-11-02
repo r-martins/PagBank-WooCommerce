@@ -16,9 +16,13 @@ class DokanHooks
      */
     public static function init(): void
     {
-        // Add Account ID field to vendor dashboard (Settings > Store)
+        // Classic Dokan store settings (PHP form)
         add_action('dokan_settings_form_bottom', [__CLASS__, 'addVendorProfileFields'], 10, 2);
         add_action('dokan_store_profile_saved', [__CLASS__, 'saveVendorProfileFields'], 10, 2);
+
+        // Dokan 5.3+ React store settings (schema API) — same Affiliate/Account ID + self-service links
+        add_filter('dokan_get_vendor_settings_schema', [__CLASS__, 'injectVendorSettingsSchema'], 20, 2);
+        add_action('dokan_after_saving_vendor_settings', [__CLASS__, 'saveVendorSettingsFromSchema'], 10, 3);
         
         // Add Account ID field to admin user profile (wp-admin/user-edit.php)
         add_action('dokan_seller_meta_fields', [__CLASS__, 'addDokanAdminProfileFields'], 10, 1);
@@ -91,29 +95,31 @@ class DokanHooks
                             : esc_html__('Você pode configurar seu Account ID PagBank uma vez. Após configurado, apenas administradores poderão alterar.', 'pagbank-connect'); ?>
                     </p>
                 <?php endif; ?>
-                <p class="help-block">
+                <div class="help-block" style="margin-top: 8px; padding: 10px; background: #f0f6fc; border-left: 3px solid #0073aa;">
                     <?php if ($isVindi): ?>
-                        <?php _e('Affiliate ID Vindi para receber pagamentos via split. Cole o ID aqui somente quando a conta estiver ativa.', 'pagbank-connect'); ?>
-                        <br>
-                        <a href="<?php echo esc_url($lookupUrl); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php _e('Descobrir meu Affiliate ID (buscar por e-mail/CPF/CNPJ)', 'pagbank-connect'); ?>
-                        </a>
-                        —
-                        <a href="<?php echo esc_url($registerUrl); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php _e('Ainda não tenho cadastro', 'pagbank-connect'); ?>
-                        </a>
-                        —
-                        <a href="https://portal.vindi.com.br" target="_blank" rel="noopener noreferrer">
-                            <?php _e('Portal Vindi', 'pagbank-connect'); ?>
-                        </a>
+                        <p style="margin: 0 0 8px;">
+                            <?php esc_html_e('Informe seu identificador de afiliado Vindi para receber sua parte das vendas. Cole o ID aqui com a conta ativa.', 'pagbank-connect'); ?>
+                        </p>
+                        <p style="margin: 0 0 4px;"><strong><?php esc_html_e('Links úteis:', 'pagbank-connect'); ?></strong></p>
+                        <p style="margin: 0;">
+                            <a class="dokan-btn dokan-btn-sm dokan-btn-theme" href="<?php echo esc_url($lookupUrl); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php esc_html_e('Buscar meu Affiliate ID', 'pagbank-connect'); ?>
+                            </a>
+                            <a class="dokan-btn dokan-btn-sm" href="<?php echo esc_url($registerUrl); ?>" target="_blank" rel="noopener noreferrer" style="margin-left: 6px;">
+                                <?php esc_html_e('Cadastrar afiliado Vindi', 'pagbank-connect'); ?>
+                            </a>
+                        </p>
                     <?php else: ?>
-                        <?php _e('Seu Account ID PagBank para receber pagamentos diretos via split. Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (41 caracteres)', 'pagbank-connect'); ?>
-                        <br>
-                        <a href="<?php echo esc_url($registerUrl); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php _e('Clique aqui para descobrir qual é o seu Account ID', 'pagbank-connect'); ?>
-                        </a>
+                        <p style="margin: 0 0 8px;">
+                            <?php esc_html_e('Seu Account ID PagBank para receber pagamentos diretos via split. Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (41 caracteres)', 'pagbank-connect'); ?>
+                        </p>
+                        <p style="margin: 0;">
+                            <a class="dokan-btn dokan-btn-sm dokan-btn-theme" href="<?php echo esc_url($registerUrl); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php esc_html_e('Descobrir meu Account ID PagBank', 'pagbank-connect'); ?>
+                            </a>
+                        </p>
                     <?php endif; ?>
-                </p>
+                </div>
             </div>
         </div>
 
@@ -221,6 +227,190 @@ class DokanHooks
                 : __('Account ID PagBank configurado com sucesso!', 'pagbank-connect'),
             'success'
         );
+    }
+
+    /**
+     * Dokan 5.3+ React Store settings: Affiliate ID (Vindi) / Account ID (PagBank) + self-service links.
+     *
+     * @param array $elements
+     * @param int   $vendor_id
+     * @return array
+     */
+    public static function injectVendorSettingsSchema(array $elements, int $vendor_id): array
+    {
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+        $metaKey = \RM_PagBank\Helpers\SplitIdentity::vendorMetaKey();
+        $accountId = (string) get_user_meta($vendor_id, $metaKey, true);
+        $label = \RM_PagBank\Helpers\SplitIdentity::fieldLabel();
+        $lookupUrl = \RM_PagBank\Helpers\SplitIdentity::selfServiceLookupUrl();
+        $registerUrl = \RM_PagBank\Helpers\SplitIdentity::selfServiceRegisterUrl();
+
+        // Dokan plugin-ui renders field/section `description` via wp.element RawHTML (anchors are first-class).
+        if ($isVindi) {
+            $description = sprintf(
+                /* translators: 1: lookup URL 2: register URL */
+                __(
+                    'Informe o Affiliate ID numérico e cole aqui com a conta ativa.<br><br><strong>Links úteis:</strong><br>→ <a href="%1$s" target="_blank" rel="noopener noreferrer"><u>Buscar meu Affiliate ID</u></a><br>→ <a href="%2$s" target="_blank" rel="noopener noreferrer"><u>Cadastrar afiliado Vindi</u></a>',
+                    'pagbank-connect'
+                ),
+                esc_url($lookupUrl),
+                esc_url($registerUrl)
+            );
+            $placeholder = '123456';
+            $sectionTitle = __('Receba via Vindi Pagamentos', 'pagbank-connect');
+            $sectionDesc = __(
+                'Informe seu identificador de afiliado Vindi para receber sua parte das vendas.',
+                'pagbank-connect'
+            );
+        } else {
+            $description = sprintf(
+                /* translators: %s: authorize URL */
+                __(
+                    'Formato ACCO_….<br>→ <a href="%s" target="_blank" rel="noopener noreferrer"><u>Descobrir meu Account ID PagBank</u></a>',
+                    'pagbank-connect'
+                ),
+                esc_url($registerUrl)
+            );
+            $placeholder = 'ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+            $sectionTitle = __('Recebimentos PagBank (Split)', 'pagbank-connect');
+            $sectionDesc = __(
+                'Configure seu Account ID PagBank para receber pagamentos via split.',
+                'pagbank-connect'
+            );
+        }
+
+        $fieldId = $isVindi ? 'pb_vindi_affiliate_id' : 'pb_pagbank_account_id';
+        $locked = $accountId !== '';
+
+        $elements[] = [
+            'id'          => 'pb_split_receiver',
+            'type'        => 'section',
+            'subpage_id'  => 'store_settings',
+            'tab_id'      => 'tab_general',
+            'title'       => $sectionTitle,
+            'description' => $sectionDesc,
+            'collapsible' => true,
+            'priority'    => 95,
+        ];
+
+        $elements[] = [
+            'id'          => $fieldId,
+            'type'        => 'field',
+            'variant'     => 'text',
+            'section_id'  => 'pb_split_receiver',
+            'title'       => $label,
+            'description' => $description,
+            'placeholder' => $placeholder,
+            'layout'      => 'full-width',
+            'value'       => $accountId,
+            'default'     => '',
+            'non_meta'    => true, // stored in user meta, not dokan_profile_settings
+            'required'    => false,
+            'disabled'    => $locked,
+            // Surface format/remote errors in the React Store UI (was silent before).
+            'validation_func' => static function ($value, $all_values, $vendor_id) {
+                return self::validateVendorSplitIdForSave((string) $value, (int) $vendor_id);
+            },
+        ];
+
+        return $elements;
+    }
+
+    /**
+     * Validate a new Affiliate/Account ID for the vendor React store settings save.
+     * Returns true or an error message string (Dokan REST field contract).
+     *
+     * @return true|string
+     */
+    public static function validateVendorSplitIdForSave(string $accountId, int $vendor_id)
+    {
+        $accountId = sanitize_text_field($accountId);
+        $metaKey = \RM_PagBank\Helpers\SplitIdentity::vendorMetaKey();
+        $existing = (string) get_user_meta($vendor_id, $metaKey, true);
+
+        if ($accountId === '' || $accountId === $existing) {
+            return true;
+        }
+
+        // Vendors may set once; admins change via user profile.
+        if ($existing !== '') {
+            return __('Após configurado, apenas administradores podem alterar este ID.', 'pagbank-connect');
+        }
+
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+        if (!\RM_PagBank\Helpers\SplitIdentity::validateFormat($accountId)) {
+            return $isVindi
+                ? __('Affiliate ID inválido. Use apenas números.', 'pagbank-connect')
+                : __('Formato de Account ID inválido.', 'pagbank-connect');
+        }
+
+        if (!$isVindi) {
+            $marketplace_account_id = get_option('woocommerce_rm-pagbank-integrations_marketplace_account_id');
+            if ($marketplace_account_id && $accountId === $marketplace_account_id) {
+                return __('Este Account ID pertence ao marketplace. Use um Account ID diferente.', 'pagbank-connect');
+            }
+        }
+
+        if (self::isAccountIdAlreadyUsed($accountId, $vendor_id, $metaKey)) {
+            return $isVindi
+                ? __('Este Affiliate ID já está sendo usado por outro vendedor.', 'pagbank-connect')
+                : __('Este Account ID já está sendo usado por outro vendedor.', 'pagbank-connect');
+        }
+
+        $validation = \RM_PagBank\Helpers\SplitIdentity::validateRemote($accountId);
+        if (is_wp_error($validation)) {
+            return $validation->get_error_message();
+        }
+
+        return true;
+    }
+
+    /**
+     * Persist Affiliate/Account ID after Dokan React store settings save.
+     *
+     * @param int   $vendor_id
+     * @param array $sanitized
+     * @param array $fields_by_id
+     */
+    public static function saveVendorSettingsFromSchema(int $vendor_id, array $sanitized, array $fields_by_id): void
+    {
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+        $fieldId = $isVindi ? 'pb_vindi_affiliate_id' : 'pb_pagbank_account_id';
+        if (!array_key_exists($fieldId, $sanitized)) {
+            return;
+        }
+
+        $metaKey = \RM_PagBank\Helpers\SplitIdentity::vendorMetaKey();
+        $validatedKey = \RM_PagBank\Helpers\SplitIdentity::vendorValidatedMetaKey();
+        $existing = (string) get_user_meta($vendor_id, $metaKey, true);
+        $accountId = sanitize_text_field((string) $sanitized[$fieldId]);
+
+        if ($accountId === '' || $accountId === $existing) {
+            return;
+        }
+
+        // validation_func already ran on the REST path; re-check before write.
+        $check = self::validateVendorSplitIdForSave($accountId, $vendor_id);
+        if ($check !== true) {
+            Functions::log(sprintf(
+                'Dokan React settings: não salvou %s do vendedor %d: %s',
+                $isVindi ? 'Affiliate ID' : 'Account ID',
+                $vendor_id,
+                $check
+            ), 'warning');
+            return;
+        }
+
+        update_user_meta($vendor_id, $metaKey, $accountId);
+        update_user_meta($vendor_id, $validatedKey, true);
+        self::notifyAdminAccountConfigured($vendor_id, $accountId);
+
+        Functions::log(sprintf(
+            __('Vendedor %d configurou %s via Dokan settings: %s', 'pagbank-connect'),
+            $vendor_id,
+            $isVindi ? 'Affiliate ID' : 'Account ID PagBank',
+            substr($accountId, 0, 8) . '...'
+        ), 'info');
     }
 
     /**
@@ -433,13 +623,17 @@ class DokanHooks
             return;
         }
         
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
         ?>
         <div class="notice notice-info">
             <p>
-                <strong><?php _e('PagBank Connect - Account ID do Vendedor:', 'pagbank-connect'); ?></strong>
-                <?php _e('Para configurar o Account ID PagBank de um vendedor, vá em', 'pagbank-connect'); ?>
-                <a href="<?php echo admin_url('users.php'); ?>"><?php _e('Usuários', 'pagbank-connect'); ?></a>
-                <?php _e('e edite o vendedor desejado.', 'pagbank-connect'); ?>
+                <strong><?php echo $isVindi
+                    ? esc_html__('PB Integrações — Affiliate ID do vendedor:', 'pagbank-connect')
+                    : esc_html__('PB Integrações — Account ID do vendedor:', 'pagbank-connect'); ?></strong>
+                <?php echo $isVindi
+                    ? esc_html__('O vendedor configura sozinho em Dokan → Configurações da loja (busca/cadastro self-service). Admin também pode editar em', 'pagbank-connect')
+                    : esc_html__('O vendedor configura sozinho em Dokan → Configurações da loja. Admin também pode editar em', 'pagbank-connect'); ?>
+                <a href="<?php echo esc_url(admin_url('users.php')); ?>"><?php esc_html_e('Usuários', 'pagbank-connect'); ?></a>.
             </p>
         </div>
         <?php

@@ -15,9 +15,22 @@ class SplitIdentity
     public const META_VINDI = 'vindi_affiliate_id';
     public const META_VINDI_VALIDATED = 'vindi_affiliate_validated';
     /**
-     * Stored as array `{url, key_fp}` (legacy: plain URL string without fingerprint).
+     * Legacy option cache (pre Api-transient). Kept for clearInviteCache cleanup only.
+     *
+     * @deprecated
      */
     public const OPTION_INVITE_URL = 'woocommerce_rm-pagbank_vindi_affiliate_invite_url';
+
+    /** Local redirect: generates/caches invite then 302 to pbintegracoes. */
+    public const API_ACTION = 'rm_pagbank_vindi_affiliate';
+
+    /** Cache invite POST response for 1 day (minutes for Api::post). */
+    public const INVITE_CACHE_MINUTES = 1440;
+
+    public static function register(): void
+    {
+        add_action('woocommerce_api_' . self::API_ACTION, [self::class, 'redirectToInvite']);
+    }
 
     public static function detector(): PartnerDetector
     {
@@ -33,7 +46,7 @@ class SplitIdentity
         return hash('sha256', trim((string) $connectKey));
     }
 
-    /** Drop cached self-service invite (e.g. after Connect Key change). */
+    /** Drop legacy option cache (Api transient rotates with Connect Key in the cache key). */
     public static function clearInviteCache(): void
     {
         delete_option(self::OPTION_INVITE_URL);
@@ -127,8 +140,8 @@ class SplitIdentity
 
     /**
      * Create or reuse a self-service invite URL (Connect Key stays on the server).
-     * Cache is bound to the current Connect Key fingerprint — sandbox↔prod or key
-     * rotation forces a new invite so vendors never hit the wrong merchant.
+     * Response is cached by Api::post for INVITE_CACHE_MINUTES; key includes Bearer
+     * so sandbox↔prod / key rotation never reuses another merchant's invite.
      *
      * @return array{url: string, token?: string, expires_at?: string}|\WP_Error
      */
@@ -138,29 +151,14 @@ class SplitIdentity
             return new \WP_Error('not_vindi', 'Invite is only for Vindi');
         }
 
-        $api = new Api();
-        $fp = self::connectKeyFingerprint($api->getConnectKey());
-        $stored = get_option(self::OPTION_INVITE_URL, null);
-
-        if (!$forceNew && is_array($stored)) {
-            $storedUrl = (string) ($stored['url'] ?? '');
-            $storedFp = (string) ($stored['key_fp'] ?? '');
-            if ($storedUrl !== '' && $storedFp !== '' && hash_equals($storedFp, $fp)) {
-                return ['url' => $storedUrl];
-            }
-        }
-        // Legacy plain-string cache (no key_fp) or mismatched key → regenerate.
-
         try {
-            $resp = $api->post('affiliates/invites', []);
+            $api = new Api();
+            $cacheMin = $forceNew ? 0 : self::INVITE_CACHE_MINUTES;
+            $resp = $api->post('affiliates/invites', [], $cacheMin);
             $url = (string) ($resp['url'] ?? '');
             if ($url === '') {
                 return new \WP_Error('invite_empty', __('Não foi possível gerar o link de cadastro.', 'pagbank-connect'));
             }
-            update_option(self::OPTION_INVITE_URL, [
-                'url' => $url,
-                'key_fp' => $fp,
-            ], false);
             return [
                 'url' => $url,
                 'token' => $resp['token'] ?? null,
@@ -171,6 +169,9 @@ class SplitIdentity
         }
     }
 
+    /**
+     * Stable storefront URL that 302s to the real invite (API only on click / cache miss).
+     */
     public static function selfServiceRegisterUrl(): string
     {
         return self::selfServiceUrl('cadastrar');
@@ -187,18 +188,60 @@ class SplitIdentity
         if (!self::isVindi()) {
             return 'https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize';
         }
+
+        return add_query_arg(
+            [
+                'wc-api' => self::API_ACTION,
+                'mode' => $mode,
+            ],
+            home_url('/')
+        );
+    }
+
+    /**
+     * wc-api: resolve invite (1-day Api cache) and redirect to pbintegracoes.
+     */
+    public static function redirectToInvite(): void
+    {
+        nocache_headers();
+
+        if (!self::isVindi()) {
+            wp_safe_redirect('https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize');
+            exit;
+        }
+
+        $mode = strtolower(sanitize_text_field(wp_unslash((string) ($_GET['mode'] ?? 'buscar'))));
+        if ($mode !== 'cadastrar' && $mode !== 'buscar') {
+            $mode = 'buscar';
+        }
+
         $invite = self::getOrCreateInviteUrl(false);
         if (is_wp_error($invite)) {
-            $base = 'https://pbintegracoes.com/connect/vindi-afiliado';
-            return $base . '?mode=' . rawurlencode($mode);
+            status_header(503);
+            wp_die(
+                esc_html($invite->get_error_message()),
+                esc_html__('Link de afiliado indisponível', 'pagbank-connect'),
+                ['response' => 503]
+            );
         }
+
         $url = (string) $invite['url'];
         $sep = str_contains($url, '?') ? '&' : '?';
-        // Avoid duplicating mode=
         if (preg_match('/[?&]mode=/', $url)) {
-            return preg_replace('/([?&])mode=[^&]*/', '$1mode=' . rawurlencode($mode), $url) ?: $url;
+            $url = preg_replace('/([?&])mode=[^&]*/', '$1mode=' . rawurlencode($mode), $url) ?: $url;
+        } else {
+            $url .= $sep . 'mode=' . rawurlencode($mode);
         }
-        return $url . $sep . 'mode=' . rawurlencode($mode);
+
+        $host = wp_parse_url($url, PHP_URL_HOST);
+        if (is_string($host) && $host !== '') {
+            add_filter('allowed_redirect_hosts', static function (array $hosts) use ($host): array {
+                $hosts[] = $host;
+                return $hosts;
+            });
+        }
+        wp_safe_redirect($url, 302);
+        exit;
     }
 
     public static function fieldLabel(): string

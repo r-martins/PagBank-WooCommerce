@@ -573,7 +573,7 @@ class Gateway extends WC_Payment_Gateway_CC
         if (!$caps->hasSplit()) {
             if ($split_enabled === 'yes') {
                 WC_Admin_Settings::add_error(
-                    __('Divisão de pagamentos não está disponível com Connect Key Vindi.', 'pagbank-connect')
+                    __('Divisão de pagamentos não está disponível com esta Connect Key.', 'pagbank-connect')
                 );
             }
             return 'no';
@@ -637,8 +637,8 @@ class Gateway extends WC_Payment_Gateway_CC
                 }
                 // Clear PagBank public key — Vindi uses tokenize/config
                 $this->update_option('public_key', '');
-                // Split / hosted checkout are PagBank-only
-                $this->update_option('split_payments_enabled', 'no');
+                // Hosted checkout (redirect) is PagBank-only — hide/disable that gateway elsewhere.
+                // Split (general + Dokan) is supported on Vindi via bill_affiliates; do not force-off here.
                 // Flag recurring re-token if switching from PagBank
                 $prev = $this->get_option('pagbank_partner', 'pagbank');
                 if ($prev === 'pagbank') {

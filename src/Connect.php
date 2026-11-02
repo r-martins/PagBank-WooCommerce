@@ -59,6 +59,7 @@ class Connect
         add_action('wp_ajax_nopriv_ps_get_3d_session', [CreditCard::class, 'getAjax3DSession']);
         \RM_PagBank\Connect\Payments\VindiThreeDs::register();
         \RM_PagBank\Helpers\PixQr::register();
+        \RM_PagBank\Helpers\SplitIdentity::register();
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
