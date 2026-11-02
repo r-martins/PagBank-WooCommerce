@@ -115,16 +115,17 @@ add_action('admin_init', function() {
         $gateway_settings = get_option('woocommerce_rm-pagbank_settings', []);
         $split_payments_enabled = $gateway_settings['split_payments_enabled'] ?? 'no';
         
+        // Mutual exclusivity: enabling Dokan turns off general split (avoids silent no-op when
+        // a stale split_payments_enabled=yes remains after migrating to Vindi).
         if ($dokan_split_enabled === 'yes' && $split_payments_enabled === 'yes') {
+            $gateway_settings['split_payments_enabled'] = 'no';
+            update_option('woocommerce_rm-pagbank_settings', $gateway_settings);
             add_settings_error(
                 'woocommerce_rm-pagbank-integrations',
-                'mutual_exclusivity_error',
-                __('Não é possível ativar Split Dokan enquanto a Divisão de Pagamentos estiver ativa. Desative a Divisão de Pagamentos primeiro.', 'pagbank-connect'),
-                'error'
+                'mutual_exclusivity_notice',
+                __('Split Dokan ativado. A Divisão de Pagamentos (geral) foi desativada automaticamente — os dois não podem ficar ativos ao mesmo tempo.', 'pagbank-connect'),
+                'updated'
             );
-            // Don't save and redirect back
-            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
-            exit;
         }
         
         // Save to database

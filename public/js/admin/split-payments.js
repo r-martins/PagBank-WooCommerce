@@ -83,6 +83,13 @@ jQuery(document).ready(function($) {
     const fieldKey = $container.closest('tr').find('input[type="text"]').first().attr('name');
     const baseFieldKey = fieldKey ? fieldKey.match(/^(.+?)\[\d+\]\[account_id\]$/)?.[1] || 'woocommerce_rm-pagbank_split_payments_receivers' : 'woocommerce_rm-pagbank_split_payments_receivers';
 
+    const partner = $container.data('partner') || 'pagbank';
+    const idPlaceholder = $container.data('id-placeholder') || 'ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+    const idPattern = $container.data('id-pattern') || 'ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}';
+    const idMaxlength = $container.data('id-maxlength') || 41;
+    const idHelpUrl = $container.data('id-help-url') || 'https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize';
+    const idHelpText = $container.data('id-help-text') || 'Qual é meu Account Id?';
+
     // Template for new row
     function getRowTemplate(index) {
         return `
@@ -92,15 +99,15 @@ jQuery(document).ready(function($) {
                         type="text" 
                         name="${baseFieldKey}[${index}][account_id]" 
                         value="" 
-                        placeholder="ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                        pattern="ACCO_[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"
+                        placeholder="${idPlaceholder}"
+                        pattern="${idPattern}"
                         class="regular-text pagbank-account-id"
-                        maxlength="41"
+                        maxlength="${idMaxlength}"
                     />
                     <br>
                     <small>
-                        <a href="https://ws.pbintegracoes.com/pspro/v7/connect/account-id/authorize" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-                            Qual é meu Account Id?
+                        <a href="${idHelpUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                            ${idHelpText}
                         </a>
                     </small>
                 </td>

@@ -68,14 +68,22 @@ class DokanSplitManager
             return false;
         }
 
-        // Check if all vendors have PagBank Account ID
+        // Check if all non-marketplace vendors have a split receiver id (PagBank ACCO_ or Vindi affiliate_id)
         foreach ($vendors as $vendor) {
+            $user = get_userdata($vendor['id']);
+            $isMarketplace = $user && in_array('administrator', (array) $user->roles, true);
+            if ($isMarketplace && \RM_PagBank\Helpers\SplitIdentity::isVindi()) {
+                continue;
+            }
             $accountId = self::getVendorPagBankAccount($vendor['id']);
-            if (!$accountId) {
-                \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Vendedor ' . $vendor['id'] . ' não tem Account ID configurado', 'info');
+            if (!$accountId || $accountId === 'marketplace') {
+                if ($isMarketplace) {
+                    continue;
+                }
+                \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Vendedor ' . $vendor['id'] . ' sem ID de split configurado', 'info');
                 return false;
             }
-            \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Vendedor ' . $vendor['id'] . ' tem Account ID: ' . substr($accountId, 0, 8) . '...', 'info');
+            \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Vendedor ' . $vendor['id'] . ' tem ID: ' . substr((string) $accountId, 0, 8) . '...', 'info');
         }
 
         \RM_PagBank\Helpers\Functions::log('DokanSplitManager::shouldApplySplit - Split será aplicado!', 'info');
@@ -146,29 +154,7 @@ class DokanSplitManager
      */
     public static function getVendorPagBankAccount(int $vendor_id): ?string
     {
-        // Check if this is the marketplace (admin user)
-        $user = get_userdata($vendor_id);
-        if ($user && in_array('administrator', $user->roles)) {
-            // For marketplace/admin, get Account ID from plugin settings
-            $gateway_settings = get_option('woocommerce_rm-pagbank-integrations_settings', []);
-            $marketplace_account_id = $gateway_settings['marketplace_account_id'] ?? '';
-            
-            if (!empty($marketplace_account_id)) {
-                \RM_PagBank\Helpers\Functions::log(
-                    'DokanSplitManager::getVendorPagBankAccount - Marketplace (ID: ' . $vendor_id . ') usando Account ID das configurações',
-                    'info'
-                );
-                return $marketplace_account_id;
-            }
-        }
-        
-        // For regular vendors, get from user meta
-        $account_id = get_user_meta($vendor_id, 'pagbank_account_id', true);
-        $validated = get_user_meta($vendor_id, 'pagbank_account_validated', true);
-        
-        // Para desenvolvimento: permitir Account IDs não validados
-        // Em produção, use: return ($account_id && $validated) ? $account_id : null;
-        return $account_id ?: null;
+        return \RM_PagBank\Helpers\SplitIdentity::getVendorReceiverId($vendor_id);
     }
 
     /**
@@ -288,9 +274,14 @@ class DokanSplitManager
             }
         }
         
-        // Marketplace as primary receiver
+        $isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+
+        // Marketplace as primary receiver (PagBank only — Vindi merchant is implicit on the bill)
         $marketplaceReceiver = new Receiver();
-        $marketplaceReceiver->setAccount(['id' => $gateway_settings['marketplace_account_id'] ?? '']);
+        $marketplaceAccountId = $isVindi
+            ? '0'
+            : ($gateway_settings['marketplace_account_id'] ?? '');
+        $marketplaceReceiver->setAccount(['id' => $marketplaceAccountId]);
         $marketplaceReceiver->setAmount(['value' => self::calculateMarketplaceAmount($order)]);
         $marketplaceReceiver->setReason($marketplaceReason);
         $marketplaceReceiver->setType(Receiver::TYPE_PRIMARY);
@@ -349,12 +340,11 @@ class DokanSplitManager
             'info'
         );
         
-        // Marketplace configurations
-        $marketplaceReceiver->setCustody(false); // No custody for marketplace
-        $marketplaceReceiver->setChargeback(0); // No chargeback transfer
-        
-        // Set liable only for credit card payments
-        if ($isCreditCard) {
+        // Marketplace configurations (custody/liable are PagBank-only)
+        $marketplaceReceiver->setCustody(false);
+        $marketplaceReceiver->setChargeback(0);
+
+        if (!$isVindi && $isCreditCard) {
             $marketplaceReceiver->setLiable($marketplace_is_liable);
             \RM_PagBank\Helpers\Functions::log(
                 sprintf(
@@ -365,17 +355,11 @@ class DokanSplitManager
                 ),
                 'info'
             );
-        } else {
-            \RM_PagBank\Helpers\Functions::log(
-                'DokanSplitManager::buildSplitData - Método de pagamento não é cartão de crédito, liable não será aplicado',
-                'info'
-            );
         }
-        
-        // Don't set statement - removed until PagBank fixes their API
-        // $marketplaceReceiver->setStatement(true);
-        
-        $split->addReceiver($marketplaceReceiver);
+
+        if (!$isVindi) {
+            $split->addReceiver($marketplaceReceiver);
+        }
         
         // Vendors as secondary receivers (excluding marketplace)
         foreach ($vendors as $vendor) {
@@ -396,26 +380,21 @@ class DokanSplitManager
             $vendorReceiver->setAmount(['value' => $vendorAmount]);
             $vendorReceiver->setReason(self::buildVendorReason($order, $vendor['id']));
             $vendorReceiver->setType(Receiver::TYPE_SECONDARY);
-            
-            // Vendor configurations
-            $vendorReceiver->setCustody(true, self::calculateCustodyReleaseDate($order));
-            // Chargeback transfer should always be 0% for secondary receivers
-            // The marketplace (PRIMARY) is responsible for the payment, so chargeback is handled by them
+
             $vendorReceiver->setChargeback(0);
-            
-            // Single vendor is liable (only for credit card, when marketplace is NOT liable)
-            // IMPORTANT: If marketplace is liable, NO vendor should be marked as liable
-            // Only set liable=true for the single vendor when marketplace is NOT liable
-            if ($isCreditCard && !$marketplace_is_liable && $single_vendor_id !== null && $vendor['id'] === $single_vendor_id) {
-                $vendorReceiver->setLiable(true);
-                \RM_PagBank\Helpers\Functions::log(
-                    sprintf(
-                        'DokanSplitManager::buildSplitData - Vendedor %d marcado como liable (config: %s, marketplace liable: false)',
-                        $vendor['id'],
-                        $liability_config
-                    ),
-                    'info'
-                );
+            if (!$isVindi) {
+                $vendorReceiver->setCustody(true, self::calculateCustodyReleaseDate($order));
+                if ($isCreditCard && !$marketplace_is_liable && $single_vendor_id !== null && $vendor['id'] === $single_vendor_id) {
+                    $vendorReceiver->setLiable(true);
+                    \RM_PagBank\Helpers\Functions::log(
+                        sprintf(
+                            'DokanSplitManager::buildSplitData - Vendedor %d marcado como liable (config: %s, marketplace liable: false)',
+                            $vendor['id'],
+                            $liability_config
+                        ),
+                        'info'
+                    );
+                }
             }
             // Note: We don't explicitly set liable=false for vendors when marketplace is liable
             // because the API should not receive the liable property at all for those vendors

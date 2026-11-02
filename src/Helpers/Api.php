@@ -292,8 +292,10 @@ class Api
             'Module-Version' => WC_PAGSEGURO_CONNECT_VERSION,
 			'Referer' => get_site_url(),
         ];
-        
-        $transientKey = 'cache_' . md5($url);
+
+        // Include Authorization + body so Connect Key rotation and different payloads
+        // do not share a stale transient (GET already hashes headers into the key).
+        $transientKey = 'cache_' . md5($url . serialize($headers) . wp_json_encode($params));
 
         if ($cacheMin > 0){
             $cached = get_transient($transientKey);
