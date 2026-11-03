@@ -1633,7 +1633,10 @@ class Recurring
             }
         } catch (Exception $e) {
             $message = sprintf(
-                __('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'),
+                __(
+                    'Não foi possível verificar/salvar o cartão (é feita uma cobrança de R$1,00 com estorno). Confira os dados e tente novamente. %s',
+                    'pagbank-connect'
+                ),
                 $e->getMessage()
             );
             $this->addNotice($message, $fromAdmin, 'error');
@@ -1664,7 +1667,14 @@ class Recurring
         $update = $this->updateSubscription($subscription, $updateData);
 
         if ($update) {
-            $this->addNotice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
+            $this->addNotice(
+                __(
+                    'Método de pagamento alterado com sucesso. Foi feita uma cobrança de verificação de R$1,00 com estorno.',
+                    'pagbank-connect'
+                ),
+                $fromAdmin,
+                'success'
+            );
             do_action('pagbank_recurring_subscription_payment_method_changed', $subscription->id);
             return;
         }
@@ -1685,10 +1695,8 @@ class Recurring
      */
     private function changePaymentMethodViaVindiProfile(WC_Order $order): array
     {
-        // Only reuse a profile id posted by the current request (e.g. checkout 3DS).
-        // Never reuse the initial order's stored profile — change-card must create a new one from gateway_token.
-        $existingProfileId = (int) ($_POST['rm-pagbank-payment-profile-id'] ?? 0);
-
+        // Never reuse the initial order's stored profile — change-card must verify a fresh gateway_token
+        // with a R$1 charge (require_cvv) then refund.
         $company = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-payment-company-code'] ?? '')));
         if ($company === '') {
             $company = (string) (OrderMeta::get($order, '_payment_company_code') ?: 'mastercard');
@@ -1700,90 +1708,54 @@ class Recurring
             $customerName = $holderName !== '' ? $holderName : 'Cliente';
         }
 
-        $profile = [];
-        $profileId = $existingProfileId;
-        $customerId = (int) ($_POST['rm-pagbank-vindi-customer-id'] ?? 0);
-        if ($customerId <= 0) {
-            $customerId = (int) OrderMeta::get($order, '_vindi_customer_id');
-        }
-        $api = new Api();
-
-        if ($profileId <= 0) {
-            $gatewayToken = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-card-encrypted'] ?? '')));
-            if ($gatewayToken === '') {
-                throw new \RM_PagBank\Connect\Exception([[
-                    'code' => 'TOKEN_MISSING',
-                    'description' => __('Token do cartão ausente.', 'pagbank-connect'),
-                ]], 40000);
-            }
-
-            $phone = preg_replace('/\D+/', '', (string) $order->get_billing_phone());
-            if ($phone !== '' && strpos($phone, '55') !== 0) {
-                $phone = '55' . $phone;
-            }
-
-            $registryCode = TaxId::sanitizeForApi((string) $order->get_meta('_rm_pagbank_customer_document'));
-            if ($registryCode === '' && !empty($_POST['rm-pagbank-card-cpf-cnpj'])) {
-                $registryCode = TaxId::sanitizeForApi(wp_unslash((string) $_POST['rm-pagbank-card-cpf-cnpj']));
-            }
-
-            $resp = $api->post('payment_profiles', [
-                'gateway_token' => $gatewayToken,
-                'payment_company_code' => $company,
-                'payment_method_code' => 'credit_card',
-                'customer' => [
-                    'name' => $customerName,
-                    'email' => strtolower(trim((string) $order->get_billing_email())),
-                    'registry_code' => $registryCode,
-                    'mobile_phone' => $phone,
-                ],
-            ]);
-
-            if (isset($resp['error_messages']) || !empty($resp['error'])) {
-                throw new \RM_PagBank\Connect\Exception(
-                    $resp['error_messages'] ?? [[
-                        'code' => (string) ($resp['error'] ?? 'PROFILE_ERROR'),
-                        'description' => (string) ($resp['message'] ?? 'Falha ao salvar cartão na Vindi.'),
-                    ]],
-                    40000
-                );
-            }
-
-            $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
-            $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
-            $customerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? $customerId);
-        }
-
-        if ($profileId <= 0) {
+        $gatewayToken = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-card-encrypted'] ?? '')));
+        if ($gatewayToken === '') {
             throw new \RM_PagBank\Connect\Exception([[
-                'code' => 'PROFILE_ID_MISSING',
-                'description' => __('Não foi possível obter o ID do perfil de pagamento.', 'pagbank-connect'),
+                'code' => 'TOKEN_MISSING',
+                'description' => __('Token do cartão ausente.', 'pagbank-connect'),
             ]], 40000);
         }
 
-        $last4 = (string) ($profile['card_number_last_four'] ?? '');
-        if ($last4 === '') {
-            $last4 = (string) (OrderMeta::get($order, 'card_last4') ?: '****');
+        $registryCode = TaxId::sanitizeForApi((string) $order->get_meta('_rm_pagbank_customer_document'));
+        if ($registryCode === '' && !empty($_POST['rm-pagbank-card-cpf-cnpj'])) {
+            $registryCode = TaxId::sanitizeForApi(wp_unslash((string) $_POST['rm-pagbank-card-cpf-cnpj']));
         }
-        $bin = (string) ($profile['card_number_first_six'] ?? '');
-        if ($bin === '') {
-            $bin = (string) (OrderMeta::get($order, '_card_first_digits') ?: '******');
+
+        $verify = \RM_PagBank\Helpers\CardVerification::chargeOneRealAndRefund($order, $gatewayToken, [
+            'holder_name' => $holderName !== '' ? $holderName : $customerName,
+            'company_code' => $company,
+            'registry_code' => $registryCode,
+        ]);
+
+        $profileId = (int) $verify['profile_id'];
+        $customerId = (int) $verify['customer_id'];
+        if ($customerId <= 0) {
+            $customerId = (int) ($_POST['rm-pagbank-vindi-customer-id'] ?? 0);
         }
+        if ($customerId <= 0) {
+            $customerId = (int) OrderMeta::get($order, '_vindi_customer_id');
+        }
+
+        $chargeCard = is_array($verify['response']['charges'][0]['payment_method']['card'] ?? null)
+            ? $verify['response']['charges'][0]['payment_method']['card']
+            : [];
+
+        $last4 = (string) ($chargeCard['last_digits'] ?? OrderMeta::get($order, 'card_last4') ?: '****');
+        $bin = (string) ($chargeCard['first_digits'] ?? OrderMeta::get($order, '_card_first_digits') ?: '******');
         $brand = strtolower((string) (
-            ($profile['payment_company']['code'] ?? null)
-            ?: (OrderMeta::get($order, '_payment_company_code') ?: $company)
+            $chargeCard['brand']
+            ?? (OrderMeta::get($order, '_payment_company_code') ?: $company)
         ));
-        $holder = (string) ($profile['holder_name'] ?? '');
+        $holder = (string) ($chargeCard['holder']['name'] ?? '');
         if ($holder === '') {
             $holder = $holderName !== '' ? $holderName : $customerName;
         }
 
         $expMonth = '';
         $expYear = '';
-        $cardExpiration = (string) ($profile['card_expiration'] ?? '');
-        if ($cardExpiration !== '' && preg_match('/^(\d{4})-(\d{2})/', $cardExpiration, $m)) {
-            $expYear = $m[1];
-            $expMonth = $m[2];
+        if (!empty($chargeCard['exp_month']) && !empty($chargeCard['exp_year'])) {
+            $expMonth = str_pad((string) $chargeCard['exp_month'], 2, '0', STR_PAD_LEFT);
+            $expYear = (string) $chargeCard['exp_year'];
         } elseif (!empty($_POST['rm-pagbank-card-expiry'])) {
             $parts = explode('/', (string) wp_unslash($_POST['rm-pagbank-card-expiry']));
             $expMonth = str_pad(preg_replace('/\D+/', '', $parts[0] ?? ''), 2, '0', STR_PAD_LEFT);

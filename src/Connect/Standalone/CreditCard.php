@@ -509,7 +509,21 @@ class CreditCard extends WC_Payment_Gateway_CC
                         break;
                     }
 
-                    $this->saveCcToken($order);
+                    try {
+                        $this->saveCcToken($order);
+                    } catch (\Exception $e) {
+                        $message = sprintf(
+                            /* translators: %s: error detail */
+                            __('Não foi possível verificar o cartão (cobrança de R$1,00). %s', 'pagbank-connect'),
+                            $e->getMessage()
+                        );
+                        wc_add_notice($message, 'error');
+                        return [
+                            'result' => 'fail',
+                            'redirect' => '',
+                            'message' => $message,
+                        ];
+                    }
                     $profileId = (int) OrderMeta::get($order, '_payment_profile_id');
                     $expMonth = '';
                     $expYear = '';
@@ -708,45 +722,77 @@ class CreditCard extends WC_Payment_Gateway_CC
             if ($customerName === '') {
                 $customerName = (string) OrderMeta::get($order, '_card_holder_name') ?: 'Cliente';
             }
-            $phone = preg_replace('/\D+/', '', (string) $order->get_billing_phone());
-            if ($phone !== '' && strpos($phone, '55') !== 0) {
-                $phone = '55' . $phone;
-            }
 
-            $payload = [
-                'gateway_token' => $gatewayToken,
-                'payment_company_code' => $company !== '' ? $company : 'mastercard',
-                'payment_method_code' => 'credit_card',
-                'customer' => [
-                    'name' => $customerName,
-                    'email' => strtolower(trim((string) $order->get_billing_email())),
+            // Trial (R$0): no real sale — charge R$1 with gateway_token then refund (require_cvv).
+            // Paid checkout that also saves the card still uses payment_profiles; the order charge follows.
+            if ((float) $order->get_total('edit') < 0.01) {
+                $holderName = (string) (OrderMeta::get($order, '_card_holder_name') ?: $customerName);
+                $verify = \RM_PagBank\Helpers\CardVerification::chargeOneRealAndRefund($order, $gatewayToken, [
+                    'holder_name' => $holderName,
+                    'company_code' => $company !== '' ? $company : 'mastercard',
                     'registry_code' => TaxId::sanitizeForApi((string) $order->get_meta('_rm_pagbank_customer_document')),
-                    'mobile_phone' => $phone,
-                ],
-            ];
+                ]);
+                $profileId = (int) $verify['profile_id'];
+                $chargeCard = is_array($verify['response']['charges'][0]['payment_method']['card'] ?? null)
+                    ? $verify['response']['charges'][0]['payment_method']['card']
+                    : [];
+                $profile = [
+                    'id' => $profileId,
+                    'card_number_last_four' => (string) ($chargeCard['last_digits'] ?? ''),
+                    'card_number_first_six' => (string) ($chargeCard['first_digits'] ?? ''),
+                    'holder_name' => (string) ($chargeCard['holder']['name'] ?? $holderName),
+                    'payment_company' => [
+                        'code' => (string) ($chargeCard['brand'] ?? $company),
+                    ],
+                ];
+                if (!empty($chargeCard['exp_year']) && !empty($chargeCard['exp_month'])) {
+                    $profile['card_expiration'] = sprintf(
+                        '%04d-%02d-01',
+                        (int) $chargeCard['exp_year'],
+                        (int) $chargeCard['exp_month']
+                    );
+                }
+            } else {
+                $phone = preg_replace('/\D+/', '', (string) $order->get_billing_phone());
+                if ($phone !== '' && strpos($phone, '55') !== 0) {
+                    $phone = '55' . $phone;
+                }
 
-            $resp = $api->post('payment_profiles', $payload);
-            if (isset($resp['error_messages']) || !empty($resp['error'])) {
-                $msg = $resp['error_messages'] ?? [[
-                    'code' => (string) ($resp['error'] ?? 'PROFILE_ERROR'),
-                    'description' => (string) ($resp['message'] ?? 'Falha ao salvar cartão na Vindi.'),
-                ]];
-                throw new \RM_PagBank\Connect\Exception($msg, 40000);
-            }
+                $payload = [
+                    'gateway_token' => $gatewayToken,
+                    'payment_company_code' => $company !== '' ? $company : 'mastercard',
+                    'payment_method_code' => 'credit_card',
+                    'customer' => [
+                        'name' => $customerName,
+                        'email' => strtolower(trim((string) $order->get_billing_email())),
+                        'registry_code' => TaxId::sanitizeForApi((string) $order->get_meta('_rm_pagbank_customer_document')),
+                        'mobile_phone' => $phone,
+                    ],
+                ];
 
-            $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
-            $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
-            if ($profileId <= 0) {
-                throw new \RM_PagBank\Connect\Exception([[
-                    'code' => 'PROFILE_ID_MISSING',
-                    'description' => __('Não foi possível obter o ID do perfil de pagamento.', 'pagbank-connect'),
-                ]], 40000);
-            }
+                $resp = $api->post('payment_profiles', $payload);
+                if (isset($resp['error_messages']) || !empty($resp['error'])) {
+                    $msg = $resp['error_messages'] ?? [[
+                        'code' => (string) ($resp['error'] ?? 'PROFILE_ERROR'),
+                        'description' => (string) ($resp['message'] ?? 'Falha ao salvar cartão na Vindi.'),
+                    ]];
+                    throw new \RM_PagBank\Connect\Exception($msg, 40000);
+                }
 
-            OrderMeta::set($order, '_payment_profile_id', $profileId, true);
-            $customerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? 0);
-            if ($customerId > 0) {
-                OrderMeta::set($order, '_vindi_customer_id', $customerId, true);
+                $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
+                $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
+                if ($profileId <= 0) {
+                    throw new \RM_PagBank\Connect\Exception([[
+                        'code' => 'PROFILE_ID_MISSING',
+                        'description' => __('Não foi possível obter o ID do perfil de pagamento.', 'pagbank-connect'),
+                    ]], 40000);
+                }
+
+                OrderMeta::set($order, '_payment_profile_id', $profileId, true);
+                $customerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? 0);
+                if ($customerId > 0) {
+                    OrderMeta::set($order, '_vindi_customer_id', $customerId, true);
+                }
             }
         }
 
