@@ -18,6 +18,10 @@ $charge_id = OrderMeta::get($order, 'charge_id');
 $bill_id = OrderMeta::get($order, 'partner_bill_id');
 $isRecurringOrder = OrderMeta::get($order, '_is_recurring') > 0 || $order->get_meta('_recurring_cycle') > 0;
 $pbOrderId = OrderMeta::get($order, 'order_id');
+// Checkout PB / redirect pending: only checkout session id until payment creates an order.
+if (!$pbOrderId) {
+	$pbOrderId = OrderMeta::get($order, 'checkout_id');
+}
 $isSandbox = (string) OrderMeta::get($order, 'is_sandbox') === '1';
 $partner = (string) OrderMeta::get($order, 'partner');
 if ($partner === '') {
@@ -33,7 +37,29 @@ $partnerName = $branding->productName();
 $logoRel = $branding->orderAdminLogo();
 
 $paymentMethodMeta = (string) OrderMeta::get($order, 'payment_method');
+$hostedOrigin = (string) OrderMeta::get($order, '_hosted_checkout_origin');
+$checkoutSessionId = (string) OrderMeta::get($order, 'checkout_id');
+$isHostedCheckout = in_array($paymentMethodMeta, ['checkout_pb', 'redirect'], true)
+	|| in_array($hostedOrigin, ['checkout_pb', 'redirect'], true)
+	|| (strpos($checkoutSessionId, 'chk_') === 0)
+	|| (strpos($checkoutSessionId, 'CHEC') === 0);
+$chargesMeta = OrderMeta::get($order, 'order_charges');
+$chargePm = is_array($chargesMeta) && isset($chargesMeta[0]['payment_method']) && is_array($chargesMeta[0]['payment_method'])
+	? $chargesMeta[0]['payment_method']
+	: [];
+$chargeType = (string) ($chargePm['type'] ?? '');
 $isCreditCardMethod = in_array($paymentMethodMeta, ['credit_card', 'credit_card_token', 'cc'], true);
+if (!$isCreditCardMethod && $isHostedCheckout) {
+	$isCreditCardMethod = in_array($chargeType, ['CREDIT_CARD', 'CREDIT_CARD_3DS'], true);
+}
+$isBoletoMethod = $paymentMethodMeta === 'boleto'
+	|| ($isHostedCheckout && ($chargeType === 'BOLETO' || OrderMeta::get($order, 'boleto_pdf')));
+$isPixMethod = $paymentMethodMeta === 'pix'
+	|| ($isHostedCheckout && (
+		in_array($chargeType, ['PIX', 'BOLEPIX'], true)
+		|| OrderMeta::get($order, 'pix_qrcode')
+		|| OrderMeta::get($order, 'pix_qrcode_text')
+	));
 $hasSplit = (bool) OrderMeta::get($order, '_split_applied');
 
 // Blocks (and classic when posted) store CPF/CNPJ here — not in Woo _billing_cpf.
@@ -47,7 +73,7 @@ $docLabel = $docType === 'cnpj'
 $actionsHtml = '';
 $metaRows = [];
 
-if ($paymentMethodMeta === 'boleto') {
+if ($isBoletoMethod) {
 	$boletoPdf = OrderMeta::get($order, 'boleto_pdf');
 	if ($boletoPdf) {
 		$actionsHtml .= '<a class="pagbank-order-info__action" href="' . esc_url($boletoPdf) . '" title="' . esc_attr__('Baixar Boleto em PDF', 'pagbank-connect') . '">'
@@ -61,13 +87,71 @@ if ($paymentMethodMeta === 'boleto') {
 			. esc_html__('Ver Boleto', 'pagbank-connect')
 			. '</a>';
 	}
+	$boletoBarcode = (string) (
+		OrderMeta::get($order, 'boleto_barcode_formatted')
+		?: OrderMeta::get($order, 'boleto_barcode')
+		?: ''
+	);
+	if ($boletoBarcode !== '') {
+		$metaRows[] = [__('Boleto', 'pagbank-connect'), '<small style="word-break:break-all;">' . esc_html($boletoBarcode) . '</small>'];
+	}
 }
 
-if ($paymentMethodMeta === 'pix') {
-	$actionsHtml .= '<a class="pagbank-order-info__action" href="' . esc_url(\RM_PagBank\Helpers\PixQr::getDisplayUrl($order)) . '" target="_blank" rel="noopener noreferrer" title="' . esc_attr__('Abrir QrCode Pix em nova aba.', 'pagbank-connect') . '">'
-		. '<span class="dashicons dashicons-external" aria-hidden="true"></span>'
-		. esc_html__('Ver QrCode Pix', 'pagbank-connect')
-		. '</a>';
+if ($isPixMethod) {
+	if (OrderMeta::get($order, 'pix_qrcode') || OrderMeta::get($order, 'pix_qrcode_text')) {
+		$actionsHtml .= '<a class="pagbank-order-info__action" href="' . esc_url(\RM_PagBank\Helpers\PixQr::getDisplayUrl($order)) . '" target="_blank" rel="noopener noreferrer" title="' . esc_attr__('Abrir QrCode Pix em nova aba.', 'pagbank-connect') . '">'
+			. '<span class="dashicons dashicons-external" aria-hidden="true"></span>'
+			. esc_html__('Ver QrCode Pix', 'pagbank-connect')
+			. '</a>';
+	}
+	$pixText = (string) OrderMeta::get($order, 'pix_qrcode_text');
+	if ($pixText !== '') {
+		$metaRows[] = [__('PIX', 'pagbank-connect'), '<small style="word-break:break-all;">' . esc_html($pixText) . '</small>'];
+	}
+}
+
+if ($isHostedCheckout) {
+	$hostedLabel = ($hostedOrigin === 'redirect' || $paymentMethodMeta === 'redirect' || strpos($checkoutSessionId, 'CHEC') === 0)
+		? __('Checkout PagBank', 'pagbank-connect')
+		: __('Checkout PB', 'pagbank-connect');
+	$hostedMethodHint = '';
+	if (in_array($paymentMethodMeta, ['pix', 'boleto', 'credit_card', 'credit_card_token', 'cc'], true)) {
+		$hostedMethodHint = [
+			'pix' => __('PIX', 'pagbank-connect'),
+			'boleto' => __('Boleto', 'pagbank-connect'),
+			'credit_card' => __('Cartão de Crédito', 'pagbank-connect'),
+			'credit_card_token' => __('Cartão de Crédito', 'pagbank-connect'),
+			'cc' => __('Cartão de Crédito', 'pagbank-connect'),
+		][ $paymentMethodMeta ] ?? '';
+	} elseif (in_array($chargeType, ['PIX', 'BOLEPIX', 'BOLETO', 'CREDIT_CARD', 'CREDIT_CARD_3DS'], true)) {
+		$hostedMethodHint = [
+			'PIX' => __('PIX', 'pagbank-connect'),
+			'BOLEPIX' => __('PIX', 'pagbank-connect'),
+			'BOLETO' => __('Boleto', 'pagbank-connect'),
+			'CREDIT_CARD' => __('Cartão de Crédito', 'pagbank-connect'),
+			'CREDIT_CARD_3DS' => __('Cartão de Crédito', 'pagbank-connect'),
+		][ $chargeType ] ?? '';
+	}
+	$hostedHtml = esc_html(
+		$hostedMethodHint !== ''
+			? sprintf('%s — %s', $hostedLabel, $hostedMethodHint)
+			: $hostedLabel
+	);
+	if ($checkoutSessionId !== '') {
+		$hostedHtml .= '<br/><small>' . esc_html(sprintf(
+			/* translators: %s = checkout session id */
+			__('Sessão: %s', 'pagbank-connect'),
+			$checkoutSessionId
+		)) . '</small>';
+	}
+	$payUrl = OrderMeta::get($order, 'redirect_url');
+	if ($payUrl && !$order->is_paid() && in_array($order->get_status(), ['pending', 'on-hold'], true)) {
+		$actionsHtml .= '<a class="pagbank-order-info__action" href="' . esc_url($payUrl) . '" target="_blank" rel="noopener noreferrer">'
+			. '<span class="dashicons dashicons-external" aria-hidden="true"></span>'
+			. esc_html__('Link de pagamento', 'pagbank-connect')
+			. '</a>';
+	}
+	$metaRows[] = [__('Checkout', 'pagbank-connect'), $hostedHtml];
 }
 
 if ($customerDocument !== '') {
@@ -107,6 +191,33 @@ if ($isCreditCardMethod) {
 		?: OrderMeta::get($order, '_card_holder_name')
 		?: ''
 	);
+	$cardInstallments = (int) (
+		OrderMeta::get($order, 'card_installments')
+		?: OrderMeta::get($order, '_card_installments')
+		?: 0
+	);
+	// Fallback from persisted charge (webhook / force update / Checkout PB).
+	if (is_array($chargePm['card'] ?? null)) {
+		$c = $chargePm['card'];
+		if ($cardBrand === '' && !empty($c['brand'])) {
+			$cardBrand = (string) ($c['brand'] ?? ($c['payment_company']['code'] ?? ''));
+		}
+		if ($cardBrand === '' && !empty($c['payment_company']['code'])) {
+			$cardBrand = (string) $c['payment_company']['code'];
+		}
+		if ($cardFirst === '' && !empty($c['first_digits'])) {
+			$cardFirst = (string) $c['first_digits'];
+		}
+		if ($cardLast === '' && !empty($c['last_digits'])) {
+			$cardLast = (string) $c['last_digits'];
+		}
+		if ($cardHolder === '' && !empty($c['holder']['name'])) {
+			$cardHolder = (string) $c['holder']['name'];
+		}
+	}
+	if ($cardInstallments < 1 && !empty($chargePm['installments'])) {
+		$cardInstallments = max(1, (int) $chargePm['installments']);
+	}
 	// Trial token response stored on the order
 	$recurringCard = OrderMeta::get($order, 'order_recurring_card');
 	if (is_array($recurringCard)) {
@@ -124,7 +235,7 @@ if ($isCreditCardMethod) {
 		}
 	}
 
-	$installments = OrderMeta::get($order, 'card_installments');
+	$installments = $cardInstallments > 0 ? $cardInstallments : OrderMeta::get($order, 'card_installments');
 	$methodLabel = $installments
 		? sprintf(
 			/* translators: %s = installment count */

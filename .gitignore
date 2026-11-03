@@ -49,3 +49,10 @@ package-lock.json
 
 # React & WP-Build scripts
 build/
+# Keep compiled Blocks payment methods for git deploys (demo/prod without npm build).
+!build/
+!build/js/
+!build/js/frontend/
+!build/js/frontend/*.js
+!build/js/frontend/*.asset.php
+build/js/frontend/*.js.map

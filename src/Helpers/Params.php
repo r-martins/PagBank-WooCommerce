@@ -219,6 +219,69 @@ class Params
     }
 
     /**
+     * Checkout PB gateway settings (Vindi hosted checkout).
+     *
+     * @param string $key
+     * @param mixed  $default
+     * @return mixed
+     */
+    public static function getCheckoutPbConfig($key, $default = '')
+    {
+        $settings = get_option('woocommerce_rm-pagbank-checkout-pb_settings');
+        if (is_array($settings) && array_key_exists($key, $settings)) {
+            return $settings[$key];
+        }
+        return $default;
+    }
+
+    /**
+     * Checkout PB enable mode: disabled | default | payment_method.
+     * Migrates legacy checkbox `enabled` when mode was never saved.
+     */
+    public static function getCheckoutPbMode(): string
+    {
+        $settings = get_option('woocommerce_rm-pagbank-checkout-pb_settings');
+        $mode = '';
+        if (is_array($settings) && array_key_exists('checkout_pb_mode', $settings)) {
+            $mode = (string) $settings['checkout_pb_mode'];
+        }
+        if ($mode === '') {
+            $legacyEnabled = is_array($settings) && (($settings['enabled'] ?? 'no') === 'yes');
+            return $legacyEnabled ? 'payment_method' : 'disabled';
+        }
+        if (!in_array($mode, ['disabled', 'default', 'payment_method'], true)) {
+            return 'disabled';
+        }
+
+        return $mode;
+    }
+
+    public static function isCheckoutPbEnabled(): bool
+    {
+        return self::getCheckoutPbMode() !== 'disabled';
+    }
+
+    /**
+     * https image URL allowed by Checkout PB (png/jpg/jpeg/gif/webp, no SVG).
+     */
+    public static function isAllowedCheckoutImageUrl(string $value): bool
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '' || !preg_match('#^https://#i', $trimmed)) {
+            return false;
+        }
+        try {
+            $path = (string) (parse_url($trimmed, PHP_URL_PATH) ?? '');
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (preg_match('#\.svg$#i', $path)) {
+            return false;
+        }
+        return (bool) preg_match('#\.(png|jpe?g|gif|webp)$#i', $path);
+    }
+
+    /**
      * Gets the max allowed installments or false if no limit
 	 *
      * @return false|int
@@ -265,6 +328,55 @@ class Params
         $installments = floor($orderTotal / $min_total);
         $installments = $installments == 1 ? 0 : $installments; //1 is not acceptable as a value by the api
         return $installments > 18 ? 18 : $installments;
+    }
+
+    /**
+     * Max installments for Checkout PB (API v1 caps at 12). False = no limit sent.
+     *
+     * @return false|int
+     */
+    public static function getCheckoutPbMaxInstallments()
+    {
+        $recurringHelper = new Recurring();
+        if ($recurringHelper->isCartRecurring()) {
+            return 1;
+        }
+
+        if (self::getCheckoutPbConfig('checkout_pb_installments_options_limit_installments', 'no') === 'no') {
+            return false;
+        }
+
+        $max = (int) self::getCheckoutPbConfig('checkout_pb_installments_options_max_installments', 12);
+
+        return max(1, min(12, $max));
+    }
+
+    /**
+     * Interest-free installments for Checkout PB (buyer / fixed / min_total).
+     *
+     * @param float|int|string $orderTotal
+     * @return int
+     */
+    public static function getCheckoutPbMaxInstallmentsNoInterest($orderTotal): int
+    {
+        $installmentOption = (string) self::getCheckoutPbConfig('checkout_pb_installment_options', 'buyer');
+        if ($installmentOption === '' || $installmentOption === 'buyer') {
+            return 0;
+        }
+
+        if ($installmentOption === 'fixed') {
+            $fixed = (int) self::getCheckoutPbConfig('checkout_pb_installment_options_fixed', 3);
+
+            return max(0, min(12, $fixed));
+        }
+
+        $minTotal = (int) self::getCheckoutPbConfig('checkout_pb_installments_options_min_total', 50);
+        $minTotal = max(5, $minTotal);
+        $orderTotal = (float) $orderTotal;
+        $installments = (int) floor($orderTotal / $minTotal);
+        $installments = $installments === 1 ? 0 : $installments;
+
+        return $installments > 12 ? 12 : $installments;
     }
 
     /**
@@ -472,6 +584,9 @@ class Params
                 break;
             case 'redirect':
                 $discountConfig = self::getRedirectConfig('redirect_discount', 0);
+                break;
+            case 'checkout_pb':
+                $discountConfig = self::getCheckoutPbConfig('checkout_pb_discount', 0);
                 break;
         }
         $discountType = self::getDiscountType($discountConfig);

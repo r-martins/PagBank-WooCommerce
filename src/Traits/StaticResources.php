@@ -78,11 +78,14 @@ trait StaticResources
             return;
         }
 
-        $alreadyEnqueued = wp_style_is('pagseguro-connect-admin-css');
+        $alreadyEnqueued = wp_style_is('pagseguro-connect-admin-css', 'enqueued');
         if (!$alreadyEnqueued) {
+            $adminCss = WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/css/ps-connect-admin.css';
             wp_enqueue_style(
                 'pagseguro-connect-admin-css',
-                plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                plugins_url('public/css/ps-connect-admin.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
+                file_exists($adminCss) ? (string) filemtime($adminCss) : WC_PAGSEGURO_CONNECT_VERSION
             );
         }
 
@@ -130,9 +133,23 @@ trait StaticResources
             wp_enqueue_script(
                 'pagseguro-connect-admin',
                 plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                [],
+                ['jquery'],
                 WC_PAGSEGURO_CONNECT_VERSION
             );
+
+            if ($current_section === 'rm-pagbank-checkout-pb') {
+                wp_localize_script(
+                    'pagseguro-connect-admin',
+                    'rmPagBankCheckoutPbPreview',
+                    [
+                        'ajaxUrl' => admin_url('admin-ajax.php'),
+                        'action' => \RM_PagBank\Connect\CheckoutPbPreview::AJAX_ACTION,
+                        'nonce' => wp_create_nonce(\RM_PagBank\Connect\CheckoutPbPreview::AJAX_ACTION),
+                        'label' => __('Pré-visualizar', 'pagbank-connect'),
+                        'error' => __('Não foi possível gerar a pré-visualização.', 'pagbank-connect'),
+                    ]
+                );
+            }
             
             // Enqueue split payments repeater script
             wp_enqueue_script(
