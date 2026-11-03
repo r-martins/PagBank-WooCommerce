@@ -8,15 +8,22 @@ use WP_Error;
 
 /**
  * Vindi require_cvv: first charge must use a fresh gateway_token (with CVV).
- * For trial / change-card (no real sale), charge R$1.00 then refund.
+ * For trial / change-card (no real sale), charge R$1.00 then refund (now or when PAID).
  */
 class CardVerification
 {
     public const AMOUNT_REAIS = 1.0;
     public const AMOUNT_CENTS = 100;
+    public const HOOK_REFUND = 'rm_pagbank_card_verify_refund';
+    public const MAX_REFUND_ATTEMPTS = 24;
+
+    public static function register(): void
+    {
+        add_action(self::HOOK_REFUND, [self::class, 'processScheduledRefund'], 10, 4);
+    }
 
     /**
-     * Charge R$1 with gateway_token (store card), then refund.
+     * Charge R$1 with gateway_token (store card), then refund (immediate or deferred).
      * Blocks on charge failure. Refund failure is logged but does not undo a successful verify.
      *
      * @return array{
@@ -25,7 +32,8 @@ class CardVerification
      *   charge_id:string,
      *   order_id:string,
      *   response:array<string,mixed>,
-     *   refund_ok:bool
+     *   refund_ok:bool,
+     *   refund_deferred:bool
      * }
      * @throws PagBankException|Exception
      */
@@ -108,7 +116,6 @@ class CardVerification
         ];
 
         if (!empty($opts['company_code'])) {
-            // Stored on order for later display; Vindi billing ignores company on /billing.
             OrderMeta::set($order, '_payment_company_code', (string) $opts['company_code'], true);
         }
 
@@ -130,10 +137,22 @@ class CardVerification
 
         $charge = is_array($resp['charges'][0] ?? null) ? $resp['charges'][0] : [];
         $status = strtoupper((string) ($charge['status'] ?? $resp['status'] ?? ''));
-        if (!in_array($status, ['PAID', 'AUTHORIZED'], true)) {
-            $msg = (string) ($charge['payment_response']['message'] ?? '');
-            $code = (string) ($charge['payment_response']['code'] ?? '');
-            $detail = trim($msg . ($code !== '' ? ' (' . $code . ')' : ''));
+        $payCode = (string) ($charge['payment_response']['code'] ?? '');
+        $payMsg = (string) ($charge['payment_response']['message'] ?? '');
+
+        // PAID/AUTHORIZED = clear success. WAITING/IN_ANALYSIS + 20002 ("Em Monitoramento")
+        // is antifraud review — not a hard decline; card was used, so proceed and refund later.
+        $okStatuses = ['PAID', 'AUTHORIZED', 'WAITING', 'IN_ANALYSIS'];
+        $hardDecline = in_array($status, ['DECLINED', 'CANCELED', 'CANCELLED'], true)
+            || $payCode === '20001';
+        $inReview = $payCode === '20002'
+            || stripos($payMsg, 'monitoramento') !== false
+            || stripos($payMsg, 'análise') !== false
+            || stripos($payMsg, 'analise') !== false
+            || in_array($status, ['WAITING', 'IN_ANALYSIS'], true);
+
+        if ($hardDecline || (!in_array($status, $okStatuses, true) && !$inReview)) {
+            $detail = trim($payMsg . ($payCode !== '' ? ' (' . $payCode . ')' : ''));
             if ($detail === '' && $status !== '') {
                 $detail = sprintf(
                     /* translators: %s: charge status */
@@ -199,29 +218,59 @@ class CardVerification
             OrderMeta::set($order, '_card_holder_name', (string) $card['holder']['name'], true);
         }
 
-        $order->add_order_note(
-            sprintf(
-                /* translators: 1: charge id */
-                __('PB Integrações: cartão verificado com cobrança de R$1,00 (cobrança %s). Estornando…', 'pagbank-connect'),
-                $chargeId
-            )
-        );
+        $canRefundNow = in_array($status, ['PAID', 'AUTHORIZED'], true) && !$inReview;
+        $refundOk = false;
+        $refundDeferred = false;
 
-        $refundOk = self::refundVerificationCharge($order, $chargeId);
-        if ($refundOk) {
+        if ($canRefundNow) {
             $order->add_order_note(
-                __('PB Integrações: estorno de R$1,00 da verificação do cartão solicitado com sucesso.', 'pagbank-connect')
+                sprintf(
+                    /* translators: 1: charge id, 2: status */
+                    __('PB Integrações: cartão verificado com cobrança de R$1,00 (cobrança %1$s, status %2$s). Estornando…', 'pagbank-connect'),
+                    $chargeId,
+                    $status
+                )
             );
+            $refundOk = self::refundVerificationCharge($order, $chargeId);
+            if ($refundOk) {
+                OrderMeta::delete($order, '_card_verify_pending_refund');
+                $order->add_order_note(
+                    __('PB Integrações: estorno de R$1,00 da verificação do cartão solicitado com sucesso.', 'pagbank-connect')
+                );
+            } else {
+                // Charge is paid but refund failed — retry shortly.
+                $refundDeferred = true;
+                self::scheduleRefund($order->get_id(), $chargeId, $pbOrderId, 1, 30);
+                $order->add_order_note(
+                    __(
+                        'PB Integrações: estorno imediato de R$1,00 falhou. Nova tentativa agendada em breve.',
+                        'pagbank-connect'
+                    )
+                );
+            }
         } else {
+            $refundDeferred = true;
+            OrderMeta::set($order, '_card_verify_pending_refund', '1', true);
+            self::scheduleRefund($order->get_id(), $chargeId, $pbOrderId, 1, 30);
             $order->add_order_note(
-                __(
-                    'PB Integrações: cobrança de verificação aprovada, mas o estorno automático de R$1,00 falhou. Estorne manualmente no painel.',
-                    'pagbank-connect'
+                sprintf(
+                    /* translators: 1: charge id, 2: status */
+                    __(
+                        'PB Integrações: cartão verificado com cobrança de R$1,00 (cobrança %1$s, status %2$s). Estorno agendado para quando a cobrança for aprovada.',
+                        'pagbank-connect'
+                    ),
+                    $chargeId,
+                    $status !== '' ? $status : 'WAITING'
                 )
             );
             Functions::log(
-                sprintf('Card verify: refund failed for charge %s (order %d)', $chargeId, $order->get_id()),
-                'error'
+                sprintf(
+                    'Card verify: deferred refund for charge %s (status=%s code=%s)',
+                    $chargeId,
+                    $status,
+                    $payCode
+                ),
+                'info'
             );
         }
 
@@ -234,7 +283,130 @@ class CardVerification
             'order_id' => $pbOrderId,
             'response' => $resp,
             'refund_ok' => $refundOk,
+            'refund_deferred' => $refundDeferred,
         ];
+    }
+
+    /**
+     * Action Scheduler / WP-Cron callback: refund when verify charge is PAID, else retry.
+     *
+     * @param int    $orderId
+     * @param string $chargeId
+     * @param string $pbOrderId
+     * @param int    $attempt
+     */
+    public static function processScheduledRefund($orderId, $chargeId = '', $pbOrderId = '', $attempt = 1): void
+    {
+        $orderId = (int) $orderId;
+        $chargeId = (string) $chargeId;
+        $pbOrderId = (string) $pbOrderId;
+        $attempt = max(1, (int) $attempt);
+
+        $order = wc_get_order($orderId);
+        if (!$order) {
+            Functions::log('Card verify refund: order not found ' . $orderId, 'error');
+            return;
+        }
+
+        if ($chargeId === '') {
+            $chargeId = (string) OrderMeta::get($order, '_card_verify_charge_id');
+        }
+        if ($pbOrderId === '') {
+            $pbOrderId = (string) OrderMeta::get($order, '_card_verify_order_id');
+        }
+        if ($chargeId === '') {
+            Functions::log('Card verify refund: missing charge id for order ' . $orderId, 'error');
+            return;
+        }
+
+        $status = '';
+        if ($pbOrderId !== '') {
+            try {
+                $remote = Api::getOrderData($pbOrderId);
+                if (is_array($remote)) {
+                    $status = strtoupper((string) (
+                        $remote['charges'][0]['status']
+                        ?? $remote['status']
+                        ?? ''
+                    ));
+                }
+            } catch (\Throwable $e) {
+                Functions::log(
+                    'Card verify refund: GET order failed — ' . $e->getMessage(),
+                    'warning',
+                    ['pb_order' => $pbOrderId]
+                );
+            }
+        }
+
+        if (in_array($status, ['DECLINED', 'CANCELED', 'CANCELLED'], true)) {
+            OrderMeta::delete($order, '_card_verify_pending_refund');
+            $order->add_order_note(
+                sprintf(
+                    /* translators: 1: charge id, 2: status */
+                    __(
+                        'PB Integrações: cobrança de verificação %1$s ficou %2$s — estorno automático cancelado.',
+                        'pagbank-connect'
+                    ),
+                    $chargeId,
+                    $status
+                )
+            );
+            $order->save();
+            return;
+        }
+
+        if ($status === '' || in_array($status, ['PAID', 'AUTHORIZED'], true)) {
+            // Empty status: still try refund (charge may already be paid).
+            $ok = self::refundVerificationCharge($order, $chargeId);
+            if ($ok) {
+                OrderMeta::delete($order, '_card_verify_pending_refund');
+                $order->add_order_note(
+                    sprintf(
+                        /* translators: %s: charge id */
+                        __('PB Integrações: estorno de R$1,00 da verificação (cobrança %s) solicitado com sucesso.', 'pagbank-connect'),
+                        $chargeId
+                    )
+                );
+                $order->save();
+                return;
+            }
+        }
+
+        if ($attempt >= self::MAX_REFUND_ATTEMPTS) {
+            OrderMeta::delete($order, '_card_verify_pending_refund');
+            $order->add_order_note(
+                sprintf(
+                    /* translators: 1: charge id, 2: status */
+                    __(
+                        'PB Integrações: não foi possível estornar automaticamente a verificação R$1,00 (cobrança %1$s, status %2$s). Estorne manualmente no painel.',
+                        'pagbank-connect'
+                    ),
+                    $chargeId,
+                    $status !== '' ? $status : '?'
+                )
+            );
+            $order->save();
+            Functions::log(
+                sprintf('Card verify refund: gave up after %d attempts (charge %s)', $attempt, $chargeId),
+                'error'
+            );
+            return;
+        }
+
+        // Still WAITING / refund failed — retry with backoff (30s, 60s, … capped at 5 min).
+        $delay = min(300, 30 * $attempt);
+        self::scheduleRefund($orderId, $chargeId, $pbOrderId, $attempt + 1, $delay);
+        Functions::log(
+            sprintf(
+                'Card verify refund: reschedule attempt %d in %ds (charge %s status=%s)',
+                $attempt + 1,
+                $delay,
+                $chargeId,
+                $status
+            ),
+            'info'
+        );
     }
 
     /**
@@ -242,7 +414,6 @@ class CardVerification
      */
     private static function refundVerificationCharge(WC_Order $order, string $chargeId): bool
     {
-        // Temporarily point Api::refund at the verification charge without clobbering a real charge_id.
         $prevCharge = OrderMeta::get($order, 'charge_id');
         $prevOrderId = OrderMeta::get($order, 'order_id');
         OrderMeta::set($order, 'charge_id', $chargeId, true);
@@ -261,5 +432,18 @@ class CardVerification
         $order->save();
 
         return !($result instanceof WP_Error) && $result === true;
+    }
+
+    private static function scheduleRefund(int $orderId, string $chargeId, string $pbOrderId, int $attempt, int $delaySeconds): void
+    {
+        $args = [$orderId, $chargeId, $pbOrderId, $attempt];
+        $ts = time() + max(5, $delaySeconds);
+
+        if (function_exists('as_schedule_single_action')) {
+            as_schedule_single_action($ts, self::HOOK_REFUND, $args, 'pagbank-connect');
+            return;
+        }
+
+        wp_schedule_single_event($ts, self::HOOK_REFUND, $args);
     }
 }

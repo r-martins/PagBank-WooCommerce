@@ -1634,7 +1634,7 @@ class Recurring
         } catch (Exception $e) {
             $message = sprintf(
                 __(
-                    'Não foi possível verificar/salvar o cartão (é feita uma cobrança de R$1,00 com estorno). Confira os dados e tente novamente. %s',
+                    'Não foi possível verificar/salvar o cartão (é feita uma cobrança de verificação de R$1,00). Confira os dados e tente novamente. %s',
                     'pagbank-connect'
                 ),
                 $e->getMessage()
@@ -1669,7 +1669,7 @@ class Recurring
         if ($update) {
             $this->addNotice(
                 __(
-                    'Método de pagamento alterado com sucesso. Foi feita uma cobrança de verificação de R$1,00 com estorno.',
+                    'Método de pagamento alterado com sucesso. Foi feita uma cobrança de verificação de R$1,00. Ela será estornada em breve.',
                     'pagbank-connect'
                 ),
                 $fromAdmin,

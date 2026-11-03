@@ -60,6 +60,7 @@ class Connect
         \RM_PagBank\Connect\Payments\VindiThreeDs::register();
         \RM_PagBank\Helpers\PixQr::register();
         \RM_PagBank\Helpers\SplitIdentity::register();
+        \RM_PagBank\Helpers\CardVerification::register();
         add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
         add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
         add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
