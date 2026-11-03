@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.0.4
+Stable tag: 5.1.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -69,7 +69,8 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Atualização de pedidos automática, inclusive com [confirmação de pagamento instantâneo PIX](https://ajuda.pbintegracoes.com/hc/pt-br/articles/31097176784653-Confirma%C3%A7%C3%A3o-Instant%C3%A2nea-de-Pagamento-PIX) com [comportamento configurável](https://ajuda.pbintegracoes.com/hc/pt-br/articles/34191612071437-Comportamento-ao-confirmar-pagamento).
 * Infinitas [**opções de parcelamento**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-Op%C3%A7%C3%B5es-de-Parcelamento) ∞
 * 💳 [Salvar Cartão](https://ajuda.pbintegracoes.com/hc/pt-br/articles/38366350272397-Salvar-Cart%C3%A3o-de-Cr%C3%A9dito-no-WooCommerce) - Permite que seus clientes salvem o token do cartão de crédito para compras futuras, sem precisar digitar os dados novamente.
-* **Divisão de Pagamentos** entre contas (Split). Seja sócio das lojas que você cria. Ou crie Marketplaces com WooCommerce e Dokan (integração nativa). Em breve na Vindi também.
+* **Divisão de Pagamentos** entre contas (Split). Seja sócio das lojas que você cria. Ou crie Marketplaces com WooCommerce e Dokan (integração nativa). Disponível no PagBank e na Vindi.
+* Compra com um clique (novo)
 
 == ⚡️ RECURSOS ADICIONAIS ==
 * Suporte a [**descontos** no boleto e pix](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) (percentual ou fixo) e [Regras personalizadas de desconto](https://ajuda.pbintegracoes.com/hc/pt-br/articles/45632701768077-Descontos-PIX-ou-Boleto-com-regras-personalizadas-avan%C3%A7adas)
@@ -86,6 +87,7 @@ Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/com
 * Maior taxa de aprovação e estabilidade nas chamadas das APIs PagBank com [retentativa transparente](https://ajuda.pbintegracoes.com/hc/pt-br/articles/4695328655245-Porque-as-transa%C3%A7%C3%B5es-pelo-modelo-de-aplica%C3%A7%C3%A3o-t%C3%AAm-mais-sucesso) em caso de falha.
 * Use a mesma conta PagBank/Vindi e a mesma Connect Key para integrar **várias lojas** WooCommerce, sem precisar de uma Connect Key para cada loja.
 * Integração com Marketplace Dokan para divisão de pagamentos entre múltiplos vendedores (split, multivendor). [Saiba mais](https://ajuda.pbintegracoes.com/hc/pt-br/articles/40558023581965-Dokan-Split-Divis%C3%A3o-de-Pagamentos-para-Marketplace).
+* Consulta CNPJ comprador com ficha cadastral (novo)
 
 https://www.youtube.com/watch?v=R7nyqVCo9fU
 
@@ -104,7 +106,7 @@ Tudo pra você vender mais com PagBank(PagSeguro) ou Vindi sem sequer precisar s
 
 
 * Termos de uso e softwares terceiros
-Ao instalar nosso plugin, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
+Ao instalar nosso plugin, você concorda com as [Regras de uso do PagBank](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), seu [Contrato de Serviço](https://pagseguro.uol.com.br/sobre/contrato-de-servicos), [Termos de Segurança, Privacidade](https://pagseguro.uol.com.br/sobre/seguranca-e-privacidade) e [Compartilhamento](https://pagseguro.uol.com.br/sobre/regras-de-compartilhamento), os [Contratos e Políticas da Vindi](https://vindi.com.br/nossos-contratos-e-politicas), bem como os [Termos de uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=readme&utm_content=termos) do desenvolvedor.
 
 
 == Installation ==
@@ -253,6 +255,11 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.0 =
+* Adicionado: **Checkout PB** (checkout hospedado) para chaves Vindi (`CONVD…`) — classic e Blocks, com preview no admin, compra com um clique (opt-in) e suporte a recorrência.
+* Adicionado: **Split / Dokan na Vindi** — Affiliate ID, convite self-service amarrado à Connect Key, validação de status e exibição do split no admin do pedido.
+* Melhoria: box de informações de pagamento no admin do pedido (layout, Checkout PB, PIX/boleto/cartão) e ficha CNPJ via ReceitaWS.
 
 = 5.0.4 =
 * Correção: avisos de depreciação no PHP 8.5 na recorrência (parâmetros nullable implícitos em processRecurringPayments e getUserRecurringOrders).
