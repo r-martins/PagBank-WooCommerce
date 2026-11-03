@@ -203,4 +203,232 @@ jQuery(document).ready(function($) {
     jQuery(document).on('change', handleShowPixDiscount);
     handleShowPixDiscount();
     //endregion
+
+    //region Checkout PB mode + shipping fields
+    function checkoutPbFieldRow(fieldKey) {
+        return jQuery('#woocommerce_rm-pagbank-checkout-pb_' + fieldKey).closest('tr');
+    }
+
+    function handleCheckoutPbModeShippingFields() {
+        var $mode = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_mode');
+        if (!$mode.length) {
+            return;
+        }
+        var mode = $mode.val();
+        // Frete só no checkout padrão: o Woo redireciona sem frete calculado.
+        // Em "meio de pagamento" o frete já vem do checkout Woo.
+        var isDefaultCheckout = mode === 'default';
+        var shippingMode = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_shipping_mode').val();
+
+        checkoutPbFieldRow('checkout_pb_shipping_mode').toggle(isDefaultCheckout);
+        checkoutPbFieldRow('checkout_pb_shipping_fixed_amount').toggle(
+            isDefaultCheckout && shippingMode === 'fixed'
+        );
+
+        // Title fields render as h3 + p (outside <tr>).
+        var $hintTitle = jQuery(
+            '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_shipping_calculate_hint, h3.rm-checkout-pb-shipping-calculate-hint'
+        );
+        var $hintDesc = $hintTitle.next('p');
+        $hintTitle.add($hintDesc).toggle(isDefaultCheckout && shippingMode === 'calculate');
+    }
+
+    jQuery(document).on(
+        'change',
+        '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_mode, #woocommerce_rm-pagbank-checkout-pb_checkout_pb_shipping_mode',
+        handleCheckoutPbModeShippingFields
+    );
+    handleCheckoutPbModeShippingFields();
+    //endregion
+
+    //region Checkout PB one-click fields
+    function handleCheckoutPbOneClickFields() {
+        var $enabled = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_one_click_enabled');
+        if (!$enabled.length) {
+            return;
+        }
+        checkoutPbFieldRow('checkout_pb_one_click_label').toggle($enabled.is(':checked'));
+    }
+
+    jQuery(document).on(
+        'change',
+        '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_one_click_enabled',
+        handleCheckoutPbOneClickFields
+    );
+    handleCheckoutPbOneClickFields();
+    //endregion
+
+    //region Checkout PB installment fields
+    function hideOrShowCheckoutPbFixedOptions() {
+        return function () {
+            var $fixed = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installment_options_fixed');
+            if (!$fixed.length) {
+                return;
+            }
+            if (jQuery(this).val() === 'fixed') {
+                $fixed.closest('tr').show();
+            } else {
+                $fixed.closest('tr').hide();
+            }
+        };
+    }
+
+    function hideOrShowCheckoutPbMinTotalOptions() {
+        return function () {
+            var $min = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installments_options_min_total');
+            if (!$min.length) {
+                return;
+            }
+            if (jQuery(this).val() === 'min_total') {
+                $min.closest('tr').show();
+            } else {
+                $min.closest('tr').hide();
+            }
+        };
+    }
+
+    function hideOrShowCheckoutPbMaxInstallmentsOptions() {
+        return function () {
+            var $max = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installments_options_max_installments');
+            if (!$max.length) {
+                return;
+            }
+            if (jQuery(this).val() === 'yes') {
+                $max.closest('tr').show();
+            } else {
+                $max.closest('tr').hide();
+            }
+        };
+    }
+
+    var $checkoutPbInstallmentOptions = jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installment_options');
+    if ($checkoutPbInstallmentOptions.length) {
+        jQuery(document).on(
+            'change',
+            '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installment_options',
+            hideOrShowCheckoutPbFixedOptions()
+        );
+        hideOrShowCheckoutPbFixedOptions().call($checkoutPbInstallmentOptions);
+
+        jQuery(document).on(
+            'change',
+            '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installment_options',
+            hideOrShowCheckoutPbMinTotalOptions()
+        );
+        hideOrShowCheckoutPbMinTotalOptions().call($checkoutPbInstallmentOptions);
+    }
+
+    var $checkoutPbLimitInstallments = jQuery(
+        '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installments_options_limit_installments'
+    );
+    if ($checkoutPbLimitInstallments.length) {
+        jQuery(document).on(
+            'change',
+            '#woocommerce_rm-pagbank-checkout-pb_checkout_pb_installments_options_limit_installments',
+            hideOrShowCheckoutPbMaxInstallmentsOptions()
+        );
+        hideOrShowCheckoutPbMaxInstallmentsOptions().call($checkoutPbLimitInstallments);
+    }
+    //endregion
+
+    //region Checkout PB preview
+    (function initCheckoutPbPreview() {
+        // Button is rendered in PHP under Pré-visualização; JS only handles the click.
+        if (!jQuery('#woocommerce_rm-pagbank-checkout-pb_checkout_pb_mode').length
+            && !jQuery('.rm-pagbank-checkout-pb-preview').length) {
+            return;
+        }
+        var prefix = 'woocommerce_rm-pagbank-checkout-pb_';
+
+        function resolveCfg($btn) {
+            if (typeof rmPagBankCheckoutPbPreview !== 'undefined') {
+                return rmPagBankCheckoutPbPreview;
+            }
+            return {
+                ajaxUrl: $btn.data('ajaxUrl') || $btn.attr('data-ajax-url') || '',
+                action: $btn.data('action') || $btn.attr('data-action') || '',
+                nonce: $btn.data('nonce') || $btn.attr('data-nonce') || '',
+                label: $btn.data('label') || $btn.attr('data-label') || 'Pré-visualizar',
+                error: $btn.data('error') || $btn.attr('data-error') || 'Não foi possível gerar a pré-visualização.'
+            };
+        }
+
+        function collectSettings() {
+            var settings = {};
+            jQuery('#mainform').find('[name^="' + prefix + '"]').each(function () {
+                var $el = jQuery(this);
+                var name = $el.attr('name') || '';
+                if (name.indexOf(prefix) !== 0) {
+                    return;
+                }
+                var key = name.slice(prefix.length).replace(/\[\]$/, '');
+                if (!key || key.indexOf('checkout_pb_preview') === 0) {
+                    return;
+                }
+                if ($el.is(':checkbox')) {
+                    if ($el.is(':checked')) {
+                        settings[key] = $el.val() || 'yes';
+                    }
+                    return;
+                }
+                if ($el.is('select[multiple]')) {
+                    settings[key] = $el.val() || [];
+                    return;
+                }
+                if (name.slice(-2) === '[]') {
+                    if (!Array.isArray(settings[key])) {
+                        settings[key] = [];
+                    }
+                    settings[key].push($el.val());
+                    return;
+                }
+                settings[key] = $el.val();
+            });
+            return settings;
+        }
+
+        jQuery(document).on('click', '.rm-pagbank-checkout-pb-preview', function (e) {
+            e.preventDefault();
+            var $btn = jQuery(this);
+            var cfg = resolveCfg($btn);
+            if (!cfg.ajaxUrl || !cfg.action || !cfg.nonce) {
+                window.alert(cfg.error || 'Não foi possível gerar a pré-visualização.');
+                return;
+            }
+            if ($btn.prop('disabled') || $btn.attr('aria-busy') === 'true') {
+                return;
+            }
+            $btn.prop('disabled', true).attr('aria-busy', 'true');
+            jQuery.post(cfg.ajaxUrl, {
+                action: cfg.action,
+                nonce: cfg.nonce,
+                settings: collectSettings()
+            })
+                .done(function (resp) {
+                    var url = resp && resp.data && resp.data.url;
+                    if (resp && resp.success && url) {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                        return;
+                    }
+                    var msg = (resp && resp.data && resp.data.message) || cfg.error;
+                    window.alert(msg);
+                })
+                .fail(function (xhr) {
+                    var msg = cfg.error;
+                    try {
+                        var json = xhr.responseJSON;
+                        if (json && json.data && json.data.message) {
+                            msg = json.data.message;
+                        }
+                    } catch (err) {
+                        // keep default
+                    }
+                    window.alert(msg);
+                })
+                .always(function () {
+                    $btn.prop('disabled', false).attr('aria-busy', 'false');
+                });
+        });
+    })();
+    //endregion
 });

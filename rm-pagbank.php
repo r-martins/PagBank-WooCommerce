@@ -11,7 +11,7 @@
  * Plugin Name:       PB Integrações (antigo PagBank Connect)
  * Plugin URI:        https://pbintegracoes.com
  * Description:       Integra seu WooCommerce com Vindi, PagBank e os melhores provedores de pagamento (com descontos nas taxas oficiais), e com suporte a PIX transparente, Recorrência e muito mais.
- * Version:           5.0.4
+ * Version:           5.1.0
  * Requires at least: 5.2
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -34,7 +34,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '5.0.4' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '5.1.0' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
@@ -115,16 +115,17 @@ add_action('admin_init', function() {
         $gateway_settings = get_option('woocommerce_rm-pagbank_settings', []);
         $split_payments_enabled = $gateway_settings['split_payments_enabled'] ?? 'no';
         
+        // Mutual exclusivity: enabling Dokan turns off general split (avoids silent no-op when
+        // a stale split_payments_enabled=yes remains after migrating to Vindi).
         if ($dokan_split_enabled === 'yes' && $split_payments_enabled === 'yes') {
+            $gateway_settings['split_payments_enabled'] = 'no';
+            update_option('woocommerce_rm-pagbank_settings', $gateway_settings);
             add_settings_error(
                 'woocommerce_rm-pagbank-integrations',
-                'mutual_exclusivity_error',
-                __('Não é possível ativar Split Dokan enquanto a Divisão de Pagamentos estiver ativa. Desative a Divisão de Pagamentos primeiro.', 'pagbank-connect'),
-                'error'
+                'mutual_exclusivity_notice',
+                __('Split Dokan ativado. A Divisão de Pagamentos (geral) foi desativada automaticamente — os dois não podem ficar ativos ao mesmo tempo.', 'pagbank-connect'),
+                'updated'
             );
-            // Don't save and redirect back
-            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank&show_integrations=1'));
-            exit;
         }
         
         // Save to database

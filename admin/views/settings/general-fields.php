@@ -173,7 +173,7 @@ return array(
         'title' => esc_html(__( 'Divisão de Pagamentos', 'pagbank-connect' ) ),
         'type'  => 'title',
         'desc'  => esc_html( __(
-            'Configure a divisão automática de pagamentos para múltiplas contas PagBank. Cada conta receberá um percentual do valor total do pedido. O restante ficará com a conta principal configurada abaixo.',
+            'Configure a divisão automática de pagamentos. PagBank: Account IDs (ACCO_…). Vindi: Affiliate IDs numéricos (resto na conta da Connect Key).',
             'pagbank-connect'
         )),
         'id'    => 'wc_pagseguro_connect_split_payments_options',

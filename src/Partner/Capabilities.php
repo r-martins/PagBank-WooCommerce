@@ -29,9 +29,19 @@ class Capabilities
         return $this->detector->isPagBank();
     }
 
+    /**
+     * Checkout PB (api.pbintegracoes.com/v1/checkouts → checkout.pbintegracoes.com).
+     * Vindi Connect Keys only; PagBank keeps hasHostedCheckout() / redirect.
+     */
+    public function hasCheckoutPb(): bool
+    {
+        return $this->detector->isVindi();
+    }
+
     public function hasSplit(): bool
     {
-        return $this->detector->isPagBank();
+        // PagBank: ACCO_… receivers. Vindi: affiliate_id → bill_affiliates via API v1.
+        return $this->detector->isPagBank() || $this->detector->isVindi();
     }
 
     public function forceNotificationProxy(): bool

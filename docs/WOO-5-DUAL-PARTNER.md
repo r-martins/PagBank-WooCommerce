@@ -24,14 +24,29 @@ Nunca chame a API Vindi com a Connect Key. Tokenização de cartão no browser u
 | Cartão salvo | tokens PagBank | `payment_profile_id` | tokens PagBank | `payment_profile_id` |
 | Soft descriptor | ✓ | omitido (config na Vindi) | ✓ | omitido |
 | Checkout redirect PagBank | ✓ | oculto | ✓ (`is_active`) | oculto (`hasHostedCheckout` = false) |
-| Split / Dokan | ✓ | bloqueado | ✓ | bloqueado |
+| Checkout PB (`rm-pagbank-checkout-pb`) | oculto | ✓ (`hasCheckoutPb`) | oculto | ✓ (`is_active`) |
+| Split / Dokan | ✓ (`ACCO_…`) | ✓ (`affiliate_id` + invite self-service) | ✓ | ✓ |
 | Health CC (`isCcEnabledAndHealthy`) | sessão 3DS PagBank | `true` se CC enabled | — | — |
 | Sandbox debug upstream | — | `POST orders?debug=1` automático (prod e sandbox) | — | idem |
 
+## Split Vindi (Dokan / geral)
+
+- Meta do vendedor: `vindi_affiliate_id` (numérico). PagBank continua em `pagbank_account_id`.
+- Cadastro self-service: link gerado via `POST /v1/affiliates/invites` (Connect Key só no servidor) → página `/connect/vindi-afiliado?token=…`.
+- Validar status (`ready_for_split`) ao salvar o ID; `pending_approval` / blocked → portal.vindi.com.br.
+- Sem custódia / liable PagBank; marketplace PRIMARY implícito (conta da Connect Key).
+- Pedido: `splits` no contrato PB → API mapeia SECONDARY → `bill_affiliates`.
+
 ## Recursos bloqueados na Vindi
 
-- Checkout PagBank (`rm-pagbank-redirect`)
-- Split / Dokan receivers PagBank
+- Checkout PagBank (`rm-pagbank-redirect`) — use **Checkout PB** (`rm-pagbank-checkout-pb`) → `POST /v1/checkouts`
+
+## Checkout PB (Vindi)
+
+- Settings: Woo → Pagamentos → Checkout PB (só com key `CONVD…`)
+- Carrinho Woo: frete `FIXED`/`FREE` + `address_modifiable: false` (já calculado na loja)
+- Compra com um clique (opt-in, default off): `CALCULATE` com CEP origem + caixas Envio Fácil + dims do produto
+- Webhook: sync de `shipping.address`, método/valor de frete e customer no `WC_Order`
 
 ## Meta de pedidos
 
@@ -81,7 +96,7 @@ Classic: `public/js/creditcard.js`. Blocks: `public/js/blocks/vindiCheckout.js` 
 - [ ] Classic BELOW_MINIMUM_AMOUNT → re-token público, sem profile stale
 - [ ] Blocks CC sem 3DS / com 3DS
 - [ ] PIX e boleto thank-you + webhook
-- [ ] Redirect e split **não** aparecem
+- [ ] Redirect PagBank **não** aparece; Checkout PB e split Vindi **aparecem**
 - [ ] Cartão salvo Vindi (classic + Blocks `savedTokenComponent`)
 - [ ] Troca CON→CONVD: retoken recorrência
 - [ ] Log sandbox com `debug.upstream` redigido

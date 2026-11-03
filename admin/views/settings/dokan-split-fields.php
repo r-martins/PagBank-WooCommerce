@@ -1,14 +1,21 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-return array(
+$isVindi = \RM_PagBank\Helpers\SplitIdentity::isVindi();
+
+$fields = [
     'dokan_split_section' => [
         'title' => esc_html( __( 'Integração Dokan - Split de Pagamentos', 'pagbank-connect' ) ),
         'type'  => 'title',
-        'desc'  => esc_html( __(
-            'Configure a integração com o Dokan para permitir split de pagamentos direto para vendedores. Esta funcionalidade permite que vendedores recebam pagamentos diretamente em suas contas PagBank, com proteção via custódia e controle de responsabilidade por chargebacks.',
-            'pagbank-connect'
-        )),
+        'desc'  => $isVindi
+            ? esc_html( __(
+                'Split Dokan via Vindi Pagamentos: Seu vendedor informa o código de afiliado nas configurações da conta dele, e o repasse é feito automaticamente de acordo com sua configuração.',
+                'pagbank-connect'
+            ))
+            : esc_html( __(
+                'Configure a integração com o Dokan para permitir split de pagamentos direto para vendedores. Esta funcionalidade permite que vendedores recebam pagamentos diretamente em suas contas PagBank, com proteção via custódia e controle de responsabilidade por chargebacks.',
+                'pagbank-connect'
+            )),
         'id'    => 'wc_pagseguro_connect_dokan_split_options',
     ],
     'dokan_split_enabled' => [
@@ -16,14 +23,22 @@ return array(
         'label' => esc_html( __( 'Ativar split de pagamentos para vendedores Dokan', 'pagbank-connect' ) ),
         'type'  => 'checkbox',
         'desc_tip' => true,
-        'description' => esc_html( __(
-            'Quando ativado, vendedores com Account ID PagBank configurado receberão pagamentos diretos via split.',
-            'pagbank-connect'
-        )),
+        'description' => $isVindi
+            ? esc_html( __(
+                'Quando ativado, vendedores com Affiliate ID Vindi ativo receberão a comissão via afiliados automaticamente.',
+                'pagbank-connect'
+            ))
+            : esc_html( __(
+                'Quando ativado, vendedores com Account ID PagBank configurado receberão pagamentos diretos via split.',
+                'pagbank-connect'
+            )),
         'default' => 'no',
         'id'    => 'woocommerce_rm-pagbank-integrations_dokan_split_enabled',
     ],
-    'marketplace_account_id' => [
+];
+
+if (!$isVindi) {
+    $fields['marketplace_account_id'] = [
         'title'       => esc_html( __( 'Account ID do Marketplace', 'pagbank-connect' ) ),
         'type'        => 'text',
         'description' => sprintf(
@@ -45,24 +60,8 @@ return array(
             'title' => 'Formato: ACCO_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         ],
         'validate' => 'validate_pagbank_account_id'
-    ],
-    'split_marketplace_reason' => [
-        'title'       => esc_html( __( 'Descrição do Marketplace', 'pagbank-connect' ) ),
-        'type'        => 'text',
-        'description' => esc_html( __(
-            'Descrição que aparecerá na fatura do marketplace para transações com split.',
-            'pagbank-connect'
-        )),
-        'default'     => 'Comissão do Marketplace',
-        'placeholder' => 'Comissão do Marketplace',
-        'desc_tip'    => true,
-        'required'    => false,
-        'id'          => 'woocommerce_rm-pagbank-integrations_split_marketplace_reason',
-        'custom_attributes' => [
-            'maxlength' => 64
-        ]
-    ],
-    'split_custody_days' => [
+    ];
+    $fields['split_custody_days'] = [
         'title'       => esc_html( __( 'Prazo de Custódia (dias)', 'pagbank-connect' ) ),
         'type'        => 'number',
         'description' => esc_html( __(
@@ -78,8 +77,8 @@ return array(
             'min' => 1,
             'max' => 30
         ]
-    ],
-    'split_chargeback_liability' => [
+    ];
+    $fields['split_chargeback_liability'] = [
         'title' => esc_html( __( 'Responsabilidade por Chargebacks (Liable)', 'pagbank-connect' ) ),
         'type'  => 'select',
         'description' => esc_html( __(
@@ -93,17 +92,39 @@ return array(
         ],
         'desc_tip'    => true,
         'id'          => 'woocommerce_rm-pagbank-integrations_split_chargeback_liability',
-    ],
-    'split_notifications' => [
-        'title' => esc_html( __( 'Notificações', 'pagbank-connect' ) ),
-        'type'  => 'checkbox',
-        'label' => esc_html( __( 'Notificar vendedores sobre configuração de Account ID', 'pagbank-connect' ) ),
-        'description' => esc_html( __(
-            'Enviar e-mail para vendedores quando Account ID for configurado ou alterado.',
-            'pagbank-connect'
-        )),
-        'default' => 'yes',
-        'desc_tip'    => true,
-        'id'          => 'woocommerce_rm-pagbank-integrations_split_notifications',
-    ],
-);
+    ];
+}
+
+$fields['split_marketplace_reason'] = [
+    'title'       => esc_html( __( 'Descrição do Marketplace', 'pagbank-connect' ) ),
+    'type'        => 'text',
+    'description' => esc_html( __(
+        'Descrição que aparecerá na fatura do marketplace para transações com split.',
+        'pagbank-connect'
+    )),
+    'default'     => 'Comissão do Marketplace',
+    'placeholder' => 'Comissão do Marketplace',
+    'desc_tip'    => true,
+    'required'    => false,
+    'id'          => 'woocommerce_rm-pagbank-integrations_split_marketplace_reason',
+    'custom_attributes' => [
+        'maxlength' => 64
+    ]
+];
+
+$fields['split_notifications'] = [
+    'title' => esc_html( __( 'Notificações', 'pagbank-connect' ) ),
+    'type'  => 'checkbox',
+    'label' => $isVindi
+        ? esc_html( __( 'Notificar admin quando Affiliate ID for configurado', 'pagbank-connect' ) )
+        : esc_html( __( 'Notificar vendedores sobre configuração de Account ID', 'pagbank-connect' ) ),
+    'description' => esc_html( __(
+        'Enviar e-mail quando o ID de split do vendedor for configurado ou alterado.',
+        'pagbank-connect'
+    )),
+    'default' => 'yes',
+    'desc_tip'    => true,
+    'id'          => 'woocommerce_rm-pagbank-integrations_split_notifications',
+];
+
+return $fields;

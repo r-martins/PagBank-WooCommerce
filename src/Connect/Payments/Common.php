@@ -434,6 +434,37 @@ class Common
 
 
     /**
+     * Pay URL from checkout create response (PagBank or Checkout PB).
+     *
+     * @param array $response
+     * @return string|null
+     */
+    public static function extractCheckoutPayUrl(array $response): ?string
+    {
+        foreach (['url', 'payment_url', 'checkout_url'] as $key) {
+            if (!empty($response[$key]) && is_string($response[$key])) {
+                return $response[$key];
+            }
+        }
+        if (!empty($response['links']) && is_array($response['links'])) {
+            foreach ($response['links'] as $link) {
+                if (!is_array($link)) {
+                    continue;
+                }
+                $rel = strtoupper((string) ($link['rel'] ?? ''));
+                if (($rel === 'PAY' || $rel === 'CHECKOUT') && !empty($link['href']) && is_string($link['href'])) {
+                    return $link['href'];
+                }
+            }
+            // PagBank legacy: PAY often at index 1
+            if (!empty($response['links'][1]['href']) && is_string($response['links'][1]['href'])) {
+                return $response['links'][1]['href'];
+            }
+        }
+        return null;
+    }
+
+    /**
 	 * Process response from the API and add the metadata to the order
      * @param WC_Order $order
      * @param array    $response
@@ -498,14 +529,24 @@ class Common
                 $order->set_props(['payment_method' => 'rm-pagbank-cc']);
 				break;
             case 'redirect':
-                OrderMeta::set($order, 'redirect_url', $response['links'][1]['href'] ?? null, true);
-                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? null, false);
+                OrderMeta::set($order, 'redirect_url', self::extractCheckoutPayUrl($response), true);
+                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? ($response['expires_at'] ?? null), false);
                 OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
+                OrderMeta::set($order, '_hosted_checkout_origin', 'redirect', true);
                 $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
+                break;
+            case 'checkout_pb':
+                OrderMeta::set($order, 'redirect_url', self::extractCheckoutPayUrl($response), true);
+                OrderMeta::set($order, 'redirect_expiration', $response['expiration_date'] ?? ($response['expires_at'] ?? null), false);
+                OrderMeta::set($order, 'checkout_id', $response['id'] ?? null, true);
+                OrderMeta::set($order, '_hosted_checkout_origin', 'checkout_pb', true);
+                $order->set_props(['payment_method' => 'rm-pagbank-checkout-pb']);
                 break;
                 
         }
-        if (isset($response['id']) && substr($response['id'], 0, 4) != 'CHEC'){ //if not a pagbank checkout code
+        $respId = (string) ($response['id'] ?? '');
+        // Checkout sessions (PagBank CHEC_* or PB chk_*) are not order ids.
+        if ($respId !== '' && strpos($respId, 'CHEC') !== 0 && strpos($respId, 'chk_') !== 0) {
             OrderMeta::set($order, 'order_id', $response['id'], true);
         }
         $chargeId = $response['charges'][0]['id']
@@ -520,46 +561,119 @@ class Common
 		OrderMeta::set($order, 'order_charges', $response['charges'] ?? null, true);
 		OrderMeta::set($order, 'is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 		
-		// Save split data if present (for Pix, split data comes directly in response)
-		if (!empty($response['qr_codes'][0]['splits'])) {
-		    OrderMeta::set($order, '_split_data', $response['qr_codes'][0]['splits'], true);
-		    OrderMeta::set($order, '_split_applied', true, true);
-		} elseif (!empty($response['charges'][0]['payment_method']['splits'])) {
-		    OrderMeta::set($order, '_split_data', $response['charges'][0]['payment_method']['splits'], true);
-		    OrderMeta::set($order, '_split_applied', true, true);
-		}
-		
-		// For credit card payments, split details come via a link (SPLIT)
-		// We need to fetch the split details from the API
-		if (!empty($response['charges'][0]['links'])) {
-		    foreach ($response['charges'][0]['links'] as $link) {
-		        if (isset($link['rel']) && $link['rel'] === 'SPLIT' && !empty($link['href'])) {
-		            // Extract split_id from href (last part of URL)
-		            $split_id = basename(parse_url($link['href'], PHP_URL_PATH));
-		            OrderMeta::set($order, '_split_id', $split_id, true);
-		            Functions::log('Split ID encontrado no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
-		            
-		            // Fetch split details from the API
-		            try {
-		                $split_details = self::fetchSplitDetails($link['href']);
-		                if (!empty($split_details)) {
-		                    // Save split data in the same format as Pix
-		                    OrderMeta::set($order, '_split_data', $split_details, true);
-		                    OrderMeta::set($order, '_split_applied', true, true);
-		                    Functions::log('Detalhes do split obtidos e salvos para o pedido ' . $order->get_id(), 'info');
-		                }
-		            } catch (\Exception $e) {
-		                Functions::log('Erro ao buscar detalhes do split para o pedido ' . $order->get_id() . ': ' . $e->getMessage(), 'error');
-		            }
-		            break;
-		        }
-		    }
-		}
+		self::persistSplitMetaFromResponse($order, $response);
 
 		$order->update_status('pending', \RM_PagBank\Partner\Branding::notePrefix($order) . ': Pagamento Pendente');
 
         do_action('pagbank_connect_after_proccess_response', $order, $response);
 	}
+
+    /**
+     * Persist split meta from create-order / webhook response (PagBank splits or Vindi bill_affiliates).
+     *
+     * @param array<string, mixed> $response
+     */
+    public static function persistSplitMetaFromResponse(WC_Order $order, array $response): void
+    {
+        // PagBank: Pix/boleto may embed splits on qr_codes / payment_method.
+        if (!empty($response['qr_codes'][0]['splits']) && is_array($response['qr_codes'][0]['splits'])) {
+            OrderMeta::set($order, '_split_data', $response['qr_codes'][0]['splits'], true);
+            OrderMeta::set($order, '_split_applied', true, true);
+        } elseif (!empty($response['charges'][0]['payment_method']['splits'])
+            && is_array($response['charges'][0]['payment_method']['splits'])) {
+            OrderMeta::set($order, '_split_data', $response['charges'][0]['payment_method']['splits'], true);
+            OrderMeta::set($order, '_split_applied', true, true);
+        } elseif (!empty($response['bill_affiliates']) && is_array($response['bill_affiliates'])) {
+            // Vindi: top-level bill_affiliates (+ optional split_applied).
+            $normalized = self::normalizeBillAffiliatesToSplitData($response['bill_affiliates']);
+            if (!empty($normalized['receivers'])) {
+                OrderMeta::set($order, '_split_data', $normalized, true);
+                OrderMeta::set($order, '_split_applied', true, true);
+                OrderMeta::set($order, '_bill_affiliates', $response['bill_affiliates'], true);
+            }
+        } elseif (!empty($response['split_applied'])) {
+            OrderMeta::set($order, '_split_applied', true, true);
+        }
+
+        // PagBank credit card: split details via charges[].links[].rel = SPLIT
+        if (!empty($response['charges'][0]['links']) && is_array($response['charges'][0]['links'])) {
+            foreach ($response['charges'][0]['links'] as $link) {
+                if (!is_array($link) || ($link['rel'] ?? '') !== 'SPLIT' || empty($link['href'])) {
+                    continue;
+                }
+                $split_id = basename(parse_url((string) $link['href'], PHP_URL_PATH) ?: '');
+                if ($split_id !== '') {
+                    OrderMeta::set($order, '_split_id', $split_id, true);
+                    Functions::log('Split ID encontrado no pedido ' . $order->get_id() . ': ' . $split_id, 'info');
+                }
+                try {
+                    $split_details = self::fetchSplitDetails((string) $link['href']);
+                    if (!empty($split_details)) {
+                        OrderMeta::set($order, '_split_data', $split_details, true);
+                        OrderMeta::set($order, '_split_applied', true, true);
+                        Functions::log('Detalhes do split obtidos e salvos para o pedido ' . $order->get_id(), 'info');
+                    }
+                } catch (\Exception $e) {
+                    Functions::log(
+                        'Erro ao buscar detalhes do split para o pedido ' . $order->get_id() . ': ' . $e->getMessage(),
+                        'error'
+                    );
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Map Vindi bill_affiliates into the PagBank-shaped _split_data used by admin UI.
+     *
+     * @param list<array<string, mixed>> $affiliates
+     * @return array{method: string, receivers: list<array<string, mixed>>, partner: string}
+     */
+    public static function normalizeBillAffiliatesToSplitData(array $affiliates): array
+    {
+        $receivers = [];
+        $sawPercentage = false;
+        $sawFixed = false;
+
+        foreach ($affiliates as $aff) {
+            if (!is_array($aff)) {
+                continue;
+            }
+            $affiliateId = (string) ($aff['affiliate_id'] ?? '');
+            if ($affiliateId === '' || $affiliateId === '0') {
+                continue;
+            }
+
+            $amountType = $aff['amount_type'] ?? 2;
+            $isPercentage = $amountType === 2
+                || $amountType === '2'
+                || $amountType === 'percentage';
+
+            $rawAmount = $aff['amount'] ?? 0;
+            if ($isPercentage) {
+                $sawPercentage = true;
+                $value = is_numeric($rawAmount) ? (0 + $rawAmount) : 0;
+            } else {
+                $sawFixed = true;
+                // Admin FIXED display expects centavos (PagBank shape).
+                $value = is_numeric($rawAmount) ? (int) round(((float) $rawAmount) * 100) : 0;
+            }
+
+            $receivers[] = [
+                'account' => ['id' => $affiliateId],
+                'amount' => ['value' => $value],
+                'type' => 'SECONDARY',
+                'reason' => __('Divisão de pagamento', 'pagbank-connect'),
+            ];
+        }
+
+        return [
+            'method' => ($sawFixed && !$sawPercentage) ? 'FIXED' : 'PERCENTAGE',
+            'receivers' => $receivers,
+            'partner' => 'vindi',
+        ];
+    }
 
     /**
      * Fetch split details from PagBank API

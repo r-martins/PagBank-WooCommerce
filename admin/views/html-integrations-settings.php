@@ -20,7 +20,7 @@ wp_enqueue_style(
 $dokan_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/dokan-split-fields.php';
 $wcbcf_fields = include WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/settings/wcbcf-fields.php';
 
-// Dokan split is PagBank-only
+// Dokan split: PagBank (ACCO_) and Vindi (affiliate_id) when Capabilities::hasSplit()
 $caps = new \RM_PagBank\Partner\Capabilities();
 if (!$caps->hasSplit()) {
     $dokan_fields = [];
