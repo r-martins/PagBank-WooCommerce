@@ -493,6 +493,34 @@ class CreditCard extends Common
     }
 
     /**
+     * Blocks checkout: refresh recurring copy when shipping/coupon/tax change the cart total.
+     */
+    public static function getAjaxRecurringTerms(): void
+    {
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash((string) $_REQUEST['nonce'])), 'rm_pagbank_nonce')) {
+            wp_send_json_error([
+                'error' => __(
+                    'Não foi possível atualizar os termos da recorrência. Recarregue a página e tente novamente.',
+                    'pagbank-connect'
+                ),
+            ], 400);
+        }
+
+        $paymentMethod = sanitize_text_field(wp_unslash((string) ($_REQUEST['payment_method'] ?? 'creditcard')));
+        if ($paymentMethod === '') {
+            $paymentMethod = 'creditcard';
+        }
+
+        $recHelper = new \RM_PagBank\Helpers\Recurring();
+        if (!$recHelper->isCartRecurring()) {
+            wp_send_json_success(['terms' => '']);
+        }
+
+        $terms = wp_kses($recHelper->getRecurringTermsFromCart($paymentMethod), 'strong');
+        wp_send_json_success(['terms' => $terms]);
+    }
+
+    /**
      * Adds order details to /order-pay page in order to correctly process credit card payments (with 3Ds)
      * @param $template_name
      *

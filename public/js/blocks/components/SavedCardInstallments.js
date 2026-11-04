@@ -97,7 +97,7 @@ const SavedCardInstallments = (props) => {
 
     const settings = window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {});
     if (!showInstallments) {
-        return settings.isCartRecurring ? <RecurringInfo /> : null;
+        return settings.isCartRecurring ? <RecurringInfo billing={billing} /> : null;
     }
     return (
         <div style={{ marginTop: '1em' }}>
@@ -105,7 +105,7 @@ const SavedCardInstallments = (props) => {
                 installments={installments}
                 onChange={e => setSelectedInstallment(e.target.value)}
             />
-            {settings.isCartRecurring ? <RecurringInfo /> : null}
+            {settings.isCartRecurring ? <RecurringInfo billing={billing} /> : null}
         </div>
     );
 };

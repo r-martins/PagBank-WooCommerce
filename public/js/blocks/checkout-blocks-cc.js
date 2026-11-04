@@ -646,7 +646,7 @@ const Content = ( props ) => {
             <CreditCardForm billing={billing} />
             <SavedCreditCardToken />
             <CustomerDocumentField />
-            {settings.isCartRecurring ? <RecurringInfo /> : null}
+            {settings.isCartRecurring ? <RecurringInfo billing={billing} /> : null}
         </div>
     );
 };

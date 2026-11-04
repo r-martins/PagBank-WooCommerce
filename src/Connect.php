@@ -57,6 +57,8 @@ class Connect
         add_action('woocommerce_api_rm_ps_notif', [__CLASS__, 'notification']);
         add_action('wp_ajax_get_cart_total', [CreditCard::class, 'getCartTotal']);
         add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
+        add_action('wp_ajax_ps_get_recurring_terms', [CreditCard::class, 'getAjaxRecurringTerms']);
+        add_action('wp_ajax_nopriv_ps_get_recurring_terms', [CreditCard::class, 'getAjaxRecurringTerms']);
         add_action('wp_ajax_ps_get_3d_session', [CreditCard::class, 'getAjax3DSession']);
         add_action('wp_ajax_nopriv_ps_get_3d_session', [CreditCard::class, 'getAjax3DSession']);
         \RM_PagBank\Connect\Payments\VindiThreeDs::register();
