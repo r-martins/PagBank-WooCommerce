@@ -18,10 +18,149 @@ class OrderMetaBoxes
      */
     public static function init(): void
     {
+        add_action('add_meta_boxes', [__CLASS__, 'addPaymentInfoMetaBox']);
+        // WC registers order-data + order-items both as priority "high"; reorder after all boxes exist.
+        add_action('add_meta_boxes', [__CLASS__, 'placePaymentInfoAboveItems'], 99);
         add_action('add_meta_boxes', [__CLASS__, 'addSplitMetaBox']);
+        add_filter('get_user_option_meta-box-order_shop_order', [__CLASS__, 'filterMetaBoxOrder']);
+        add_filter('get_user_option_meta-box-order_woocommerce_page_wc-orders', [__CLASS__, 'filterMetaBoxOrder']);
         add_action('wp_ajax_pagbank_get_split_details', [__CLASS__, 'ajaxGetSplitDetails']);
         add_action('wp_ajax_pagbank_get_cnpj_details', [__CLASS__, 'ajaxGetCnpjDetails']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueueScripts']);
+    }
+
+    /**
+     * Payment info card above order items.
+     * WooCommerce HPOS registers Items as normal/high (same as Order data), so priority alone
+     * cannot place us between them — see placePaymentInfoAboveItems().
+     */
+    public static function addPaymentInfoMetaBox(): void
+    {
+        $screen = get_current_screen();
+        if (!$screen || !in_array($screen->id, ['shop_order', 'woocommerce_page_wc-orders'], true)) {
+            return;
+        }
+
+        $order_id = null;
+        if (isset($_GET['post'])) {
+            $order_id = absint($_GET['post']);
+        } elseif (isset($_GET['id'])) {
+            $order_id = absint($_GET['id']);
+        }
+
+        if (!$order_id) {
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order || (string) OrderMeta::get($order, 'payment_method') === '') {
+            return;
+        }
+
+        $brand = \RM_PagBank\Partner\Branding::notePrefix($order);
+        add_meta_box(
+            'pagbank_payment_info',
+            sprintf(
+                /* translators: %s: partner name (PagBank|Vindi) */
+                __('%s — Informações do pagamento', 'pagbank-connect'),
+                $brand
+            ),
+            [__CLASS__, 'displayPaymentInfoMetaBox'],
+            ['shop_order', 'woocommerce_page_wc-orders'],
+            'normal',
+            'high'
+        );
+    }
+
+    /**
+     * Insert payment info meta box after order data and before items in the "high" column.
+     */
+    public static function placePaymentInfoAboveItems(): void
+    {
+        global $wp_meta_boxes;
+
+        foreach (['shop_order', 'woocommerce_page_wc-orders'] as $screenId) {
+            $high = $wp_meta_boxes[$screenId]['normal']['high'] ?? null;
+            if (!is_array($high) || empty($high['pagbank_payment_info'])) {
+                continue;
+            }
+
+            $box = $high['pagbank_payment_info'];
+            unset($high['pagbank_payment_info']);
+
+            $reordered = [];
+            $inserted = false;
+            foreach ($high as $id => $metaBox) {
+                if ($id === 'woocommerce-order-items' && !$inserted) {
+                    $reordered['pagbank_payment_info'] = $box;
+                    $inserted = true;
+                }
+                $reordered[$id] = $metaBox;
+                if ($id === 'woocommerce-order-data' && !$inserted) {
+                    $reordered['pagbank_payment_info'] = $box;
+                    $inserted = true;
+                }
+            }
+            if (!$inserted) {
+                $reordered['pagbank_payment_info'] = $box;
+            }
+
+            $wp_meta_boxes[$screenId]['normal']['high'] = $reordered;
+        }
+    }
+
+    /**
+     * Keep payment info between order data and items when WP restores a saved meta-box order.
+     *
+     * @param mixed $order User option value (array of comma-separated ids per context, or false).
+     * @return mixed
+     */
+    public static function filterMetaBoxOrder($order)
+    {
+        if (!is_array($order) || empty($order['normal']) || !is_string($order['normal'])) {
+            return $order;
+        }
+
+        $ids = array_values(array_filter(array_map('trim', explode(',', $order['normal']))));
+        if ($ids === [] || !in_array('pagbank_payment_info', $ids, true)) {
+            return $order;
+        }
+
+        $ids = array_values(array_diff($ids, ['pagbank_payment_info']));
+        $dataPos = array_search('woocommerce-order-data', $ids, true);
+        $itemsPos = array_search('woocommerce-order-items', $ids, true);
+
+        if ($dataPos !== false) {
+            array_splice($ids, $dataPos + 1, 0, ['pagbank_payment_info']);
+        } elseif ($itemsPos !== false) {
+            array_splice($ids, $itemsPos, 0, ['pagbank_payment_info']);
+        } else {
+            array_unshift($ids, 'pagbank_payment_info');
+        }
+
+        $order['normal'] = implode(',', $ids);
+
+        return $order;
+    }
+
+    /**
+     * @param \WP_Post|\WC_Order|object $post_or_order_object
+     */
+    public static function displayPaymentInfoMetaBox($post_or_order_object): void
+    {
+        if ($post_or_order_object instanceof \WC_Order) {
+            $order = $post_or_order_object;
+        } elseif (isset($post_or_order_object->ID)) {
+            $order = wc_get_order($post_or_order_object->ID);
+        } else {
+            return;
+        }
+
+        if (!$order instanceof \WC_Order) {
+            return;
+        }
+
+        include WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/order-info.php';
     }
 
     /**

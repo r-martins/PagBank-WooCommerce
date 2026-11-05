@@ -12,6 +12,20 @@
 	box-sizing: border-box;
 }
 
+/* Meta box already provides the outer card — avoid double chrome. */
+#pagbank_payment_info .inside {
+	margin: 0;
+	padding: 12px;
+}
+
+#pagbank_payment_info .pagbank-order-info {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+}
+
 .pagbank-order-info__header {
 	display: flex;
 	align-items: center;
