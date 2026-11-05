@@ -90,6 +90,8 @@ class Connect
         add_filter('woocommerce_rest_prepare_shop_order_object', [CreditCardDisplayTitle::class, 'filterRestPrepareShopOrderObject'], 20, 3);
         add_filter('woocommerce_order_get_payment_method_title', [CreditCardDisplayTitle::class, 'filterPaymentMethodTitle'], 10, 2);
         Connect\AdminOrderPayment::init();
+        // Thank-you / order details: hide Pay+Cancel while awaiting PIX/boleto/card WAITING (avoids double pay).
+        add_filter('woocommerce_my_account_my_orders_actions', [__CLASS__, 'hidePendingOrderPayCancelActions'], 10, 2);
         add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
         add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
         add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
@@ -1067,12 +1069,33 @@ class Connect
     }
 
     /**
-     * Adds order info to the admin order page by including the order info template
+     * Hide Pay/Cancel on thank-you and My Account while a PagBank/Vindi order awaits payment
+     * (pending/on-hold). Customers reusing Pay were creating duplicate charges on WAITING cards.
      *
-     * @param $order
-     *
-     * @return void
-     * @noinspection PhpUnusedParameterInspection*/
+     * @param array     $actions
+     * @param \WC_Order $order
+     * @return array
+     */
+    public static function hidePendingOrderPayCancelActions($actions, $order): array
+    {
+        if (!is_array($actions) || !$order instanceof \WC_Order) {
+            return is_array($actions) ? $actions : [];
+        }
+
+        $method = (string) $order->get_payment_method();
+        if ($method === '' || strpos($method, self::DOMAIN) !== 0) {
+            return $actions;
+        }
+
+        if (!$order->has_status(['pending', 'on-hold'])) {
+            return $actions;
+        }
+
+        unset($actions['pay'], $actions['cancel']);
+
+        return $actions;
+    }
+
     /**
      * Whether a given payment method is currently selected (blocks: rm-pagbank-pix / rm-pagbank-boleto;
      * legacy: rm-pagbank + ps_connect_method=pix|boleto). Checks POST and post_data first so update_order_review
