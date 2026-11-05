@@ -569,10 +569,19 @@ class CreditCard extends WC_Payment_Gateway_CC
                     'redirect' => '',
                 );
         }
-        // Persist card after order meta is set; rebuild Vindi charge so discard_credit_card stays false.
-        if ($shouldSaveToken) {
-            $this->saveCcToken($order);
-            if ($payment_method === 'cc' && (new Api())->partner()->isVindi()) {
+        // Persist card after order meta is set.
+        // Vindi: always create payment_profile (link card to customer) before charging on
+        // recurring initial or "save card" — renewals must use payment_profile.id, not gateway_token.
+        $apiPartner = new Api();
+        $isVindi = $apiPartner->partner()->isVindi();
+        $persistVindiProfileBeforeCharge = $isVindi
+            && !$is_saved_token
+            && $payment_method === 'cc'
+            && ($shouldSaveToken || (bool) OrderMeta::get($order, '_recurring_initial'));
+
+        if ($shouldSaveToken || $persistVindiProfileBeforeCharge) {
+            $this->saveCcToken($order, $shouldSaveToken);
+            if ($isVindi && $payment_method === 'cc') {
                 $method = new \RM_PagBank\Connect\Payments\CreditCard($order);
                 $params = $method->prepare();
             }
@@ -641,14 +650,17 @@ class CreditCard extends WC_Payment_Gateway_CC
 
     /**
      * Token ID PagBank|Woo — Vindi uses payment_profile id (no /tokens/cards).
+     *
      * @param WC_Order $order
+     * @param bool     $storeAsWooToken When false (Vindi recurring without "save card"), still
+     *                                 creates the Vindi payment_profile but skips My Account token.
      * @throws \RM_PagBank\Connect\Exception
      */
-    public function saveCcToken($order)
+    public function saveCcToken($order, bool $storeAsWooToken = true)
     {
         $api = new Api();
         if ($api->partner()->isVindi()) {
-            $this->saveVindiCcToken($order, $api);
+            $this->saveVindiCcToken($order, $api, $storeAsWooToken);
             return $order;
         }
 
@@ -678,11 +690,11 @@ class CreditCard extends WC_Payment_Gateway_CC
     }
 
     /**
-     * Persist Vindi payment_profile and store as WooCommerce CC token.
+     * Persist Vindi payment_profile (link gateway_token to customer) and optionally store as Woo CC token.
      *
      * @throws \RM_PagBank\Connect\Exception
      */
-    private function saveVindiCcToken(WC_Order $order, Api $api): void
+    private function saveVindiCcToken(WC_Order $order, Api $api, bool $storeAsWooToken = true): void
     {
         $userId = get_current_user_id();
 
@@ -750,8 +762,8 @@ class CreditCard extends WC_Payment_Gateway_CC
             }
         }
 
-        // Woo token only for logged-in customers (My Account saved cards).
-        if ($userId <= 0) {
+        // Woo token only for logged-in customers who opted to save the card (My Account).
+        if (!$storeAsWooToken || $userId <= 0) {
             return;
         }
 

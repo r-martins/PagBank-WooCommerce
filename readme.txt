@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.0
+Stable tag: 5.1.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -255,6 +255,11 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.1 =
+* Correção: assinaturas Vindi — cria o `payment_profile` antes da primeira cobrança recorrente (o `gateway_token` expira em poucos minutos se não for persistido).
+* Correção: no checkout em Blocos, o texto/total da recorrência passa a atualizar quando frete ou cupom alteram o valor do carrinho.
+* Melhoria: bloco de informações de pagamento no admin do pedido virou meta box e aparece acima dos itens (compatível com HPOS).
 
 = 5.1.0 =
 * Adicionado: **Checkout PB** (checkout hospedado) para chaves Vindi (`CONVD…`) — classic e Blocks, com preview no admin, compra com um clique (opt-in) e suporte a recorrência.
