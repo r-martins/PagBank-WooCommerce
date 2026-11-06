@@ -254,7 +254,21 @@ class Exception extends \Exception
                         'A autenticação 3D não é um método válido para transações com configuração de responsabilidade do receptor (liable).',
                         'pagbank-connect'
                     );
+                case 'gateway_token or payment_profile_id is required for CREDIT_CARD':
+                    return __(
+                        'Não foi possível cobrar este cartão. Remova o cartão salvo (se houver) e informe os dados novamente.',
+                        'pagbank-connect'
+                    );
                 default:
+                    $desc = (string) ($error['description'] ?? '');
+                    if (stripos($desc, 'gateway_token') !== false
+                        || stripos($desc, 'payment_profile_id') !== false
+                    ) {
+                        return __(
+                            'Não foi possível cobrar este cartão. Remova o cartão salvo (se houver) e informe os dados novamente.',
+                            'pagbank-connect'
+                        );
+                    }
                     return $this->errors[$error['code']] ?? $error['description'];
             }
             return __(

@@ -455,6 +455,17 @@ class Api
         }
 
         $haystack = function_exists('mb_strtolower') ? mb_strtolower($msg) : strtolower($msg);
+
+        // Saved PagBank CARD_* on Vindi, empty tokenize, etc.
+        if (strpos($haystack, 'gateway_token') !== false
+            || strpos($haystack, 'payment_profile_id') !== false
+        ) {
+            return __(
+                'Não foi possível cobrar este cartão. Remova o cartão salvo (se houver) e informe os dados novamente.',
+                'pagbank-connect'
+            );
+        }
+
         $mentionsTaxId = strpos($haystack, 'registry_code') !== false
             || strpos($haystack, 'tax_id') !== false;
 
