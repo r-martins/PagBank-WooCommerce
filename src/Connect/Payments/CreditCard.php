@@ -398,7 +398,7 @@ class CreditCard extends Common
             OrderMeta::set($this->order, '_card_first_digits', $tokenCc->get_meta( 'cc_bin' ), true);
             $api = new Api();
             if ($api->partner()->isVindi()) {
-                $profileId = (int) ($tokenCc->get_meta('vindi_payment_profile_id') ?: $tokenCc->get_token());
+                $profileId = self::vindiPaymentProfileIdFromToken($tokenCc);
                 if ($profileId > 0) {
                     $card->setPaymentProfileId($profileId);
                     $holderName = (string) $tokenCc->get_meta('holder_name');
@@ -408,6 +408,13 @@ class CreditCard extends Common
                     }
                     return $card;
                 }
+                // Legacy PagBank CARD_* (or empty) — never send card.id to the Vindi adapter.
+                throw new \Exception(
+                    __(
+                        'Este cartão salvo não é compatível com o meio de pagamento atual. Remova-o e informe os dados do cartão novamente.',
+                        'pagbank-connect'
+                    )
+                );
             }
             $card->setId($tokenCc->get_token() ?: '');
             return $card;
@@ -911,5 +918,31 @@ class CreditCard extends Common
             return $token;
         }
         return null;
+    }
+
+    /**
+     * True when the Woo token still holds a PagBank card id (CARD_…), unusable on Vindi.
+     */
+    public static function isPagBankLegacyCardToken(\WC_Payment_Token_CC $token): bool
+    {
+        return stripos((string) $token->get_token(), 'CARD_') === 0;
+    }
+
+    /**
+     * Numeric Vindi payment_profile id from a Woo CC token, or 0 if missing/incompatible.
+     * Do not cast CARD_* with (int) — that becomes 0 and used to fall through to setId(CARD_*).
+     */
+    public static function vindiPaymentProfileIdFromToken(\WC_Payment_Token_CC $token): int
+    {
+        $meta = (int) $token->get_meta('vindi_payment_profile_id');
+        if ($meta > 0) {
+            return $meta;
+        }
+        $raw = trim((string) $token->get_token());
+        if ($raw !== '' && ctype_digit($raw)) {
+            return (int) $raw;
+        }
+
+        return 0;
     }
 }
