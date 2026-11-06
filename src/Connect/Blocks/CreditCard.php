@@ -145,17 +145,27 @@ final class CreditCard extends AbstractPaymentMethodType
 
         $customer_tokens = \WC_Payment_Tokens::get_customer_tokens(get_current_user_id(), $this->name);
         
+        $api = new \RM_PagBank\Helpers\Api();
+        $isVindi = $api->partner()->isVindi();
         foreach ($customer_tokens as $token) {
-            if ($token->get_gateway_id() === $this->name) {
-                $cc_bin = $token->get_meta('cc_bin') ?: '555566';
-                $customer_document = $token->get_meta('customer_document') ?: '';
-                $tokens[] = [
-                    'id' => $token->get_id(),
-                    'cc_bin' => $cc_bin,
-                    'customer_document' => $customer_document,
-                    'display_name' => $token->get_display_name()
-                ];
+            if ($token->get_gateway_id() !== $this->name) {
+                continue;
             }
+            if (!$token instanceof \WC_Payment_Token_CC) {
+                continue;
+            }
+            // PagBank CARD_* tokens are unusable on Vindi — hide them from Blocks checkout.
+            if ($isVindi && \RM_PagBank\Connect\Payments\CreditCard::vindiPaymentProfileIdFromToken($token) <= 0) {
+                continue;
+            }
+            $cc_bin = $token->get_meta('cc_bin') ?: '555566';
+            $customer_document = $token->get_meta('customer_document') ?: '';
+            $tokens[] = [
+                'id' => $token->get_id(),
+                'cc_bin' => $cc_bin,
+                'customer_document' => $customer_document,
+                'display_name' => $token->get_display_name()
+            ];
         }
         
         return $tokens;

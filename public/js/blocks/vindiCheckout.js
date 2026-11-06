@@ -5,6 +5,34 @@
 
 const fieldVal = (id) => (document.getElementById(id)?.value || '').toString();
 
+/** Humanize Vindi public payment_profiles errors for checkout alerts. */
+const formatVindiTokenizeError = (err) => {
+    if (!err || typeof err !== 'object') {
+        return '';
+    }
+    const paramLabels = {
+        card_number: 'Número do cartão',
+        card_cvv: 'CVV',
+        card_expiration: 'Validade',
+        holder_name: 'Nome do titular',
+        payment_company_code: 'Bandeira',
+        payment_profile: 'Cartão',
+        payment_method_code: 'Método de pagamento',
+    };
+    let message = String(err.message || '').trim();
+    const lower = message.toLowerCase();
+    if (lower.includes('tempo excedido') || lower.includes('timed out')) {
+        message = 'Não foi possível validar o cartão. Verifique os dados e tente novamente.';
+    } else if (lower === 'inválido(a)' || lower === 'invalido(a)' || lower === 'invalid') {
+        message = 'inválido';
+    }
+    const label = paramLabels[err.parameter] || err.parameter || '';
+    if (label && message) {
+        return `${label}: ${message}`;
+    }
+    return message || label;
+};
+
 /** Prefer live DOM PAN/CVV; fall back to window cache only when the field looks masked/empty. */
 const liveCardNumber = () => {
     const raw = fieldVal('rm-pagbank-card-number').replace(/\s/g, '');
@@ -64,9 +92,7 @@ export const tokenizeVindiPublic = ({ publicKey, profilesUrl, holderName, number
         try {
             const errBody = JSON.parse(xhr.responseText);
             if (errBody && Array.isArray(errBody.errors)) {
-                detail = errBody.errors.map((e) =>
-                    (e.parameter ? e.parameter + ': ' : '') + (e.message || '')
-                ).filter(Boolean).join('\n');
+                detail = errBody.errors.map((e) => formatVindiTokenizeError(e)).filter(Boolean).join('\n');
             }
         } catch (e) { /* ignore */ }
         throw new Error('Erro ao tokenizar o cartão.' + (detail ? '\n' + detail : ''));

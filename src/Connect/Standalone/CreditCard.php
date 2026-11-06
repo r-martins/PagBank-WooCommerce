@@ -103,6 +103,32 @@ class CreditCard extends WC_Payment_Gateway_CC
 	}
 
     /**
+     * Hide PagBank CARD_* tokens when the store is on Vindi (they cannot be charged).
+     *
+     * @return array<\WC_Payment_Token>
+     */
+    public function get_tokens()
+    {
+        $tokens = parent::get_tokens();
+        if ($tokens === [] || !(new Api())->partner()->isVindi()) {
+            return $tokens;
+        }
+
+        $filtered = [];
+        foreach ($tokens as $token) {
+            if (!$token instanceof \WC_Payment_Token_CC) {
+                continue;
+            }
+            if (\RM_PagBank\Connect\Payments\CreditCard::vindiPaymentProfileIdFromToken($token) > 0) {
+                $filtered[] = $token;
+            }
+        }
+        $this->tokens = $filtered;
+
+        return $this->tokens;
+    }
+
+    /**
      * Outputs the save payment method checkbox.
      * Only shows if:
      * - It's a recurring order, OR
@@ -341,10 +367,20 @@ class CreditCard extends WC_Payment_Gateway_CC
                     try {
                         $tokenCc = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($token_id);
                         if ($tokenCc && (new Api())->partner()->isVindi()) {
-                            $profileId = (int) ($tokenCc->get_meta('vindi_payment_profile_id') ?: $tokenCc->get_token());
-                            if ($profileId > 0) {
-                                OrderMeta::set($order, '_payment_profile_id', $profileId, true);
+                            $profileId = \RM_PagBank\Connect\Payments\CreditCard::vindiPaymentProfileIdFromToken($tokenCc);
+                            if ($profileId <= 0) {
+                                $message = __(
+                                    'Este cartão salvo não é compatível com o meio de pagamento atual. Remova-o e informe os dados do cartão novamente.',
+                                    'pagbank-connect'
+                                );
+                                wc_add_notice($message, 'error');
+                                return [
+                                    'result' => 'fail',
+                                    'redirect' => '',
+                                    'message' => $message,
+                                ];
                             }
+                            OrderMeta::set($order, '_payment_profile_id', $profileId, true);
                             $doc = (string) $tokenCc->get_meta('customer_document');
                             if ($doc !== '' && !$order->get_meta('_rm_pagbank_customer_document')) {
                                 $order->add_meta_data('_rm_pagbank_customer_document', $doc, true);
@@ -489,11 +525,23 @@ class CreditCard extends WC_Payment_Gateway_CC
                     $method = new CreditCardToken($order);
                     if ($is_saved_token) {
                         $tokenCc = \RM_PagBank\Connect\Payments\CreditCard::getCcToken($token_id);
-                        $profileId = (int) ($tokenCc->get_meta('vindi_payment_profile_id') ?: $tokenCc->get_token());
+                        $profileId = \RM_PagBank\Connect\Payments\CreditCard::vindiPaymentProfileIdFromToken($tokenCc);
+                        if ($profileId <= 0) {
+                            $message = __(
+                                'Este cartão salvo não é compatível com o meio de pagamento atual. Remova-o e informe os dados do cartão novamente.',
+                                'pagbank-connect'
+                            );
+                            wc_add_notice($message, 'error');
+                            return [
+                                'result' => 'fail',
+                                'redirect' => '',
+                                'message' => $message,
+                            ];
+                        }
                         $holder_name = (string) $tokenCc->get_meta('holder_name');
                         $brand = (string) $tokenCc->get_card_type();
                         $resp = [
-                            'id' => $profileId > 0 ? (string) $profileId : ($tokenCc->get_token() ?: ''),
+                            'id' => (string) $profileId,
                             'holder' => ['name' => $holder_name],
                             'first_digits' => $tokenCc->get_meta('cc_bin'),
                             'last_digits' => $tokenCc->get_last4(),
@@ -501,9 +549,7 @@ class CreditCard extends WC_Payment_Gateway_CC
                             'exp_year' => $tokenCc->get_expiry_year(),
                             'brand' => $brand,
                         ];
-                        if ($profileId > 0) {
-                            OrderMeta::set($order, '_payment_profile_id', $profileId, true);
-                        }
+                        OrderMeta::set($order, '_payment_profile_id', $profileId, true);
                         OrderMeta::set($order, 'payment_method', $method->code, true);
                         $order->set_payment_method(Connect::DOMAIN);
                         break;

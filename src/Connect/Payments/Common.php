@@ -99,7 +99,7 @@ class Common
             if (!$token) {
                 return false;
             }
-            return (int) ($token->get_meta('vindi_payment_profile_id') ?: $token->get_token()) > 0;
+            return \RM_PagBank\Connect\Payments\CreditCard::vindiPaymentProfileIdFromToken($token) > 0;
         } catch (\Throwable $e) {
             return false;
         }

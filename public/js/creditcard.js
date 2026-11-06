@@ -30,6 +30,38 @@ window.rmPagbankParseBrlToCents = function (raw) {
 };
 
 /**
+ * Humanize Vindi public payment_profiles errors for checkout alerts.
+ * @param {{parameter?: string, message?: string}} err
+ * @returns {string}
+ */
+window.rmPagbankFormatVindiTokenizeError = function (err) {
+    if (!err || typeof err !== 'object') {
+        return '';
+    }
+    const paramLabels = {
+        card_number: 'Número do cartão',
+        card_cvv: 'CVV',
+        card_expiration: 'Validade',
+        holder_name: 'Nome do titular',
+        payment_company_code: 'Bandeira',
+        payment_profile: 'Cartão',
+        payment_method_code: 'Método de pagamento',
+    };
+    let message = String(err.message || '').trim();
+    const lower = message.toLowerCase();
+    if (lower.indexOf('tempo excedido') !== -1 || lower.indexOf('timed out') !== -1) {
+        message = 'Não foi possível validar o cartão. Verifique os dados e tente novamente.';
+    } else if (lower === 'inválido(a)' || lower === 'invalido(a)' || lower === 'invalid') {
+        message = 'inválido';
+    }
+    const label = paramLabels[err.parameter] || err.parameter || '';
+    if (label && message) {
+        return label + ': ' + message;
+    }
+    return message || label;
+};
+
+/**
  * Map PAN → Vindi payment_company_code.
  * Elo/Hipercard BINs overlap Visa/MC ranges — check BR brands before Visa.
  * Codes: mastercard, visa, american_express, diners_club, elo, hipercard, jcb.
@@ -171,7 +203,9 @@ jQuery(document).ready(function ($) {
                         const errBody = JSON.parse(xhr.responseText);
                         if (errBody && Array.isArray(errBody.errors)) {
                             detail = errBody.errors.map(function (e) {
-                                return (e.parameter ? e.parameter + ': ' : '') + (e.message || '');
+                                return window.rmPagbankFormatVindiTokenizeError
+                                    ? window.rmPagbankFormatVindiTokenizeError(e)
+                                    : ((e.parameter ? e.parameter + ': ' : '') + (e.message || ''));
                             }).filter(Boolean).join('\n');
                         }
                     } catch (parseErr) { /* ignore */ }
