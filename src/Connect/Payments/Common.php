@@ -39,7 +39,7 @@ class Common
 
     /**
      * Returns an array with reference_id, customer, items, notification_urls and shipping
-     * to be used in the /orders request
+     * (address + amount in cents) to be used in the /orders request.
      * @return array
      */
     public function getDefaultParameters(): array
@@ -58,6 +58,8 @@ class Common
         if ($this->order->has_shipping_address() && Params::getConfig('shipping_param') !== 'never' && $this->order->get_shipping_method()){
             $address = $this->getShippingAddress();
             $return['shipping']['address'] = $address;
+            // Cents — Vindi OrderAdapter uses shipping.amount to label frete vs generic adjustment.
+            $return['shipping']['amount'] = Params::convertToCents($this->order->get_shipping_total() ?? 0);
             $helper = new Params();
             if (Params::getConfig('shipping_param') === 'validate' && ! $helper->isAddressValid($address)){
                 unset($return['shipping']);
