@@ -986,43 +986,98 @@ jQuery(document).ready(function ($) {
         console.debug('PB Integrações: checkout form not found');
         return true;
     }
-    let originalSubmitHandler = () => {};
-    // get the original submit handler for checkout or order-pay page
-    if (jQuery._data(jQuery(checkoutFormIdentifiers)[0], "events") !== undefined) {
-        let formCheckout = jQuery('form.woocommerce-checkout, form#order_review, form#order_update, form#add_payment_method')[0];
-        let formEvents = jQuery._data(formCheckout, "events");
-        
-        if (formEvents && formEvents.submit) {
-            originalSubmitHandler = formEvents.submit[0].handler;
+    const getCheckoutFormEl = function () {
+        return jQuery('form.woocommerce-checkout, form#order_review, form#order_update, form#add_payment_method').get(0);
+    };
+
+    /**
+     * WooCommerce binds checkout submit in the same document.ready turn as this file.
+     * We must capture that handler BEFORE .off('submit'), then call it directly to resume
+     * AJAX place-order — never re-trigger submit (native POST / Ticketera conflict).
+     */
+    let wooCheckoutSubmitHandler = null;
+    const captureWooCheckoutSubmitHandler = function (formEl) {
+        if (!formEl || typeof jQuery._data !== 'function') {
+            return null;
         }
-    }
+        const events = jQuery._data(formEl, 'events');
+        if (!events || !events.submit || !events.submit.length) {
+            return null;
+        }
+        for (let i = 0; i < events.submit.length; i++) {
+            const handler = events.submit[i] && events.submit[i].handler;
+            if (!handler || handler === pagBankSubmitHandler) {
+                continue;
+            }
+            const src = Function.prototype.toString.call(handler);
+            // Classic WC checkout.js submit always triggers checkout_place_order.
+            if (src.indexOf('checkout_place_order') !== -1 || src.indexOf('wc_checkout_params') !== -1) {
+                return handler;
+            }
+        }
+        // Fallback: first non-PagBank handler (WC usually sole remaining after Ticketera destroy).
+        for (let i = 0; i < events.submit.length; i++) {
+            const handler = events.submit[i] && events.submit[i].handler;
+            if (handler && handler !== pagBankSubmitHandler) {
+                return handler;
+            }
+        }
+        return null;
+    };
+
+    const resumeWooCheckoutSubmit = function () {
+        isSubmitting = true;
+        const formEl = getCheckoutFormEl();
+        if (!formEl) {
+            console.error('PB Integrações: form de checkout não encontrado ao retomar submit');
+            isSubmitting = false;
+            return;
+        }
+        if (!wooCheckoutSubmitHandler) {
+            wooCheckoutSubmitHandler = captureWooCheckoutSubmitHandler(formEl);
+        }
+        if (typeof wooCheckoutSubmitHandler !== 'function') {
+            console.error('PB Integrações: handler submit do WooCommerce não encontrado');
+            isSubmitting = false;
+            return;
+        }
+        try {
+            console.debug('PB Integrações: retomando via handler WooCommerce capturado');
+            wooCheckoutSubmitHandler.call(formEl);
+        } catch (err) {
+            console.error('PB Integrações: falha ao retomar submit do WooCommerce', err);
+            isSubmitting = false;
+        }
+    };
 
     let pagBankSubmitHandler = async function (e) {
         console.debug('PB Integrações: submit');
 
-        if (isSubmitting) {
-            return true;
+        // Always block native submit (async return values are ignored by jQuery).
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
         }
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        if (e && typeof e.stopImmediatePropagation === 'function') {
+            e.stopImmediatePropagation();
+        }
+
+        if (isSubmitting) {
+            return false;
+        }
 
         if ((jQuery('#ps-connect-payment-cc').attr('disabled') !== undefined ||
             jQuery('#payment_method_rm-pagbank').is(':checked') === false) &&
             jQuery('input[name="payment_method"]:checked').val() !== 'rm-pagbank-cc') //when using standalone methods 
         {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
 
         const cc_payment_token = jQuery('input[name="wc-rm-pagbank-cc-payment-token"]:checked').val();
         if (cc_payment_token && cc_payment_token !== 'new') {
             console.debug('PB Integrações: cartão salvo selecionado, não criptografar.');
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
 
         let has3dSession = typeof pagseguro_connect_3d_session !== 'undefined' && pagseguro_connect_3d_session;
@@ -1039,10 +1094,8 @@ jQuery(document).ready(function ($) {
             && window.ps_cc_has_changed === false;
         if (vindi3dsAlreadyDone) {
             obfuscateSensitiveCardFields();
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
         if (isVindi && window.ps_cc_has_changed === true
             && typeof window.clearVindiCardAuthState === 'function') {
@@ -1084,10 +1137,8 @@ jQuery(document).ready(function ($) {
                     alert('Este pedido está abaixo do valor mínimo para 3D Secure. Use outro método de pagamento ou aumente o valor do carrinho.');
                     return false;
                 }
-                isSubmitting = true;
-                jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-                jQuery(checkoutFormIdentifiers).trigger('submit');
-                return true;
+                resumeWooCheckoutSubmit();
+                return false;
             }
 
             var checkoutFormDataVindi = jQuery(this).serializeArray();
@@ -1110,10 +1161,8 @@ jQuery(document).ready(function ($) {
                 await runVindi3dsPipeline(cartTotal, selectedInstallments, checkoutFormDataObjVindi);
                 pagbank3dAuthorized = true;
                 jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table, form#order_review').unblock();
-                isSubmitting = true;
-                jQuery('form.woocommerce-checkout, form#order_review').on('submit', originalSubmitHandler);
-                jQuery('form.woocommerce-checkout, form#order_review').trigger('submit');
-                return true;
+                resumeWooCheckoutSubmit();
+                return false;
             } catch (err) {
                 console.error(err);
                 alert((err && err.message) ? err.message : 'Falha na autenticação 3D Secure.');
@@ -1125,33 +1174,25 @@ jQuery(document).ready(function ($) {
 
         // If 3ds and 3ds_retry is not enabled, continue
         if (!is3dsEnabled && !isRetryEnabled || !has3dSession) {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
 
         // If 3DS authorization has already occurred, proceed normally
         if (typeof pagbank3dAuthorized !== 'undefined' && pagbank3dAuthorized === true) {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
 
         if (isRetryEnabled && !canRetry && !is3dsEnabled) {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
 
         //if cart total is less than 100, don't continue with 3ds
         if (cartTotal < 100) {
-            isSubmitting = true;
-            jQuery(checkoutFormIdentifiers).on('submit', originalSubmitHandler);
-            jQuery(checkoutFormIdentifiers).trigger('submit');
-            return true;
+            resumeWooCheckoutSubmit();
+            return false;
         }
 
         //region 3ds authentication method
@@ -1274,10 +1315,8 @@ jQuery(document).ready(function ($) {
                         console.debug('PB Integrações: 3DS Autenticado ou Sem desafio');
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
-                        isSubmitting = true;
-                        jQuery('form.woocommerce-checkout, form#order_review').on('submit', originalSubmitHandler);
-                        jQuery('form.woocommerce-checkout, form#order_review').trigger('submit');
-                        return true;
+                        resumeWooCheckoutSubmit();
+                        return false;
                     }
                     alert('Autenticação 3D falhou. Tente novamente.');
                     pagbank3dAuthorized = false;
@@ -1291,10 +1330,8 @@ jQuery(document).ready(function ($) {
                         pagbank3dAuthorized = true;
                         jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
 
-                        isSubmitting = true;
-                        jQuery('form.woocommerce-checkout, form#order_review').on('submit', originalSubmitHandler);
-                        jQuery('form.woocommerce-checkout, form#order_review').trigger('submit');
-                        return true;
+                        resumeWooCheckoutSubmit();
+                        return false;
                     }
                     alert('Seu cartão não suporta autenticação 3D. Escolha outro método de pagamento ou cartão.');
                     jQuery('.woocommerce-checkout-payment, .woocommerce-checkout-review-order-table').unblock();
@@ -1317,8 +1354,22 @@ jQuery(document).ready(function ($) {
         return false;
     }
     
+    // Capture WC submit BEFORE removing handlers — this file runs in the same
+    // document.ready as checkout.js, after WC already bound submit.
+    wooCheckoutSubmitHandler = captureWooCheckoutSubmitHandler(getCheckoutFormEl());
+    if (!wooCheckoutSubmitHandler) {
+        console.warn('PB Integrações: WooCommerce submit handler ausente no bind; tentaremos recapturar no place order.');
+    } else {
+        console.debug('PB Integrações: WooCommerce submit handler capturado');
+    }
     jQuery(checkoutFormIdentifiers).off('submit');
     jQuery(checkoutFormIdentifiers).on('submit', pagBankSubmitHandler);
+
+    // Allow a new attempt after WooCommerce reports a checkout error.
+    jQuery(document.body).on('checkout_error', function () {
+        isSubmitting = false;
+    });
+
     
     
     //endregion
@@ -1351,7 +1402,7 @@ jQuery(document).ready(function ($) {
 
          /*region Encrypt card and obfuscates before submit*/
         if (encryptCard() === false) {
-            return;
+            return false;
         }
 
         //obfuscates cvv
@@ -1361,6 +1412,7 @@ jQuery(document).ready(function ($) {
         /*endregion*/
         
         isSubmitting = false;
+        return true;
     });
 
     
