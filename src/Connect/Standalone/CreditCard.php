@@ -971,11 +971,17 @@ class CreditCard extends WC_Payment_Gateway_CC
                     true
                 );
 
+                $ccDeps = ['jquery', $payment_handle, $blockui_handle, 'pagseguro-connect-tax-id'];
+                // Ensure WooCommerce checkout submit handler exists before we capture/replace it.
+                if (wp_script_is('wc-checkout', 'registered') || wp_script_is('wc-checkout', 'enqueued')) {
+                    $ccDeps[] = 'wc-checkout';
+                }
+                $ccJs = WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/js/creditcard.js';
                 wp_enqueue_script(
                     'pagseguro-connect-creditcard',
                     plugins_url('public/js/creditcard.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                    ['jquery', $payment_handle, $blockui_handle, 'pagseguro-connect-tax-id'],
-                    WC_PAGSEGURO_CONNECT_VERSION,
+                    $ccDeps,
+                    WC_PAGSEGURO_CONNECT_VERSION . '.' . (is_readable($ccJs) ? (string) filemtime($ccJs) : '0'),
                     ['strategy' => 'defer', 'in_footer' => true]
                 );
                 wp_localize_script(
