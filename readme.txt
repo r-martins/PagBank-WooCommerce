@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.3
+Stable tag: 5.1.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -17,23 +17,23 @@ Conecte. Converta. Cresça. 99% de aprovação.
 
 # ℹ️ **NOTA IMPORTANTE:**
 
-Devido a uma mudança estratégica, o PagBank decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014).
-
 Você pode usar este plugin e receber seus pagamentos em sua conta PagBank (ou de outro banco), porém através do trilho de pagamento com nosos novo parceiro: Vindi.
+
+Devido a uma mudança estratégica, o PagBank decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014).
 
 Mesma integração. Mesma equipe. E mais recursos novos. 
 
-Sme mensalidade ou taxas escondidas. Taxas de transação *muito* menores. E claro, mais aprovação.
+Sem mensalidade ou taxas escondidas. Taxas de transação *muito* menores. E claro, mais aprovação.
 
 **99% dos pedidos aprovados em 70% dos clientes. Antifraude incluso.**
 
+**Economize nas taxas e converta ainda mais.** Receba no crédito à vista **a partir de 2,99% + R$0,00** de taxa de intermediação e PIX na hora por 0,60%. Veja [tabela completa](https://pbintegracoes.com/taxas/?utm_source=readme&utm_content=taxas) e atualizada.
+
 Certifique-se de usar a versão mais recente e [obter uma nova connect key](https://pbintegracoes.com/autorizar) gratuitamente.
 
-[Perguntas frequentes](https://pbintegracoes.com/perguntas-frequentes)
+🛟[Perguntas frequentes](https://pbintegracoes.com/perguntas-frequentes)
 
 **🌟Parceiro dos melhores gateways de pagamento desde 2014.**
-
-**Economize nas taxas e converta ainda mais.** Receba no crédito à vista **a partir de 2,99% + R$0,00** de taxa de intermediação e PIX na hora por 0,60%. [Veja tabela completa](https://pbintegracoes.com/taxas/?utm_source=readme&utm_content=taxas).
 
 O **melhor plugin de pagamentos** do Brasil.
 
@@ -226,6 +226,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.4 =
+* Correção: conflito com o plugin Ticketera no checkout legado — ao finalizar (cartão/PIX/boleto) a compra poderia recarregar o checkout em vez de processar o pedido.
+* Melhoria: envia `shipping.amount` (em centavos) no payload padrão de pedidos (`/orders`), para o frete ser identificado corretamente na Vindi.
 
 = 5.1.3 =
 * Correção: cartões salvos do PagBank (`CARD_…`) não podem mais ser usados no checkout Vindi (assinatura/legado e Blocks) — evita o erro `gateway_token or payment_profile_id is required for CREDIT_CARD`.

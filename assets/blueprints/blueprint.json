@@ -4,7 +4,7 @@
     {
       "step": "writeFile",
       "path": "/wordpress/index.php",
-      "data": "<?php header('Location: https://pagseguro-exemplo-woo.ricardomartins.net.br/');"
+      "data": "<?php header('Location: https://demo-woo.pbintegracoes.com/');"
     }
   ]
 }
