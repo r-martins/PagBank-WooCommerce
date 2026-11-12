@@ -669,32 +669,8 @@ class Connect
 
     public static function activate()
     {
-        global $wpdb;
-        $recurringTable = $wpdb->prefix . 'pagbank_recurring';
-
-        $sql = "CREATE TABLE IF NOT EXISTS $recurringTable
-                (
-                    id               int auto_increment,
-                    initial_order_id int           not null UNIQUE comment 'Order that generated the subscription profiler',
-                    recurring_amount float(8, 2)   not null comment 'Amount to be charged regularly',
-                    status           varchar(100)  not null comment 'Current subscription status (ACTIVE, PAUSED, SUSPENDED, CANCELED)',
-                    recurring_type   varchar(15)   not null comment 'Daily, Weekly, Monthly, Yearly ',
-                    recurring_cycle  int default 1 not null comment 'Type multiplier',
-                    created_at       datetime      null,
-                    updated_at       datetime      null,
-                    paused_at        datetime      null,
-                    canceled_at      datetime      null,
-                    suspended_at     datetime      null,
-                    canceled_reason  text          null,
-                    suspended_reason text          null,
-                    next_bill_at     datetime      not null,
-                    payment_info     text          null comment 'Payment details for the subscription',
-                    PRIMARY KEY  (id)
-                )
-                    comment 'Recurring profiles information for PagBank Subscribers';";
-
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta($sql);
+        self::ensureSchemaTables();
         add_option('pagbank_db_version', '4.0');
     }
 
@@ -715,11 +691,135 @@ class Connect
         return $result === $table_name;
     }
 
+    /**
+     * Create/repair PagBank schema tables automatically.
+     *
+     * Merchants must not need phpMyAdmin, DROP TABLE, or reactivation: any WP
+     * request after updating the plugin heals missing tables even when
+     * pagbank_db_version is already high. Fast-path skips work when all tables exist.
+     * Uses dbDelta without IF NOT EXISTS — WordPress docs forbid that combo.
+     *
+     * @return void
+     */
+    public static function ensureSchemaTables(): void
+    {
+        global $wpdb;
+
+        static $done = false;
+        if ($done) {
+            return;
+        }
+
+        $recurringTable = $wpdb->prefix . 'pagbank_recurring';
+        $contentRestrictionTable = $wpdb->prefix . 'pagbank_content_restriction';
+        $boxesTable = $wpdb->prefix . 'pagbank_ef_boxes';
+
+        $recurringOk = self::tableExists($recurringTable);
+        $contentOk = self::tableExists($contentRestrictionTable);
+        $boxesOk = self::tableExists($boxesTable);
+        if ($recurringOk && $contentOk && $boxesOk) {
+            $done = true;
+            return;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        $charset = $wpdb->get_charset_collate();
+
+        if (!$recurringOk) {
+            // dbDelta is picky: no column COMMENTs, two spaces after PRIMARY KEY.
+            $recurringSql = "CREATE TABLE $recurringTable (
+                id int NOT NULL AUTO_INCREMENT,
+                initial_order_id int NOT NULL,
+                recurring_amount float(8,2) NOT NULL,
+                recurring_initial_fee float(8,2) NULL,
+                recurring_trial_period int NULL,
+                recurring_discount_amount float(8,2) NULL,
+                recurring_discount_cycles int NULL,
+                recurring_max_cycles int NULL,
+                status varchar(100) NOT NULL,
+                recurring_type varchar(15) NOT NULL,
+                recurring_cycle int NOT NULL DEFAULT 1,
+                created_at datetime NULL,
+                updated_at datetime NULL,
+                paused_at datetime NULL,
+                canceled_at datetime NULL,
+                suspended_at datetime NULL,
+                retry_attempts_remaining int NULL,
+                canceled_reason text NULL,
+                suspended_reason text NULL,
+                next_bill_at datetime NOT NULL,
+                payment_info text NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY initial_order_id (initial_order_id)
+            ) $charset;";
+            self::dbDeltaOrCreate($recurringTable, $recurringSql);
+        }
+
+        if (!$contentOk) {
+            $contentSql = "CREATE TABLE $contentRestrictionTable (
+                user_id int NOT NULL,
+                categories text NULL,
+                pages text NULL,
+                UNIQUE KEY pagbank_content_restriction_pk (user_id)
+            ) $charset;";
+            self::dbDeltaOrCreate($contentRestrictionTable, $contentSql);
+        }
+
+        if (!$boxesOk) {
+            $boxesSql = "CREATE TABLE $boxesTable (
+                box_id int NOT NULL AUTO_INCREMENT,
+                reference varchar(30) NOT NULL,
+                is_available tinyint NOT NULL DEFAULT 1,
+                outer_width varchar(30) NOT NULL,
+                outer_depth varchar(30) NOT NULL,
+                outer_length varchar(30) NOT NULL,
+                thickness varchar(30) NOT NULL DEFAULT '0.20',
+                inner_length varchar(30) NOT NULL,
+                inner_width varchar(30) NOT NULL,
+                inner_depth decimal(30,0) NOT NULL,
+                max_weight int NOT NULL,
+                empty_weight int NOT NULL,
+                cost float(4,2) DEFAULT 0.00,
+                created_at datetime DEFAULT CURRENT_TIMESTAMP,
+                updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY  (box_id),
+                UNIQUE KEY reference (reference)
+            ) $charset;";
+            self::dbDeltaOrCreate($boxesTable, $boxesSql);
+        }
+
+        $done = true;
+    }
+
+    /**
+     * Run dbDelta and fall back to a direct CREATE if the table is still missing.
+     */
+    private static function dbDeltaOrCreate(string $table_name, string $sql): void
+    {
+        global $wpdb;
+
+        dbDelta($sql);
+
+        if (self::tableExists($table_name)) {
+            return;
+        }
+
+        // Rare: dbDelta parsed but did not execute (host quirks). Last resort.
+        $wpdb->query($sql);
+        if (!self::tableExists($table_name) && $wpdb->last_error) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('PagBank Connect: failed creating table ' . $table_name . ': ' . $wpdb->last_error);
+        }
+    }
+
     public static function upgrade()
     {
         global $wpdb;
         $recurringTable = $wpdb->prefix . 'pagbank_recurring';
         $stored_version = get_option('pagbank_db_version');
+
+        // Always heal missing tables before versioned migrations.
+        self::ensureSchemaTables();
 
         if (version_compare($stored_version, '4.12', '<')) {
             // Check if table exists before trying to modify it
@@ -838,19 +938,11 @@ class Connect
         }
         
         if (version_compare($stored_version, '4.25', '<')) {
-            global $wpdb;
             $contentRestrictionTable = $wpdb->prefix . 'pagbank_content_restriction';
-            $sql = "CREATE TABLE IF NOT EXISTS $contentRestrictionTable
-                    (
-                        user_id    int  not null,
-                        categories text null,
-                        pages      text null,
-                        CONSTRAINT pagbank_content_restriction_pk
-                            UNIQUE (user_id)
-                    )
-                        comment 'User permissions based on subscription status';";
-            $wpdb->query($sql);
-            update_option('pagbank_db_version', '4.25');
+            // Table creation is handled by ensureSchemaTables(); only bump when present.
+            if (self::tableExists($contentRestrictionTable)) {
+                update_option('pagbank_db_version', '4.25');
+            }
         }
 
         if (version_compare($stored_version, '4.27', '<')) {
@@ -881,33 +973,11 @@ class Connect
         }
 
         if (version_compare($stored_version, '4.29', '<')) {
-            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-            
             $boxesTable = $wpdb->prefix . 'pagbank_ef_boxes';
-            $sql = "CREATE TABLE IF NOT EXISTS $boxesTable
-                    (
-                        box_id int NOT NULL AUTO_INCREMENT,
-                        reference varchar(30) NOT NULL,
-                        is_available tinyint NOT NULL DEFAULT '1',
-                        outer_width varchar(30) NOT NULL,
-                        outer_depth varchar(30) NOT NULL,
-                        outer_length varchar(30) NOT NULL,
-                        thickness varchar(30) NOT NULL DEFAULT 0.20,
-                        inner_length varchar(30) NOT NULL,
-                        inner_width varchar(30) NOT NULL,
-                        inner_depth decimal(30) NOT NULL,
-                        max_weight int NOT NULL,
-                        empty_weight int NOT NULL,
-                        cost float(4,2) DEFAULT '0.00',
-                        created_at datetime DEFAULT CURRENT_TIMESTAMP,
-                        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        PRIMARY KEY (box_id),
-                        UNIQUE KEY reference (reference)
-                    )
-                    ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Boxes related to Envio Fácil Shipping';";
-            
-            dbDelta($sql);
-            update_option('pagbank_db_version', '4.29');
+            // Table creation is handled by ensureSchemaTables(); only bump when present.
+            if (self::tableExists($boxesTable)) {
+                update_option('pagbank_db_version', '4.29');
+            }
         }
 
         // Remove legacy installment option "external" (PagBank account settings) → buyer.

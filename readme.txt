@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.4
+Stable tag: 5.1.5
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -226,6 +226,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.5 =
+* Correção: após a correção do Ticketera (5.1.4), a troca de cartão da assinatura (Minha Conta → Alterar cartão) criptografava o cartão mas não enviava o formulário.
+* Correção: recria automaticamente tabelas do PagBank ausentes (recorrência, caixas Envio Fácil, restrição de conteúdo) na atualização — sem intervenção manual no banco.
 
 = 5.1.4 =
 * Correção: conflito com o plugin Ticketera no checkout legado — ao finalizar (cartão/PIX/boleto) a compra poderia recarregar o checkout em vez de processar o pedido.
