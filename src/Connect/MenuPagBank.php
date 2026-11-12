@@ -502,8 +502,8 @@ class MenuPagBank
                             <label for="reference"><?php _e('Referência', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="text" id="reference" name="reference" value="<?php echo $is_edit ? esc_attr($box->reference) : ''; ?>" class="regular-text" required />
-                            <p class="description"><?php _e('Identificador único da caixa (ex: CAIXA_PEQUENA_001)', 'pagbank-connect'); ?></p>
+                            <input type="text" id="reference" name="reference" value="<?php echo $is_edit ? esc_attr($box->reference) : ''; ?>" class="regular-text" maxlength="30" required />
+                            <p class="description"><?php _e('Identificador único da caixa (ex: CAIXA_PEQUENA_001). Máximo 30 caracteres.', 'pagbank-connect'); ?></p>
                         </td>
                     </tr>
                     
