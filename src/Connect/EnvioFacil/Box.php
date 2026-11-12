@@ -29,6 +29,8 @@ class Box
     {
         global $wpdb;
         $this->table_name = $wpdb->prefix . 'pagbank_ef_boxes';
+        // Auto-heal missing schema — merchants must not recreate tables manually.
+        \RM_PagBank\Connect::ensureSchemaTables();
     }
     
     /**
@@ -79,7 +81,10 @@ class Box
         $result = $wpdb->insert($this->table_name, $sanitized_data);
         
         if ($result === false) {
-            return new WP_Error('db_error', __('Erro ao salvar no banco de dados.', 'pagbank-connect'));
+            return new WP_Error(
+                'db_error',
+                self::formatDbError(__('Erro ao salvar no banco de dados.', 'pagbank-connect'), $wpdb->last_error)
+            );
         }
         
         return $wpdb->insert_id;
@@ -235,7 +240,10 @@ class Box
         );
         
         if ($result === false) {
-            return new WP_Error('db_error', __('Erro ao atualizar no banco de dados.', 'pagbank-connect'));
+            return new WP_Error(
+                'db_error',
+                self::formatDbError(__('Erro ao atualizar no banco de dados.', 'pagbank-connect'), $wpdb->last_error)
+            );
         }
         
         return true;
@@ -263,10 +271,26 @@ class Box
         );
         
         if ($result === false) {
-            return new WP_Error('db_error', __('Erro ao remover do banco de dados.', 'pagbank-connect'));
+            return new WP_Error(
+                'db_error',
+                self::formatDbError(__('Erro ao remover do banco de dados.', 'pagbank-connect'), $wpdb->last_error)
+            );
         }
         
         return true;
+    }
+
+    /**
+     * Append the raw MySQL error when available (admin-facing diagnostics).
+     */
+    private static function formatDbError(string $message, string $last_error): string
+    {
+        $last_error = trim($last_error);
+        if ($last_error === '') {
+            return $message;
+        }
+
+        return $message . ' (' . $last_error . ')';
     }
     
     /**
@@ -279,6 +303,14 @@ class Box
     private function reference_exists(string $reference, int $exclude_id = 0): bool
     {
         global $wpdb;
+
+        // Avoid fatal SQL noise when the boxes table was never created.
+        $wpdb->suppress_errors();
+        $table = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $this->table_name));
+        if ($table !== $this->table_name) {
+            $wpdb->suppress_errors(false);
+            return false;
+        }
         
         $sql = "SELECT COUNT(*) FROM {$this->table_name} WHERE reference = %s";
         $values = [$reference];
@@ -289,6 +321,7 @@ class Box
         }
         
         $count = $wpdb->get_var($wpdb->prepare($sql, $values));
+        $wpdb->suppress_errors(false);
         
         return (int) $count > 0;
     }
@@ -304,7 +337,8 @@ class Box
         $sanitized = [];
         
         if (isset($data['reference'])) {
-            $sanitized['reference'] = sanitize_text_field($data['reference']);
+            // Column is varchar(30); truncate after sanitize to avoid silent insert failures.
+            $sanitized['reference'] = substr(sanitize_text_field($data['reference']), 0, 30);
         }
         
         if (isset($data['is_available'])) {

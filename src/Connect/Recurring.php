@@ -32,6 +32,9 @@ class Recurring
             return;
         }
 
+        // Auto-heal missing subscription table — no manual DB steps for merchants.
+        Connect::ensureSchemaTables();
+
         //region admin management
         add_action('woocommerce_product_data_panels', [$this, 'addRecurringTabContent']);
         add_action('woocommerce_process_product_meta', [$this, 'saveRecurringTabContent']);
