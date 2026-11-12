@@ -1036,16 +1036,24 @@ jQuery(document).ready(function ($) {
         if (!wooCheckoutSubmitHandler) {
             wooCheckoutSubmitHandler = captureWooCheckoutSubmitHandler(formEl);
         }
-        if (typeof wooCheckoutSubmitHandler !== 'function') {
-            console.error('PB Integrações: handler submit do WooCommerce não encontrado');
-            isSubmitting = false;
+        // Classic checkout / order-pay: call WC AJAX handler (avoid native POST — Ticketera).
+        if (typeof wooCheckoutSubmitHandler === 'function') {
+            try {
+                console.debug('PB Integrações: retomando via handler WooCommerce capturado');
+                wooCheckoutSubmitHandler.call(formEl);
+            } catch (err) {
+                console.error('PB Integrações: falha ao retomar submit do WooCommerce', err);
+                isSubmitting = false;
+            }
             return;
         }
+        // Change-card / add payment method: no wc-checkout.js — native POST (bypass jQuery
+        // so we do not re-enter pagBankSubmitHandler).
         try {
-            console.debug('PB Integrações: retomando via handler WooCommerce capturado');
-            wooCheckoutSubmitHandler.call(formEl);
+            console.debug('PB Integrações: sem handler WC; submit nativo do formulário', formEl.id || formEl.className);
+            HTMLFormElement.prototype.submit.call(formEl);
         } catch (err) {
-            console.error('PB Integrações: falha ao retomar submit do WooCommerce', err);
+            console.error('PB Integrações: falha no submit nativo do formulário', err);
             isSubmitting = false;
         }
     };
