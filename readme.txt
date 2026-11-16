@@ -228,8 +228,9 @@ Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbinte
 == Changelog ==
 
 = 5.1.6 =
-* Correção: com 3DS Vindi e “Permitir concluir” ativo, pedidos abaixo do mínimo do MPI (R$ 600) não geram mais retokenização / `payment_profiles` extras — pula o enroll ou reutiliza o profile já criado (PB-1099).
+* Correção: com 3DS Vindi e “Permitir concluir” ativo, pedidos abaixo do mínimo do MPI (R$ 600) não geram mais retokenização / `payment_profiles` extras — pula o enroll ou reutiliza o profile já criado.
 * Melhoria: reduz chamadas repetidas a `fees/calculate` / `ps_get_installments` no checkout legado e em Blocos (debounce, dedupe por BIN+total, reuso das parcelas pré-renderizadas).
+* Correção: opção “Marcar como Completo” para produtos virtuais passa a considerar também produtos baixáveis (downloadable), alinhado ao uso real de ebooks digitais.
 
 = 5.1.5 =
 * Correção: após a correção do Ticketera (5.1.4), a troca de cartão da assinatura (Minha Conta → Alterar cartão) criptografava o cartão mas não enviava o formulário.
