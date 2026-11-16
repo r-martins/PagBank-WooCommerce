@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.5
+Stable tag: 5.1.6
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -226,6 +226,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.6 =
+* Correção: com 3DS Vindi e “Permitir concluir” ativo, pedidos abaixo do mínimo do MPI (R$ 600) não geram mais retokenização / `payment_profiles` extras — pula o enroll ou reutiliza o profile já criado (PB-1099).
+* Melhoria: reduz chamadas repetidas a `fees/calculate` / `ps_get_installments` no checkout legado e em Blocos (debounce, dedupe por BIN+total, reuso das parcelas pré-renderizadas).
 
 = 5.1.5 =
 * Correção: após a correção do Ticketera (5.1.4), a troca de cartão da assinatura (Minha Conta → Alterar cartão) criptografava o cartão mas não enviava o formulário.

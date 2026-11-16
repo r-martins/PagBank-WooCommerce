@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { __ } from '@wordpress/i18n';
 import InstallmentsOptions from './InstallmentsOptions';
 import RecurringInfo from './RecurringInfo';
@@ -7,36 +7,53 @@ const SavedCardInstallments = (props) => {
     const { token, emitResponse, eventRegistration, billing } = props;
     const total = billing?.cartTotal?.value || 0;
     const showInstallments = Number(total) > 0;
-    
-    // Safety check: ensure eventRegistration exists
-    if (!eventRegistration) {
-        return null;
-    }
-    
-    const { onPaymentSetup, onCheckoutValidation: onCheckoutValidation, onCheckoutSuccess, onCheckoutFail } = eventRegistration;
-    // Example: fetch installments by saved card BIN
     const [installments, setInstallments] = useState([]);
     const [selectedInstallment, setSelectedInstallment] = useState('1'); // default to 1 installment
+    const lastFetchKeyRef = useRef('');
+    const xhrRef = useRef(null);
+    const debounceRef = useRef(null);
+    const onPaymentSetup = eventRegistration?.onPaymentSetup;
 
-    // Function to fetch installments based on BIN and total amount
-    const fetchInstallments = (bin, total) => {
-        if (!bin || bin.length < 6 || !total || Number(total) <= 0) return;
-        jQuery.ajax({
-            url: window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).ajax_url,
-            method: 'POST',
-            data: {
-                cc_bin: bin,
-                amount: total,
-                nonce: window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).rm_pagbank_nonce,
-                action: 'ps_get_installments',
-            },
-            success: (response) => {
-                setInstallments(response);
-            },
-            error: () => {
-                alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
+    const fetchInstallments = (bin, amountCents) => {
+        if (!bin || String(bin).length < 6) return;
+        const totalNum = Number(amountCents) || 0;
+        if (totalNum <= 0) return;
+
+        const fetchKey = String(bin) + '|' + String(totalNum) + '|token:' + String(token);
+        if (lastFetchKeyRef.current === fetchKey) {
+            return;
+        }
+        lastFetchKeyRef.current = fetchKey;
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+        debounceRef.current = setTimeout(() => {
+            if (xhrRef.current && xhrRef.current.readyState !== 4) {
+                xhrRef.current.abort();
             }
-        });
+            xhrRef.current = jQuery.ajax({
+                url: window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).ajax_url,
+                method: 'POST',
+                data: {
+                    cc_bin: bin,
+                    nonce: window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {}).rm_pagbank_nonce,
+                    action: 'ps_get_installments',
+                },
+                success: (response) => {
+                    setInstallments(response);
+                },
+                error: (xhr) => {
+                    if (xhr && xhr.statusText === 'abort') {
+                        return;
+                    }
+                    if (lastFetchKeyRef.current === fetchKey) {
+                        lastFetchKeyRef.current = '';
+                    }
+                    alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
+                }
+            });
+        }, 250);
     };
 
     // Function to get the CC BIN for a specific token
@@ -54,29 +71,37 @@ const SavedCardInstallments = (props) => {
     };
 
     useEffect(() => {
-        // When selecting the token, fetch installments using the token's BIN and total checkout amount
-        const total = billing?.cartTotal?.value || 0;
+        const cartTotal = billing?.cartTotal?.value || 0;
         const tokenBin = getTokenBin(token);
-        fetchInstallments(tokenBin, total);
+        fetchInstallments(tokenBin, cartTotal);
     }, [token, billing?.cartTotal?.value]);
+
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+            if (xhrRef.current && xhrRef.current.readyState !== 4) {
+                xhrRef.current.abort();
+            }
+        };
+    }, []);
 
     // Integrate with checkout blocks to send the selected installment
     useEffect(() => {
-        if (!eventRegistration || !emitResponse) return;
+        if (!eventRegistration || !emitResponse || typeof onPaymentSetup !== 'function') return;
 
-            const unsubscribe = onPaymentSetup(() => { 
+        const unsubscribe = onPaymentSetup(() => {
             const customerDocument = getTokenCustomerDocument(token);
-            
+
             const paymentMethodData = {
                 'rm-pagbank-card-installments-token': selectedInstallment,
                 'token': token,
-                'payment_method': token,
                 'payment_method': 'rm-pagbank-cc',
                 'wc-rm-pagbank-cc-payment-token': token,
                 'isSavedToken': true,
             };
 
-            // Add customer document if available
             if (customerDocument) {
                 paymentMethodData['rm-pagbank-customer-document'] = customerDocument;
             }
@@ -87,15 +112,17 @@ const SavedCardInstallments = (props) => {
                     paymentMethodData: paymentMethodData,
                 },
             };
-        } );
+        });
 
         return () => {
             unsubscribe();
-        }
-        
-    }, [selectedInstallment, token, onPaymentSetup]);
+        };
+    }, [selectedInstallment, token, onPaymentSetup, eventRegistration, emitResponse]);
 
     const settings = window.wc.wcSettings.getSetting('rm-pagbank-cc_data', {});
+    if (!eventRegistration) {
+        return null;
+    }
     if (!showInstallments) {
         return settings.isCartRecurring ? <RecurringInfo billing={billing} /> : null;
     }
