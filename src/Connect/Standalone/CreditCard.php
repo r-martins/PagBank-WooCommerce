@@ -418,9 +418,12 @@ class CreditCard extends WC_Payment_Gateway_CC
                         : false);
 
                 if (!empty($_POST['rm-pagbank-payment-profile-id'])) {
+                    // PB-1099: kept after BELOW_MINIMUM / card-not-enrolled so we charge the
+                    // same profile created for enroll instead of retokenizing.
                     OrderMeta::set($order, '_payment_profile_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-payment-profile-id'])), true);
                 } else {
-                    // BELOW_MINIMUM / retry clears the hidden field — do not reuse a discarded profile from a prior attempt.
+                    // No profile posted (fresh gateway_token charge or cleared retry) — do not
+                    // reuse a leftover profile from a prior attempt on the same order.
                     OrderMeta::delete($order, '_payment_profile_id');
                 }
                 if (!empty($_POST['rm-pagbank-vindi-customer-id'])) {

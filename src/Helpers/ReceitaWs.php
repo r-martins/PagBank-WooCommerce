@@ -34,7 +34,7 @@ final class ReceitaWs
             'timeout' => self::TIMEOUT_SECONDS,
             'headers' => [
                 'Accept' => 'application/json',
-                'User-Agent' => 'WooCommerce / PagBank Integracoes',
+                'User-Agent' => 'WooCommerce / PB Integracoes',
             ],
         ]);
 

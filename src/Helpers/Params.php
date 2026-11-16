@@ -409,9 +409,22 @@ class Params
 
         $params['max_installments_no_interest'] = self::getMaxInstallmentsNoInterest($orderTotal);
 
+        // Same PHP request (e.g. payment fragment rendering) must not hit fees/calculate twice.
+        static $requestCache = [];
+        $cacheKey = implode('|', [
+            (string) ($params['value'] ?? ''),
+            (string) ($params['credit_card_bin'] ?? ''),
+            (string) ($params['max_installments'] ?? ''),
+            (string) ($params['max_installments_no_interest'] ?? ''),
+        ]);
+        if (array_key_exists($cacheKey, $requestCache)) {
+            return $requestCache[$cacheKey];
+        }
+
         try {
             $installments = $api->get($url, $params, 30);
         } catch (Exception $e) {
+            $requestCache[$cacheKey] = [];
             return [];
         }
 
@@ -423,6 +436,7 @@ class Params
         if (isset($installments['payment_methods']['credit_card'])){
             $installments = reset($installments['payment_methods']['credit_card']);
             if ( ! isset($installments['installment_plans'])) {
+                $requestCache[$cacheKey] = [];
                 return [];
             }
 
@@ -456,6 +470,7 @@ class Params
         if (function_exists('apply_filters')) {
             $return = apply_filters('pagbank_get_installments', $return, $orderTotal, $bin);
         }
+        $requestCache[$cacheKey] = $return;
         return $return;
     }
 
@@ -645,7 +660,7 @@ class Params
                 'timeout' => 10,
                 'sslverify' => false,
                 'reject_unsafe_urls' => false,
-                'user-agent' => 'WooCommerce / PagBank Integracoes',
+                'user-agent' => 'WooCommerce / PB Integracoes',
             ]
         );
 

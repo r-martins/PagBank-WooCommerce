@@ -386,6 +386,20 @@ export const runVindiBlocksCheckout = async ({
         return { gatewayToken, company };
     }
 
+    // Vindi MPI minimum_amount is in reais (600 = R$ 600). Skip enroll when we already
+    // know it will return BELOW_MINIMUM — charge with the public gateway_token only.
+    // PB-1099
+    const VINDI_3DS_MINIMUM_CENTS = 60000;
+    if (amountCents < VINDI_3DS_MINIMUM_CENTS) {
+        if (!allowContinueWithout3ds) {
+            throw new Error(
+                'Este pedido está abaixo do valor mínimo para 3D Secure (R$ 600,00). '
+                + 'Use outro método de pagamento ou aumente o valor do carrinho.'
+            );
+        }
+        return { gatewayToken, company };
+    }
+
     const checkout = billingCheckoutFromBlocks(billing);
     const ajaxUrl = settings.ajax_url;
     const nonce = settings.rm_pagbank_nonce;
@@ -447,18 +461,13 @@ export const runVindiBlocksCheckout = async ({
     const isBelowMinimum = enrollReason === 'BELOW_MINIMUM_AMOUNT'
         || enrollReason.indexOf('BELOW_MINIMUM') !== -1;
 
-    const retokenizeWithout3ds = () => {
-        const again = tokenizeVindiPublic({
-            publicKey: settings.vindiPublicKey,
-            profilesUrl: settings.vindiPaymentProfilesUrl,
-            holderName,
-            number: liveCardNumber(),
-            expiry,
-            cvv: liveCardCvv(),
-            company,
-        });
-        return { gatewayToken: again.gatewayToken, company };
-    };
+    // Charge with the private profile already created for setup/enroll — do not
+    // retokenize (public gateway_token was consumed). PB-1099
+    const continueWithExistingProfile = () => ({
+        paymentProfileId: profileId,
+        vindiCustomerId: customerId,
+        company,
+    });
 
     // Reason wins over status — MPI may return BELOW_MINIMUM with FAILED/SKIPPED + card_enrolled false.
     if (isBelowMinimum) {
@@ -468,8 +477,7 @@ export const runVindiBlocksCheckout = async ({
                 + 'Use outro método de pagamento ou aumente o valor do pedido.'
             );
         }
-        // Fresh public token — private profile consumed the first gateway_token.
-        return retokenizeWithout3ds();
+        return continueWithExistingProfile();
     }
 
     if (enrollStatus === 'AUTHENTICATION_SKIPPED') {
@@ -507,7 +515,7 @@ export const runVindiBlocksCheckout = async ({
 
     if (notEnrolledIn3ds && !challengeRequired) {
         if (allowContinueWithout3ds) {
-            return retokenizeWithout3ds();
+            return continueWithExistingProfile();
         }
         throw new Error('Este cartão não tem suporte a 3D Secure. Use outro cartão ou método de pagamento.');
     }

@@ -421,6 +421,7 @@ jQuery(document).ready(function ($) {
 
 
     jQuery(document.body).on('updated_checkout', function (e) {
+        // Debounced — WC often fires updated_checkout several times per refresh.
         jQuery(document.body).trigger('update_installments');
         // Keep server cart total in sync for Vindi 3DS amount (centavos).
         if (typeof ajax_object === 'undefined' || typeof rm_pagbank_nonce === 'undefined') {
@@ -437,8 +438,14 @@ jQuery(document).ready(function ($) {
             success: function (total) {
                 const reais = parseFloat(String(total).replace(',', '.'));
                 if (Number.isFinite(reais) && reais > 0) {
-                    window.pagseguro_connect_cart_total_cents = Math.round(reais * 100);
-                    console.debug('PB Integrações: cart total cents updated', window.pagseguro_connect_cart_total_cents);
+                    const cents = Math.round(reais * 100);
+                    const prev = Number(window.pagseguro_connect_cart_total_cents) || 0;
+                    window.pagseguro_connect_cart_total_cents = cents;
+                    console.debug('PB Integrações: cart total cents updated', cents);
+                    // Only refresh installments when the total actually changed.
+                    if (prev !== cents) {
+                        jQuery(document.body).trigger('update_installments');
+                    }
                 } else {
                     // Cart emptied (e.g. Funnel Kit removes last item on checkout).
                     window.pagseguro_connect_cart_total_cents = 0;
@@ -869,13 +876,21 @@ jQuery(document).ready(function ($) {
         const isChangeCardPage = (typeof pagseguro_connect_change_card_page !== 'undefined'
             && (pagseguro_connect_change_card_page === true || pagseguro_connect_change_card_page === 'true'));
 
-        const continueWithout3ds = function (reason) {
+        /**
+         * Finish without 3DS payload.
+         * When reuseProfile is true, keep the private payment_profile already created for
+         * setup/enroll and charge with it — do not retokenize (gateway_token was consumed).
+         */
+        const continueWithout3ds = function (reason, reuseProfile) {
             console.warn('PagBank Vindi 3DS: ' + reason + ' — concluindo sem 3DS');
-            jQuery('#rm-pagbank-payment-profile-id').val('');
-            jQuery('#rm-pagbank-vindi-customer-id').val('');
             jQuery('#rm-pagbank-card-3ds-payload').val('');
             jQuery('#rm-pagbank-card-3d').val('');
-            // Re-tokenize from in-memory PAN (DOM may already be masked).
+            if (reuseProfile && jQuery('#rm-pagbank-payment-profile-id').val()) {
+                return true;
+            }
+            jQuery('#rm-pagbank-payment-profile-id').val('');
+            jQuery('#rm-pagbank-vindi-customer-id').val('');
+            // Fallback: re-tokenize from in-memory PAN (DOM may already be masked).
             window.ps_cc_has_changed = false;
             if (encryptCard() === false) {
                 throw new Error('Não foi possível tokenizar o cartão para concluir sem 3DS.');
@@ -892,8 +907,8 @@ jQuery(document).ready(function ($) {
                     + 'Use outro método de pagamento ou aumente o valor do pedido.'
                 );
             }
-            // MPI will not run 3DS — charge with a fresh gateway_token (private profile consumed the first one).
-            return continueWithout3ds('BELOW_MINIMUM_AMOUNT (amount cents=' + cartTotal + ')');
+            // PB-1099: reuse the profile from enroll — no second public payment_profiles.
+            return continueWithout3ds('BELOW_MINIMUM_AMOUNT (amount cents=' + cartTotal + ')', true);
         }
 
         if (enrollStatus === 'AUTHENTICATION_SKIPPED') {
@@ -912,7 +927,10 @@ jQuery(document).ready(function ($) {
 
         if (notEnrolledIn3ds && !challengeRequired) {
             if (allowContinueWithout3ds) {
-                return continueWithout3ds('cartão fora do 3DS (veres=' + (enroll.veres_enrolled || '?') + ')');
+                return continueWithout3ds(
+                    'cartão fora do 3DS (veres=' + (enroll.veres_enrolled || '?') + ')',
+                    true
+                );
             }
             throw new Error('Este cartão não tem suporte a 3D Secure. Use outro cartão ou método de pagamento.');
         }
@@ -1145,6 +1163,23 @@ jQuery(document).ready(function ($) {
                     alert('Este pedido está abaixo do valor mínimo para 3D Secure. Use outro método de pagamento ou aumente o valor do carrinho.');
                     return false;
                 }
+                resumeWooCheckoutSubmit();
+                return false;
+            }
+
+            // Vindi MPI minimum_amount is in reais (600 = R$ 600). Skip enroll to avoid a
+            // throwaway payment_profile when the charge will proceed without 3DS anyway.
+            // PB-1099
+            const VINDI_3DS_MINIMUM_CENTS = 60000;
+            if (cartTotal < VINDI_3DS_MINIMUM_CENTS) {
+                if (!allowContinueWithout3ds && !isChangeCardPage) {
+                    alert(
+                        'Este pedido está abaixo do valor mínimo para 3D Secure (R$ 600,00). '
+                        + 'Use outro método de pagamento ou aumente o valor do carrinho.'
+                    );
+                    return false;
+                }
+                console.debug('PagBank Vindi 3DS: skip enroll (below R$ 600)', cartTotal);
                 resumeWooCheckoutSubmit();
                 return false;
             }
@@ -1439,7 +1474,9 @@ jQuery(document).ready(function ($) {
     };
 
 // jQuery(document.body).on('init_checkout', ()=>{
-    jQuery(document).on('keyup change paste', '#rm-pagbank-card-number', (e)=>{
+    // `input` once (not keyup+change+paste): jquery.payment mask reformats on keyup and
+    // would otherwise re-enter this handler multiple times per keystroke.
+    jQuery(document).on('input paste', '#rm-pagbank-card-number', (e)=>{
         window.ps_cc_has_changed = true;
         // PagBank session OR Vindi profile from a prior attempt — never reuse after PAN edit.
         if ('undefined' !== typeof pagseguro_connect_3d_session
@@ -1450,18 +1487,22 @@ jQuery(document).ready(function ($) {
         }
         let cardNumber = jQuery(e.target).val();
         let digits = cardNumber.replace(/\D/g, '');
+        // Masked PAN (****) after tokenize — ignore; keep previous bin/installments.
+        if (cardNumber.indexOf('*') !== -1 || digits.length < 6) {
+            return;
+        }
         let ccBin = digits.substring(0, 6);
-        if (digits.length >= 6 && typeof window.rmPagbankDetectVindiPaymentCompanyCode === 'function') {
+        if (typeof window.rmPagbankDetectVindiPaymentCompanyCode === 'function') {
             const company = window.rmPagbankDetectVindiPaymentCompanyCode(digits);
             jQuery('#rm-pagbank-payment-company-code').val(company);
             window.ps_vindi_payment_company = company;
         }
-        if (ccBin !== window.ps_cc_bin && ccBin.length === 6 && !pagseguro_connect_change_card_page) {
+        if (ccBin !== window.ps_cc_bin && !pagseguro_connect_change_card_page) {
             window.ps_cc_bin = ccBin;
             jQuery(document.body).trigger('update_installments');
         }
     });
-    jQuery(document).on('keyup change paste', '#rm-pagbank-card-cvc', (e)=>{
+    jQuery(document).on('input paste', '#rm-pagbank-card-cvc', (e)=>{
         window.ps_cc_has_changed = true;
         if (typeof pagseguro_connect_partner !== 'undefined' && pagseguro_connect_partner === 'vindi') {
             window.clearVindiCardAuthState();
@@ -1478,37 +1519,70 @@ jQuery(document).ready(function ($) {
     });
 // });
 
-    jQuery(document.body).on('update_installments', (event, selector_installments = '#rm-pagbank-card-installments')=> {
-        //if success, update the installments select with the response
-        //if error, show error message
+    /**
+     * Resolve cart total in cents for installments. Prefer the last known server total so
+     * a brief empty DOM during updated_checkout does not clear the dedupe cache / refetch.
+     */
+    const resolveInstallmentsAmountCents = function () {
+        const injected = Number(window.pagseguro_connect_cart_total_cents);
+        if (Number.isFinite(injected) && injected >= 100) {
+            return Math.round(injected);
+        }
+        const totalHtml = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value').last().html();
+        if (typeof window.rmPagbankParseBrlToCents === 'function') {
+            return window.rmPagbankParseBrlToCents(totalHtml) || 0;
+        }
+        return 0;
+    };
+
+    const runUpdateInstallments = function (selector_installments) {
+        selector_installments = selector_installments || '#rm-pagbank-card-installments';
         let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
-        let total = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value').last().html();
-        let orderTotal = (typeof window.rmPagbankParseBrlToCents === 'function')
-            ? window.rmPagbankParseBrlToCents(total)
-            : 0;
-        // Never let a stale injected cart total (Vindi 3DS sync) override an empty cart.
-        // Funnel Kit (and similar) can remove the last item on checkout; DOM goes to R$0
-        // while pagseguro_connect_cart_total_cents may still hold the previous amount.
+        let orderTotal = resolveInstallmentsAmountCents();
+        // Transient empty DOM while WC refreshes fragments — wait, do not wipe fetch cache.
         if (orderTotal < 100) {
-            if (typeof window.pagseguro_connect_cart_total_cents !== 'undefined') {
-                window.pagseguro_connect_cart_total_cents = 0;
+            const domLooksEmpty = !jQuery('.order-total bdi, .product-total bdi').last().text();
+            if (domLooksEmpty) {
+                return;
             }
+            // Cart truly empty.
+            window.pagseguro_connect_cart_total_cents = 0;
+            window.ps_cc_installments_fetch_key = '';
             let select = jQuery(selector_installments);
             select.empty();
             select.parent().hide();
             return;
         }
-        if (typeof pagseguro_connect_cart_total_cents !== 'undefined') {
-            const injected = Number(pagseguro_connect_cart_total_cents);
-            if (Number.isFinite(injected) && injected >= 100) {
-                orderTotal = Math.round(injected);
-            }
+
+        // Dedupe by bin+total only (ignore selector — token vs new-card share the same plans).
+        const fetchKey = String(ccBin) + '|' + String(orderTotal);
+        if (window.ps_cc_installments_fetch_key === fetchKey) {
+            return;
         }
-        // let maxInstallments = jQuery('#rm-pagbank-card-installments').attr('max_installments');
+        // PHP already pre-filled parcels with default BIN — reuse until bin/total changes.
+        const $selectReady = jQuery(selector_installments);
+        const hasServerOptions = $selectReady.find('option').filter(function () {
+            return String(jQuery(this).val() || '') !== '';
+        }).length > 0;
+        if (
+            !window.ps_cc_installments_fetch_key
+            && String(ccBin) === '555566'
+            && hasServerOptions
+            && !Array.isArray(window.ps_cc_installments)
+        ) {
+            window.ps_cc_installments_fetch_key = fetchKey;
+            console.debug('PB Integrações: installments already rendered server-side, skip ajax');
+            return;
+        }
+        window.ps_cc_installments_fetch_key = fetchKey;
+
         let url = ajax_object.ajax_url;
         let encryptedOrderId = typeof pagBankOrderDetails !== 'undefined' ?
             pagBankOrderDetails?.encryptedOrderId : null;
-        jQuery.ajax({
+        if (window.ps_cc_installments_xhr && window.ps_cc_installments_xhr.readyState !== 4) {
+            window.ps_cc_installments_xhr.abort();
+        }
+        window.ps_cc_installments_xhr = jQuery.ajax({
             url: url,
             method: 'POST',
             data: {
@@ -1534,7 +1608,7 @@ jQuery(document).ready(function ($) {
                     let additional_text = ' (sem juros)';
                     if (response[i].interest_free === false)
                         additional_text = ' (Total R$ ' + response[i].total_amount + ')';
-    
+
                     option.text(text + additional_text);
                     select.append(option);
                     if (previouslySelected == response[i].installments) {
@@ -1543,18 +1617,21 @@ jQuery(document).ready(function ($) {
                 }
                 window.ps_cc_installments = response;
 
-                // if previously selected installment is found, select it
                 if (found) {
                     select.val(previouslySelected);
                 } else if (response?.length > 0 && typeof window.ps_cc_selected_installment !== 'undefined') {
-                    // If the previously selected installment is not found, select the last one
                     select.val(response[response.length-1].installments);
                 }
             },
             error: (xhr)=>{
+                if (xhr && xhr.statusText === 'abort') {
+                    return;
+                }
+                if (window.ps_cc_installments_fetch_key === fetchKey) {
+                    window.ps_cc_installments_fetch_key = '';
+                }
                 const payload = xhr && xhr.responseJSON;
                 const msg = (payload && (payload.error || (payload.data && payload.data.error))) || '';
-                // Empty cart / invalid total: hide quietly (no alert).
                 if (typeof msg === 'string' && /total do pedido inválido|pedido inválido/i.test(msg)) {
                     jQuery(selector_installments).empty().parent().hide();
                     return;
@@ -1565,6 +1642,17 @@ jQuery(document).ready(function ($) {
                     'na maioria dos casos.');
             }
         });
+    };
+
+    jQuery(document.body).on('update_installments', (event, selector_installments)=> {
+        const selector = selector_installments || '#rm-pagbank-card-installments';
+        // Debounce: mask formatting + repeated updated_checkout collapse into one ajax.
+        if (window.ps_cc_installments_debounce) {
+            clearTimeout(window.ps_cc_installments_debounce);
+        }
+        window.ps_cc_installments_debounce = setTimeout(function () {
+            runUpdateInstallments(selector);
+        }, 250);
     });
 
 jQuery(document.body).on('checkout_error', function(event, error_data) {

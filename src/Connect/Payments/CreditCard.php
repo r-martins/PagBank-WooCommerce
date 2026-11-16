@@ -494,7 +494,7 @@ class CreditCard extends Common
                 400);
         }
         global $woocommerce;
-        Params::getInstallments(floatval($woocommerce->cart->get_total('edit')), intval($_POST['ccBin']));
+        // Do not call fees/calculate here — installments are refreshed via ps_get_installments.
         echo esc_html( $woocommerce->cart->get_total('edit') );
         wp_die();
     }

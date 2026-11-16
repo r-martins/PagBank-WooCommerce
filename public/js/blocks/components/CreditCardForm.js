@@ -9,11 +9,14 @@ const { checkoutStore } = window.wc?.wcBlocksData || {};
 const PaymentInstructions = ({ billing }) => {
     const settings = getSetting('rm-pagbank-cc_data', {});
     const defaultInstallments = settings.defaultInstallments || [];
-    const [creditCardNumber, setCreditCardNumber] = useState('555566');
-    const [ccBin, setCcBin] = useState('');
+    const [creditCardNumber, setCreditCardNumber] = useState('');
+    const [ccBin, setCcBin] = useState('555566');
     const [cardBrand, setCardBrand] = useState('');
-    const prevCcBinRef = useRef();
     const [installments, setInstallments] = useState(defaultInstallments);
+    const lastFetchKeyRef = useRef('');
+    const xhrRef = useRef(null);
+    const debounceRef = useRef(null);
+    const initialTotalRef = useRef(Number(billing?.cartTotal?.value) || 0);
     window.ps_cc_installments = installments;
 
 	const isCalculating = useSelect((select) => {
@@ -75,56 +78,105 @@ const PaymentInstructions = ({ billing }) => {
 		return map[brand] || 'mastercard';
 	};
 
-	const fetchInstallments = (bin, force = false) => {
-		if (bin.length < 6 || (prevCcBinRef.current === bin && !force)) return;
-
+	const fetchInstallments = (bin, totalCents) => {
 		if (settings.isCartRecurring === true) return;
 
-		prevCcBinRef.current = bin;
+		const safeBin = (bin && String(bin).replace(/\D/g, '').length >= 6)
+			? String(bin).replace(/\D/g, '').slice(0, 6)
+			: '555566';
+		const total = Number(totalCents) || 0;
+		if (total < 100) {
+			return;
+		}
 
-		jQuery.ajax({
-			url: settings.ajax_url,
-			method: 'POST',
-			data: {
-				cc_bin: bin,
-				nonce: settings.rm_pagbank_nonce,
-				action: 'ps_get_installments',
-			},
-			success: (response) => {
-				window.ps_cc_installments = response;
-				setInstallments(response);
-			},
-			error: () => {
-				alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
-				console.info('WooCommerce > Status > Logs para mais detalhes.');
+		const fetchKey = safeBin + '|' + String(total);
+		if (lastFetchKeyRef.current === fetchKey) {
+			return;
+		}
+
+		// PHP/blocks already injected defaultInstallments for default BIN + initial total.
+		if (
+			!lastFetchKeyRef.current
+			&& safeBin === '555566'
+			&& Array.isArray(defaultInstallments)
+			&& defaultInstallments.length > 0
+			&& !defaultInstallments.error
+			&& total === Number(initialTotalRef.current)
+		) {
+			lastFetchKeyRef.current = fetchKey;
+			window.ps_cc_installments = defaultInstallments;
+			return;
+		}
+
+		lastFetchKeyRef.current = fetchKey;
+
+		if (debounceRef.current) {
+			clearTimeout(debounceRef.current);
+		}
+		debounceRef.current = setTimeout(() => {
+			if (xhrRef.current && xhrRef.current.readyState !== 4) {
+				xhrRef.current.abort();
 			}
-		});
+			xhrRef.current = jQuery.ajax({
+				url: settings.ajax_url,
+				method: 'POST',
+				data: {
+					cc_bin: safeBin,
+					nonce: settings.rm_pagbank_nonce,
+					action: 'ps_get_installments',
+				},
+				success: (response) => {
+					window.ps_cc_installments = response;
+					setInstallments(response);
+				},
+				error: (xhr) => {
+					if (xhr && xhr.statusText === 'abort') {
+						return;
+					}
+					if (lastFetchKeyRef.current === fetchKey) {
+						lastFetchKeyRef.current = '';
+					}
+					alert('Erro ao calcular parcelas. Verifique os dados do cartão e tente novamente.');
+					console.info('WooCommerce > Status > Logs para mais detalhes.');
+				}
+			});
+		}, 250);
 	};
 
-	// When the credit card number changes
+	// When the credit card number changes — only react to a real BIN (ignore mask noise / ****).
 	useEffect(() => {
-		const digits = creditCardNumber.replace(/\D/g, '');
-		if (digits.length >= 6) {
-			const brand = detectCardBrand(digits);
-			setCardBrand(brand);
-			setCcBin(digits.substring(0, 6));
-			window.ps_vindi_payment_company = toVindiPaymentCompanyCode(brand);
+		if (String(creditCardNumber).indexOf('*') !== -1) {
+			return;
 		}
+		const digits = creditCardNumber.replace(/\D/g, '');
+		if (digits.length < 6) {
+			return;
+		}
+		const brand = detectCardBrand(digits);
+		const nextBin = digits.substring(0, 6);
+		setCardBrand(brand);
+		window.ps_vindi_payment_company = toVindiPaymentCompanyCode(brand);
+		setCcBin((prev) => (prev === nextBin ? prev : nextBin));
 	}, [creditCardNumber]);
 
-	// Recalculate installments when BIN changes and checkout finishes recalculating.
+	// Fetch when BIN or cart total changes (after checkout finishes recalculating).
 	useEffect(() => {
-		if (!isCalculating && ccBin) {
-			fetchInstallments(ccBin, true);
+		if (isCalculating) {
+			return;
 		}
-	}, [ccBin, isCalculating]);
+		fetchInstallments(ccBin, billing?.cartTotal?.value);
+	}, [ccBin, billing?.cartTotal?.value, isCalculating]);
 
-	// Recalculate installments when cart total changes (coupon/shipping/tax updates).
 	useEffect(() => {
-		if (!isCalculating && ccBin) {
-			fetchInstallments(ccBin, true);
-		}
-	}, [billing?.cartTotal?.value, ccBin, isCalculating]);
+		return () => {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
+			if (xhrRef.current && xhrRef.current.readyState !== 4) {
+				xhrRef.current.abort();
+			}
+		};
+	}, []);
 
     return (
         <div>

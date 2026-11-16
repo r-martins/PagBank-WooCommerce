@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.5
+Stable tag: 5.1.6
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -15,11 +15,11 @@ Conecte. Converta. Cresça. 99% de aprovação.
 
 **Aceite PagBank ou Vindi (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
-# ℹ️ **NOTA IMPORTANTE:**
+# 🎉 **NOVIDADE**
 
-Você pode usar este plugin e receber seus pagamentos em sua conta PagBank (ou de outro banco), porém através do trilho de pagamento com nosos novo parceiro: Vindi.
+Você agora pode usar este plugin e receber seus pagamentos em sua conta PagBank (ou de outro banco) automaticamente, e agora através do trilho de pagamento com nosso novo parceiro: Vindi.
 
-Devido a uma mudança estratégica, o PagBank decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014).
+Devido a uma mudança estratégica, o PagBank decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014, até 5/11).
 
 Mesma integração. Mesma equipe. E mais recursos novos. 
 
@@ -226,6 +226,12 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.6 =
+* Correção: com 3DS Vindi e “Permitir concluir” ativo, pedidos abaixo do mínimo do MPI (R$ 600) não geram mais retokenização / `payment_profiles` extras — pula o enroll ou reutiliza o profile já criado.
+* Melhoria: reduz chamadas repetidas a `fees/calculate` / `ps_get_installments` no checkout legado e em Blocos (debounce, dedupe por BIN+total, reuso das parcelas pré-renderizadas).
+* Correção: opção “Marcar como Completo” para produtos virtuais passa a considerar também produtos baixáveis (downloadable), alinhado ao uso real de ebooks digitais.
+* Melhoria: User-Agent das requisições HTTP passa a identificar “PB Integracoes”; texto de novidade Vindi atualizado no readme.
 
 = 5.1.5 =
 * Correção: após a correção do Ticketera (5.1.4), a troca de cartão da assinatura (Minha Conta → Alterar cartão) criptografava o cartão mas não enviava o formulário.

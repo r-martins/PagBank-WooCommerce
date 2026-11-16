@@ -48,7 +48,7 @@ return array(
         'desc_tip' => true,
         'description' => esc_html(
             __(
-                'Por padrão, pedidos só com produtos virtuais tem o status Processando após a confirmação do pagamento.',
+                'Pedidos que contenham apenas produtos virtuais e/ou baixáveis (downloadable) passam a Concluído após a confirmação do pagamento, em vez de Processando. O WooCommerce, por padrão, só faz isso quando o item é virtual E baixável ao mesmo tempo.',
                 'pagbank-connect'
             )),
         'default' => 'no',

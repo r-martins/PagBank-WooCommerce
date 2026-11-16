@@ -1055,7 +1055,7 @@ class Connect
             ]);
             $url .= '&' . $params;
             wp_remote_get($url, [
-                'user-agent' => 'WooCommerce / PagBank Integracoes',
+                'user-agent' => 'WooCommerce / PB Integracoes',
             ]);
         }
     }
@@ -1379,28 +1379,43 @@ class Connect
     }
 
     /**
-     * Will check if skip_processing_virtual is enabled and skip processing for virtual products
+     * When skip_processing_virtual is enabled, treat virtual and/or downloadable line items
+     * as not needing processing so payment_complete() moves the order to completed.
      *
-     * @param $needsProcessing
-     * @param $product
-     * @param $orderId
+     * WooCommerce core only auto-completes items that are both virtual AND downloadable.
+     * Merchants often mark ebooks as downloadable without checking Virtual — still digital.
      *
-     * @return void
+     * @param bool        $needsProcessing
+     * @param \WC_Product $product
+     * @param int         $orderId
+     *
+     * @return bool
      */
     public static function orderItemNeedsProcessing($needsProcessing, $product, $orderId)
     {
         $order = wc_get_order($orderId);
-        $paymentMethod = $order->get_payment_method();
+        if (!$order instanceof \WC_Order) {
+            return $needsProcessing;
+        }
+
+        $paymentMethod = (string) $order->get_payment_method();
         if (strpos($paymentMethod, 'rm-pagbank') === false) {
             return $needsProcessing;
         }
-        
-        $isVirtual = $product->is_virtual();
-        $skipProcessing = Params::getConfig('skip_processing_virtual') == 'yes';
-        if ($isVirtual && $skipProcessing) {
+
+        if (Params::getConfig('skip_processing_virtual') !== 'yes') {
+            return $needsProcessing;
+        }
+
+        if (!$product instanceof \WC_Product) {
+            return $needsProcessing;
+        }
+
+        // Digital goods: virtual, downloadable, or both.
+        if ($product->is_virtual() || $product->is_downloadable()) {
             return false;
         }
-        
+
         return $needsProcessing;
     }
     
