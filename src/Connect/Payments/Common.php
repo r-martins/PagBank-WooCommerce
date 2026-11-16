@@ -730,7 +730,7 @@ class Common
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
-            'user-agent' => 'WooCommerce / PagBank Integracoes',
+            'user-agent' => 'WooCommerce / PB Integracoes',
         ]);
 
         if (is_wp_error($response)) {

@@ -122,7 +122,7 @@ class Api
     {
         $opts = array_merge([
             'timeout' => 60,
-            'user-agent' => 'WooCommerce / PagBank Integracoes',
+            'user-agent' => 'WooCommerce / PB Integracoes',
         ], $extra);
         // Constant is safe in wp-config.php (add_filter is not — WP is not loaded yet).
         $ssl = true;
@@ -240,7 +240,7 @@ class Api
         $resp = wp_remote_get($url, [
             'headers' => $header,
             'timeout' => 60,
-            'user-agent' => 'WooCommerce / PagBank Integracoes',
+            'user-agent' => 'WooCommerce / PB Integracoes',
         ]);
 
         if (is_wp_error($resp)) {
@@ -603,7 +603,7 @@ class Api
             'headers' => $headers,
             'body' => wp_json_encode($params),
             'timeout' => 60,
-            'user-agent' => 'WooCommerce / PagBank Integracoes',
+            'user-agent' => 'WooCommerce / PB Integracoes',
         ]);
 
         if (is_wp_error($response)) {

@@ -660,7 +660,7 @@ class Params
                 'timeout' => 10,
                 'sslverify' => false,
                 'reject_unsafe_urls' => false,
-                'user-agent' => 'WooCommerce / PagBank Integracoes',
+                'user-agent' => 'WooCommerce / PB Integracoes',
             ]
         );
 

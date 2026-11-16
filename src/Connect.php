@@ -1055,7 +1055,7 @@ class Connect
             ]);
             $url .= '&' . $params;
             wp_remote_get($url, [
-                'user-agent' => 'WooCommerce / PagBank Integracoes',
+                'user-agent' => 'WooCommerce / PB Integracoes',
             ]);
         }
     }

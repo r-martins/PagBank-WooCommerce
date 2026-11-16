@@ -95,7 +95,7 @@ class PixQr
             [
                 'timeout'     => 30,
                 'redirection' => 3,
-                'user-agent'  => 'WooCommerce / PagBank Integracoes PIX QR',
+                'user-agent'  => 'WooCommerce / PB Integracoes PIX QR',
             ]
         );
 
