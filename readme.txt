@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.6
+Stable tag: 5.1.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
@@ -226,6 +226,10 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.7 =
+* Segurança: sanitiza nome/e-mail/endereço vindos do webhook do Checkout PB e escapa a saída na tela admin de Assinaturas (mitiga stored XSS via `customer.name`).
+* Segurança: token de notificação (`rm_ps_notif`) passa a ser aleatório (CSPRNG), gravado no pedido e validado com comparação idêntica; pedidos antigos sem meta continuam aceitando o hash de 5 caracteres.
 
 = 5.1.6 =
 * Correção: com 3DS Vindi e “Permitir concluir” ativo, pedidos abaixo do mínimo do MPI (R$ 600) não geram mais retokenização / `payment_profiles` extras — pula o enroll ou reutiliza o profile já criado.
