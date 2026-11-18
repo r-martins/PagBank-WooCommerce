@@ -76,15 +76,16 @@ class SubscriptionDetails extends WP_List_Table
         $name = $item['name'] ?? '';
         $value = $item['value'] ?? '';
         if ($name !== 'Pedido Inicial') {
-            return $value;
+            // Escape untrusted order/customer fields (e.g. billing name from webhook) — PB-1102.
+            return esc_html((string) $value);
         }
 
         $order = wc_get_order($value);
         if (!$order) {
-            return $value;
+            return esc_html((string) $value);
         }
 
-        return '<a href="' . $order->get_edit_order_url() . '">' . $value . '</a>';
+        return '<a href="' . esc_url($order->get_edit_order_url()) . '">' . esc_html((string) $value) . '</a>';
     }
 
     public function prepare_items()

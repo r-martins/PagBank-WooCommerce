@@ -753,12 +753,69 @@ class Api
     }
 
     /**
-     * @param WC_Order $order
-     *
-     * @return false|string
+     * Logical order meta for the notification webhook token (PB-1102).
+     * Physical keys: _pb_notif_hash / _pagbank_notif_hash via OrderMeta.
      */
-    public static function getOrderHash(WC_Order $order){
-        return substr(wp_hash($order->get_id()), 0, 5);
+    public const ORDER_NOTIF_HASH_META = '_notif_hash';
+
+    /**
+     * Notification URL token (?wc-api=rm_ps_notif&hash=…).
+     * Persists a CSPRNG token on the order (no wp_hash / wp_salt) and reuses it.
+     *
+     * @param WC_Order $order
+     * @return string
+     */
+    public static function getOrderHash(WC_Order $order): string
+    {
+        $existing = OrderMeta::get($order, self::ORDER_NOTIF_HASH_META, '');
+        if (is_string($existing) && $existing !== '') {
+            return $existing;
+        }
+
+        // 16 hex chars (64-bit) from PHP CSPRNG — independent of wp_salt / other plugins.
+        try {
+            $token = bin2hex(random_bytes(8));
+        } catch (\Exception $e) {
+            // Extremely rare; still avoid wp_salt. wp_generate_password is WP-native fallback.
+            $token = wp_generate_password(16, false, false);
+        }
+
+        OrderMeta::set($order, self::ORDER_NOTIF_HASH_META, $token, true);
+        $order->save();
+
+        return $token;
+    }
+
+    /**
+     * Legacy 5-char gate for notification_urls emitted before PB-1102 (no meta stored).
+     */
+    public static function getLegacyOrderHash(WC_Order $order): string
+    {
+        return substr(wp_hash((string) $order->get_id()), 0, 5);
+    }
+
+    /**
+     * Constant-time check for notification webhook hash.
+     * - Meta present → only the stored token (new orders).
+     * - No meta + provided length 5 → legacy wp_hash prefix (in-flight old URLs).
+     */
+    public static function isValidOrderHash(WC_Order $order, string $provided): bool
+    {
+        if ($provided === '') {
+            return false;
+        }
+
+        $stored = OrderMeta::get($order, self::ORDER_NOTIF_HASH_META, '');
+        if (is_string($stored) && $stored !== '') {
+            return hash_equals($stored, $provided);
+        }
+
+        // Pre-PB-1102 orders: URL still carries 5-char derived hash.
+        if (strlen($provided) !== 5) {
+            return false;
+        }
+
+        return hash_equals(self::getLegacyOrderHash($order), $provided);
     }
 
     /**
