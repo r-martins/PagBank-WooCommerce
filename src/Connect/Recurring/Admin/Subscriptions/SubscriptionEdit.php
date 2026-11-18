@@ -61,15 +61,18 @@ class SubscriptionEdit extends SubscriptionDetails
     {
         if ($item['name'] === 'Pedido Inicial') {
             $order = wc_get_order($item['value']);
-            return '<a href="' . $order->get_edit_order_url() . '">' . $item['value'] . '</a>';
+            if (!$order) {
+                return esc_html((string) $item['value']);
+            }
+            return '<a href="' . esc_url($order->get_edit_order_url()) . '">' . esc_html((string) $item['value']) . '</a>';
         }
 
         if (!array_key_exists($item['name'], array_flip($this->get_edit_colluns()))) {
-            return $item['value'];
+            return esc_html((string) $item['value']);
         }
 
-        $name = array_search($item['name'], $this->get_edit_colluns());
-        $value = number_format($item['value'], 2, ',', '.');
-        return "<input type='text' name='{$name}' value='{$value}'>";
+        $name = array_search($item['name'], $this->get_edit_colluns(), true);
+        $value = number_format((float) $item['value'], 2, ',', '.');
+        return "<input type='text' name='" . esc_attr((string) $name) . "' value='" . esc_attr($value) . "'>";
     }
 }

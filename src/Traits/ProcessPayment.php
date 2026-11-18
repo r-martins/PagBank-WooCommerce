@@ -401,8 +401,9 @@ trait ProcessPayment
             }
         }
 
-        if ($hash != Api::getOrderHash($order))
+        if (!Api::isValidOrderHash($order, (string) $hash)) {
             wp_die('Hash inválido', 403);
+        }
 
 //        if (!isset($order_data['charges']))
 //            wp_die('Charges não informado. Notificação ignorada.', 200);
@@ -712,14 +713,19 @@ trait ProcessPayment
         if (!empty($order_data['customer']) && is_array($order_data['customer'])) {
             $c = $order_data['customer'];
             if (!empty($c['name'])) {
-                $parts = preg_split('/\s+/', trim((string) $c['name']), 2);
-                $order->set_billing_first_name($parts[0] ?? '');
-                $order->set_billing_last_name($parts[1] ?? '');
+                // Strip tags before split so XSS payloads cannot survive re-join in admin sinks (PB-1102).
+                $safeName = sanitize_text_field(wp_strip_all_tags((string) $c['name']));
+                $parts = preg_split('/\s+/', trim($safeName), 2);
+                $order->set_billing_first_name(sanitize_text_field($parts[0] ?? ''));
+                $order->set_billing_last_name(sanitize_text_field($parts[1] ?? ''));
                 $changed = true;
             }
             if (!empty($c['email'])) {
-                $order->set_billing_email((string) $c['email']);
-                $changed = true;
+                $email = sanitize_email((string) $c['email']);
+                if ($email !== '') {
+                    $order->set_billing_email($email);
+                    $changed = true;
+                }
             }
             if (!empty($c['tax_id'])) {
                 OrderMeta::set($order, '_rm_pagbank_customer_document', preg_replace('/\D+/', '', (string) $c['tax_id']), true);
@@ -735,12 +741,12 @@ trait ProcessPayment
                     if (is_array($first)) {
                         $digits = ($first['area'] ?? '') . ($first['number'] ?? '');
                         if ($digits !== '') {
-                            $order->set_billing_phone((string) $digits);
+                            $order->set_billing_phone(sanitize_text_field((string) $digits));
                             $changed = true;
                         }
                     }
                 } elseif (is_string($phone) && $phone !== '') {
-                    $order->set_billing_phone($phone);
+                    $order->set_billing_phone(sanitize_text_field($phone));
                     $changed = true;
                 }
             }
@@ -781,6 +787,7 @@ trait ProcessPayment
                         $label = implode(' / ', $parts);
                     }
                 }
+                $label = sanitize_text_field($label);
 
                 // Replace existing shipping lines
                 foreach ($order->get_items('shipping') as $item_id => $item) {
@@ -825,6 +832,14 @@ trait ProcessPayment
         if (strtoupper($country) === 'BRA') {
             $country = 'BR';
         }
+
+        $street = sanitize_text_field($street);
+        $number = sanitize_text_field($number);
+        $complement = sanitize_text_field($complement);
+        $locality = sanitize_text_field($locality);
+        $city = sanitize_text_field($city);
+        $region = sanitize_text_field($region);
+        $country = sanitize_text_field($country);
 
         if ($type === 'shipping') {
             $order->set_shipping_address_1($street);
