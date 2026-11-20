@@ -1,35 +1,35 @@
-=== PagBank / PagSeguro e Vindi para WooCommerce ===
+=== PB Integrações (antigo PagBank Integrações) para WooCommerce ===
 Contributors: martins56
 Tags: pagseguro, pagbank, pix, woocommerce, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.7
+Stable tag: 5.1.8
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
-PagBank ou Vindi com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores.
+Receba no PagBank, MercadoPago ou outro banco com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores a partir de 0,60%.
 Conecte. Converta. Cresça. 99% de aprovação.
 
 == Description ==
 
-**Aceite PagBank ou Vindi (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
+**Receba em sua Conta PagBank, MercadoPago (ou outra) via Vindi (Pix, Cartão de Crédito, Boleto) em sua loja WooCommerce.**
 
 # 🎉 **NOVIDADE**
 
-Você agora pode usar este plugin e receber seus pagamentos em sua conta PagBank (ou de outro banco) automaticamente, e agora através do trilho de pagamento com nosso novo parceiro: Vindi.
+Você agora pode usar este plugin e receber seus pagamentos em sua conta PagBank, MercadoPago, NuBank (ou de outro banco) de forma automática (sem precisar sacar), e agora através do trilho de pagamento com nosso novo parceiro: Vindi Pagamentos.
 
-Devido a uma mudança estratégica, o PagBank decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014, até 5/11).
+Devido a uma mudança estratégica, decidiu não aceitar novas lojas do [PB Integrações](https://pbintegracoes.com) (Parceiro oficial desde 2014, até 5/11).
 
 Mesma integração. Mesma equipe. E mais recursos novos. 
 
 Sem mensalidade ou taxas escondidas. Taxas de transação *muito* menores. E claro, mais aprovação.
 
-**99% dos pedidos aprovados em 70% dos clientes. Antifraude incluso.**
+**99% dos pedidos aprovados em 70% dos clientes. Antifraude incluso.** Fonte: Vindi
 
-**Economize nas taxas e converta ainda mais.** Receba no crédito à vista **a partir de 2,99% + R$0,00** de taxa de intermediação e PIX na hora por 0,60%. Veja [tabela completa](https://pbintegracoes.com/taxas/?utm_source=readme&utm_content=taxas) e atualizada.
+Receba no crédito à vista **a partir de 2,99% + R$0,00** de taxa de intermediação e PIX na hora por 0,60%. Veja [tabela completa](https://pbintegracoes.com/taxas/?utm_source=readme&utm_content=taxas) e atualizada.
 
-Certifique-se de usar a versão mais recente e [obter uma nova connect key](https://pbintegracoes.com/autorizar) gratuitamente.
+Certifique-se de usar a versão mais recente e [obter uma connect key](https://pbintegracoes.com/autorizar) gratuitamente.
 
 🛟[Perguntas frequentes](https://pbintegracoes.com/perguntas-frequentes)
 
@@ -59,7 +59,7 @@ Economize milhares de reais ao ano em taxas de transação e receba direto na co
 Consulte mais sobre elas e compare no [nosso site](https://pbintegracoes.com/taxas/?utm_source=readme&utm_content=taxas).
 
 == ⚡️ PRINCIPAIS RECURSOS ==
-* Pagamentos sem sair da loja com **PIX**, **Cartão de Crédito**, **Boleto** ou **Checkout PagBank** (redirect/link).
+* Pagamentos sem sair da loja com **PIX**, **Cartão de Crédito**, **Boleto** ou **Checkout PB** (redirect/link).
 * Venda clubes e assinaturas com [**pagamento recorrente**](https://ajuda.pbintegracoes.com/hc/pt-br/sections/20410120690829-Recorr%C3%AAncia-e-Clube-de-Assinatura-com-WooCommerce), sem depender de outros plugins 🤯
 * **OnlyFans** - Restrição de conteúdo só para assinantes. Restrinja o acesso à páginas e categorias somente pra quem é assinante. [Veja como](https://www.magenteiro.com/blog/wp/restricao-conteudo-para-assinantes-wordpress/).
 * Integração com [**Envio Fácil**](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce) (economize até 70% no frete com Correios e Jadlog) sem precisar de contrato
@@ -226,6 +226,11 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.8 =
+* Correção: em Minha Conta → Métodos de pagamento → Adicionar, após tokenizar o cartão a tela ficava em loading infinito e o método não era salvo (PB-1105).
+* Atualização: banners e ícone (SVG) do plugin no WordPress.org.
+* Atualização: textos do readme (posicionamento PB Integrações / Vindi / recebimento em PagBank, MercadoPago e outros bancos).
 
 = 5.1.7 =
 * Segurança: sanitiza nome/e-mail/endereço vindos do webhook do Checkout PB e escapa a saída na tela admin de Assinaturas (mitiga stored XSS via `customer.name`).
