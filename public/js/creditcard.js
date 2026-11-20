@@ -1012,10 +1012,22 @@ jQuery(document).ready(function ($) {
      * WooCommerce binds checkout submit in the same document.ready turn as this file.
      * We must capture that handler BEFORE .off('submit'), then call it directly to resume
      * AJAX place-order — never re-trigger submit (native POST / Ticketera conflict).
+     *
+     * My Account #add_payment_method is different: WC's submit callback only calls
+     * $form.block() (loading overlay). Capturing/calling it leaves an infinite spinner
+     * and never POSTs the card to PHP. #order_update (change-card) has no AJAX either.
      */
     let wooCheckoutSubmitHandler = null;
+    const isNativePostPaymentForm = function (formEl) {
+        const id = formEl && formEl.id ? formEl.id : '';
+        return id === 'add_payment_method' || id === 'order_update';
+    };
     const captureWooCheckoutSubmitHandler = function (formEl) {
         if (!formEl || typeof jQuery._data !== 'function') {
+            return null;
+        }
+        // Not an AJAX place-order transport — do not capture the loading-only handler.
+        if (isNativePostPaymentForm(formEl)) {
             return null;
         }
         const events = jQuery._data(formEl, 'events');
@@ -1051,6 +1063,23 @@ jQuery(document).ready(function ($) {
             isSubmitting = false;
             return;
         }
+        // Wallet / change-card: always native POST (bypass jQuery so we do not re-enter
+        // pagBankSubmitHandler). Never call WC's add-payment-method loading-only callback.
+        if (isNativePostPaymentForm(formEl)) {
+            try {
+                console.debug('PB Integrações: submit nativo (carteira/troca de cartão)', formEl.id);
+                jQuery(formEl).block({
+                    message: null,
+                    overlayCSS: { background: '#fff', opacity: 0.6 },
+                });
+                HTMLFormElement.prototype.submit.call(formEl);
+            } catch (err) {
+                console.error('PB Integrações: falha no submit nativo do formulário', err);
+                isSubmitting = false;
+                jQuery(formEl).unblock();
+            }
+            return;
+        }
         if (!wooCheckoutSubmitHandler) {
             wooCheckoutSubmitHandler = captureWooCheckoutSubmitHandler(formEl);
         }
@@ -1065,8 +1094,6 @@ jQuery(document).ready(function ($) {
             }
             return;
         }
-        // Change-card / add payment method: no wc-checkout.js — native POST (bypass jQuery
-        // so we do not re-enter pagBankSubmitHandler).
         try {
             console.debug('PB Integrações: sem handler WC; submit nativo do formulário', formEl.id || formEl.className);
             HTMLFormElement.prototype.submit.call(formEl);
@@ -1399,11 +1426,12 @@ jQuery(document).ready(function ($) {
     
     // Capture WC submit BEFORE removing handlers — this file runs in the same
     // document.ready as checkout.js, after WC already bound submit.
-    wooCheckoutSubmitHandler = captureWooCheckoutSubmitHandler(getCheckoutFormEl());
-    if (!wooCheckoutSubmitHandler) {
-        console.warn('PB Integrações: WooCommerce submit handler ausente no bind; tentaremos recapturar no place order.');
-    } else {
+    const bindFormEl = getCheckoutFormEl();
+    wooCheckoutSubmitHandler = captureWooCheckoutSubmitHandler(bindFormEl);
+    if (wooCheckoutSubmitHandler) {
         console.debug('PB Integrações: WooCommerce submit handler capturado');
+    } else if (bindFormEl && !isNativePostPaymentForm(bindFormEl)) {
+        console.warn('PB Integrações: WooCommerce submit handler ausente no bind; tentaremos recapturar no place order.');
     }
     jQuery(checkoutFormIdentifiers).off('submit');
     jQuery(checkoutFormIdentifiers).on('submit', pagBankSubmitHandler);
