@@ -107,6 +107,7 @@ class Connect
         self::includes();
 
         \RM_PagBank\Compat\BrazilianCheckoutFields::init();
+        \RM_PagBank\Compat\BrazilianAddressDisplay::init();
 
         // Add action links
         add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( self::class, 'addPluginActionLinks' ) );
