@@ -217,10 +217,45 @@ class CheckoutPbDefaultCheckout
     }
 
     /**
+     * Soft-fail banner/flag only applies while Checkout PB mode is still "default".
+     * Stale session leftovers (e.g. after merchant disables Checkout PB) must not stick.
+     */
+    private static function softFailContextActive(): bool
+    {
+        return self::isDefaultMode();
+    }
+
+    /**
+     * Drop soft-fail session when hosted default mode is no longer in effect.
+     */
+    private static function discardStaleWooCheckoutFallback(): void
+    {
+        if (self::softFailContextActive()) {
+            return;
+        }
+        if (!function_exists('WC') || !WC()->session) {
+            return;
+        }
+        if (WC()->session->get(self::SESSION_FALLBACK) !== 'yes'
+            && !WC()->session->get(self::SESSION_FALLBACK_MSG)) {
+            return;
+        }
+        self::clearWooCheckoutFallback();
+        if (method_exists(WC()->session, 'save_data')) {
+            WC()->session->save_data();
+        }
+    }
+
+    /**
      * When hosted checkout cannot proceed, allow the real Woo /checkout/ once.
      */
     public static function hasWooCheckoutFallback(): bool
     {
+        self::discardStaleWooCheckoutFallback();
+        if (!self::softFailContextActive()) {
+            return false;
+        }
+
         return function_exists('WC')
             && WC()->session
             && WC()->session->get(self::SESSION_FALLBACK) === 'yes';
@@ -239,6 +274,9 @@ class CheckoutPbDefaultCheckout
         if (!function_exists('WC') || !WC()->session) {
             return;
         }
+        if (!self::softFailContextActive()) {
+            return;
+        }
         WC()->session->set(self::SESSION_FALLBACK, 'yes');
         WC()->session->set(self::SESSION_FALLBACK_MSG, $message);
         // Persist before exit/redirect — otherwise Blocks checkout can load with an empty session.
@@ -249,6 +287,10 @@ class CheckoutPbDefaultCheckout
 
     private static function getFallbackMessage(): string
     {
+        self::discardStaleWooCheckoutFallback();
+        if (!self::softFailContextActive()) {
+            return '';
+        }
         if (!function_exists('WC') || !WC()->session) {
             return '';
         }
