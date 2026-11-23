@@ -42,9 +42,14 @@ class CheckoutPbDefaultCheckout
         add_filter('woocommerce_get_checkout_order_received_url', [__CLASS__, 'filterOrderReceivedUrl'], 5, 2);
         add_filter('woocommerce_get_checkout_payment_url', [__CLASS__, 'filterOrderPayUrl'], 5, 2);
         add_action('woocommerce_api_' . self::API_ACTION, [__CLASS__, 'handleApi']);
+        add_action('template_redirect', [__CLASS__, 'maybeClearFallbackOnCart'], 4);
         add_action('template_redirect', [__CLASS__, 'maybeInterceptCheckoutPage'], 5);
         add_action('woocommerce_thankyou', [__CLASS__, 'clearWooCheckoutFallback'], 1);
         add_action('woocommerce_cart_emptied', [__CLASS__, 'clearWooCheckoutFallback']);
+        // Cart changes (after fixing product dims / qty) should allow a fresh hosted attempt.
+        add_action('woocommerce_add_to_cart', [__CLASS__, 'clearWooCheckoutFallback'], 5);
+        add_action('woocommerce_cart_item_removed', [__CLASS__, 'clearWooCheckoutFallback'], 5);
+        add_action('woocommerce_after_cart_item_quantity_update', [__CLASS__, 'clearWooCheckoutFallback'], 5);
         // Classic checkout / shortcode.
         add_action('woocommerce_before_checkout_form', [__CLASS__, 'printFallbackNotice'], 5);
         // Blocks checkout does not reliably surface wc_add_notice — inject into the block markup.
@@ -132,10 +137,8 @@ class CheckoutPbDefaultCheckout
         if (self::$bypassCheckoutPageLinkFilter) {
             return false;
         }
-        // Soft-fail: shopper is finishing on Woo (checkout + thank-you). Do not rewrite.
-        if (self::hasWooCheckoutFallback()) {
-            return false;
-        }
+        // Soft-fail still rewrites "Finalizar compra" → entrypoint so a second click retries hosted.
+        // Loop prevention is only in maybeInterceptCheckoutPage (landing on /checkout/ after soft-fail).
         if (function_exists('is_wc_endpoint_url')
             && (is_wc_endpoint_url('order-received') || is_wc_endpoint_url('order-pay'))) {
             return false;
@@ -269,6 +272,28 @@ class CheckoutPbDefaultCheckout
         }
     }
 
+    /**
+     * Visiting the cart releases soft-fail so "Finalizar compra" can retry hosted checkout
+     * (e.g. after fixing Envio Fácil boxes or product dimensions in admin).
+     */
+    public static function maybeClearFallbackOnCart(): void
+    {
+        if (!function_exists('is_cart') || !is_cart()) {
+            return;
+        }
+        if (!function_exists('WC') || !WC()->session) {
+            return;
+        }
+        if (WC()->session->get(self::SESSION_FALLBACK) !== 'yes'
+            && !WC()->session->get(self::SESSION_FALLBACK_MSG)) {
+            return;
+        }
+        self::clearWooCheckoutFallback();
+        if (method_exists(WC()->session, 'save_data')) {
+            WC()->session->save_data();
+        }
+    }
+
     private static function enableWooCheckoutFallback(string $message): void
     {
         if (!function_exists('WC') || !WC()->session) {
@@ -346,27 +371,30 @@ class CheckoutPbDefaultCheckout
     }
 
     /**
-     * Soft-fail: restore cart from the orphan order (if any), cancel it, then Woo checkout.
+     * Soft-fail: restore cart from the orphan order (if any), trash it, then Woo checkout.
      */
     private static function redirectToWooCheckoutWithWarning(string $message, ?WC_Order $orphanOrder = null): void
     {
         $restored = 0;
+        $orphanOrderId = null;
         if ($orphanOrder instanceof WC_Order) {
+            $orphanOrderId = $orphanOrder->get_id();
             // Cart may already be empty (session) or about to be — rebuild from the Woo order
-            // before cancelling so the shopper can finish on the store checkout.
+            // before trashing so the shopper can finish on the store checkout.
             $restored = self::restoreCartFromOrder($orphanOrder);
-            $orphanOrder->update_status(
-                'cancelled',
+            $orphanOrder->add_order_note(
                 sprintf(
                     /* translators: %s = Checkout PB payment method title */
-                    __('Pedido cancelado: falha ao iniciar %s (fallback para checkout da loja).', 'pagbank-connect'),
+                    __('Pedido movido para a lixeira: falha ao iniciar %s (fallback para checkout da loja).', 'pagbank-connect'),
                     self::checkoutPbTitle()
                 )
             );
+            // false = trash (not force-delete). Avoids cancelled clutter on every soft-fail retry.
+            $orphanOrder->delete(false);
         }
 
         Functions::log('Checkout PB default: soft-fail → Woo checkout: ' . $message, 'warning', [
-            'orphan_order_id' => $orphanOrder instanceof WC_Order ? $orphanOrder->get_id() : null,
+            'orphan_order_id' => $orphanOrderId,
             'cart_items_restored' => $restored,
         ]);
 
@@ -636,20 +664,19 @@ class CheckoutPbDefaultCheckout
             exit;
         }
 
-        // Soft-fail in progress: do not create another orphan hosted order.
-        if (self::hasWooCheckoutFallback()) {
-            self::$bypassCheckoutPageLinkFilter = true;
-            $checkoutUrl = wc_get_page_permalink('checkout');
-            self::$bypassCheckoutPageLinkFilter = false;
-            wp_safe_redirect($checkoutUrl ?: wc_get_cart_url());
-            exit;
-        }
-
         $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash((string) $_GET['_wpnonce'])) : '';
         if ($nonce === '' || !wp_verify_nonce($nonce, self::API_ACTION)) {
             wc_add_notice(__('Link de checkout inválido ou expirado. Tente novamente.', 'pagbank-connect'), 'error');
             wp_safe_redirect(wc_get_cart_url());
             exit;
+        }
+
+        // Intentional "Finalizar compra" (menu/cart) after soft-fail → clear flag and retry hosted.
+        if (self::hasWooCheckoutFallback()) {
+            self::clearWooCheckoutFallback();
+            if (function_exists('WC') && WC()->session && method_exists(WC()->session, 'save_data')) {
+                WC()->session->save_data();
+            }
         }
 
         self::startFromCartAndRedirect(true);
