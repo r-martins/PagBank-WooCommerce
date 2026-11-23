@@ -821,6 +821,9 @@ class CheckoutPbDefaultCheckout
         );
         OrderMeta::set($order, 'payment_method', 'checkout_pb', true);
         OrderMeta::set($order, '_hosted_checkout_origin', 'checkout_pb', true);
+        // Stamp before API so soft-fail / trash orphans keep correct Vindi|PagBank branding in admin.
+        $api = new \RM_PagBank\Helpers\Api();
+        OrderMeta::set($order, 'partner', $api->partner()->getPartner(), true);
         $order->calculate_totals();
         $order->save();
 
