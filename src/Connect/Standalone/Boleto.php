@@ -44,7 +44,7 @@ class Boleto extends WC_Payment_Gateway
             __('Boleto', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Receba pagamentos com Boleto (por Ricardo Martins)',
+            'Receba pagamentos com Boleto (via PB Integrações)',
             'pagbank-connect'
         );
 
