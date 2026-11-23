@@ -23,13 +23,17 @@ if (!$pbOrderId) {
 	$pbOrderId = OrderMeta::get($order, 'checkout_id');
 }
 $isSandbox = (string) OrderMeta::get($order, 'is_sandbox') === '1';
-$partner = (string) OrderMeta::get($order, 'partner');
+$partner = (string) OrderMeta::readPartner($order);
 if ($partner === '') {
-	// Trial / legacy tokens path may omit partner meta — infer Vindi from profile id.
+	$partner = (string) OrderMeta::get($order, 'partner');
+}
+if ($partner === '') {
+	// Soft-fail / pending Checkout PB may lack partner meta (set only after API success).
+	// Match Branding::notePrefix: prefer settings over hardcoding PagBank.
 	if ((int) OrderMeta::get($order, '_payment_profile_id') > 0) {
 		$partner = Partner::VINDI;
 	} else {
-		$partner = Partner::PAGBANK;
+		$partner = \RM_PagBank\Partner\PartnerDetector::fromSettings()->getPartner();
 	}
 }
 $branding = Branding::forOrderPartner($partner);

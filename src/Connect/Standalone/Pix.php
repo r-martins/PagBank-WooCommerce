@@ -46,7 +46,7 @@ class Pix extends WC_Payment_Gateway
             __('Pix', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Receba pagamentos com Pix (por Ricardo Martins)',
+            'Receba pagamentos com Pix (via PB Integrações)',
             'pagbank-connect'
         );
 

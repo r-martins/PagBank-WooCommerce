@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.8
+Stable tag: 5.1.9
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Receba no PagBank, MercadoPago ou outro banco com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores a partir de 0,60%.
@@ -226,6 +226,13 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.9 =
+* Melhoria: no Checkout PB como checkout padrão, se a criação da sessão hosted falhar o comprador volta ao checkout da loja com o carrinho restaurado (soft-fail), sem loop de redirect (PB-1106).
+* Melhoria: um novo clique em “Finalizar compra” tenta o Checkout PB novamente; pedidos órfãos da falha vão para a lixeira (em vez de cancelados), evitando poluir a lista de pedidos.
+* Melhoria: número e bairro sincronizados do Checkout PB passam a aparecer no endereço formatado do WooCommerce mesmo sem o Extra Checkout Fields for Brazil.
+* Correção: pedidos órfãos/soft-fail do Checkout PB em lojas Vindi não exibem mais o logo PagBank nas informações de pagamento do admin.
+* Atualização: descrições dos meios PIX, Cartão e Boleto no admin passam a dizer “(via PB Integrações)” em vez de “(por Ricardo Martins)”.
 
 = 5.1.8 =
 * Correção: em Minha Conta → Métodos de pagamento → Adicionar, após tokenizar o cartão a tela ficava em loading infinito e o método não era salvo (PB-1105).

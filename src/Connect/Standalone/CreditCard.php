@@ -45,7 +45,7 @@ class CreditCard extends WC_Payment_Gateway_CC
             __('Cartão de Crédito', 'pagbank-connect')
         );
         $this->method_description = __(
-            'Receba pagamentos com Cartão de Crédito (por Ricardo Martins)',
+            'Receba pagamentos com Cartão de Crédito (via PB Integrações)',
             'pagbank-connect'
         );
         $this->title = $this->get_option('title', __('Cartão de Crédito', 'pagbank-connect'));
