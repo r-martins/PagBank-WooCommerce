@@ -5,7 +5,7 @@ Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.9
+Stable tag: 5.1.10
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Receba no PagBank, MercadoPago ou outro banco com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores a partir de 0,60%.
@@ -226,6 +226,9 @@ A confirmação é exibida ainda na tela de sucesso, e pode opcionalmente dispar
 Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945430928909-Oferecer-Desconto-Pix-e-Boleto) para PIX e Boleto diretamente nas configurações do plugin.
 
 == Changelog ==
+
+= 5.1.10 =
+* Segurança: no checkout Vindi, o `payment_profile_id` enviado no formulário só é aceito se foi criado na sessão atual ou pertencer a um cartão salvo do usuário logado (impede cobrança com perfil de outro cliente).
 
 = 5.1.9 =
 * Melhoria: no Checkout PB como checkout padrão, se a criação da sessão hosted falhar o comprador volta ao checkout da loja com o carrinho restaurado (soft-fail), sem loop de redirect (PB-1106).

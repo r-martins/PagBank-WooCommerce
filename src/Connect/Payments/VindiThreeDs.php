@@ -74,9 +74,13 @@ class VindiThreeDs
             if (!$id) {
                 wp_send_json_error(['message' => __('Não foi possível criar o perfil de pagamento.', 'pagbank-connect'), 'response' => $resp], 502);
             }
+            $profileId = (int) $id;
+            $customerId = (int) ($resp['customer_id'] ?? $resp['payment_profile']['customer_id'] ?? 0);
+            // PB-1107: bind to WC session so checkout/setup cannot use another customer's profile.
+            VindiPaymentProfileGuard::bind($profileId, $customerId);
             wp_send_json_success([
-                'payment_profile_id' => (int) $id,
-                'customer_id' => (int) ($resp['customer_id'] ?? $resp['payment_profile']['customer_id'] ?? 0),
+                'payment_profile_id' => $profileId,
+                'customer_id' => $customerId,
                 'payment_profile' => $resp['payment_profile'] ?? $resp,
             ]);
         } catch (Exception $e) {
@@ -95,6 +99,8 @@ class VindiThreeDs
             wp_send_json_error(['message' => __('payment_profile_id inválido.', 'pagbank-connect')], 400);
         }
         try {
+            // PB-1107: only session-bound or owned Woo token profiles may start 3DS setup.
+            VindiPaymentProfileGuard::assertAllowedOrFail($profileId);
             $api = new Api();
             // UML Vindi + orientação comercial: setup 3DS usa o método credit_card_3ds (não credit_card).
             $resp = $api->post('three-d-secure/sessions/setup', [
@@ -107,8 +113,9 @@ class VindiThreeDs
             }
             wp_send_json_success(['setup' => $setup]);
         } catch (Exception $e) {
-            Functions::log('Vindi 3DS setup: ' . $e->getMessage(), 'error');
-            wp_send_json_error(['message' => $e->getMessage()], 502);
+            $code = (strpos($e->getMessage(), 'Perfil de pagamento inválido') !== false) ? 403 : 502;
+            Functions::log('Vindi 3DS setup: ' . $e->getMessage(), $code === 403 ? 'warning' : 'error');
+            wp_send_json_error(['message' => $e->getMessage()], $code);
         }
     }
 
