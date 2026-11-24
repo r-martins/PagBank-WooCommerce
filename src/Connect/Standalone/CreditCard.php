@@ -417,19 +417,19 @@ class CreditCard extends WC_Payment_Gateway_CC
                         ? htmlspecialchars($_POST['rm-pagbank-card-retry-with-3ds'], ENT_QUOTES, 'UTF-8')
                         : false);
 
-                if (!empty($_POST['rm-pagbank-payment-profile-id'])) {
-                    // PB-1099: kept after BELOW_MINIMUM / card-not-enrolled so we charge the
-                    // same profile created for enroll instead of retokenizing.
-                    OrderMeta::set($order, '_payment_profile_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-payment-profile-id'])), true);
-                } else {
-                    // No profile posted (fresh gateway_token charge or cleared retry) — do not
-                    // reuse a leftover profile from a prior attempt on the same order.
-                    OrderMeta::delete($order, '_payment_profile_id');
-                }
-                if (!empty($_POST['rm-pagbank-vindi-customer-id'])) {
-                    OrderMeta::set($order, '_vindi_customer_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-vindi-customer-id'])), true);
-                } else {
-                    OrderMeta::delete($order, '_vindi_customer_id');
+                // PB-1107: never trust raw POST profile/customer ids (IDOR).
+                // Saved Woo token already set _payment_profile_id above via getCcToken.
+                if (!$is_saved_token) {
+                    try {
+                        \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::applyPostedIdsToOrder($order);
+                    } catch (\Exception $e) {
+                        wc_add_notice($e->getMessage(), 'error');
+                        return [
+                            'result' => 'fail',
+                            'redirect' => '',
+                            'message' => $e->getMessage(),
+                        ];
+                    }
                 }
                 if (!empty($_POST['rm-pagbank-payment-company-code'])) {
                     OrderMeta::set($order, '_payment_company_code', sanitize_text_field(wp_unslash($_POST['rm-pagbank-payment-company-code'])), true);
@@ -505,15 +505,18 @@ class CreditCard extends WC_Payment_Gateway_CC
                         true
                     );
                 }
-                if (!empty($_POST['rm-pagbank-payment-profile-id'])) {
-                    OrderMeta::set($order, '_payment_profile_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-payment-profile-id'])), true);
-                } else {
-                    OrderMeta::delete($order, '_payment_profile_id');
-                }
-                if (!empty($_POST['rm-pagbank-vindi-customer-id'])) {
-                    OrderMeta::set($order, '_vindi_customer_id', (int) wc_clean(wp_unslash($_POST['rm-pagbank-vindi-customer-id'])), true);
-                } else {
-                    OrderMeta::delete($order, '_vindi_customer_id');
+                // PB-1107: trial/zero-total — same ownership bind as regular CC checkout.
+                if (!$is_saved_token) {
+                    try {
+                        \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::applyPostedIdsToOrder($order);
+                    } catch (\Exception $e) {
+                        wc_add_notice($e->getMessage(), 'error');
+                        return [
+                            'result' => 'fail',
+                            'redirect' => '',
+                            'message' => $e->getMessage(),
+                        ];
+                    }
                 }
                 $ccNumber = filter_input(INPUT_POST, 'rm-pagbank-card-number', FILTER_SANITIZE_NUMBER_INT)
                     ?: filter_var($_POST['rm-pagbank-card-number'] ?? '', FILTER_SANITIZE_NUMBER_INT);
@@ -809,6 +812,7 @@ class CreditCard extends WC_Payment_Gateway_CC
             if ($customerId > 0) {
                 OrderMeta::set($order, '_vindi_customer_id', $customerId, true);
             }
+            \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::bind($profileId, $customerId);
         }
 
         // Woo token only for logged-in customers who opted to save the card (My Account).
@@ -858,6 +862,10 @@ class CreditCard extends WC_Payment_Gateway_CC
         $token->update_meta_data('cc_bin', $bin);
         $token->update_meta_data('partner', 'vindi');
         $token->update_meta_data('vindi_payment_profile_id', $profileId);
+        $boundCustomer = (int) OrderMeta::get($order, '_vindi_customer_id');
+        if ($boundCustomer > 0) {
+            $token->update_meta_data('vindi_customer_id', $boundCustomer);
+        }
         $token->update_meta_data('customer_document', $order->get_meta('_rm_pagbank_customer_document'));
         $token->save();
         $order->add_payment_token($token);
@@ -1473,7 +1481,12 @@ class CreditCard extends WC_Payment_Gateway_CC
                 $token->update_meta_data('cc_bin', $bin);
                 $token->update_meta_data('partner', 'vindi');
                 $token->update_meta_data('vindi_payment_profile_id', $profileId);
+                $vindiCustomerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? 0);
+                if ($vindiCustomerId > 0) {
+                    $token->update_meta_data('vindi_customer_id', $vindiCustomerId);
+                }
                 $token->update_meta_data('customer_document', $cpfCnpj, true);
+                \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::bind($profileId, $vindiCustomerId);
                 if (empty($existing_tokens)) {
                     $token->set_default(true);
                 }

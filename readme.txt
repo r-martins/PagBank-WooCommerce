@@ -1,11 +1,11 @@
 === PB Integrações (antigo PagBank Integrações) para WooCommerce ===
 Contributors: martins56
-Tags: pagseguro, pagbank, pix, woocommerce, pagamento
+Tags: mercadopago, pagbank, pix, woocommerce, pagamento
 Donate link: https://github.com/sponsors/r-martins
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.9
+Stable tag: 5.1.10
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Receba no PagBank, MercadoPago ou outro banco com PIX, Cartão de Crédito, Recorrência + Envio Fácil com Taxas Ainda Menores a partir de 0,60%.
@@ -227,6 +227,9 @@ Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbinte
 
 == Changelog ==
 
+= 5.1.10 =
+* Segurança: no checkout Vindi, o `payment_profile_id` enviado no formulário só é aceito se foi criado na sessão atual ou pertencer a um cartão salvo do usuário logado (impede explorar possível cobrança com perfil de outro cliente).
+
 = 5.1.9 =
 * Melhoria: no Checkout PB como checkout padrão, se a criação da sessão hosted falhar o comprador volta ao checkout da loja com o carrinho restaurado (soft-fail), sem loop de redirect (PB-1106).
 * Melhoria: um novo clique em “Finalizar compra” tenta o Checkout PB novamente; pedidos órfãos da falha vão para a lixeira (em vez de cancelados), evitando poluir a lista de pedidos.
@@ -237,7 +240,6 @@ Sim! Você pode [configurar descontos percentuais ou fixos](https://ajuda.pbinte
 = 5.1.8 =
 * Correção: em Minha Conta → Métodos de pagamento → Adicionar, após tokenizar o cartão a tela ficava em loading infinito e o método não era salvo (PB-1105).
 * Atualização: banners e ícone (SVG) do plugin no WordPress.org.
-* Atualização: textos do readme (posicionamento PB Integrações / Vindi / recebimento em PagBank, MercadoPago e outros bancos).
 
 = 5.1.7 =
 * Segurança: sanitiza nome/e-mail/endereço vindos do webhook do Checkout PB e escapa a saída na tela admin de Assinaturas (mitiga stored XSS via `customer.name`).

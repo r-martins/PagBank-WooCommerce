@@ -1692,9 +1692,12 @@ class Recurring
      */
     private function changePaymentMethodViaVindiProfile(WC_Order $order): array
     {
-        // Only reuse a profile id posted by the current request (e.g. checkout 3DS).
+        // Only reuse a profile id posted by the current request (e.g. 3DS) when bound/owned (PB-1107).
         // Never reuse the initial order's stored profile — change-card must create a new one from gateway_token.
         $existingProfileId = (int) ($_POST['rm-pagbank-payment-profile-id'] ?? 0);
+        if ($existingProfileId > 0) {
+            \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::assertAllowedOrFail($existingProfileId);
+        }
 
         $company = sanitize_text_field(wp_unslash((string) ($_POST['rm-pagbank-payment-company-code'] ?? '')));
         if ($company === '') {
@@ -1709,7 +1712,11 @@ class Recurring
 
         $profile = [];
         $profileId = $existingProfileId;
-        $customerId = (int) ($_POST['rm-pagbank-vindi-customer-id'] ?? 0);
+        // Customer id: session bind first; never trust POST alone for a foreign pair.
+        $customerId = 0;
+        if ($profileId > 0 && \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::isSessionBound($profileId)) {
+            $customerId = \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::boundCustomerId();
+        }
         if ($customerId <= 0) {
             $customerId = (int) OrderMeta::get($order, '_vindi_customer_id');
         }
@@ -1759,6 +1766,7 @@ class Recurring
             $profile = is_array($resp['payment_profile'] ?? null) ? $resp['payment_profile'] : $resp;
             $profileId = (int) ($profile['id'] ?? $resp['payment_profile_id'] ?? 0);
             $customerId = (int) ($resp['customer_id'] ?? $profile['customer_id'] ?? $customerId);
+            \RM_PagBank\Connect\Payments\VindiPaymentProfileGuard::bind($profileId, $customerId);
         }
 
         if ($profileId <= 0) {
