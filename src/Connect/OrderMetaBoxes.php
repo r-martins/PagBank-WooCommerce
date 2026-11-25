@@ -504,12 +504,12 @@ class OrderMetaBoxes
                         echo '</li>';
                     }
                     
-                    // Chargeback
+                    // Chargeback (escape — prevent stored XSS via webhook _split_data)
                     if (isset($configurations['chargeback']['charge_transfer']['percentage'])) {
                         $chargeback_pct = $configurations['chargeback']['charge_transfer']['percentage'] ?? 0;
                         echo '<li>';
                         echo '<strong>' . __('Chargeback:', 'pagbank-connect') . '</strong> ';
-                        echo '<span style="color: #666;">' . $chargeback_pct . '%</span>';
+                        echo '<span style="color: #666;">' . esc_html((string) $chargeback_pct) . '%</span>';
                         echo '</li>';
                     }
                     
