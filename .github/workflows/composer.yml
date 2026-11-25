@@ -1,0 +1,40 @@
+name: Composer
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - main
+    paths:
+      - 'composer.json'
+      - 'composer.lock'
+      - '.github/workflows/composer.yml'
+  pull_request:
+    paths:
+      - 'composer.json'
+      - 'composer.lock'
+      - '.github/workflows/composer.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Install require-dev (no scripts noise)
+        run: composer install --prefer-dist --no-progress --no-interaction
